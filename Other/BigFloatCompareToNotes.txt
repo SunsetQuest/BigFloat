@@ -1,0 +1,184 @@
+
+10:18 PM 8/17/2023:
+
+    public int CompareTo1(BigFloat other)
+    {
+        // output   11001110111111101101000111101110100100010001000110110110110101011101110001110001100011  62560518121828658697411683  output
+        // output   110011101111111011010001111011101001000100010001101110                                   14566005701624942
+        //                                                                ################################  hidden/ignored
+        // expect   11001110111111101101000111101110100100010001000110111000000000000000000000000000000000  62560518121828659947896832  expect
+
+        //if(Highest64Bits == 18446744065119617024UL)
+        //{        }
+
+        if (OutOfPrecision)
+        {
+            return other.OutOfPrecision ? 0 : -other._int.Sign;
+        }
+
+        if (other.OutOfPrecision)
+        {
+            return OutOfPrecision ? 0 : _int.Sign;
+        }
+
+        // Lets see if we can escape early by just looking at the Exponent.
+        if (_int.Sign != other._int.Sign)
+        {
+            return _int.Sign;
+        }
+
+        // Lets see if we can escape early by just looking at the Exponent.
+        int expDifference = this.Exponent - other.Exponent;
+        if (Math.Abs(expDifference) > 1)
+        {
+            return Exponent.CompareTo(other.Exponent) * _int.Sign;
+        }
+
+        // At this point the sign is the same and the exp are within 1 bit of each other.
+
+
+        // special cases when the Exponent is off by just 1 bit:
+        //  case 1: the smaller of the two rounds up to match the size of the larger and therefor can be equal (11|111 == 100|000)
+        //  case 2: the smaller of the two rounds up, but the larger also rounds up so not equal (depends on #1 happening first)
+        //  case 3: both round up and are therefor equal again
+
+
+        // If "this" is larger by one bit AND "this" is not in the format 10000000..., THEN "this" must be larger(or smaller if neg)
+        if (expDifference == 1 && !this.IsOneBitFollowedByZeroBits())
+        {
+            return _int.Sign;
+        }
+        // If "other" is larger by one bit AND "other" is not in the format 10000000..., THEN "other" must be larger(or smaller if neg)
+        if (expDifference == -1 && !other.IsOneBitFollowedByZeroBits())
+        {
+            return Sign;
+        }
+        else // if (expDifference == 0)
+        {
+            //int valA = (_int >> (_size - other._size + ExtraHiddenBits - expDifference - 1)).CompareTo(other._int >> (ExtraHiddenBits - 1));   //43
+            //int valB = (_int >> (ExtraHiddenBits - 1)).CompareTo(other._int >> (other._size - _size + ExtraHiddenBits + expDifference - 1));   // 40 
+
+            //string a, b;
+            ////if (valA != valB) //todo: remove this
+            //{
+            //    a = ($"valA:{valA} {_int >> (_size - other._size + ExtraHiddenBits - expDifference - 1)} != {(other._int >> (ExtraHiddenBits - 1))}");
+            //    b = ($"valB:{valB} {_int >> (ExtraHiddenBits - 1)} != {(other._int >> (other._size - _size + ExtraHiddenBits + expDifference - 1))}");
+            //}
+            // -11000000000000000000000000000000000000000000000 105553116266496
+            // -110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111011011010111100111010100101 -996920996838686904677855296207179429
+            //                                                                                          ################################
+
+            // -1100000000000000 (-49152)
+            // -1100000000000001 (-49153)  < --- why does this have a training 1?
+
+            int sizeDiff = _size - other._size;
+
+            BigInteger test = (_int.Sign >= 0) switch
+            {
+
+                true => (sizeDiff) switch  // Both positive values
+                {
+
+                    //> 0 => (RightShiftWithRound(_int, _size - other._size + ExtraHiddenBits - expDifference)- other.Int).Sign,  //38
+                    //> 0 => (RightShiftWithRound(other._int, ExtraHiddenBits) - RightShiftWithRound(this._int, _size - other._size + ExtraHiddenBits)).Sign,  //37
+                    //> 0 => (_int >> (_size - other._size + ExtraHiddenBits - expDifference - 1)).CompareTo(other._int >> (ExtraHiddenBits - 1)),   //38
+                    > 0 => -(other._int - (_int >> (sizeDiff - expDifference))),  //38 
+
+                    //< 0 => (Int - RightShiftWithRound(other._int, other._size - _size + ExtraHiddenBits)).Sign, // 38
+                    //< 0 => (other._int >> (other._size - _size + ExtraHiddenBits - expDifference - 1)).CompareTo(_int >> (ExtraHiddenBits - 1)), //39
+                    //< 0 => (RightShiftWithRound(this._int, ExtraHiddenBits) - RightShiftWithRound(other._int, other._size - _size + ExtraHiddenBits + expDifference)).Sign,  // 39
+                    //< 0 => (_int >> (ExtraHiddenBits - 1)).CompareTo(other._int >> (other._size - _size + ExtraHiddenBits + expDifference - 1)),   // 39
+                    < 0 => -((other._int << (sizeDiff - expDifference)) - _int),  //38
+
+                    _ => expDifference switch
+                    {
+                        //0 => RightShiftWithRound(_int - other._int, ExtraHiddenBits); //38
+                        //0 => (_int >> (ExtraHiddenBits - 1)).CompareTo(other._int >> (ExtraHiddenBits - 1)), //37
+                        0 => (_int - other._int), //38
+                        //1 => RightShiftWithRound(_int - other._int, ExtraHiddenBits); //38
+                        //1 => (_int >> (ExtraHiddenBits - 1)).CompareTo(other._int >> ExtraHiddenBits), //38
+                        1 => (_int - (other._int >> 1)),  //38
+                        //_/*-1*/ => RightShiftWithRound(_int - other._int, ExtraHiddenBits);  //38
+                        //_/*-1*/ => (_int >> (ExtraHiddenBits - 1)).CompareTo(other._int >> (ExtraHiddenBits - 1)), //38
+                        _/*-1*/ => ((_int >> 1) - other._int), //38   
+                    }
+                },
+
+                false => (sizeDiff) switch // Both negative values
+                {
+                    //> 0 => (-other._int >> (ExtraHiddenBits - 1)).CompareTo(-_int >> (_size - other._size + ExtraHiddenBits - expDifference - 1)),   //38
+                    //> 0 => ((-other._int >> (ExtraHiddenBits - 1)) - (-_int >> (_size - other._size + ExtraHiddenBits - expDifference - 1))),   //38
+                    > 0 => -(other._int - (_int >> (sizeDiff - expDifference))),  //38 
+                    //< 0 => (-other._int >> (other._size - _size + ExtraHiddenBits + expDifference - 1)).CompareTo(-_int >> (ExtraHiddenBits - 1)),   //  
+                    //< 0 => ((-other._int >> (other._size - _size + ExtraHiddenBits + expDifference - 1)) - (-_int >> (ExtraHiddenBits - 1))),   //  
+                    < 0 => -((other._int << (sizeDiff - expDifference)) - _int),  //38
+                    _/*0*/ => expDifference switch
+                    {
+                        //0 => RightShiftWithRound(_int - other._int, ExtraHiddenBits).Sign, //38
+                        //0 => (-other._int >> (ExtraHiddenBits - 1)).CompareTo(-_int >> (ExtraHiddenBits - 1)), //38
+                        0 => (_int - other._int),    //38
+                        //1=> RightShiftWithRound(_int - other._int, ExtraHiddenBits).Sign, //38
+                        //1 => (-other._int >> ExtraHiddenBits).CompareTo(-_int >> (ExtraHiddenBits - 1)),//38
+                        1 => (_int - (other._int >> 1)),    //38
+                        //_/*-1*/ => RightShiftWithRound(_int - other._int, ExtraHiddenBits).Sign,
+                        //_/*-1*/ => (-other._int >> (ExtraHiddenBits - 1)).CompareTo(-_int >> ExtraHiddenBits),  // maybe not as good as  110110011|01111111111111111 and 10110011|10000000000000000 are not equal
+                        _/*-1*/ => ((_int >> 1) - other._int),
+                    }
+                }
+            };
+
+            return test.Sign switch
+            {
+                0 => 0, // perf: (if we remove this line and make next line ">="
+                > 0 => (test >> (ExtraHiddenBits - 1)).IsZero ? 0 : 1,
+                _ => ((test >> (ExtraHiddenBits - 1)) >= -1) ? 0 : -1
+            };
+        }
+    }
+
+////////////////////////////////////////////////////////////////////////////////////////////
+    //public int CompareTo0(BigFloat other)
+    //{
+    //    // output   11001110111111101101000111101110100100010001000110110110110101011101110001110001100011  62560518121828658697411683  output
+    //    // output   110011101111111011010001111011101001000100010001101110                                   14566005701624942
+    //    //                                                                ################################  hidden/ignored
+    //    // expect   11001110111111101101000111101110100100010001000110111000000000000000000000000000000000  62560518121828659947896832  expect
+
+    //    if (OutOfPrecision)
+    //    {
+    //        return other.OutOfPrecision ? 0 : -other._int.Sign;
+    //    }
+    //    else if (other.OutOfPrecision)
+    //    {
+    //        return OutOfPrecision ? 0 : _int.Sign;
+    //    }
+    //    else if (_int.Sign != other._int.Sign)
+    //    {
+    //        return _int.Sign;
+    //    }
+
+
+    //    // At this point the signs are the same and neither are zero.
+
+    //    // special cases when the Exponent is off by just 1 bit:
+    //    //  case 1: the smaller of the two rounds up to match the size of the larger and therefor can be equal (11|111 == 100|000)
+    //    //  case 2: the smaller of the two rounds up, but the larger also rounds up so not equal (depends on #1 happening first)
+    //    //  case 3: both round up and are therefor equal again
+
+    //    return (Exponent - other.Exponent) switch
+    //    {
+    //        0 => (_size - other._size) switch
+    //        {
+    //            // While not as accurate we first round each _int and then subtract. This prevents "0.1 > 0.1" from being true sometimes.
+    //            > 0 => (other.Int - RightShiftWithRound(_int, _size - other._size + ExtraHiddenBits)).Sign,
+    //            //> 0 => (Int - other.Int).Sign,
+    //            < 0 => (Int - RightShiftWithRound(other._int, other._size - _size + ExtraHiddenBits)).Sign,
+    //            //< 0 => (other.Int - Int).Sign,
+
+    //            //we reduce precision before doing the compare to prevent things like 5.0 != 5.0 because of rounding
+    //            0 => (Int - other.Int).Sign,    //RightShiftWithRound(_int - other._int, ExtraHiddenBits); // Alternative version
+    //        },
+    //        // Anything over 1 or under -1
+    //        _ => Exponent.CompareTo(other.Exponent) * _int.Sign
+    //    };
+    //}

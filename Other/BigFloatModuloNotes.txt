@@ -1,0 +1,268 @@
+Notes on Mod (Dec 2022 to Feb 2023)
+
+
+        ///////////////////////////// Modulus vs Remainder /////////////////////////////
+
+        Source for below: Anonymous, 1/22/2021 at 9:06 AM https://www.java67.com/2014/11/modulo-or-remainder-operator-in-java.html
+        //   Technically(n % m) is a remainder operator, but not a modulus operator. There's a difference.
+        //   For nonnegative n and positive m, the remainder and modulus are the same thing. But for negative n, they are
+        //   different. -2 mod 10 is defined to be 8 in standard mathematics, going back centuries. But the remainder
+        //   of -2 over 10 is -2. So (-2 % 10) gives -2, which is the remainder.It doesn't give 8, which is the mod.
+        //   
+        //   If you ever need an actual mod operator, then (((n % m) + m) % m) gives the mod.In most cases where you have a
+        //   negative n, you'll actually need to find the mod rather than the remainder. So it's unfortunate Java doesn't
+        //   have a mod operator built in. It inherited this from C.
+        //   
+        //   I wish C had defined % to be remainder and %% to be mod.That would have allowed us to avoid having to use ugly
+        //   constructions like(((n % m) + m) % m) when we need the mod.
+        //   Some languages actually do have both.For example, LISP has both "mod" and "rem" as operators.So does Ada. But
+        //   sadly, C and all its descendants have only rem, not mod.
+        
+ 
+        // Also nice video on Modulus negatives: https://www.youtube.com/watch?v=AbGVbgQre7I
+
+        // More notes here on Windows calculator: https://github.com/microsoft/calculator/issues/111
+
+
+
+    // Modulus is the leftover repeated subtraction of a second number until it is less than that second number.
+    // If we use the modulo on an integer it would look like 17 % 3 => 17-(3*5) => 2. If on float it would look like 1.7 % 0.3 = 1.7-(.3 * 5) = 0.2
+
+
+	
+    // Modulus is the leftover repeated subtraction of a second number until it is less than that second number.
+    // If we use the modulo on an integer it would look like 17 % 3 => 17-(3*5) => 2. If on float it would look like 1.7 % 0.3 = 1.7-(.3 * 5) = 0.2
+    public static BigFloat Mod0(BigFloat dividend, BigFloat divisor)
+    {
+        int minScale = Math.Min(dividend.Scale, divisor.Scale);
+        _ = Math.Min(dividend.Size, divisor.Size);
+
+        //if (dividend._int << dividend.Scale < divisor._int << divisor.Scale)
+        //{
+        //    return dividend;
+        //}
+
+        //if (dividend == divisor)
+        //{
+        //    return new BigFloat(0, minScale);
+        //}
+
+        /////////////////////////////////////////////////
+        //BigInteger prod = a._int * b._int;
+        //int smallerSize = Math.Min(b.Size, a.Size);
+        //int downshiftProd = (int)prod.GetBitLength() - smallerSize - ExtraHiddenBits;
+        //prod = ShiftRightAndRound(prod, downshiftProd, out bool roundedUp);
+        //if (roundedUp)  //todo: is this needed? (like 11111 rounds up to a larger number)
+        //    downshiftProd++;
+        //int resScalePart = a.Scale + b.Scale + downshiftProd - ExtraHiddenBits;
+        //int sizePart = (int)BigInteger.Abs(prod).GetBitLength();
+        //BigFloat ret = new(prod, resScalePart, sizePart);
+        //return ret;
+        //////////////////////////////////////////////////
+
+
+        // Example 1:
+        // 101010110101______     2741 << 6 = 175424
+        // mod  11101011001__     1881 << 2 = 7524         175424 % 7524 = 332  83<<2    101 0011__
+        //   =   1001010001__     593  << 2 = 2372
+        //   
+        //                                      
+        // 101010110101_____ %  11101011001__  = 1001101010100 (middles)
+        // 1010101101001____  % 111010110011_  = 100011110110 (worst case low)         175392 % 7526 = 2294
+        // 1010101101011____  % 111010110001_  = 100110010010 (worst case high)        175456 % 7522 = 2450
+        //                                           10011100 (diff)
+        // Answer: Value:1001  shift:8           1001        (4 prec bits)
+
+        // Example 2:
+        // 10111011_________ % 110111   = 00101100 (middles)              95744 % 55  = 44  
+        // 101110101________ % 110111.1 = 00011100 (worst case low)       95488 % 111 = 28  
+        // 101110111________ % 110110.1 = 01010000 (worst case high)      96000 % 109 = 80  
+        //                                  110100 (diff)
+        // Answer: no real answer! (diff is larger the worst case low)
+
+
+        // step 2) diff = a.scale - b.scale
+        int scaleDiff = dividend.Scale - divisor.Scale;
+
+        // Step 3) if diff is positive, we a << diff, else  b >> diff
+        // If we are doing a A % B then B should be smaller at this point. We need the result's size to be the size of B.
+        // Excluding ExtraHiddenBits for now, 'A' should be twice the size of 'B' so the result is size of B. 
+        int sizeOfB = divisor._size - ExtraHiddenBits;
+        int sizeOfA = dividend._size - ExtraHiddenBits;
+        int diff = sizeOfA - sizeOfB;
+        _ = sizeOfB - diff;  // postive-> A should grow ; negitive -> A shrink by
+                             //  A: 101011011.0101   scale:-4  
+                             //  B: 1001101__        scale:+2  <--largest so we shift both by 2-(-4), so it looks like 100110100000
+
+        // Step 4) perform the Modulus on the integers
+        _ = scaleDiff >= 0
+            ? new BigFloat((dividend._int << (scaleDiff)) % divisor._int, minScale, true)
+            : new BigFloat(dividend._int % (divisor._int >> (scaleDiff)), minScale, true);
+
+        //BigFloat tst = new(((dividend._int << (scaleDiff + 32)) % (divisor._int<<32)) >> 32, minScale - Math.Min(0, scaleDiff), true);
+
+        BigFloat tst = new((dividend._int << (scaleDiff)) % divisor._int, minScale - Math.Min(0, scaleDiff), true);
+        return tst;
+    }
+
+
+        //  dividend           divisor      result     IntPart    Scale        How to solve?  INT                             SCALE
+        //  (  100 << 0)  %  (1000 << 0) =  100     = (100 >> 0)  << 0 =>   ((100 << Max(0,0-0)=0) % (1000 << Max(0,0-0)=0 ))>>0 , 0    (dividend < divisor so just return left)  
+        //  (    1 << 0)  %  (  1_ << 1) =   1      = ( 1  >> 0)  << 0 =>   ((1   << Max(0,0-1)=0) % (   1 << Max(0,1-0)=1 ))>>0 , 0    (dividend < divisor so just return left)
+        //  (   1_ << 1)  %  (  11 << 0) =   1_     = (10  >> 1)  << 2 =>   ((1   << Max(0,1-0)=1) % (  11 << Max(0,0-1)=0 ))>>1 , 2    (dividend < divisor so just return left)
+        //  ( 1000 << 0)  %  (1000 << 0) =    0     = ( 0  >> 0)  << 0 =>   ((1000<< Max(0,0-0)=0) % (1000 << Max(0,0-0)=0 ))>>0 , 0 
+        //  ( 1000 << 0)  %  ( 100 << 0) =    0     = ( 0  >> 0)  << 0 =>   ((1000<< Max(0,0-0)=0) % ( 100 << Max(0,0-0)=0 ))>>0 , 0 
+        //  ( 100_ << 1)  %  (1000 << 0) =   0_     = ( 0  >> 0)  << 1 =>   ((100 << Max(0,1-0)=1) % (1000 << Max(0,0-1)=0 ))>>0 , 1 
+        //  ( 101_ << 1)  %  ( 100 << 0) =   1_     = ( 10 >> 1)  << 2 =>   ((101 << Max(0,1-0)=1) % ( 100 << Max(0,0-1)=0 ))>>1 , 2 
+        //  ( 101_ << 1)  %  ( 10_ << 1) =   1_     = ( 1  >> 0)  << 1 =>   ((101 << Max(0,1-1)=0) % (  10 << Max(0,1-1)=0 ))>>0 , 1 
+        //- ( 101_ << 1)  %  ( 11_ << 1) =  10_     = ( 10 >> 0)  << 1 =>   ((101 << Max(0,1-1)=0) % (  11 << Max(0,1-1)=0 ))>>0 , 1 
+        //  ( 11__ << 2)  %  (11__ << 2) =  0__     = ( 0  >> 0)  << 2 =>   ((11  << Max(0,2-2)=0) % (  11 << Max(0,2-2)=0 ))>>0 , 2 
+        //  ( 11__ << 2)  %  ( 11_ << 1) =  0__     = ( 0  >> 0)  << 2 =>   ((11  << Max(0,2-1)=1) % (  11 << Max(0,1-2)=0 ))>>0 , 2 
+        //  ( 11__ << 2)  %  (  11 << 0) =  0__     = ( 0  >> 0)  << 2 =>   ((11  << Max(0,2-0)=2) % (  11 << Max(0,0-2)=0 ))>>0 , 2 
+        //  ( 111_ << 1)  %  (   1 << 0) =   0_     = ( 0  >> 0)  << 1 =>   ((111 << Max(0,1-0)=1) % (   1 << Max(0,0-1)=0 ))>>0 , 1 
+        //  ( 111_ << 1)  %  (  1_ << 1) =   0_     = ( 0  >> 0)  << 1 =>   ((111 << Max(0,1-1)=0) % (   1 << Max(0,1-1)=0 ))>>0 , 1 
+        //  ( 111_ << 1)  %  ( 11_ << 1) =    1_    = ( 1  >> 0)  << 1 =>   ((111 << Max(0,1-1)=0) % (  11 << Max(0,1-1)=0 ))>>0 , 1 
+        //  (11___ << 3)  %  ( 11_ << 1) =  0___    = ( 0  >> 0)  << 3 =>   ((11  << Max(0,3-1)=2) % (  11 << Max(0,1-3)=0 ))>>0 , 3 
+        //  (10___ << 3)  %  (  1_ << 1) =    0     = ( 0  >> 0)  << 4 =>   ((10  << Max(0,3-1)=2) % (   1 << Max(0,1-3)=0 ))>>0 , 4 
+        //  (1____ << 4)  %  (  1_ << 1) =  0____   = ( 0  >> 0)  << 4 =>   ((1   << Max(0,4-1)=3) % (   1 << Max(0,1-4)=0 ))>>0 , 4 
+        //  ( 1011 << 0)  %  ( 10_ << 1) =    1|1   = ( 11 >> 1)  << 2 =>   ((1011<< Max(0,0-1)=0) % (  10 << Max(0,1-0)=1 ))>>1 , 2 
+        //  (1001_ << 1)  %  (11__ << 2) =    1|1   = ( 11 >> 1)  << 2 =>   ((1001<< Max(0,1-2)=0) % (  11 << Max(0,2-1)=1 ))>>1 , 2 
+        //  (101__ << 2)  %  ( 11_ << 1) =    |01   = ( 1  >> 2)  << 2 =>   ((101 << Max(0,2-1)=1) % (  11 << Max(0,1-2)=0 ))>>2 , 2 
+        //  (10___ << 3)  %  ( 11_ << 1) =    |10   = ( 10 >> 2)  << 4 =>   ((10  << Max(0,3-1)=2) % (  11 << Max(0,1-3)=0 ))>>2 , 4 
+        //  ( 1___ << 3)  %  (  11 << 0) =   |010   = ( 10 >> 3)  << 3 =>   ((1   << Max(0,3-0)=3) % (  11 << Max(0,0-3)=0 ))>>3 , 3 
+        //  (1____ << 4)  %  ( 11_ << 1) =    |10   = ( 10 >> 3)  << 4 =>   ((1   << Max(0,4-1)=3) % (  11 << Max(0,1-4)=0 ))>>3 , 4 
+
+
+
+        // 100  [3] << 0 (0)  %  1000 [4] << 0 (0)  both:0 =  100 >> 0 << 0  |          100  >> 0 << (0 + 0 = 0)  
+        // 1    [1] << 0 (0)  %     1 [1] << 1 (1)  both:0 =   1  >> 0 << 0  |            1  >> 0 << (0 + 0 = 0)    
+        // 1    [1] << 1 (1)  %    11 [2] << 0 (0)  both:1 =  10  >> 1 << 2  |           10  >> 1 << (1 + 1 = 2)    
+        // 1000 [4] << 0 (0)  %  1000 [4] << 0 (0)  both:0 =   0  >> 0 << 0  |            0  >> 0 << (0 + 0 = 0)    
+        // 1000 [4] << 0 (0)  %   100 [3] << 0 (0)  both:0 =   0  >> 0 << 0  |            0  >> 0 << (0 + 0 = 0)    
+        // 100  [3] << 1 (1)  %  1000 [4] << 0 (0)  both:0 =   0  >> 0 << 1  |            0  >> 0 << (1 + 0 = 1)    
+        // 101  [3] << 1 (1)  %   100 [3] << 0 (0)  both:0 =   10 >> 1 << 2  |           10  >> 1 << (1 + 1 = 2)    
+        // 101  [3] << 1 (0)  %    10 [2] << 1 (0)  both:0 =   1  >> 0 << 1  |            1  >> 0 << (1 + 0 = 1)    
+        // 101  [3] << 1 (0)  %    11 [2] << 1 (0)  both:0 =   10 >> 0 << 1  |           10  >> 0 << (1 + 0 = 1)    
+        // 11   [2] << 2 (0)  %    11 [2] << 2 (0)  both:2 =   0  >> 0 << 2  |            0  >> 0 << (2 + 0 = 2)    
+        // 11   [2] << 2 (1)  %    11 [2] << 1 (0)  both:1 =   0  >> 0 << 2  |            0  >> 0 << (2 + 0 = 2)    
+        // 11   [2] << 2 (2)  %    11 [2] << 0 (0)  both:0 =   0  >> 0 << 2  |            0  >> 0 << (2 + 0 = 2)    
+        // 111  [3] << 1 (1)  %     1 [1] << 0 (0)  both:0 =   0  >> 0 << 1  |            0  >> 0 << (1 + 0 = 1)   
+        // 111  [3] << 1 (0)  %     1 [1] << 1 (0)  both:1 =   0  >> 0 << 1  |            0  >> 0 << (1 + 0 = 1)    
+        // 111  [3] << 1 (0)  %    11 [2] << 1 (0)  both:1 =   1  >> 0 << 1  |            1  >> 0 << (1 + 0 = 1)    
+        // 11   [2] << 3 (2)  %    11 [2] << 1 (0)  both:1 =   0  >> 0 << 3  |            0  >> 0 << (3 + 0 = 3)    
+        // 10   [2] << 3 (2)  %     1 [1] << 1 (0)  both:1 =   0  >> 0 << 4  |            0  >> 0 << (4 + 0 = 4)    
+        // 1    [1] << 4 (3)  %     1 [1] << 1 (0)  both:1 =   0  >> 0 << 4  |            0  >> 0 << (4 + 0 = 4)    
+        // 1011 [4] << 0 (0)  %    10 [2] << 1 (1)  both:0 =   11 >> 1 << 2  |           11  >> 1 << (1 + 1 = 2)    
+        // 1001 [4] << 1 (0)  %    11 [2] << 2 (1)  both:1 =   11 >> 1 << 2  |           11  >> 1 << (1 + 1 = 2)    
+        // 101  [3] << 2 (1)  %    11 [2] << 1 (0)  both:1 =   1  >> 2 << 2  |            1  >> 2 << (0 + 2 = 2)    
+        // 10   [2] << 3 (2)  %    11 [2] << 1 (0)  both:1 =   10 >> 2 << 4  |           10  >> 2 << (2 + 2 = 4)    
+        // 1    [1] << 3 (3)  %    11 [2] << 0 (0)  both:0 =   10 >> 3 << 3  |           10  >> 3 << (0 + 3 = 3)    
+        // 1    [1] << 4 (3)  %    11 [2] << 1 (0)  both:1 =   10 >> 3 << 4  |           10  >> 3 << (1 + 3 = 4)     
+
+
+
+
+        //            size/scale   Operation
+        /////////////////////////////////////////////////////////////////////////
+        //   1111.111  (7/-3) |
+        //  % 11_.___  (2/ 1) | 1) left shift the larger scale by scaleDiff(-3 - 1 = -4)
+        //   ========         |
+        //     11.111         | 2) perform mod %
+        //      -----         | (these are out of precision digits)
+        // Int: 11111 >> 4    | 3) right shift by scaleDiff
+        // scale: 1           | 4) set the scale using to the left shifted input used in step 1
+
+
+        //      1___.  (1/3)  | 1) left shift the larger scale by scaleDiff(3 - 0 = 3)
+        //  %     11.  (2/0)  |
+        //   ========         |
+        //       010.  (2)    | 2) perform mod %
+        //       ---          | (these are out of precision digits)
+        // Int: 10 >> 3       | 3) right shift by scaleDiff
+        // scale: 3           | 4) set the scale using to the left shifted input used in step 1
+
+
+        //     1001_   (4/1)  |
+        //  %   11__   (2/2)  | 1) left shift the larger scale by scaleDiff(1 - 2 = -1)
+        //   ========         |
+        //      011_   (2)    | 2) perform mod %
+        //        --          | (these are out of precision digits)
+        // Int: 11 >> 1       | 3) right shift by scaleDiff
+        // scale:  2          | 4) set the scale using to the left shifted input used in step 1
+
+
+        //   1111.111  (7/-3) |
+        //  %  10.1__  (3/-1) | 1) left shift the larger scale by scaleDiff(-2)
+        //   ========         |
+        //      0.111  (3)    | 2) perform mod %
+        //         --         | (these 2 digits are out of precision)
+        // Int: 111 >> 2      | 3) right shift by scaleDiff
+        // scale: -1          | 4) set the scale using to the left shifted input used in step 1
+
+
+        //   1111.111  (7/-3) |
+        // % 101_.___  (3/ 1) | 1) left shift the larger scale by scaleDiff(-4)
+        //   ========         |
+        //    101.111  (5)    | 2) perform mod %
+        //      -----         | (these 4 digits are out of precision)
+        // Int: 101111 >> 4   | 3) right shift by scaleDiff
+        // scale: 1           | 4) set the scale using to the left shifted input used in step 1
+
+
+        //   101_.___  (3/ 1) | 1) left shift the larger scale by scaleDiff(1 - -3 = 4)
+        // %  111.111  (6/-3) |
+        //   ========         |
+        //     10.001  (5)    | 2) perform mod %
+        //      -----         | (these 4 digits are out of precision)
+        // Int: 10001 >> 4    | 3) right shift by scaleDiff
+        // scale: 1           | 4) set the scale using to the left shifted input used in step 1
+
+
+        //   1011.0__  (5/-1) | 1) left shift the larger scale by scaleDiff(-1 - -3 = 2)
+        // %  111.111  (6/-3) |
+        //   ========         |
+        //     11.001  (5)    | 2) perform mod %
+        //         --         | (these 1 digits are out of precision)
+        // Int: 11001 >> 2    | 3) right shift by scaleDiff
+        // scale: -1          | 4) set the scale using to the left shifted input used in step 1
+
+
+        // a better way... (removes a shift and has smaller numbers for the mod...
+        //   1011.0|   (5/-1) |  note: digit to the right of | are in the hidden precision area
+        // %  111.1|11 (6/-3) | 1) right shift the smaller scale by scaleDiff(-1 - -3 = 2)
+        //   ========         |
+        //     11.0|01 (5)    | 2) perform mod(%)
+        // Int: 110|01        |  
+        // scale: -1          | 3) set the scale using to the non-shifted input's scale (used in step 1)
+
+        //   1011.000| (7/-3) |  note: digit to the right of | are in the hidden precision area
+        // %  111.111| (6/-3) | 1) since scaleDiff is 0, no pre-shift needed.
+        //   ========         |
+        //     11.001| (5)    | 2) perform mod(%)
+        // Int: 11001|        |  
+        // scale: -3          | 3) set the scale using to the non-shifted input's scale (used in step 1)
+		
+		    // see BifFloatModuloNotes.txt for additional notes
+			
+	
+	
+	(function as of 10:41 AM Saturday, February 25, 2023)
+    public static BigFloat operator %(BigFloat dividend, BigFloat divisor)
+    {
+        int scaleDiff = dividend.Scale - divisor.Scale; 
+
+        if (scaleDiff > 0)
+        {
+            return new(dividend._int  % (divisor._int >> scaleDiff), dividend.Scale, true);
+        }
+        else if (scaleDiff < 0)
+        {
+            return new((dividend._int << scaleDiff) % divisor._int, divisor.Scale, true);
+        }
+        else
+        {
+            return new(dividend._int % divisor._int, divisor.Scale, true);
+        }
+    }
+		
+	

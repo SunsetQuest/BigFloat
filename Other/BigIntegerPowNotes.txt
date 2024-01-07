@@ -1,0 +1,1223 @@
+10/16/2023
+
+    /// <summary>
+    /// Returns the top n bits for a BigInteger raised to a power. 
+    /// If wantedBits is not specified the output precision will match the input value's precision. 
+    /// The number of removed bits are returned in in totalShift. 
+    /// The result left shifted by totalShift would return the expanded result.
+    /// The result is rounded using the top most removed bit. 
+    /// The result is occasionally rounded up/down in marginal cases.  least significant bit  in value may not be _______________
+    /// </summary>
+    /// <param name="val">The input value.</param>
+    /// <param name="valSize">The input values size.</param>
+    /// <param name="exp">The exponent to raise the value by.</param>
+    /// <param name="totalShift">The number of bits removed in the result.</param>
+    /// <param name="wantedBits">The number of bits most significant bits to return.</param>
+    /// <returns>The top bits val raised to the power of exp.</returns>
+    public static BigInteger PowMostSignificantBits(BigInteger val, int valSize, int exp, out int totalShift, int wantedBits = 0)  //todo: set to private
+    {
+        totalShift = 0;
+
+        if (((long)exp * valSize) >= int.MaxValue)
+            throw new OverflowException("Overflow: The output 'totalShift' is not large enough. exp * size");
+
+        int expSz = BitOperations.Log2((uint)exp) + 1;
+
+        int workingSize;
+        if (wantedBits == 0)
+        {
+            wantedBits = valSize;
+        }
+
+        if (wantedBits > 0)
+        {
+            // Odds of an incorrect round-up(ex: 7.50001 not rounding up to 8) ~= 18.12/(2^ExtraBits)
+            //   0=18.1%; 1=9.1%; 2=4.5%; 3=2.3%; 4=1.1%; 5=0.6%; 8=0.07%
+            workingSize = wantedBits + expSz + 8/*ExtraBits(adjustable)*/;
+        }
+        else
+        {
+            wantedBits = -wantedBits;
+
+            // This version is more accurate but create a slower function. There is just one known incident when it does not round up like it should.
+            // JUST ONE KNOWN ROUND ERROR between 16 to 20 is 51^17938 (goes away above 20)
+            //   searches @16: (1-2000)^(2-39,999), (1-126,000)^(2-3999), (1-134,654,818)^(1-1500)
+            workingSize = (2 * wantedBits) + expSz + 22/*extraPrecisionBits*/;
+        }
+
+        if (exp < 3)
+        {
+            switch (exp)
+            {
+                case 0:
+                    return BigInteger.One; //totalShift = 0
+                case 1:
+                    return val; //totalShift = 0
+                case 2:
+                    BigInteger sqr = val * val;
+                    totalShift = valSize - ((sqr >> ((2 * valSize) - 1) > 0) ? 0 : 1);
+                    return RightShiftWithRound(sqr, totalShift);
+                default: // negative exp would be less then 1 (unless 1)
+                    return val != 1 ? BigInteger.Zero : val.Sign;
+            }
+        }
+
+        // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
+        if ((wantedBits > 2) && (wantedBits < 53) && (valSize * exp) < 3807)
+        {
+            //// Lets first make sure we would have some precision remaining after our exponent operation.
+            if (valSize == 0)
+            {
+                return BigInteger.Zero; // technically more of a "NA".
+            }
+
+            // 1) create a double with the bits. 
+            // Aline input to the top 53 bits then pre-append a "1" bit.
+            long inMantissa = (long)(BigInteger.Abs(val) << (53 - valSize));
+            long dubAsLong = inMantissa | ((long)1023 << 52);
+            double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
+
+            // 2) perform a power
+            double normPow = double.Pow(normInput, exp);
+            if (normPow == double.PositiveInfinity)
+            {
+                throw new OverflowException($"Internal Error: PositiveInfinity valSize:{valSize} exp:{exp} val:{val} wantedBits:{wantedBits}");
+            }
+
+            // 3) extract "bottom 52 bits" and that is our answer.
+            long bits = BitConverter.DoubleToInt64Bits(normPow);
+            long outMantissa = bits & 0xfffffffffffffL;
+            int outExp = (int)((bits >> 52) /*& 0x7ffL*/);  // should be either 1023(so, +0) 1024(so, +1)  1025(so, +2) // todo:maybe do not need 7ffL
+            outMantissa |= 0x10000000000000L;
+            int _scale = outExp - 1023;
+            int bitsToDrop = 53 - wantedBits;  // wantedBits OR size????
+            long mask1 = ((long)1 << bitsToDrop) - 1;  // OR ((long)1 << (53 - size)) - 1  ?????
+
+            // no known issues if not all removed bits are 1 or val < 13511613
+            if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
+            {
+                totalShift = ((valSize - 1) * (exp - 1)) + _scale + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;  // wantedBits OR size????
+                return RightShiftWithRound(outMantissa, bitsToDrop);
+            }
+        }
+
+        // First Loop
+        BigInteger product = ((exp & 1) > 0) ? val : 1;
+        BigInteger powerPostShift = val;
+        int shiftSum = 0;
+        int shift = 0;
+
+        // Second Loop
+        BigInteger pwrPreShift = powerPostShift * powerPostShift;
+        int prdSize = (valSize * 2) - (((pwrPreShift >> ((valSize * 2) - 1)) > 0) ? 0 : 1);
+        int H = valSize + prdSize;  //OR  size + shift
+
+        int J = ((exp & 0x1) == 1) ? 0 : valSize;
+        int I = 0;
+
+        powerPostShift = pwrPreShift;
+        if ((exp & 0x2) > 0)
+        {
+            I = H - workingSize;
+            int shrinkSize = I - J;
+            J = 0;
+            product = (product * powerPostShift) >> shrinkSize;
+            totalShift += shrinkSize;
+        }
+        else
+        {
+            J += prdSize;
+        }
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        for (int i = 2; i < expSz; i++)
+        {
+            pwrPreShift = powerPostShift * powerPostShift;
+
+            // checks if a leading bit resulted from the multiply and if so adds it.
+            int tmp = ((prdSize - shift) * 2) - 1;
+            prdSize = tmp + (int)(pwrPreShift >> tmp);
+
+            shift = Math.Max(prdSize - workingSize, 0);
+            H += prdSize - shift - I;
+
+            //powerPostShift = RightShiftWithRound(pwrPreShift, shift);  ///better precision by 1.7 buts but 25% slower
+            powerPostShift = pwrPreShift >> shift; // 25% faster; 5 times more round errors; always one direction(good thing)
+
+            shiftSum = (shiftSum * 2) + shift;
+            bool bit = ((exp >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - workingSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> shrinkSize;
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += prdSize - shift;  //OR  shift OR prdSize - shift
+            }
+        }
+        int productSize = (int)product.GetBitLength();
+        int bitsToRemove = productSize - wantedBits;
+
+        totalShift += bitsToRemove;
+
+        //BigInteger res =  RightShiftWithRound(product, bitsToRemove, ref productSize); // 
+        
+        bool carry = RightShiftWithRoundWithOverflowDownsize(out BigInteger res, product, bitsToRemove, productSize);
+        if (carry)
+        {
+            totalShift++;
+        }
+
+        return res;
+
+    }
+
+
+    // 10/7/2023
+
+   public static BigInteger Pow7(BigInteger val, int valSize, int exp, out int totalShift, int wantedBits = 0)  //todo: set to private
+   {
+       totalShift = 0;
+
+       if (((long)exp * valSize) >= int.MaxValue)
+           throw new OverflowException("Overflow: The output 'totalShift' is not large enough. exp * size");
+
+       int expSz = BitOperations.Log2((uint)exp) + 1;
+
+       int workingSize;
+       if (wantedBits == 0)
+       {
+           // This version occupationally does not round up but only on extreme edge cases.  110111:1000000000001 should actually round up 111000
+           workingSize = wantedBits + expSz;
+
+           // This version is more accurate but create a slower function. There is just one known incident when it does not round up like it should.
+           // workingSize = (2 * valSize) + expSz + 16/*extraPrecisionBits*/; // searches: (1-2000)^(2-39,999), (1-126,000)^(2-3999), (1-134,654,818)^(1-1500)
+           //     JUST ONE FAIL KNOWN: minus1:1 m= val=51 pow=17938 (issue goes away at 21 or above)
+
+           wantedBits = valSize;
+       }
+       else 
+       {
+           if (wantedBits < 3)
+               throw new OverflowException("wantedBits must be at least 3");
+           //wantedBits = (wantedBits > size) ? size : wantedBits;
+           workingSize = wantedBits + expSz;
+       }
+
+       if (exp < 3)
+       {
+           switch (exp)
+           {
+               case 0:
+                   return BigInteger.One; //totalShift = 0
+               case 1:
+                   return val; //totalShift = 0
+               case 2:
+                   BigInteger sqr = (val * val);
+                   totalShift = valSize - ((sqr >> ((2 * valSize) - 1) > 0) ? 0 : 1);
+                   return RightShiftWithRound(sqr, totalShift);
+               default: // negative exp would be less then 1 (unless 1)
+                   return val != 1 ? BigInteger.Zero : val.Sign; 
+           }
+       }
+
+
+
+       // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
+       //if ((size < 53) && (wantedBits < 53) && (exp < 4000) && ((wantedBits * exp) < 8000))  // wantedBits OR size????
+       //if ((valSize < 53) && (wantedBits < 53) && (exp < 1831) && ((wantedBits * exp) < 3300))  // wantedBits OR size????
+       if (/*(valSize < 53) &&*/ (wantedBits < 53) && (valSize* exp) < 3807)  // wantedBits OR size????
+       {
+           //// Lets first make sure we would have some precision remaining after our exponent operation.
+           if (valSize == 0)
+           {
+               return BigInteger.Zero; // technically more of a "NA".
+           }
+
+           // 1) create a double with the bits. 
+           // Aline and move input to the top 53 bits then pre-append a "1" bit.
+           long inMantissa = (long)(BigInteger.Abs(val) << (53 - valSize));// | ((long)1 << 52);
+           long dubAsLong = inMantissa | ((long)1023 << 52);
+
+           if (dubAsLong != (dubAsLong & 0x7FFFFFFFFFFFFFFF)) //dubAsLong &= 0x7FFFFFFFFFFFFFFF;  // todo: i think we can remove this (removes neg)
+               Console.WriteLine($"needed!!!!!!!!!!!!!!!!!     val={val}  exp={exp} wantedBits:{wantedBits}");
+
+           double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
+
+           // 2) perform a power
+           double normPow = double.Pow(normInput, exp);
+           if (normPow == double.PositiveInfinity)
+           {
+               Console.WriteLine($"PositiveInfinity valSize:{valSize} exp:{exp}  val:{val} wantedBits:{wantedBits}");
+           }
+
+           // 3) extract "bottom 52 bits" and that is our answer.
+           long bits = BitConverter.DoubleToInt64Bits(normPow);
+           long outMantissa = bits & 0xfffffffffffffL;
+           int outExp = (int)((bits >> 52) & 0x7ffL);  // should be either 1023(so, +0) 1024(so, +1)  1025(so, +2) // todo:maybe dont need 7ffL
+           
+           if (outExp != (outExp & 0x7ffL))
+               Console.WriteLine($"outExp != (outExp & 0x7ffL)  val={val}  exp={exp}");
+
+           outMantissa |= 0x10000000000000L;
+           int _scale = outExp - 1023;
+
+           int bitsToDrop = 53 - wantedBits;  // wantedBits OR size????
+           long mask1 = ((long)1 << bitsToDrop) - 1;  // OR ((long)1 << (53 - size)) - 1  ?????
+
+           // no known issues if not all removed bits are 1 or val < 13511613
+           if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
+           {
+               totalShift = ((valSize - 1) * (exp - 1)) + _scale +        (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;  // wantedBits OR size????
+               return RightShiftWithRound(outMantissa, bitsToDrop);
+           }
+       }
+
+       if (val == 51 && exp == 17938) // only known issue with extraPrecBits is 16  //todo: remove
+       {
+               Console.WriteLine($"known issue: val == 51 && exp == 17938        val={val}  exp={exp}");
+       }
+
+       // The below occasionally does not around up like it should.. example: 110010:1000000000000000101 might not round up to 110010
+
+
+       // First Loop
+       BigInteger product = ((exp & 1) > 0) ? val : 1;
+       BigInteger powerPostShift = val;
+       int shiftSum = 0;
+       int shift = 0;
+
+
+
+       // Second Loop
+       BigInteger pwrPreShift = powerPostShift * powerPostShift;
+       int prdSize = (valSize * 2) - (((pwrPreShift >> ((valSize * 2) - 1)) > 0) ? 0 : 1);
+       int H = valSize + prdSize;  //OR  size + shift
+
+       int J = ((exp & 0x1) == 1) ? 0 : valSize;
+       int I = 0;
+
+
+
+       //if (wantedBits == 0)
+       //    Console.Write($"{workingSize}!!! {size}, {prdSize}, {size + prdSize}, {J}, {(size * 2) - 1}");
+
+
+
+       powerPostShift = pwrPreShift;
+       if ((exp & 0x2) > 0)
+       {
+           I = H - workingSize;
+           int shrinkSize = I - J;
+           J = 0;
+           product = (product * powerPostShift) >> shrinkSize;
+           totalShift += shrinkSize;
+       }
+       else
+       {
+           J += prdSize;  //  prdSize  OR  shift 
+       }
+
+
+       // for each bit in the exponent, we need to multiply in 2^position
+       for (int i = 2; i < expSz; i++)
+       {
+           pwrPreShift = powerPostShift * powerPostShift ;
+
+           // checks if a leading bit resulted from the multiply and if so adds it.
+           int tmp = (prdSize - shift) * 2 - 1;
+           prdSize = tmp + (int)(pwrPreShift >> tmp);
+
+           //if (prdSize - targetSize < 0)
+           //    Console.WriteLine("smaller");
+
+           shift = Math.Max(prdSize - workingSize, 0);
+           //shift = prdSize - targetSize;
+           H += prdSize - shift - I;       // 
+           // OR H += shift - I;           // Has issues when playing with the size of workingSize  But Faster???
+
+           //powerPostShift = RightShiftWithRound(pwrPreShift, shift);  ///better precision by maybe 40 bits (vs 35 bits)
+           powerPostShift = pwrPreShift >> shift;
+
+           shiftSum = shiftSum * 2 + shift;
+           bool bit = ((exp >> i) & 1) == 1;
+           if (bit)
+           {
+               I = H - workingSize;
+               int shrinkSize = I - J;
+               J = 0;
+               product = (product * powerPostShift) >> shrinkSize;
+               totalShift += shrinkSize + shiftSum;
+           }
+           else
+           {
+               I = 0;
+               J += prdSize - shift;  //OR  shift OR prdSize - shift
+           }
+       }
+
+       int bitsToRemove = ((int)product.GetBitLength() - wantedBits);
+
+       //or BigInteger.TrailingZeroCount?
+       if (val == 534 && exp == 1475)
+               { }
+
+       totalShift += bitsToRemove;
+       return RightShiftWithRound(product, bitsToRemove);
+
+   }
+
+
+
+
+    // 9/24/2023
+    /// <summary>
+    /// Returns the exponentiation of a BigInteger raised to a power. 
+    /// The output precision matches the input value's precision. 
+    /// The number of least significant bits that are left off are returned in totalShift.  
+    /// So the return value left shifted by totalShift would return the approximate value.
+    /// The value last significant bit in value may not be _______________
+    /// 10000
+    ///  1111
+    /// </summary>
+    /// <param name="val"></param>
+    /// <param name="size"></param>
+    /// <param name="exp"></param>
+    /// <param name="totalShift"></param>
+    /// <returns></returns>
+    public static BigInteger Pow6(BigInteger val, int size, int exp, out int totalShift)  //todo: set to private
+    {
+        int extraPrecisionBits = 12; // 16 works but 32 or 64 is not much slower
+        totalShift = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (exp < 3)
+        {
+            switch (exp)
+            {
+                case 0:
+                    return BigInteger.One; //totalShift = 0
+                case 1:
+                    return val; //totalShift = 0
+                case 2:
+                    BigInteger sqrd = (val * val);
+                    totalShift = size - ((sqrd >> ((2 * size) - 1) > 0) ? 0 : 1);
+                    return
+                       RightShiftWithRound(sqrd, totalShift);
+                default: // negative exp would be less then 1 (unless 1)
+                    return val != 1 ? BigInteger.Zero : BigInteger.One; //totalShift = 0;
+            }
+        }
+
+        // fails with (1-2000)^(2-39,999), (1-126,000)^(2-3999)
+        // JUST ONE FAIL: minus1:1 m= val=51 pow=17938
+
+        // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
+        if (size < 53 && ((size * exp) < 3502))
+        {
+            //// Lets first make sure we would have some precision remaining after our exponent operation.
+            if (size == 0)
+            {
+                return BigInteger.Zero; // technically more of a "NA".
+            }
+
+            double valAsDouble = (double)val;  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+
+
+            // 1) create a double with the bits. 
+            // Aline and move input to the top 53 bits then pre-append a "1" bit.
+            long inMantissa = (long)(BigInteger.Abs(val) << (53 - size));// | ((long)1 << 52);
+            long dubAsLong = inMantissa | ((long)1023 << 52);
+
+            if (dubAsLong != (dubAsLong & 0x7FFFFFFFFFFFFFFF)) //dubAsLong &= 0x7FFFFFFFFFFFFFFF;  // todo: i think we can remove this (removes neg)
+                Console.WriteLine($"needed!!!!!!!!!!!!!!!!!     val={val}  exp={exp}");
+
+            double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
+
+            // 2) perform a power
+            double normPow = double.Pow(normInput, exp);
+            if (normPow == double.PositiveInfinity)
+            {
+                Console.WriteLine($"PositiveInfinity {size * exp}     val={val}  exp={exp}");
+            }
+
+            // 3) extract "bottom 52 bits" and that is our answer.
+            long bits = BitConverter.DoubleToInt64Bits(normPow);
+            long outMantissa = bits & 0xfffffffffffffL;
+            int outExp = (int)((bits >> 52) & 0x7ffL);  // should be either 1023(so, +0) 1024(so, +1)  1025(so, +2) // todo:maybe dont need 7ffL
+            
+            if (outExp != (outExp & 0x7ffL))
+                Console.WriteLine($"outExp != (outExp & 0x7ffL)  val={val}  exp={exp}");
+
+            outMantissa |= 0x10000000000000L;
+            int _scale = outExp - 1023;
+
+            int bitsToDrop = 53 - size;
+            long mask1 = ((long)1 << bitsToDrop) - 1;
+
+            // no known issues if not all removed bits are 1 or val < 13511613
+            if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
+            {
+                totalShift = ((size - 1) * (exp - 1)) + _scale;
+                return RightShiftWithRound(outMantissa, bitsToDrop);
+            }
+        }
+
+        if (val == 51 && exp == 17938) // only known issue with extraPrecBits<=20  //todo: remove
+        {
+                Console.WriteLine($"known issue: val == 51 && exp == 17938        val={val}  exp={exp}");
+        }
+
+        int targetSize = size + size / 1 + BitOperations.Log2((uint)exp) + extraPrecisionBits;
+
+        // First Loop
+        int I = 0;
+        int J = ((exp & 0x1) == 1) ? 0 : size;
+        BigInteger product = ((exp & 1) > 0) ? val : 1;
+        BigInteger powerPostShift = val;
+        int shiftSum = 0;
+        int shift = 0;
+
+        // Second Loop
+        BigInteger pwrPreShift = powerPostShift * powerPostShift;
+        int prdSize = ((size - shift) * 2) - (((pwrPreShift >> (((size - shift) * 2) - 1)) > 0) ? 0 : 1);
+        int H = size + prdSize;  //OR  size + shift
+
+        powerPostShift = pwrPreShift;
+        if ((exp & 0x2) > 0)
+        {
+            I = H - targetSize;
+            int shrinkSize = I - J;
+            J = 0;
+            product = (product * powerPostShift) >> shrinkSize;
+            totalShift += shrinkSize;
+        }
+        else
+        {
+            J += prdSize;  //  prdSize  OR  shift 
+        }
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2((uint)exp) + 1;
+        for (int i = 2; i < powerBitCount; i++)
+        {
+            pwrPreShift = (powerPostShift * powerPostShift);
+
+            // checks if a leading bit resulted from the multiply and if so adds it.
+            int tmp = (prdSize - shift) * 2 - 1;
+            prdSize = tmp + (int)(pwrPreShift >> tmp);
+
+            //if (prdSize - targetSize < 0)
+            //    Console.WriteLine("smaller");
+
+            shift = Math.Max(prdSize - targetSize, 0);
+            H += shift - I;  //OR  shift - I  OR prdSize - shift - I
+
+            powerPostShift = pwrPreShift >> shift;
+            shiftSum = shiftSum * 2 + shift;
+            bool bit = ((exp >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - targetSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> shrinkSize;
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += prdSize - shift;  //OR  shift OR prdSize - shift
+            }
+
+            //Console.WriteLine($"{i}, {bit}, {pwrPreShift}, {prdSize}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+        }
+
+        int bitsToRemove = ((int)product.GetBitLength() - size);
+
+
+        //check if not all 1's in the removed area.
+        long mask2 = ((long)1 << bitsToRemove) - 1;
+        if ((~(product & mask2)) == 0)
+            Console.WriteLine($"all 1s,  mask={mask2}  val={val}  exp={exp}  product={product} bitsToRemove={bitsToRemove}");
+        if (size > 10 && ((product & mask2) == 0))
+            Console.WriteLine($"all 0s,  mask={mask2}  val={val}  exp={exp}  product={product} bitsToRemove={bitsToRemove}");
+
+        totalShift += bitsToRemove;
+        return RightShiftWithRound(product, bitsToRemove);
+
+        //return product >> bitsToRemove;
+        //return ((product >> (bitsToRemove-2))+1) >>2;
+
+    }
+
+
+    // 9/3/2023 - For testing only (SLOWWWWWW)
+    public static BigInteger PowAccurate(BigInteger value, int size, uint power, out int shifted)
+    {
+        if (size != value.GetBitLength())
+        {
+            throw new Exception("size != value.GetBitLength()");
+        }
+        BigInteger res = BigInteger.Pow(value, (int)power);
+        shifted = (int)(res.GetBitLength() - value.GetBitLength());
+        return RightShiftWithRound(res, shifted);
+        //return res >> shifted;
+    }
+
+
+
+    /// <summary>
+    /// Returns the exponentiation of a BigInteger raised to a power. 
+    /// The output precision matches the input value's precision. 
+    /// The number of least significant bits that are left off are returned in totalShift.  
+    /// So the return value left shifted by totalShift would return the approximate value.
+    /// The value last significant bit in value may not be _______________
+    /// 10000
+    ///  1111
+    /// </summary>
+    /// <param name="val"></param>
+    /// <param name="size"></param>
+    /// <param name="exp"></param>
+    /// <param name="totalShift"></param>
+    /// <returns></returns>
+    public static BigInteger Pow5(BigInteger val, int size, int exp, out int totalShift)  //todo: set to private
+    {
+        int extraPrecisionBits =16; // 16 works but 32 or 64 is not much slower
+        totalShift = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (exp < 3)
+        {
+            switch (exp)
+            {
+                case 0:
+                    //totalShift = 0;
+                    return BigInteger.One;
+                case 1:
+                    //totalShift = 0;
+                    return val;
+                case 2:
+                    BigInteger sqrd = (val * val);
+                    totalShift = size - ((sqrd >> ((2 * size) - 1) > 0) ? 0 : 1);
+                    return
+                       RightShiftWithRound(sqrd, totalShift); //sqrd >> totalShift;
+                default:
+                    //totalShift = 0;
+                    return BigInteger.Zero;
+            }
+        }
+        // fails with (1-2000)^(2-39,999), (1-126,000)^(2-3999)
+        // JUST ONE FAIL: minus1:1 m= val=51 pow=17938
+
+        // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
+        if (size < 53 && ((size * exp) < 3502))
+        {
+            //// Lets first make sure we would have some precision remaining after our exponent operation.
+            if (size == 0)
+            {
+                return BigInteger.Zero; // technically more of a "NA".
+            }
+
+            double valAsDouble = (double)val;  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+
+
+            // 1) create a double with the bits. 1.0000  (hold exp separate)
+
+
+            // Aline and move input to the top 53 bits then pre-append a "1" bit. (pre-append a "1" bit ?????)
+            long inMantissa = (long)(BigInteger.Abs(val) << (53 - size)) ^ ((long)1 << 52);
+            long dubAsLong = inMantissa | ((long)1023 << 52);
+
+            if (dubAsLong != (dubAsLong & 0x7FFFFFFFFFFFFFFF)) //dubAsLong &= 0x7FFFFFFFFFFFFFFF;  // todo: i think we can remove this (removes neg)
+                Console.WriteLine("needed!!!!!!!!!!!!!!!!!");
+
+            double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
+
+            // 2) perform a power
+            double normPow = double.Pow(normInput, exp);
+            if (normPow == double.PositiveInfinity)
+            { 
+                Console.WriteLine($"PositiveInfinity {size * exp}");
+            }
+
+
+
+            // 3) extract "bottom 52 bits" and that is our answer.
+            long bits = BitConverter.DoubleToInt64Bits(normPow);
+            long outMantissa = bits & 0xfffffffffffffL;
+            int outExp = (int)((bits >> 52) & 0x7ffL);  // should be either 1023(so, +0) 1024(so, +1)  1025(so, +2) // todo:maybe dont need 7ffL
+            int _scale; //, _size;
+            //if (outExp != 0)
+            //{
+                outMantissa |= 0x10000000000000L;
+                _scale = outExp - 1023;// - 52;
+                //_size = 53;
+            //}
+            //else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
+            //{
+            //    _scale = -1023 - 52 + 1; //todo: does this ever get hit?
+            //    { Console.WriteLine("area 12351 hit!!!!!!!!!!"); }
+
+            //    //_size = BitOperations.LeadingZeroCount((ulong)outMantissa);
+            //}
+
+            int bitsToDrop = 53 - size;
+            totalShift = ((size - 1) * (exp - 1)) + _scale;
+            long mask = ((long)1 << bitsToDrop) - 1;
+
+            // no known issues if not all removed bits are 1 or val < 13511613
+            if ((~(outMantissa & mask)) >= 0 || val < 13511613)
+            {
+                
+                return RightShiftWithRound(outMantissa, bitsToDrop);
+                //return outMantissa >> bitsToRemove ;
+                //outMantissa--; <-- does not work
+            }
+
+            
+
+        }
+
+        if (val == 51 && exp == 17938)
+        {
+            //return 
+            //todo: 
+        }
+
+        //Console.WriteLine("reached???");
+        int targetSize = size + size / 1 + BitOperations.Log2((uint)exp) + extraPrecisionBits;
+
+        // First Loop
+        int H = size;
+        int I = 0;
+        int J = ((exp & 0x1) == 1) ? 0 : size;
+        BigInteger powerPostShift = val;
+        int shiftSum = 0;
+        BigInteger product = ((exp & 1) > 0) ? val : 1;
+        int shift = 0;
+
+        // Second Loop
+        BigInteger pwrPreShift = (powerPostShift * powerPostShift);
+        int prdSize = ((size - shift) * 2) - (((pwrPreShift >> (((size - shift) * 2) - 1)) > 0) ? 0 : 1);
+        H += prdSize - I;  //OR  shift - I;
+
+        powerPostShift = pwrPreShift;
+        if ((exp & 0x2) > 0)
+        {
+            I = H - targetSize;
+            int shrinkSize = I - J;
+            J = 0;
+            product = (product * powerPostShift) >> shrinkSize;
+            totalShift += shrinkSize;
+        }
+        else
+        {
+            J += prdSize;  //  prdSize  OR  shift 
+        }
+
+        //Console.WriteLine($"{1}, {(power & 0x2) > 0}, {pwrPreShift}, {prdSize}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2((uint)exp) + 1;
+        for (int i = 2; i < powerBitCount; i++)
+        {
+            pwrPreShift = (powerPostShift * powerPostShift);
+
+            int tmp = (prdSize - shift) * 2;
+            int B = (int)(pwrPreShift >> (tmp - 1));
+            //prdSize = tmp - ((B > 0) ? 0 : 2);
+            prdSize = tmp;
+            if (B == 0)
+                prdSize -= 1;
+            //if (B > 1) throw new Exception();
+
+
+            shift = Math.Max(prdSize - targetSize, 0);
+            H += shift - I;  //OR  shift - I  OR prdSize - shift - I
+
+            powerPostShift = pwrPreShift >> shift;
+            shiftSum = shiftSum * 2 + shift;
+            bool bit = ((exp >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - targetSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> shrinkSize;
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += prdSize - shift;  //OR  shift OR prdSize - shift
+            }
+
+            //Console.WriteLine($"{i}, {bit}, {pwrPreShift}, {prdSize}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+        }
+
+        int bitsToRemove = ((int)product.GetBitLength() - size);
+        totalShift += bitsToRemove;
+        return RightShiftWithRound(product, bitsToRemove);
+        //return product >> bitsToRemove;
+        //return ((product >> (bitsToRemove-2))+1) >>2;
+
+    }
+
+
+
+
+
+
+
+    // 9/?/2023
+    // changes: back to using bit size instead of byte size. changed to grow then slowly shrink.
+    public static BigInteger Pow4(BigInteger value, int size, int power, out int totalShift)  //todo: set to private
+    {
+        int extraPrecisionBits = 0;
+        totalShift = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (power < 3)
+        {
+            switch (power)
+            {
+                case 0:
+                    totalShift = 0;
+                    return BigInteger.One;
+                case 1:
+                    totalShift = 0;
+                    return value;
+                case 2:
+                    BigInteger sqrd = (value * value);
+                    totalShift = size - ((sqrd >> ((2 * size) - 1) > 0) ? 1 : 0);
+                    return sqrd >> totalShift;
+                default:
+                    totalShift = 0;
+                    return BigInteger.Zero;
+            }
+        }
+
+        int targetSize = 2 * size + extraPrecisionBits + int.PopCount(power);
+
+        // First Loop
+        int H = size;
+        int I = 0;
+        int J = ((power & 0x1) == 1) ? 0 : size;
+        BigInteger powerPostShift = value;
+        int shiftSum = 0;
+        BigInteger product = ((power & 1) > 0) ? value : 1;
+        int shift = 0;
+        BigInteger pwrPreShift = value;
+
+        // Second Loop
+        int s = (int)(pwrPreShift >> (size - 8));
+
+        pwrPreShift = (powerPostShift * powerPostShift);
+        int prdSize = ((size - shift) * 2) - (((pwrPreShift >> (((size - shift) * 2) - 1)) > 0) ? 0 : 1);
+
+        //int prdSize = s switch
+        //{
+        //    < 181 => (size) * 2 - 1,
+        //    > 181 => (size) * 2,
+        //    _ => (int)pwrPreShift.GetBitLength()
+        //};
+
+        H += prdSize - I;  //OR  shift - I;
+
+        powerPostShift = pwrPreShift;
+        if ((power & 0x2) > 0)
+        {
+            I = H - targetSize;
+            int shrinkSize = I - J;
+            J = 0;
+            product = (product * powerPostShift) >> shrinkSize;
+            totalShift += shrinkSize;
+        }
+        else
+        {
+            J += prdSize;  //OR  shift ;
+        }
+
+        //Console.WriteLine($"{1}, {(power & 0x2) > 0}, {pwrPreShift}, {prdSize}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2((uint)power) + 1;
+        for (int i = 2; i < powerBitCount; i++)
+        {
+            //s = (int)(pwrPreShift >> (prdSize - 8));
+
+            pwrPreShift = (powerPostShift * powerPostShift);
+
+            int tmp = (prdSize - shift) * 2;
+            prdSize = tmp - (((pwrPreShift >> (tmp - 1)) > 0)?0:2);
+            //if ((pwrPreShift >> (tmp - 1)) > 0)  prdSize--;
+
+            //prdSize = s switch
+            //{
+            //    < 181 => (prdSize - shift) * 2 - 1,
+            //    > 181 => (prdSize - shift) * 2,
+            //    _ => (int)pwrPreShift.GetBitLength()
+            //};
+
+            shift = Math.Max(prdSize - targetSize, 0);
+            H += prdSize - shift - I;  //OR  shift - I;
+
+            powerPostShift = pwrPreShift >> shift;
+            shiftSum = shiftSum * 2 + shift;
+            bool bit = ((power >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - targetSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> shrinkSize;
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += prdSize - shift;  //OR  shift ;
+            }
+
+            //Console.WriteLine($"{i}, {bit}, {pwrPreShift}, {prdSize}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+        }
+
+        int bitsToRemove = ((int)product.GetBitLength() - size);
+        totalShift += bitsToRemove;
+        return (product/*+ int.PopCount(power) * 8*/) >> bitsToRemove; // << totalShift;;
+
+    }
+
+
+
+
+
+
+
+
+
+
+    // 9/16/2023
+    // changes: back to using bit size instead of byte size. changed to grow then slowly shrink.
+    //todo: neg power
+    public static BigInteger Pow3(BigInteger value, int size, int power, out int totalShift)  //todo: set to private
+    {
+        int extraPrecisionBits = 0;
+        totalShift = 0;
+
+        // minus1: 1 m = val = 51 pow = 17938
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (power < 3)
+        {
+            if (power == 0)
+            {
+                return BigInteger.One;
+            }
+            if (power == 1)
+            {
+                return value;
+            }
+            if (power == 2)
+            {
+                totalShift = size;
+                return (value * value) >> size;
+            }
+        }
+
+        int targetSize = 2 * size + extraPrecisionBits + Int32.PopCount(power);
+
+        // First Loop
+        int H = size;
+        int I = 0;
+        int J = ((power & 0x1) == 1) ? 0 : size;
+        BigInteger powerPostShift = value;
+        int shiftSum = 0;
+        BigInteger product = ((power & 1) > 0) ? value : 1;
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2((uint)power) + 1;
+        int sz2 = size;
+        int shift = 0;
+        BigInteger pwrPreShift = 0;
+        for (int i = 1; i < powerBitCount; i++)
+        {
+            int s = (int)(pwrPreShift >> (sz2 - 8));
+
+            pwrPreShift = (powerPostShift * powerPostShift);
+
+            if (s == 181)
+            {
+                sz2 = (int)pwrPreShift.GetBitLength();
+            }
+            else
+            {
+                sz2 = sz2 * 2 - (s > 181 ? 0 : 1) - shift * 2;
+            }
+            shift = Math.Max(sz2 - targetSize, 0);
+            H += sz2 - shift - I;  //OR  shift - I;
+
+            powerPostShift = pwrPreShift >> shift;
+            shiftSum = shiftSum * 2 + shift;
+            bool bit = ((power >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - targetSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> shrinkSize;
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += sz2 - shift;  //OR  shift ;
+            }
+
+            //Console.WriteLine($"{i}, {bit}, {pwrPreShift}, {sz2}, {shift}, {H}, {I}, {J}, {powerPostShift}, , {shiftSum}, shrinkSize, {totalShift},{product},{product.GetBitLength()}");
+        }
+
+        return product; // << totalShift;;
+
+    }
+
+
+    // 9/3/2023 
+    public static BigInteger Pow2(BigInteger value, int size, uint power, out int shifted)  //todo: set to private
+    {
+        shifted = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (power < 3)
+        {
+            if (power == 0)
+            {
+                return BigInteger.One;
+            }
+            if (power == 1)
+            {
+                return value;
+            }
+            if (power == 2)
+            {
+                shifted = size;
+                return (value * value) >> size;
+            }
+        }
+
+        int targetSize = value.GetByteCount() + 1;
+
+        // First Loop
+        BigInteger powerPostShift = value;
+        int shiftSum = 0;
+        shifted = 0;
+        BigInteger product = ((power & 1) > 0) ? value : 1;
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2(power) + 1;
+        for (int i = 1; i < powerBitCount; i++)
+        {
+            BigInteger pwrPreShift = (powerPostShift * powerPostShift);
+            int shift = Math.Max(pwrPreShift.GetByteCount() - targetSize, 0);
+            powerPostShift = pwrPreShift >> (shift * 8);
+            shiftSum = shiftSum * 2 + shift;
+            bool bit = ((power >> i) & 1) == 1;
+            if (bit)
+            {
+                int shrinkSize = Math.Max(product.GetByteCount() - targetSize, 0);
+                shifted = shifted + shiftSum + shrinkSize;
+                product = (product * powerPostShift) >> (shrinkSize * 8);
+            }
+            Console.WriteLine($"{i},{bit},{pwrPreShift},{pwrPreShift.GetByteCount() - 1},{shift},powerPostShift,{shiftSum},shrinkSize,{shifted},{product},,{product.GetByteCount() - 1}");
+        }
+
+        shifted *= 8;
+        return product;// >> (2 * (int)power);
+    }
+
+
+    // 9/3/2023
+    public static BigInteger Pow1(BigInteger value, int size, uint power, out int shifted)  //todo: set to private
+    {
+        shifted = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (power < 3)
+        {
+            if (power == 0)
+            {
+                return BigInteger.One;
+            }
+            if (power == 1)
+            {
+                return value;
+            }
+            if (power == 2)
+            {
+                shifted = size;
+                return (value * value) >> size;
+            }
+        }
+
+
+
+
+        int targetSize = value.GetByteCount() + 1;
+
+        // First Loop
+        //int i = 0;
+        BigInteger pwrPreShift = value;
+        //int pwrPreShiftSz;
+        //int shift;
+        BigInteger powerPostShift = value;
+        int shiftSum = 0;
+        //int shrinkSize = 
+        shifted = 0;
+        BigInteger product = ((power & 1) > 0) ? value : 1;
+        //int productSize = product.GetByteCount();
+
+        //Console.WriteLine($"{powers},{shifted},{product},{((((power >> 0) & 1) == 1) ? 1 : 0)},{size}");
+        //i++;
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2(power) + 1;
+        for (int i = 1; i < powerBitCount; i++)
+        {
+            bool bit = ((power >> i) & 1) == 1;
+            pwrPreShift = (powerPostShift * powerPostShift);
+            int byteSz = pwrPreShift.GetByteCount();
+            int shift = Math.Max(byteSz - targetSize, 0);
+            powerPostShift = pwrPreShift >> (shift * 8);
+            shiftSum = shiftSum * 2 + shift;
+            int shrinkSize = 0;
+            if (bit)
+            {
+                shrinkSize = Math.Max(product.GetByteCount() - targetSize, 0);
+                shifted = shifted + shiftSum + shrinkSize;
+                product = (product * powerPostShift) >> (shrinkSize * 8);
+            }
+            Console.WriteLine($"{i},{bit},{pwrPreShift},{pwrPreShift.GetByteCount() -1},{shift},{powerPostShift},{shiftSum},{shrinkSize},{shifted},{product},,{product.GetByteCount() -1}");
+
+        }
+        shifted *= 8;
+
+        //product.DebugPrint("bf1");
+        return product;// >> (2 * (int)power);
+    }
+
+    // Returns a BigInteger that is equal in size or slight smaller then the input size.  The number of bits that are removed are returned in "shifted".
+    // negative values are not supported
+    // optimized for larger numbers
+    // result could be rounded down or up
+    // 8/26/2023
+    public static BigInteger Pow0(BigInteger value, int size, uint power, out int shifted)  //todo: set to private
+    {
+        shifted = 0;
+
+        // 100 * 100 =    10000
+        // 111 * 111 =   110001
+        if (power < 3)
+        {
+            if (power == 0)
+            {
+                return BigInteger.One;
+            }
+            if (power == 1)
+            {
+                return value;
+            }
+            if (power == 2)
+            {
+                shifted = size;
+                return (value * value) >> size;
+            }
+        }
+        value <<= 2;
+        shifted += -2;
+
+        size--;
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        int powerBitCount = BitOperations.Log2(power) + 1;
+
+        // First Loop
+        int i = 0;
+        BigInteger product = ((power & 1) > 0) ? value : 1;
+        BigInteger powers = value;
+
+        //          
+        //       111  (product)
+        //     x1100  (power)
+        //         0
+        //       111  (product)
+        //         1  (product>>2)
+        //    
+        // 
+
+        Console.WriteLine($"{powers},{shifted},{product},{((((power >> 0) & 1) == 1) ? 1 : 0)},{size}");
+        i++;
+
+        for ( i = 1; i < powerBitCount; i++)
+        {
+            powers = (powers * powers) >> size;
+            shifted += size;
+
+            if (((power >> i) & 1) == 1) // bit is set
+            {
+                product = product * powers;
+            }
+            product >>= size;
+            shifted += size;
+            Console.WriteLine($"{powers},{shifted},{product},{((((power >> i) & 1) == 1) ? 1 : 0)},{size}");
+
+
+        }
+
+        //product.DebugPrint("bf1");
+        return product >> (2 * (int)power);
+    }
+
+    //                            (root-1)*(scale-size)/root
+    // if root = 2
+    //  IN:  1111111.11111__[12]  << 2
+    //  OUT: 1111111.11111  [12]  <<  (2-1)*(2-12)/2  = -5  (should be left shift of -5)
+    //
+    // if root = 3
+    //  IN:  1111111.11111__[12]  <<  2
+    //  OUT: 11001.0110010  [12]  <<  (3-1)*(2-12)/3  = -6.66 (should be left shift of -7)
+    //
+    // if root = 3
+    //  IN:  1101001.01111__[12]  <<  2
+    //  OUT: 1111.00000000  [12]  <<  (3-1)*(2-12)/3  = -6.66 (should be left shift of -8)
+    //
+    // if root = 4
+    //  IN:  1111111.11111__[12]  <<  2
+    //  OUT: 1011.01010000  [12]  <<  (4-1)*(2-12)/4  = -7.5 (should be left shift of -8)
+    //
+    // if root = 5
+    //  IN:  1111111.11111__[12]  <<  2
+    //  OUT: 1101.11101101  [12]  <<  (5-1)*(2-12)/5  = -8 (should be left shift of -8-0)
+    // 
+    // if root = 5
+    //  IN:  100 000000000__[12]  <<  2
+    //  OUT: 110.000100000  [12]  <<  (5-1)*(2-12)/5  = -8 (should be left shift of -8-1)
+
+    // if root = 5
+    //  IN:  100 00000000__[11]  <<  2
+    //  OUT: 101.xxxxxxxx  [11]  <<  (5-1)*(2-11)/5  = -7.2 (should be left shift of -8-1)
+
+

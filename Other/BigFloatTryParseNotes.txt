@@ -1,0 +1,194 @@
+    // The below is from Parse()...  (note: Log2 rounds down)
+    //   In Value    Precision on user would get    # of digits in ToString()
+    //             ->  0 bits  [Log2(1)    + 3]  ->            0
+    //             ->  1 bits  [Log2(1)    + 3]  ->            1
+    //             ->  2 bits  [Log2(1)    + 3]  ->            1
+    //   0.0000001 ->  3 bits  [Log2(1)    + 3]  ->            1
+    //   0.0000002 ->  4 bits  [Log2(2)    + 3]  ->            1
+    //   0.0000009 ->  6 bits  [Log2(9)    + 3]  ->  60        1-2 [2^4/10 = 1.6 <= X < 2^5/10=2.5]
+    //   0.0000015 ->  6 bits  [Log2(10)   + 3]  ->            1-2
+    //   0.0000016 ->  7 bits  [Log2(16)   + 3]  ->            1-2
+    //   0.0000031 ->  7 bits  [Log2(31)   + 3]  ->            1-2
+    //   63.       ->  8 bits  [Log2(63)   + 3]  ->            2-3 [(2^5-3)/10 = 2.2 <= X < 2^6/10=3.3]
+    //   64.       ->  9 bits  [Log2(64)   + 3]  ->            2-3
+    //   9.0       ->  9 bits  [Log2(90)   + 3]  ->            2-3
+    //   0.99      ->  9 bits  [Log2(99)   + 3]  ->            2-3 
+    //   900       -> 12 bits  [Log2(900)  + 3]  ->  
+    //   900.0     -> 18 bits  [Log2(9000) + 3]  -> 
+
+    // [Log2(9)    + 3]  [6]               [9]
+    // Log2(9) -> 3.17   sub 3             sub 3
+    // Floor   -> 3      avg  3.5          avg 6.5 
+    // add 3   -> 6      Log10(2^3.5)=1.1  Log10(2^6.5) =90
+
+///////////////////////////////////////////////////////
+
+
+    // The number of storage bits is Log2(TheNumber)+3. (Example: so .001 is 3 bits, .002 is 4 bits, .009 is 7 bits... _
+    // Value       Precision user would get..  (Log2 is floored)
+    // 0.0000001   3 bits  [Log2(1)    + 3]
+    // 0.0000002   4 bits  [Log2(2)    + 3]
+    // 0.0000009   7 bits  [Log2(9)    + 3]
+    // 0.0000010   7 bits  [Log2(10)   + 3]
+    // 0.99        8 bits  [Log2(99)   + 3]
+    // 9.0         8 bits  [Log2(90)   + 3]
+    // 900        12 bits  [Log2(900)  + 3]
+    // 900.0      18 bits  [Log2(900.0)+ 3]
+
+    // Allowed examples:
+    //  * 12.34       
+    //  * -0xABC.DEF    binary, hex and dec all support leading negitive with '-'
+    //  * 0xabc.def     with hex, both uppdercase and lowercase okay
+    //  * -0b101.010    binary
+    //  * -0b1_1111.1   underscores okay in binary
+    // Not Allowed:
+    //  * {123}         CurlBraces and Brackets
+    //  * 5ABC          hex/binary numbers without leading 0x/0b
+    //  * 12,345.0      spaces or commas in decimal numbers (hex/binary okay)
+
+
+
+
+///////////////////////////////////////////////////////////////////
+
+// 2022
+    // Value      User Expects
+    // 0.0000001  24 bits [RoundUp(7 x 3.32)]
+    // 0.0000010  24 bits [RoundUp(7 x 3.32)]
+    // 0.99        7 bits [RoundUp(2 x 3.32)]
+    // 9.0         7 bits [RoundUp(2 x 3.32)]
+    // 900        10 bits [RoundUp(3 x 3.32)]
+    // 900.0      14 bits [RoundUp(4 x 3.32)]
+    public static bool TryParseAlt3(string inputStr, out BigFloat result, int additionalScale = 0)
+    {
+        //BigInteger asInt;
+        if (string.IsNullOrEmpty(inputStr))
+        {
+            result = new BigFloat(0);
+            return false;
+        }
+
+        // There is no decimal point so let's just use BigInteger to convert.
+        int radixLoc = inputStr.IndexOf('.');
+        int inputStrLen = inputStr.Length;
+
+        if (radixLoc < 0)
+        {
+            if (BigInteger.TryParse(inputStr, out BigInteger intVal))
+            {
+                result = new BigFloat(intVal, additionalScale);
+                return true;
+            }
+            result = new BigFloat(0);
+            return false;
+        }
+
+        int pos = 0;
+        //has leading +/-
+        char firstChar = inputStr[0];
+        bool isPositive = firstChar != '-';
+        if (firstChar is '-' or '+')
+        {
+            pos++;
+        }
+
+        // Move curser past any leading zeros
+        for (; inputStr[pos] == '0'; pos++)
+        {
+            ;
+        }
+        
+
+
+        // Starting at the curser, we can have:  .0001121, 11111.00
+        // ..but not: 0.1(has leading zero), 123(has no decimal point), 123.(has tail decimal point)
+
+        // convert to a ToCharArray while removing radixLoc
+        int digitCount = inputStr.Length - pos - 1;
+        Span<char> valAsSpan = stackalloc char[digitCount + 1]; // +1 for the leading sign
+        valAsSpan[0] = isPositive ? '+' : '-';
+        inputStr.AsSpan(pos, radixLoc - pos).CopyTo(valAsSpan[1..]);
+        inputStr.AsSpan(radixLoc + 1).CopyTo(valAsSpan[(radixLoc - pos + 1)..]);
+
+        // Leading chars like -, +, 0 were removed so we need to adjust radixLoc to be relative to the new valAsSpan.
+        radixLoc -= pos;
+
+        // convert to a BigInteger
+        if (!BigInteger.TryParse(valAsSpan, out BigInteger asInt))
+        {
+            result = new BigFloat(0);
+            return false;
+        }
+
+        long targetBitLen = (long)Math.Ceiling(digitCount * 3.321928094887362347870);
+        int decDepth = digitCount - radixLoc;
+
+        BigInteger mult = BigInteger.Pow(5, decDepth);
+
+        int shiftAmt = (int)(mult.GetBitLength() + targetBitLen - asInt.GetBitLength() + 1);
+
+        BigInteger val = (asInt << shiftAmt) / mult;
+
+        int oversized = (int)(val.GetBitLength() - targetBitLen);
+        if (oversized > 0)
+        {
+            // The following line enables rounding to nearest
+            val += 1 << (oversized - 1);
+
+            val >>= oversized;
+        }
+
+        result = new BigFloat(val, -shiftAmt - decDepth + oversized + additionalScale);
+
+        //Console.WriteLine(
+        //    $"Alt: {inputStr} -> {asInt,5}/{mult,7}[{shiftAmt,3}] " +
+        //    $"->{asInt,3}({BigIntegerToBinaryString(asInt),10})[{BigIntegerToBinaryString(asInt).Length}] " +
+        //    $"->{val,3}({BigIntegerToBinaryString(val),10})[{BigIntegerToBinaryString(val).Length}] " +
+        //    $"-> AsBF: {result,11} " +
+        //    $"AsDbl: {double.Parse(inputStr),8}({DecimalToBinary(double.Parse(inputStr), 40)})");
+
+        result.AssertValid();
+
+        return true;
+    }
+
+// 2022
+    //todo: need to finish
+    public static bool TryParseAlt2(string inputStr, out BigFloat result, int additionalScale = 0)
+    {
+        bool success;
+
+        if (string.IsNullOrEmpty(inputStr))
+        {
+            result = new BigFloat(0);
+            return false;
+        }
+
+        //There is no decimal point so let's just use BigInteger to convert.
+        int radixLoc = inputStr.IndexOf('.');
+        if (radixLoc < 0)
+        {
+            radixLoc = inputStr.Length;
+        }
+        else
+        {
+            inputStr = inputStr.Remove(radixLoc, 1);
+        }
+
+        success = BigInteger.TryParse(inputStr, out BigInteger asInt);
+        if (!success)
+        {
+            result = new BigFloat(0);
+            return false;
+        }
+        int decLenth = inputStr.Length - radixLoc;
+        BigInteger mult = BigInteger.Pow(5, decLenth);
+        int shiftAmt = (int)mult.GetBitLength() + additionalScale - 1; //maybe -1 only on negatives?
+        result = new BigFloat((asInt << shiftAmt) / mult, -(shiftAmt + decLenth));
+
+        result.AssertValid();
+
+        return true;
+    }
+
+
