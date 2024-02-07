@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<coverage version="1.0" date="2024-02-06_14-30-32" tag="">
+  <assembly name="BigFloatLibrary">
+    <class name="BigFloatLibrary.BigFloat" coveredlines="1598" coverablelines="2302" totallines="4776" coveredbranches="579" totalbranches="864" coveredcodeelements="135" totalcodeelements="204" />
+  </assembly>
+</coverage>

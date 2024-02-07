@@ -1,25 +1,29 @@
-8/2023 
+2/2024 
 
 Zero = any dataInt that is LESS than 0:100000000, and also the shift results in a 0:100000000.
 
-public bool IsZero => _size < ExtraHiddenBits && (Scale + _size - ExtraHiddenBits) < 0;
-
+public bool IsZero => (_size < ExtraHiddenBits-1) && (Scale + _size - ExtraHiddenBits) < 0;
 
 
     //  IntData    Scale  Precision  Zero
-    //1:111111111 << -2       1       N 
-    //1:000000000 << -2       1       N
-    //1:000000000 << -1       1       N
-    //1:000000000 <<  0       1       N
-    //0:111111111 << -1       0       N 
-    //0:100000000 << -1       0       N
-    //0:100000000 <<  0       0       N
-    //0:011111111 << -1      -1       Y
-    //0:011111111 <<  0      -1       Y (borderline)
-    //0:011111111 <<  1      -1       N
-    //0:001111111 <<  1      -2       Y (borderline)
-    //0:001111111 <<  2      -2       N
+    //1:000000000 << -2       1       N -1 (no because _size >= ExtraHiddenBits-1) 
+    //1:000000000 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //1:000000000 <<  0       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //0:100000000 << -1       0       N -1 (no because _size >= ExtraHiddenBits-1)
+    //0:100000000 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //0:100000000 <<  1       0       N  1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
 
+    //1:111111111 << -2       1       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //1:111111111 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) 
+    //0:111111111 << -1       0       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //0:111111111 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) 
+    //0:011111111 << -1      -1       Y -2                                             
+    //0:011111111 <<  0      -1       Y -1 (borderline)
+    //0:011111111 <<  1      -1       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //0:001111111 <<  1      -2       Y -1 (borderline)
+    //0:001111111 <<  2      -2       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+    //0:000111111 <<  2      -3       Y -1 (borderline)
+    //0:000111111 <<  3      -3       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
 
 ======================================================
 NUMBER         IS_ZERO   NOTES

@@ -1,10 +1,10 @@
-﻿// Copyright Ryan Scott White. 11/29/2020, 12/26/2020, 1/3/2021, 1/9/2021, 1/13/2021, 1/17/2021, 3/22/2022, 3/28/2022, 7/10/2022, 12/2022, 1/2023, 2/2023, 3/2023, 6/2023, 11/2023, 12/2023, 1/2024
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 1/2024, 2/2024
 
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 1/6/2024 version this class was written by a human only. This will change soon.
+// As of the 2/7/2024 this class was written by human hand. This will change soon.
 
 // Ignore Spelling: Lemniscate Mascheroni Pisots Theodorus Khintchines Ramanujan Soldner
 
@@ -457,9 +457,9 @@ public readonly partial struct BigFloat
         public readonly int SizeInFile = sizeInFile;
 
         /// <summary>
-        /// Returns the precision or number of decimal digits.  (e.g. 12.1 is 3)
+        /// Returns the number of decimal digits.  (e.g. 12.3 is 3)
         /// </summary>
-        public int GetDecimalSignificantDigitsUNTESTED()
+        public int GetDecimalPrecisionUNTESTED()
         {
             int counter = 0;
 
@@ -477,11 +477,11 @@ public readonly partial struct BigFloat
                 }
             }
 
-            return ConstantAsString.Length - counter;
+            return ConstantAsString.Length - counter - 1;
         }
 
         /// <summary>
-        /// Gets the decimal accuracy or the number of bits available after the radix point. (i.e. 10.111 is 3)
+        /// Gets the accuracy, or the number of digits after the decimal point. (i.e. 12.345 is 3)
         /// </summary>
         public int GetDecimalAccuracyUNTESTED()
         {
@@ -495,25 +495,35 @@ public readonly partial struct BigFloat
             }
 
             // Get the length minus the location of radix point.
-            return len - locOfRadix;
-        }
-
-        /// <summary>
-        /// Gets the approximate accuracy or the number of decimal places available. (i.e. 12.1 is 1)
-        /// </summary>
-        public int GetApproximateBinaryDigitsInCodeUNTESTED()
-        {
-            double bitLen = ConstantAsString.Length * 3.3219280948873623;
-            double log2 = Math.Log2(double.Parse(ConstantAsString[0..15]));
-            return (int)(bitLen + log2);
+            return len - locOfRadix - 1; 
         }
 
         /// <summary> 
         /// Gets the approximate binary accuracy or the number of binary digits after the radix point.  (i.e. 10.111 is 5)
         /// </summary>
-        public int GetApproximateBinaryAccuracyUNTESTED()
+        public int GetBinaryAccuracyUNTESTED()
         {
+            //todo: make exact version
+
             return (int)(GetDecimalAccuracyUNTESTED() * 3.3219280948873623);
+        }
+
+        /// <summary>
+        /// Gets the approximate accuracy or the number of decimal places available. (i.e. 11.1 is 1)
+        /// This method has slow performance and does not do any error checking.
+        /// </summary>
+        public int GetBinaryPrecisionUNTESTED()
+        {
+            //todo: make exact version
+            string trimmed = ConstantAsString.TrimStart('0').Replace(".","");
+
+            // The version below is faster but is approximate
+            int sizeOfFirstSix = int.Log2(int.Parse(trimmed[..6])) + 1;
+            int test1 = (int)((trimmed.Length - 6) * 3.3219280948873623) + sizeOfFirstSix;
+
+            int test2 = (int)BigInteger.Parse(trimmed).GetBitLength();
+            return test2;
+
         }
 
         /// <summary>
@@ -525,7 +535,7 @@ public readonly partial struct BigFloat
         /// <returns>Returns true if successful.</returns>
         public bool TryGetAsBigFloatUNTESTED(out BigFloat value, int minimumAccuracyInBits, bool cutOnTrailingZero = true)
         {
-            int availableBinAccuracy = GetApproximateBinaryAccuracyUNTESTED();
+            int availableBinAccuracy = GetBinaryAccuracyUNTESTED();
             int requestedAccuracyInDecDigits = (int)((minimumAccuracyInBits + ExtraHiddenBits) / 3.3219280948873623);
             int decDigitsNeeded = requestedAccuracyInDecDigits + ConstantAsString.IndexOf('.');
 

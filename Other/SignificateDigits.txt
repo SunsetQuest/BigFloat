@@ -1,3 +1,44 @@
+===================================================‎ 1/14/2024 ===================================================
+Precision:
+
+One of this project's goals was to maintain accuracy. Early in the project, it dropped off the least significant bits. However, as the project evolved, rounding the least significant bits became more crucial. 
+In the perfect world, BigFloat would always be accurate to the bit. We can get close to this, but there are limits. We use some different techniques to help with this. First, we can have some trailing extra hidden bits considered out-of-precision at the end. For BigFloat, we call these hidden bits. By default, BigFloat has 32 out-of-precision hidden bits. When a user loads an integer 5, they would get 101|000...000, which is 35 bits in size.  
+With these numbers, we can do math operations. When we have a number with, say, five in-precision bits and perform a math operation on another number, say multiplying by 3, we generally expect a result with the same number of significant digits as the smaller number. However, with the math operation, we often get some extra digits(or bits) that we must remove, and with these, we should round to the nearest as were we tough.
+
+How is rounding done:
+
+Rounding for BigFloat is simple. After a math operation, we may have some least-significate digits to remove to preserve precision. If the most significant bit we remove is set, we increment the least significant digit of the number.
+
+Example of ~6 x ~4:
+
+   101|11001011101101001000101100110100
+ x 100|01011001101001011100101110110101
+-----------------------------------------------------
+110|11001100100110110010011001111111[101100...]
+110|11001100100110110010011001111111 (dropped)
+110|11001100100110110010011010000000 (rounded)
+* "|" is the separator for the in-precision and out-of-precision hidden bits.
+** "[]" bits past the hidden bits - to be rounded
+Even though these bits were in the hidden area and are considered out-of-precision, Rounding helps with the loss of precision with successive math operations operating on it. The precision slowly decreases with chopping off the bits (i.e., rounding down). However, if Rounding is done correctly for some math functions, the Rounding up and down of the least significant digit will cancel each other out over time. This is equivalent to counting the number of heads when flipping a coin several times.
+
+Example with dropping bits:
+
+A trillion serial math operations with an average of half rounding down incorrectly (when we should be rounding up) would result in a value roughly half a billion too low. So, the bottom 40 bits are incorrect on average, and this would be above our 32 hidden bits, making it incorrect.
+
+Example with rounding bits:
+
+With Rounding, one million serial math operations would produce 25% that round up incorrectly, 25% that round down incorrectly, and 50% that is correct. That standard deviation, or average incorrect value, would be Sqrt(trillion/2·1/2·1/2)1/2 = 176776, so only the bottom 18 bits are incorrect on average, still well within our 32 hidden bits, making it incorrect. 
+So, how many math operations do we need before we use up all the 32 hidden out-of-precision bits? Solving for x in Sqrt(X/2·1/2·1/2)1/2=2^32 = 6 x 10^20. So, after 600000000000000000000 math operations, we would have used up our hidden bits and would be off by one on average. If we enlarged our hidden bits from 32 to 64, this number would grow to 1x10^40.
+
+Rounding on IEEE floating point math is very similar. Single and Double operations even do Banker's Rounding, so if the numbers we remove are in a one followed by zeros, it will only round up half the time. Banker's Rounding is more critical for the IEEE floating points as it only keeps a few extra bits; however, BigFloat will keep more, so Banker's Rounding is less critical. BigFloat does have some other advantages over IEEE Float. 
+ - Since BigFloat is a software library, it is more adjustable. 
+ - additional extra hidden precision bits, and finally, 
+ - BigFloat has flexible precision (vs. Single/Double with fixed 26-bit/53-bit sizes). 
+One massive advantage of Single/Double is that it is fast and efficient since it is hardware-based. It just does not handle large numbers and flexible precision.
+BigFloat, however, does use double's hardware in several places. For Example, it will leverage Double's hardware floating point function to get the first 53 bits of a square root.
+
+===================================================‎ Friday, ‎November ‎10, ‎2023 ===================================================
+
 Going beyond significant digits (in binary/decimal)
 
 -> I recently built a floating point class for large numbers, so I temporarily know this very well. =)

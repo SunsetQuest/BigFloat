@@ -1,10 +1,10 @@
-﻿// Copyright Ryan Scott White. 11/29/2020, 12/26/2020, 1/3/2021, 1/9/2021, 1/13/2021, 1/17/2021, 3/22/2022, 3/28/2022, 7/10/2022, 12/2022, 1/2023, 2/2023, 3/2023, 6/2023, 11/2023, 12/2023, 1/2024
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 1/2024, 2/2024
 
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 1/6/2024 version this class was written by a human only. This will change soon.
+// As of the 2/7/2024 this class was written by human hand. This will change soon.
 
 using System;
 using System.Diagnostics;
@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using BigFloatLibrary;
+using static BigFloatLibrary.BigFloat;
 //using static BigFloatLibrary.BigFloat;
 
 
@@ -22,10 +23,124 @@ using BigFloatLibrary;
 
 namespace ShowCase;
 
-public static class Program
+public static class Showcase
 {
     public static void Main()
     {
+        BigInteger test = BigInteger.Parse(null);
+
+        //Console.WriteLine(int.Log2(3));
+        //Console.WriteLine(int.Log2(-3));
+        //Console.WriteLine(int.Log2(4));
+        //Console.WriteLine(int.Log2(-4));
+
+        Console.WriteLine($"{int.Log2(3)+1}");
+        //Console.WriteLine($"{int.Log2(-3)}");
+        Console.WriteLine($"{int.Log2(4)+1}");
+        //Console.WriteLine($"{int.Log2(-4)}");
+
+
+        //////////////////// Initializing and Basic Arithmetic: ////////////////////
+        // Initialize BigFloat numbers
+        BigFloat a = new("123456789.012345678901234"); // Initialize by String
+        BigFloat b = new(1234.56789012345678);         // Initialize by Double
+
+        // Basic arithmetic
+        BigFloat sum = a + b;
+        BigFloat difference = a - b;
+        BigFloat product = a * b;
+        BigFloat quotient = a / b;
+
+        // Display results
+        Console.WriteLine($"Sum: {sum}");
+        Console.WriteLine($"Difference: {difference}");
+        Console.WriteLine($"Product: {product}");
+        Console.WriteLine($"Quotient: {quotient}");
+
+
+        //////////////////// Working with Mathematical Constants: ////////////////////
+        // Access constants like Pi or E from BigConstants
+        BigConstants bigConstants = new(requestedAccuracy: 1000);
+        BigFloat pi = bigConstants.Pi;
+        BigFloat e = bigConstants.E;
+
+        // Use Pi in a calculation (Area of a circle with r = 100)
+        BigFloat radius = new("100.0000000000000000");
+        BigFloat area = pi * radius * radius;
+
+        Console.WriteLine($"Area of the circle: {area}");
+
+
+        //////////////////// Precision Manipulation: ////////////////////
+        // Initialize a number with high precision
+        BigFloat preciseNumber = new("123.45678901234567890123");
+        BigFloat morePreciseNumber = BigFloat.ExtendPrecision(preciseNumber, bitsToAdd: 50);
+
+        Console.WriteLine($"Extend Precision result: {morePreciseNumber}");
+        
+        // Initialize an integer with custom precision
+        BigFloat c = BigFloat.IntWithAccuracy(10, 100);
+        Console.WriteLine($"Int with specified accuracy: {c}");
+
+        //////////////////// Comparing Numbers: ////////////////////
+        // Initialize two BigFloat numbers
+
+        BigFloat num1 = new("12345.6790");
+        BigFloat num2 = new("12345.6789");
+
+        // Compare the numbers
+
+        bool areEqual = num1 == num2;
+        bool isFirstBigger = num1 > num2;
+
+        Console.WriteLine($"Are the numbers equal? {areEqual}");
+        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
+
+        // Initialize a BigFloat that would be equal
+
+        BigFloat num3 = new("12345.6789");
+        BigFloat num4 = new("12345.67895");
+
+        areEqual = num3 == num4;
+        isFirstBigger = num3 > num4;
+
+        Console.WriteLine($"Are the numbers equal? {areEqual}");
+        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
+
+        //////////////////// Handling Very Large or Small Exponents: ////////////////////
+        // Creating a very large number
+        BigFloat largeNumber = new("1e+300");
+
+        // Creating a very small number
+        BigFloat smallNumber = new("1e-300");
+
+        Console.WriteLine($"Large Number: {largeNumber}");
+        Console.WriteLine($"Small Number: {smallNumber}");
+
+
+
+
+        BigFloat num5 = new("12121212.1212"); //8589934593, 17179869185
+        BigFloat num6 = new("1234");
+        Console.WriteLine($"12121212.1212 * 1234 = 14957575757.5608");
+        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+
+        num5 = new("12121212.1212"); //8589934593, 17179869185
+        num6 = new("3");
+        Console.WriteLine($"12121212.1212 * 3 = 36363636.3636");
+        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+
+
+        num5 = new("121212.1212"); //8589934593, 17179869185
+        num6 = new("1234567");
+        Console.WriteLine($"1212121212.1212 * 3 = 36363636.3636");
+        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+
+        Console.WriteLine($"GetPrecision: {num6.GetPrecision}");
+
+
+
+
         //BigConstant_Stuff();
         //BigConstant_Stuff2();
         //Pow_Stuff();
@@ -42,7 +157,7 @@ public static class Program
         //TryParse_Stuff();
         //Sqrt_Stuff();
         //CastingFromFloatAndDouble_Stuff();
-        //NthRoot_DRAFT_Stuff();
+        NthRoot_DRAFT_Stuff();
     }
 
     //////////////  BigConstants Play Area & Examples //////////////

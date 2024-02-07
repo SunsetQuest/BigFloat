@@ -221,13 +221,13 @@ var assemblies = [
   {
     "name": "BigFloatLibrary",
     "classes": [
-      { "name": "BigFloatLibrary.BigFloat", "rp": "BigFloatLibrary_BigFloat.html", "cl": 1501, "ucl": 722, "cal": 2223, "tl": 4627, "cb": 527, "tb": 820, "cm": 0, "tm": 0, "lch": [63.9,65.2,66,66,67.5], "bch": [62.4,64.1,66.4,66.4,64.2], "mch": [], "hc": [{ "et": "12/12/2023 - 5:18:21 PM", "cl": 1383, "ucl": 779, "cal": 2162, "tl": 4461, "lcq": 63.9, "cb": 502, "tb": 804, "bcq": 62.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/12/2023 - 10:54:24 PM", "cl": 1400, "ucl": 746, "cal": 2146, "tl": 4456, "lcq": 65.2, "cb": 512, "tb": 798, "bcq": 64.1, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/12/2023 - 11:14:15 PM", "cl": 1400, "ucl": 746, "cal": 2146, "tl": 4456, "lcq": 65.2, "cb": 512, "tb": 798, "bcq": 64.1, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/14/2023 - 8:51:23 AM", "cl": 1417, "ucl": 729, "cal": 2146, "tl": 4456, "lcq": 66, "cb": 530, "tb": 798, "bcq": 66.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/18/2023 - 8:47:27 AM", "cl": 1417, "ucl": 729, "cal": 2146, "tl": 4452, "lcq": 66, "cb": 530, "tb": 798, "bcq": 66.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "1/6/2024 - 3:27:28 PM", "cl": 1501, "ucl": 722, "cal": 2223, "tl": 4627, "lcq": 67.5, "cb": 527, "tb": 820, "bcq": 64.2, "cm": 0, "tm": 0, "mcq": 0 }], "metrics": { } },
+      { "name": "BigFloatLibrary.BigFloat", "rp": "BigFloatLibrary_BigFloat.html", "cl": 1602, "ucl": 701, "cal": 2303, "tl": 4781, "cb": 579, "tb": 864, "cm": 0, "tm": 0, "lch": [63.9,65.2,66,66,67.5,68.8,69.4,69.5], "bch": [62.4,64.1,66.4,66.4,64.2,66.8,67,67], "mch": [], "hc": [{ "et": "12/12/2023 - 5:18:21 PM", "cl": 1383, "ucl": 779, "cal": 2162, "tl": 4461, "lcq": 63.9, "cb": 502, "tb": 804, "bcq": 62.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/12/2023 - 10:54:24 PM", "cl": 1400, "ucl": 746, "cal": 2146, "tl": 4456, "lcq": 65.2, "cb": 512, "tb": 798, "bcq": 64.1, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/12/2023 - 11:14:15 PM", "cl": 1400, "ucl": 746, "cal": 2146, "tl": 4456, "lcq": 65.2, "cb": 512, "tb": 798, "bcq": 64.1, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/14/2023 - 8:51:23 AM", "cl": 1417, "ucl": 729, "cal": 2146, "tl": 4456, "lcq": 66, "cb": 530, "tb": 798, "bcq": 66.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "12/18/2023 - 8:47:27 AM", "cl": 1417, "ucl": 729, "cal": 2146, "tl": 4452, "lcq": 66, "cb": 530, "tb": 798, "bcq": 66.4, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "1/6/2024 - 3:27:28 PM", "cl": 1501, "ucl": 722, "cal": 2223, "tl": 4627, "lcq": 67.5, "cb": 527, "tb": 820, "bcq": 64.2, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "2/4/2024 - 10:53:47 PM", "cl": 1566, "ucl": 708, "cal": 2274, "tl": 4728, "lcq": 68.8, "cb": 560, "tb": 838, "bcq": 66.8, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "2/5/2024 - 1:00:06 PM", "cl": 1566, "ucl": 708, "cal": 2274, "tl": 4728, "lcq": 68.8, "cb": 560, "tb": 838, "bcq": 66.8, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "2/6/2024 - 2:30:32 PM", "cl": 1598, "ucl": 704, "cal": 2302, "tl": 4776, "lcq": 69.4, "cb": 579, "tb": 864, "bcq": 67, "cm": 0, "tm": 0, "mcq": 0 }, { "et": "2/6/2024 - 6:48:37 PM", "cl": 1602, "ucl": 701, "cal": 2303, "tl": 4781, "lcq": 69.5, "cb": 579, "tb": 864, "bcq": 67, "cm": 0, "tm": 0, "mcq": 0 }], "metrics": { } },
     ]},
 ];
 
 var metrics = [{ "name": "Cyclomatic complexity", "abbreviation": "cc", "explanationUrl": "https://en.wikipedia.org/wiki/Cyclomatic_complexity" }, { "name": "Line coverage", "abbreviation": "cov", "explanationUrl": "https://en.wikipedia.org/wiki/Code_coverage" }, { "name": "Branch coverage", "abbreviation": "bcov", "explanationUrl": "https://en.wikipedia.org/wiki/Code_coverage" }];
 
-var historicCoverageExecutionTimes = ["12/18/2023 - 8:47:27 AM", "12/14/2023 - 8:51:23 AM", "12/12/2023 - 11:14:15 PM", "12/12/2023 - 10:54:24 PM", "12/12/2023 - 5:18:21 PM"];
+var historicCoverageExecutionTimes = ["2/6/2024 - 2:30:32 PM", "2/5/2024 - 1:00:06 PM", "2/4/2024 - 10:53:47 PM", "1/6/2024 - 3:27:28 PM", "12/18/2023 - 8:47:27 AM", "12/14/2023 - 8:51:23 AM", "12/12/2023 - 11:14:15 PM", "12/12/2023 - 10:54:24 PM", "12/12/2023 - 5:18:21 PM"];
 
 var riskHotspotMetrics = [
       { "name": "Cyclomatic complexity", "explanationUrl": "https://en.wikipedia.org/wiki/Cyclomatic_complexity" },
@@ -235,29 +235,29 @@ var riskHotspotMetrics = [
 
 var riskHotspots = [
   {
-    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParseHex(System.ReadOnlySpan`1<System.Char>,BigFloatLibrary.BigFloat&,System.Int32)", "methodShortName": "TryParseHex(...)", "fileIndex": 1, "line": 1014,
+    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParseHex(System.ReadOnlySpan`1<System.Char>,BigFloatLibrary.BigFloat&,System.Int32)", "methodShortName": "TryParseHex(...)", "fileIndex": 1, "line": 1111,
     "metrics": [
       { "value": 68, "exceeded": true },
     ]},
   {
-    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "PowMostSignificantBits(System.Numerics.BigInteger,System.Int32,System.Int32&,System.Int32,System.Int32,System.Boolean)", "methodShortName": "PowMostSignificantBits(...)", "fileIndex": 1, "line": 3628,
+    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "PowMostSignificantBits(System.Numerics.BigInteger,System.Int32,System.Int32&,System.Int32,System.Int32,System.Boolean,System.Boolean)", "methodShortName": "PowMostSignificantBits(...)", "fileIndex": 1, "line": 3750,
     "metrics": [
-      { "value": 58, "exceeded": true },
+      { "value": 62, "exceeded": true },
     ]},
   {
-    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParse(System.String,BigFloatLibrary.BigFloat&,System.Int32)", "methodShortName": "TryParse(...)", "fileIndex": 1, "line": 854,
+    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParseBinary(System.ReadOnlySpan`1<System.Char>,BigFloatLibrary.BigFloat&,System.Int32,System.Int32,System.Int32)", "methodShortName": "TryParseBinary(...)", "fileIndex": 1, "line": 1313,
+    "metrics": [
+      { "value": 53, "exceeded": true },
+    ]},
+  {
+    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParse(System.String,BigFloatLibrary.BigFloat&,System.Int32)", "methodShortName": "TryParse(...)", "fileIndex": 1, "line": 951,
     "metrics": [
       { "value": 52, "exceeded": true },
     ]},
   {
-    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "CompareTo(BigFloatLibrary.BigFloat)", "methodShortName": "CompareTo(...)", "fileIndex": 1, "line": 1437,
+    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "CompareTo(BigFloatLibrary.BigFloat)", "methodShortName": "CompareTo(...)", "fileIndex": 1, "line": 1577,
     "metrics": [
       { "value": 46, "exceeded": true },
-    ]},
-  {
-    "assembly": "BigFloatLibrary", "class": "BigFloatLibrary.BigFloat", "reportPath": "BigFloatLibrary_BigFloat.html", "methodName": "TryParseBinary(System.ReadOnlySpan`1<System.Char>,BigFloatLibrary.BigFloat&,System.Int32,System.Int32)", "methodShortName": "TryParseBinary(...)", "fileIndex": 1, "line": 1209,
-    "metrics": [
-      { "value": 33, "exceeded": true },
     ]},
 ];
 
