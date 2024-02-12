@@ -4,7 +4,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/7/2024 this class was written by human hand. This will change soon.
+// As of the 2/12/2024 this class was written by human hand. This will change soon.
 
 // Ignore Spelling: Lemniscate Mascheroni Pisots Theodorus Khintchines Ramanujan Soldner
 
@@ -41,8 +41,10 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Popular math constants.
     /// </summary>
-    /// <param name="requestedAccuracy">The requested accuracy for the constant requests in this class. Depending on the feature, it will either not return a value below this or will return as large of value that is available.</param>
-    public class BigConstants(int requestedAccuracy = 2000)
+    /// <param name="requestedAccuracyInBits">The target number of bits that should be loaded into memory.</param>
+    /// <param name="cutOnTrailingZero">If true, the result will stop on or after <param name="requestedAccuracyInBits"> the first bit that has a zero bit following it. If false, the returned length will be a stop at exactly <param name="requestedAccuracyInBits">.></param>
+    /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <param name="requestedAccuracyInBits">,</param>
+    public class BigConstants(int requestedAccuracyInBits = 2000, bool cutOnTrailingZero = true, bool onInsufficientBitsThenSetToZero = true)
     {
         public BigFloat PrimeConstant => _0_414682509851 ??= BuildNumber(BigConstantBuilder.Const_0_414682509851);
         private BigFloat? _0_414682509851;
@@ -100,8 +102,10 @@ public readonly partial struct BigFloat
 
         private BigFloat BuildNumber(BigConstantInfo c)
         {
-            bool success = c.TryGetAsBigFloatUNTESTED(out BigFloat res, requestedAccuracy);
-            return success ? res : default;
+            if (c.TryGetAsBigFloat(out BigFloat res, requestedAccuracyInBits, cutOnTrailingZero))
+                return res;
+            else
+                return onInsufficientBitsThenSetToZero ? default : BigFloat.Parse(c.ConstantAsString) ;
         }
 
         /// <summary>
@@ -111,7 +115,7 @@ public readonly partial struct BigFloat
         {
             BigInteger m = BigInteger.One << (accuracyInBits + ExtraHiddenBits + 12);
             BigInteger p = 125;
-            BigInteger q = 239 * 239 * 239 << 2;
+            BigInteger q = (239 * 239 * 239) << 2;
             BigInteger sum = (m / 5) - (m / (239 << 2));
 
             for (int j = 3; ; j += 4)
@@ -136,7 +140,7 @@ public readonly partial struct BigFloat
 
             // Ensure last bits are correct.
             // Optional since ExtraHiddenBits area not considered exact.
-            sum >>= 8; 
+            sum >>= 8;
 
             return new BigFloat(sum, 2 - (int)sum.GetBitLength() + ExtraHiddenBits, true);
         }
@@ -159,7 +163,9 @@ public readonly partial struct BigFloat
             int[] includedWholeNumbers = null)
         {
             if (minimumAccuracy < 2)
+            {
                 throw new ArgumentOutOfRangeException(nameof(minimumAccuracy), "The minimum accuracy should be at least a few bits.");
+            }
 
             List<BigFloat> bfList = [];
 
@@ -294,7 +300,7 @@ public readonly partial struct BigFloat
         /// <param name="minimumAccuracy">The minimum accuracy in bits that must be available via the class or external file.</param>
         public static void AddConstantToList(List<BigFloat> targetList, BigConstantInfo constantToAdd, int minimumAccuracy)
         {
-            bool success = constantToAdd.TryGetAsBigFloatUNTESTED(out BigFloat value, minimumAccuracy, true);
+            bool success = constantToAdd.TryGetAsBigFloat(out BigFloat value, minimumAccuracy, true);
             if (success)
             {
                 targetList.Add(value);
@@ -457,9 +463,10 @@ public readonly partial struct BigFloat
         public readonly int SizeInFile = sizeInFile;
 
         /// <summary>
-        /// Returns the number of decimal digits.  (e.g. 12.3 is 3)
+        /// Returns the number of decimal digits. 
+        /// e.g. 12.3 is 3
         /// </summary>
-        public int GetDecimalPrecisionUNTESTED()
+        public int GetDecimalPrecision()
         {
             int counter = 0;
 
@@ -481,65 +488,57 @@ public readonly partial struct BigFloat
         }
 
         /// <summary>
-        /// Gets the accuracy, or the number of digits after the decimal point. (i.e. 12.345 is 3)
+        /// Gets the accuracy, or the number of digits after the decimal point. 
+        /// e.g. 12.345 is 3
         /// </summary>
-        public int GetDecimalAccuracyUNTESTED()
+        public int GetDecimalAccuracy()
         {
             int len = ConstantAsString.Length;
             int locOfRadix = ConstantAsString.IndexOf('.');
 
-            // if no radix point is found then it means the number is an integer and precision is 0.
+            // if no radix point is found, it is an integer with an accuracy of 0.
             if (locOfRadix == -1)
             {
                 return 0;
             }
 
             // Get the length minus the location of radix point.
-            return len - locOfRadix - 1; 
+            return len - locOfRadix - 1;
         }
 
-        /// <summary> 
-        /// Gets the approximate binary accuracy or the number of binary digits after the radix point.  (i.e. 10.111 is 5)
-        /// </summary>
-        public int GetBinaryAccuracyUNTESTED()
-        {
-            //todo: make exact version
+        ///// <summary> 
+        ///// Gets the approximate binary accuracy or the number of binary digits after the radix point. 
+        ///// e.g. 10.111 is 5
+        ///// This method has slow performance.
+        ///// </summary>
+        //public int GetBinaryAccuracyUNTESTED() => BigFloat.Parse(ConstantAsString).GetAccuracy;
+        ////      =>  (int)(GetDecimalAccuracyUNTESTED() * 3.3219280948873623); // fast but approximate version
 
-            return (int)(GetDecimalAccuracyUNTESTED() * 3.3219280948873623);
-        }
+        ///// <summary>
+        ///// Gets the approximate accuracy or the number of decimal places available. 
+        ///// e.g. 11.1 is 1
+        ///// This method has slow performance.
+        ///// </summary>
+        //public int GetBinaryPrecisionUNTESTED() => BigFloat.Parse(ConstantAsString).GetPrecision;
+        ////      => (int)((trimmed.Length - 6) * 3.3219280948873623) + int.Log2(int.Parse(trimmed[..6])) + 2; // fast but approximate version
 
         /// <summary>
-        /// Gets the approximate accuracy or the number of decimal places available. (i.e. 11.1 is 1)
-        /// This method has slow performance and does not do any error checking.
-        /// </summary>
-        public int GetBinaryPrecisionUNTESTED()
-        {
-            //todo: make exact version
-            string trimmed = ConstantAsString.TrimStart('0').Replace(".","");
-
-            // The version below is faster but is approximate
-            int sizeOfFirstSix = int.Log2(int.Parse(trimmed[..6])) + 1;
-            int test1 = (int)((trimmed.Length - 6) * 3.3219280948873623) + sizeOfFirstSix;
-
-            int test2 = (int)BigInteger.Parse(trimmed).GetBitLength();
-            return test2;
-
-        }
-
-        /// <summary>
-        /// Returns a common constant as a BigFloat with the given accuracy.  
+        /// Returns a common constant as a BigFloat with the given accuracy. The accuracy bits will stop on the first 0 after the <param name="targetAccuracyInBits">.
+        /// e.g. 110.110110 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.11011
+        /// e.g. 110.110100 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.1101
+        /// e.g. 110.111000 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.1110
         /// </summary>
         /// <param name="value">The BigFloat to return.</param>
-        /// <param name="minimumAccuracyInBits">The minimum accuracy that should be allowed.</param>
+        /// <param name="targetAccuracyInBits">The target binary accuracy that should be fetched. The result will be this size or larger.</param>
         /// <param name="cutOnTrailingZero">Cuts off the accuracy just prior to a zero trailing bit. This ensures the result would be the same even if rounded.</param>
         /// <returns>Returns true if successful.</returns>
-        public bool TryGetAsBigFloatUNTESTED(out BigFloat value, int minimumAccuracyInBits, bool cutOnTrailingZero = true)
+        public bool TryGetAsBigFloat(out BigFloat value, int targetAccuracyInBits, bool cutOnTrailingZero = true)
         {
-            int availableBinAccuracy = GetBinaryAccuracyUNTESTED();
-            int requestedAccuracyInDecDigits = (int)((minimumAccuracyInBits + ExtraHiddenBits) / 3.3219280948873623);
+            int approximateBinaryAccuracy = (int)(GetDecimalAccuracy() * 3.3219280948873623);
+            int requestedAccuracyInDecDigits = (int)((targetAccuracyInBits + ExtraHiddenBits) / 3.3219280948873623);
             int decDigitsNeeded = requestedAccuracyInDecDigits + ConstantAsString.IndexOf('.');
 
-            if (availableBinAccuracy >= minimumAccuracyInBits)
+            if (approximateBinaryAccuracy >= targetAccuracyInBits)
             {
                 // if the size is met by the internal code then lets use that.
                 value = BigFloat.Parse(ConstantAsString[..decDigitsNeeded]);
@@ -554,7 +553,7 @@ public readonly partial struct BigFloat
                     Match m = Regex.Match(filesText, @"(?<=Number: )(\d+\.\d{" + requestedAccuracyInDecDigits + "})", RegexOptions.IgnoreCase);
                     if (m.Success)
                     {
-                         value = BigFloat.Parse(m.Value);
+                        value = BigFloat.Parse(m.Value);
                     }
                     else
                     {
@@ -571,7 +570,7 @@ public readonly partial struct BigFloat
                 }
             }
 
-            int overAccurateBy = -value.Scale - minimumAccuracyInBits;
+            int overAccurateBy = -value.Scale - targetAccuracyInBits;
             if (overAccurateBy < 0)
             {
                 value = default;
@@ -591,19 +590,20 @@ public readonly partial struct BigFloat
             // Lets first start with the requested accuracy and work to the right(more accurate) and stop at the first zero.
             for (int i = overAccurateBy; i >= 0; i--)
             {
-                if ((value._int >> (i-1)).IsEven)
+                if ((value.DataBits >> (i - 1)).IsEven)
                 {
+                    // no rounding needed since top removed bit is 0
                     value = ReducePrecision(value, i);
                     return true;
                 }
             }
-            
+
             // okay, we search to the end but did not find any zeros, lets search going forward instead.
             for (int i = overAccurateBy + 1; i < 32; i++)
             {
-                if ((value._int >> i).IsEven)
+                if ((value.DataBits >> i).IsEven)
                 {
-                    ReducePrecision(value, i);
+                    _ = ReducePrecision(value, i);
                     return true;
                 }
             }

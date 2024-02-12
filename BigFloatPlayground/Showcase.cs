@@ -4,7 +4,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/7/2024 this class was written by human hand. This will change soon.
+// As of the 2/12/2024 this class was written by human hand. This will change soon.
 
 using System;
 using System.Diagnostics;
@@ -14,32 +14,19 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using BigFloatLibrary;
-using static BigFloatLibrary.BigFloat;
 //using static BigFloatLibrary.BigFloat;
 
 
 #pragma warning disable IDE0051  // Ignore unused private members
 //#pragma warning disable CS0162 // Ignore unreachable code in playground
 
-namespace ShowCase;
+namespace ShowCase2;
 
 public static class Showcase
 {
+    //////////////  BigConstants Play Area & Examples //////////////
     public static void Main()
     {
-        BigInteger test = BigInteger.Parse(null);
-
-        //Console.WriteLine(int.Log2(3));
-        //Console.WriteLine(int.Log2(-3));
-        //Console.WriteLine(int.Log2(4));
-        //Console.WriteLine(int.Log2(-4));
-
-        Console.WriteLine($"{int.Log2(3)+1}");
-        //Console.WriteLine($"{int.Log2(-3)}");
-        Console.WriteLine($"{int.Log2(4)+1}");
-        //Console.WriteLine($"{int.Log2(-4)}");
-
-
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
         // Initialize BigFloat numbers
         BigFloat a = new("123456789.012345678901234"); // Initialize by String
@@ -52,23 +39,36 @@ public static class Showcase
         BigFloat quotient = a / b;
 
         // Display results
-        Console.WriteLine($"Sum: {sum}");
-        Console.WriteLine($"Difference: {difference}");
+        Console.WriteLine($"Sum: {sum}"); 
+        Console.WriteLine($"Difference: {difference}"); 
         Console.WriteLine($"Product: {product}");
         Console.WriteLine($"Quotient: {quotient}");
+        // Output: Sum: 123458023.5802358023581
+        // Output: Difference: 123455554.4444555554443
+        // Output: Product: 152415787532.38838
+        // Output: Quotient: 99999.99999999999
 
 
         //////////////////// Working with Mathematical Constants: ////////////////////
         // Access constants like Pi or E from BigConstants
-        BigConstants bigConstants = new(requestedAccuracy: 1000);
+        BigFloat.BigConstants bigConstants = new(
+            requestedAccuracyInBits: 1000,
+            onInsufficientBitsThenSetToZero: true,
+            cutOnTrailingZero: true);
         BigFloat pi = bigConstants.Pi;
         BigFloat e = bigConstants.E;
+
+        Console.WriteLine($"e to 1000 binary digits: {e.ToString()}");
+        // Output: e to 1000 binary digits: 2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525
+        //         166427427466391932003059921817413596629043572900334295260595630738132328627943490763233829880753195251019011573834187930
+        //         7021540891499348841675092447614606680822648001684774118537423454424371075390777449920696
 
         // Use Pi in a calculation (Area of a circle with r = 100)
         BigFloat radius = new("100.0000000000000000");
         BigFloat area = pi * radius * radius;
 
         Console.WriteLine($"Area of the circle: {area}");
+        // Output: Area of the circle: 31415.92653589793238
 
 
         //////////////////// Precision Manipulation: ////////////////////
@@ -77,10 +77,12 @@ public static class Showcase
         BigFloat morePreciseNumber = BigFloat.ExtendPrecision(preciseNumber, bitsToAdd: 50);
 
         Console.WriteLine($"Extend Precision result: {morePreciseNumber}");
-        
+        // Output: Extend Precision result: 123.45678901234567890122999999999787243
+
         // Initialize an integer with custom precision
         BigFloat c = BigFloat.IntWithAccuracy(10, 100);
         Console.WriteLine($"Int with specified accuracy: {c}");
+        // Output: Int with specified accuracy: 10.000000000000000000000000000000
 
         //////////////////// Comparing Numbers: ////////////////////
         // Initialize two BigFloat numbers
@@ -95,6 +97,8 @@ public static class Showcase
 
         Console.WriteLine($"Are the numbers equal? {areEqual}");
         Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
+        // Output: Are the numbers equal? False
+        // Output: Is the first number bigger? True
 
         // Initialize a BigFloat that would be equal
 
@@ -106,6 +110,9 @@ public static class Showcase
 
         Console.WriteLine($"Are the numbers equal? {areEqual}");
         Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
+        // Output: Are the numbers equal? True
+        // Output: Is the first number bigger? False
+
 
         //////////////////// Handling Very Large or Small Exponents: ////////////////////
         // Creating a very large number
@@ -116,31 +123,45 @@ public static class Showcase
 
         Console.WriteLine($"Large Number: {largeNumber}");
         Console.WriteLine($"Small Number: {smallNumber}");
-
-
-
+        // Output: Large Number: 0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // Output: Small Number: 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        //         000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        //         0000000000000000000000000000000000000000000000000000000000000000000000000001
 
         BigFloat num5 = new("12121212.1212"); //8589934593, 17179869185
         BigFloat num6 = new("1234");
         Console.WriteLine($"12121212.1212 * 1234 = 14957575757.5608");
         Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+        // Output: 12121212.1212 * 1234 = 14957575757.5608
+        // Output: 12121212.1212 * 1234 = 1496XXXXXXX
 
         num5 = new("12121212.1212"); //8589934593, 17179869185
         num6 = new("3");
+        BigFloat result = num5 * num6;
         Console.WriteLine($"12121212.1212 * 3 = 36363636.3636");
-        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+        Console.WriteLine($"{num5} * {num6} = {result}");
+        // Output: 12121212.1212 * 3 = 36363636.3636
+        // Output: 12121212.1212 * 3 = 0XXXXXXXX
 
 
         num5 = new("121212.1212"); //8589934593, 17179869185
         num6 = new("1234567");
         Console.WriteLine($"1212121212.1212 * 3 = 36363636.3636");
         Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
+        // Output: 1212121212.1212 * 3 = 36363636.3636
+        // Output: 121212.1212 * 1234567 = 149644XXXXXX
 
         Console.WriteLine($"GetPrecision: {num6.GetPrecision}");
+        // Output: GetPrecision: 21
 
 
 
-
+        ///////////////////////////////////////////////////
+        //////////////////// TEST AREA ////////////////////
+        ///////////////////////////////////////////////////
+        
         //BigConstant_Stuff();
         //BigConstant_Stuff2();
         //Pow_Stuff();
@@ -157,10 +178,9 @@ public static class Showcase
         //TryParse_Stuff();
         //Sqrt_Stuff();
         //CastingFromFloatAndDouble_Stuff();
-        NthRoot_DRAFT_Stuff();
+        //NthRoot_DRAFT_Stuff();
     }
 
-    //////////////  BigConstants Play Area & Examples //////////////
 
     private static void BigConstant_Stuff() //added to test
     {
@@ -186,7 +206,7 @@ public static class Showcase
             BigFloat bf1000 = bigFloats1000[i];
             BigFloat bf2000 = bigFloats2000[i];
             if (bf1000 != bf2000)
-                Console.WriteLine(bf2000-bf1000);
+                Console.WriteLine(bf2000 - bf1000);
         }
     }
 
@@ -195,7 +215,7 @@ public static class Showcase
     //////////////  NthRoot Play Area & Examples //////////////
     private static void NthRoot_DRAFT_Stuff()
     {
-        Console.WriteLine($"Ans: val^(1/3) -> 26260231.868889058659811670527341)"); Console.WriteLine($"  Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("77777777777777777777777777777777")>>32, 3)}");
+        Console.WriteLine($"Ans: val^(1/3) -> 26260231.868889058659811670527341)"); Console.WriteLine($"  Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("77777777777777777777777777777777") >> 32, 3)}");
         Console.WriteLine($"Ans: val^(1/3) -> 42685972166.249808508213684454450)"); Console.WriteLine($"  Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("77777777777777777777777777777777"), 3)}");
         Console.WriteLine($"Ans: val^(1/2) -> 8944271909999158.7856366946749251)"); Console.WriteLine($"  Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 2)}");
         Console.WriteLine($"Ans: val^(1/3) -> 43088693800.637674435185871330387)"); Console.WriteLine($"  Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 3)}");
@@ -317,10 +337,10 @@ public static class Showcase
 
         result = BigFloat.NthRoot_INCOMPLETE_DRAFT8(new BigFloat((BigInteger)3 << 200, -200), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
-        
-        timer.Stop(); 
+
+        timer.Stop();
         timer.Reset();
-        
+
         for (int i = 2; i >= 0; i--)
             for (int m = 7; m < 300; m *= 31)
                 for (int e = 5; e < 10; e++)
@@ -655,7 +675,7 @@ public static class Showcase
             {
                 BigFloat res = BigFloat.Pow(val, exp);
                 double correct = Math.Pow((double)val, exp);
-                Console.WriteLine($"{val,3}^{exp,2} = {res, 8} ({res.Int, 4} << {res.Scale, 2})  Correct: {correct,8}");
+                Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.Int,4} << {res.Scale,2})  Correct: {correct,8}");
             }
     }
 
@@ -689,7 +709,7 @@ public static class Showcase
         //10000000_
         new BigFloat("1.0000000e+8").DebugPrint(); //100000000
         new BigFloat("10000000e1").DebugPrint();   //10000000000
-        
+
         Console.WriteLine(new BigFloat("10000e4").ToStringHexScientific());
 
         new BigFloat("1.0000000e+8").DebugPrint();
@@ -967,7 +987,7 @@ public static class Showcase
             }
         }
     }
-    
+
     [DebuggerHidden]
     private static void IsFalse(bool val, string msg = null)
     {

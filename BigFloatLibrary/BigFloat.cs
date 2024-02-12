@@ -4,14 +4,13 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/7/2024 this class was written by human hand. This will change soon.
+// As of the 2/12/2024 this class was written by human hand. This will change soon.
 
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
-using System.Reflection;
 using System.Text;
 
 namespace BigFloatLibrary;
@@ -32,14 +31,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
     /// These bits helps guard against some nuisances such as "7" * "9" being 60. 
-    /// ExtraHiddenBits have a light performance processing and storing these 32 additional bits.
     /// </summary>
     public const int ExtraHiddenBits = 32;  // 0-62, must be even (for sqrt)
 
     /// <summary>
-    /// The stored BigInteger data with ExtraHiddenBits. This with the applied scaling make up the number.
+    /// Gets the full integer with the hidden bits.
     /// </summary>
-    private readonly BigInteger _int;
+    public readonly BigInteger DataBits { get; }
 
     /// <summary>
     /// _size are the number of precision bits. It is equal to "ABS(_int).GetBitLength()". The ABS is for 
@@ -138,26 +136,21 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Rounds and returns -1 if negative, 0 if zero, and +1 if positive. Only the top bit in ExtraHiddenBits and top out-of-precision hidden bit are included.
     /// </summary>
-    public int Sign => (_size >= ExtraHiddenBits-1) ? _int.Sign : 0;
+    public int Sign => (_size >= ExtraHiddenBits - 1) ? DataBits.Sign : 0;
 
     /// <summary>
     /// Gets the integer part of the BigFloat. No scaling is applied. ExtraHiddenBits are rounded and removed.
     /// </summary>
-    public readonly BigInteger Int => DataIntValueWithRound(_int);
-
-    /// <summary>
-    /// Gets the full integer with the hidden bits.
-    /// </summary>
-    public readonly BigInteger IntWithHiddenBits => _int;
+    public readonly BigInteger Int => DataIntValueWithRound(DataBits);
 
     public string DebuggerDisplay
     {
         get
         {
-            string bottom8HexChars = (BigInteger.Abs(_int) & ((BigInteger.One << ExtraHiddenBits) - 1)).ToString("X8").PadLeft(8)[^8..];
+            string bottom8HexChars = (BigInteger.Abs(DataBits) & ((BigInteger.One << ExtraHiddenBits) - 1)).ToString("X8").PadLeft(8)[^8..];
             StringBuilder sb = new(32);
             _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
-            _ = sb.Append($"{(_int.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(_int) >> ExtraHiddenBits:X}:{bottom8HexChars}"); // hex part
+            _ = sb.Append($"{(DataBits.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(DataBits) >> ExtraHiddenBits:X}:{bottom8HexChars}"); // hex part
             _ = sb.Append($"[{Size}+{ExtraHiddenBits}={_size}], {((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}");
 
             return sb.ToString();
@@ -181,14 +174,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //Console.WriteLine($"  Int|hex: {_int >> ExtraHiddenBits:X}:{(_int & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
         Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
         Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
-        Console.WriteLine($"    |Dec : {_int >> ExtraHiddenBits}{((double)(_int & (((ulong)1 << ExtraHiddenBits) - 1)) / ((ulong)1 << ExtraHiddenBits)).ToString()[1..]} {shift}");
-        Console.WriteLine($"    |Dec : {_int >> ExtraHiddenBits}:{_int & (((ulong)1 << ExtraHiddenBits) - 1)} {shift}");  // decimal part (e.g. .75)
-        if (_int < 0)
+        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}{((double)(DataBits & (((ulong)1 << ExtraHiddenBits) - 1)) / ((ulong)1 << ExtraHiddenBits)).ToString()[1..]} {shift}");
+        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}:{DataBits & (((ulong)1 << ExtraHiddenBits) - 1)} {shift}");  // decimal part (e.g. .75)
+        if (DataBits < 0)
         {
-            Console.WriteLine($"   or -{-_int >> ExtraHiddenBits:X4}:{(-_int & (((ulong)1 << ExtraHiddenBits) - 1)).ToString("X8")[^8..]}");
+            Console.WriteLine($"   or -{-DataBits >> ExtraHiddenBits:X4}:{(-DataBits & (((ulong)1 << ExtraHiddenBits) - 1)).ToString("X8")[^8..]}");
         }
 
-        Console.WriteLine($"    |_int: {_int}");
+        Console.WriteLine($"    |_int: {DataBits}");
         Console.WriteLine($"   Scale : {Scale}");
         Console.WriteLine();
     }
@@ -246,9 +239,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public static BigFloat IntWithAccuracy(int intVal, int precisionInBits)
     {
         int size = int.Log2(int.Abs(intVal)) + 1 + ExtraHiddenBits;
-        if (precisionInBits < -size)
-            return ZeroWithNoPrecision;
-        return new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
+        return precisionInBits < -size
+            ? ZeroWithNoPrecision
+            : new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
     }
 
     public static BigFloat NegativeOne => new(-BigInteger.One << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
@@ -262,7 +255,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <param name="rawValueSize">The size of rawValue. </param>
     private BigFloat(BigInteger rawValue, int scale, int rawValueSize)
     {
-        _int = rawValue;
+        DataBits = rawValue;
         Scale = scale;
         _size = rawValueSize;
 
@@ -279,8 +272,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
         // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
-        _int = integerPart << applyHiddenBits;
-        _size = (int)BigInteger.Abs(_int).GetBitLength();
+        DataBits = integerPart << applyHiddenBits;
+        _size = (int)BigInteger.Abs(DataBits).GetBitLength();
         Scale = scale; // _int of zero can have scale
 
         AssertValid();
@@ -288,7 +281,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(char integerPart, int scale = 0)
     {
-        _int = (BigInteger)integerPart << ExtraHiddenBits;
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
         Scale = scale;
 
         // Special handing required for int.MinValue
@@ -303,7 +296,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(byte integerPart, int scale = 0)
     {
-        _int = (BigInteger)integerPart << ExtraHiddenBits;
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
         Scale = scale;
         _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits;
         AssertValid();
@@ -313,7 +306,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(uint value, int scale = 0)
     {
-        _int = (BigInteger)value << ExtraHiddenBits;
+        DataBits = (BigInteger)value << ExtraHiddenBits;
         Scale = scale;
         _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
         AssertValid();
@@ -321,7 +314,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(long value, int scale = 0)
     {
-        _int = (BigInteger)value << ExtraHiddenBits;
+        DataBits = (BigInteger)value << ExtraHiddenBits;
         Scale = scale;
         _size = value switch
         {
@@ -334,7 +327,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(ulong value, int scale = 0)
     {
-        _int = (BigInteger)value << ExtraHiddenBits;
+        DataBits = (BigInteger)value << ExtraHiddenBits;
         Scale = scale;
         _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
         AssertValid();
@@ -342,7 +335,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(Int128 integerPart, int scale = 0)
     {
-        _int = (BigInteger)integerPart << ExtraHiddenBits;
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
         Scale = scale;
 
         _size = integerPart > Int128.Zero
@@ -354,7 +347,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     public BigFloat(Int128 integerPart, int scale, bool valueIncludesHiddenBits)
     {
-        _int = (BigInteger)integerPart << ExtraHiddenBits;
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
         Scale = scale;
 
         _size = integerPart > Int128.Zero
@@ -366,7 +359,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
         // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
         _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
-        _int = integerPart << applyHiddenBits;
+        DataBits = integerPart << applyHiddenBits;
         Scale = scale; // _int of zero can have scale
         AssertValid();
     }
@@ -399,7 +392,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             {
                 mantissa = -mantissa;
             }
-            _int = new BigInteger(mantissa) << ExtraHiddenBits;
+            DataBits = new BigInteger(mantissa) << ExtraHiddenBits;
             Scale = exp - 1023 - 52 + additionalScale;
             _size = 53 + ExtraHiddenBits; //_size = BitOperations.Log2((ulong)Int);
         }
@@ -410,7 +403,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
             if (mantissa == 0)
             {
-                _int = 0;
+                DataBits = 0;
                 Scale = additionalScale;
                 _size = 0;
             }
@@ -421,7 +414,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 {
                     mantissa = -mantissa;
                 }
-                _int = (new BigInteger(mantissa)) << (ExtraHiddenBits);
+                DataBits = (new BigInteger(mantissa)) << (ExtraHiddenBits);
                 Scale = -1023 - 52 + 1 + additionalScale;
                 _size = size + ExtraHiddenBits;
             }
@@ -459,7 +452,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             {
                 mantissa = -mantissa;
             }
-            _int = new BigInteger(mantissa) << ExtraHiddenBits;
+            DataBits = new BigInteger(mantissa) << ExtraHiddenBits;
             Scale = exp - 127 - 23 + additionalScale;
             _size = 24 + ExtraHiddenBits;
         }
@@ -467,14 +460,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             if (mantissa == 0)
             {
-                _int = 0;
+                DataBits = 0;
                 Scale = additionalScale;
                 _size = 0; //24 + ExtraHiddenBits;
             }
             else
             {
                 BigInteger mant = new(value >= 0 ? mantissa : -mantissa);
-                _int = mant << ExtraHiddenBits;
+                DataBits = mant << ExtraHiddenBits;
                 Scale = -126 - 23 + additionalScale; //hack: 23 is a guess
                 _size = 32 - BitOperations.LeadingZeroCount((uint)mantissa) + ExtraHiddenBits;
             }
@@ -532,13 +525,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     /// <param name="val">The BigFloat that should be converted to a string.</param>
     /// <param name="includeOutOfPrecisionBits">Include out-of-precision bits in result. This will include additional decimal places.</param>
-    [DebuggerHidden()]
+    //[DebuggerHidden()]
     public static string ToStringDecimal(BigFloat val, bool includeOutOfPrecisionBits = false)
     {
-        BigInteger intVal = val._int;
+        BigInteger intVal = val.DataBits;
         int scale = val.Scale;
         int valSize = val._size;
-        
+
         if (scale < 0)// Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
         {
             if (includeOutOfPrecisionBits)
@@ -614,20 +607,18 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 return new string(chars);
             }
         }
-        else  //  XXXXX or XXX0000  (The numbers with no decimal precision.)
+        else  // XXXXX or 7XXXXX  (The numbers with no decimal precision.) (scale >= 0)
         {
             if (includeOutOfPrecisionBits)
             {
                 // returns integer WITHOUT hidden bits masked.
-                return RightShiftWithRound(intVal, ExtraHiddenBits - scale).ToString(); 
+                return RightShiftWithRound(intVal, ExtraHiddenBits - scale).ToString();
             }
 
-            //int maskSize = (int)Math.Round((scale + 1.661) / 3.32192809488736235);
-            int maskSize = (int)Math.Round((scale + 1.66) / 3.32192809488736235);
-            //int maskSize = (int)Math.Round((scale + 1) / 3.32192809488736235);
-            //int maskSize = (int)(scale / 3.32192809488736235) + 1;
-            
-            BigInteger power5 = intVal / BigInteger.Pow(5, maskSize);
+            //int maskSize = (int)((scale + 2.86313809) / 3.32192809488736235); // this number was test for a large range of floats
+            int maskSize = (int)((scale + 3.18507) / 3.32192809488736235); // this number was test for a large range of floats
+
+            BigInteger power5 = (intVal) / BigInteger.Pow(5, maskSize);
             BigInteger power5Scaled = RightShiftWithRound(power5, maskSize + ExtraHiddenBits - scale); // Applies the scale to the number and rounds from bottom bit
             //Console.WriteLine(power5Scaled.ToString() + new string('X', maskSize));
             return power5Scaled.ToString() + new string('X', maskSize);
@@ -642,7 +633,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public string ToString(string format)
     {
         if (string.IsNullOrEmpty(format))
-        { 
+        {
             return ToString();
         }
 
@@ -656,14 +647,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (Scale >= 0)
             {
                 //return (newInt >> Scale).ToString("X");
-                return (_int >> (ExtraHiddenBits - Scale)).ToString("X"); // This version includes hidden bits in result
+                return (DataBits >> (ExtraHiddenBits - Scale)).ToString("X"); // This version includes hidden bits in result
             }
 
             // We have to align the INT to the nearest 4 bits for hex. We also want to remove the ExtraHiddenBits.
             // The number of bits between the radix point and the end should be divisible by 4. We will dig into the ExtraHiddenBits for this.
             int rightShift = (ExtraHiddenBits - Scale) & 0x03;
 
-            BigInteger shiftedBigIntForDisplay = RightShiftWithRound(_int, rightShift);
+            BigInteger shiftedBigIntForDisplay = RightShiftWithRound(DataBits, rightShift);
 
             return shiftedBigIntForDisplay.ToString("X").Insert((-Scale / 4) - 1, ".");
         }
@@ -673,7 +664,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // Setup destination and allocate memory
             Span<char> dstBytes = stackalloc char[_size - ExtraHiddenBits
                 + Math.Max(Math.Max(Scale, -(_size - ExtraHiddenBits) - Scale), 0) // total number of out-of-precision zeros in the output.
-                + (_int.Sign < 0 ? 1 : 0)   // add one if a leading '-' sign (-0.1)
+                + (DataBits.Sign < 0 ? 1 : 0)   // add one if a leading '-' sign (-0.1)
                 + (Scale < 0 ? 1 : 0)       // add one if it has a point like (1.1)
                 + (Exponent <= 0 ? 1 : 0)];  // add one if <1 for leading Zero (0.1) 
             int dstIndex = 0;
@@ -684,14 +675,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             //   Type '0.123' - all numbers are to the right of the radix point. (has leading 0.or - 0.)
 
             // Pre-append the leading sign.
-            if (_int.Sign < 0)
+            if (DataBits.Sign < 0)
             {
                 dstBytes[dstIndex] = '-';
                 dstIndex++;
             }
 
             // Setup source bits to read.
-            ReadOnlySpan<byte> srcBytes = DataIntValueWithRound(BigInteger.Abs(_int)).ToByteArray();
+            ReadOnlySpan<byte> srcBytes = DataIntValueWithRound(BigInteger.Abs(DataBits)).ToByteArray();
             int leadingZeroCount = BitOperations.LeadingZeroCount(srcBytes[^1]) - 24;
 
             if (Exponent <= 0)  // For binary numbers less then one. (e.g. 0.001101)
@@ -763,8 +754,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         StringBuilder sb = new();
 
-        BigInteger intVal = _int;
-        if (!showInTwosComplement && _int.Sign < 0)
+        BigInteger intVal = DataBits;
+        if (!showInTwosComplement && DataBits.Sign < 0)
         {
             _ = sb.Append('-');
             intVal = -intVal;
@@ -882,25 +873,30 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public string GetMostSignificantBits(int numberOfBits)
     {
-        BigInteger abs = BigInteger.Abs(_int);
+        BigInteger abs = BigInteger.Abs(DataBits);
         int shiftAmount = _size - numberOfBits;
-        if (shiftAmount >= 0)
-            return BigIntegerToBinaryString(abs >> shiftAmount);
-        else
-            return BigIntegerToBinaryString(abs) + new string('_', -shiftAmount);
+        return shiftAmount >= 0
+            ? BigIntegerToBinaryString(abs >> shiftAmount)
+            : BigIntegerToBinaryString(abs) + new string('_', -shiftAmount);
     }
 
     /// <summary>
     /// Returns the value's bits, including hidden bits, as a string. 
     /// Negative values will have a leading '-' sign.
     /// </summary>
-    public string GetAllBitsAsString(bool twosComplement = false) => BigIntegerToBinaryString(_int, twosComplement);
+    public string GetAllBitsAsString(bool twosComplement = false)
+    {
+        return BigIntegerToBinaryString(DataBits, twosComplement);
+    }
 
     /// <summary>
     /// Returns the value's bits as a string. 
     /// Negative values will have a leading '-' sign.
     /// </summary>
-    public string GetBitsAsString() => BigIntegerToBinaryString(Int);
+    public string GetBitsAsString()
+    {
+        return BigIntegerToBinaryString(Int);
+    }
 
 
     /////////////////////////// [END] TO_STRING FUNCTIONS [END] ////////////////////////////////
@@ -1043,8 +1039,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return true;
         }
 
-        //Enable either ROUND or EXTRABIT with a 1
-        const int ROUND = 0;    // Set to 1 to enable round to nearest. (An extra bit added and if it is a 1 it will round up. (e.g. 0.1011 => 0.110)
+        // Set ROUND to 1 to enable round to nearest.
+        // When 1, an extra LSBit is kept and if 1 it will round up. (e.g. 0.1011 => 0.110)
+        const int ROUND = 1;
         BigInteger intPart;
 
         int radixDepth = numericString.Length - radixLoc - exp;
@@ -1052,18 +1049,18 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             result = new BigFloat(asInt, scale);
         }
-        else if (radixDepth >= 0)
+        else if (radixDepth >= 0) //111.111 OR 0.000111
         {
             BigInteger a = BigInteger.Pow(5, radixDepth);
             int multBitLength = (int)a.GetBitLength();
-            multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;  // Round up if closer to larger size 
+            multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND;  // added  "-1" because it was adding one to many digits 
                                                                          // we have to make asInt larger by size of "a" before we divide it by "a"
             intPart = (((asInt << shiftAmt) / a) + ROUND) >> ROUND;
             scale += -multBitLength + 1 - radixDepth;
             result = new BigFloat(intPart, scale, true);
         }
-        else
+        else // 100010XX
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
             int multBitLength = (int)a.GetBitLength();
@@ -1290,12 +1287,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return 0;
         }
 
-        if (!TryParseBinary(input.AsSpan(), out BigFloat result, scale, forceSign, includesHiddenBits))
-        {
-            throw new Exception("Unable to convert the binary string to a BigFloat.");
-        }
-
-        return result;
+        return !TryParseBinary(input.AsSpan(), out BigFloat result, scale, forceSign, includesHiddenBits)
+            ? throw new Exception("Unable to convert the binary string to a BigFloat.")
+            : result;
     }
 
     /// <summary>
@@ -1453,7 +1447,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         BigInteger bi = new(bytes, !isNeg);
 
-        result = new BigFloat(bi << (ExtraHiddenBits- includedHiddenBits), (radixPointFound ? scale + includedHiddenBits : orgScale), true);
+        result = new BigFloat(bi << (ExtraHiddenBits - includedHiddenBits), radixPointFound ? scale + includedHiddenBits : orgScale, true);
 
         result.AssertValid();
 
@@ -1487,7 +1481,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // if starting with - or + then headPosition should be 1.
         int headPosition = isNeg | input[0] == '+' ? 1 : 0;
 
-        int periodLoc = input.LastIndexOf('.'); 
+        int periodLoc = input.LastIndexOf('.');
         int tailPosition = (periodLoc < 0 ? inputLen : periodLoc) - 1;
         for (; tailPosition >= headPosition; tailPosition--)
         {
@@ -1532,7 +1526,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         result = new(bytes, !isNeg);
-        
+
         // return true if success, if no 0/1 bits found then return false.
         return outputBitPosition != 0;
     }
@@ -1577,25 +1571,25 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         if (OutOfPrecision)
         {
-            return other.OutOfPrecision ? 0 : -other._int.Sign;
+            return other.OutOfPrecision ? 0 : -other.DataBits.Sign;
         }
 
         if (other.OutOfPrecision)
         {
-            return OutOfPrecision ? 0 : _int.Sign;
+            return OutOfPrecision ? 0 : DataBits.Sign;
         }
 
         // Lets see if we can escape early by just looking at the Exponent.
-        if (_int.Sign != other._int.Sign)
+        if (DataBits.Sign != other.DataBits.Sign)
         {
-            return _int.Sign;
+            return DataBits.Sign;
         }
 
         // Lets see if we can escape early by just looking at the Exponent.
         int expDifference = Exponent - other.Exponent;
         if (Math.Abs(expDifference) > 1)
         {
-            return Exponent.CompareTo(other.Exponent) * _int.Sign;
+            return Exponent.CompareTo(other.Exponent) * DataBits.Sign;
         }
 
         //        At this point, the sign is the same, and the exp are within 1 bit of each other.
@@ -1608,7 +1602,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //If "this" is larger by one bit AND "this" is not in the format 10000000..., THEN "this" must be larger(or smaller if neg)
         if (expDifference == 1 && !IsOneBitFollowedByZeroBits)
         {
-            return _int.Sign;
+            return DataBits.Sign;
         }
         // If "other" is larger by one bit AND "other" is not in the format 10000000..., THEN "other" must be larger(or smaller if neg)
         if (expDifference == -1 && !other.IsOneBitFollowedByZeroBits)
@@ -1619,29 +1613,29 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             int sizeDiff = _size - other._size;
 
-            BigInteger temp = (_int.Sign >= 0) switch
+            BigInteger temp = (DataBits.Sign >= 0) switch
             {
                 true => sizeDiff switch  // Both positive values
                 {
-                    > 0 => -(other._int - (_int >> (sizeDiff - expDifference))),
-                    < 0 => -((other._int << (sizeDiff - expDifference)) - _int),
+                    > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),
+                    < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
                     _ => expDifference switch
                     {
-                        0 => _int - other._int,
-                        1 => _int - (other._int >> 1),
-                        _/*-1*/ => (_int >> 1) - other._int,
+                        0 => DataBits - other.DataBits,
+                        1 => DataBits - (other.DataBits >> 1),
+                        _/*-1*/ => (DataBits >> 1) - other.DataBits,
                     }
                 },
 
                 false => sizeDiff switch // Both negative values
                 {
-                    > 0 => -(other._int - (_int >> (sizeDiff - expDifference))),
-                    < 0 => -((other._int << (sizeDiff - expDifference)) - _int),
+                    > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),
+                    < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
                     _/*0*/ => expDifference switch
                     {
-                        0 => _int - other._int,
-                        1 => _int - (other._int >> 1),
-                        _/*-1*/ => (_int >> 1) - other._int,
+                        0 => DataBits - other.DataBits,
+                        1 => DataBits - (other.DataBits >> 1),
+                        _/*-1*/ => (DataBits >> 1) - other.DataBits,
                     }
                 }
             };
@@ -1649,7 +1643,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // a quick exit
             int bytes = temp.GetByteCount();
             if (bytes != 4)
-                return (bytes > 4)?temp.Sign : 0;
+            {
+                return (bytes > 4) ? temp.Sign : 0;
+            }
 
             // since we are subtracting, we can run into an issue where a 0:100000 should be considered a match.  e.g. 11:000 == 10:100
             temp -= temp.Sign; //decrements towards 0
@@ -1673,8 +1669,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int CompareToExact(BigFloat other)
     {
-        int thisPos = _int.Sign;
-        int otherPos = other._int.Sign;
+        int thisPos = DataBits.Sign;
+        int otherPos = other.DataBits.Sign;
 
         // Let's first make sure the signs are the same, if not, the positive input is greater.
         if (thisPos != otherPos)
@@ -1702,19 +1698,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // If we made it here we know that both items have the same exponent 
         if (_size == other._size)
         {
-            return _int.CompareTo(other._int);
+            return DataBits.CompareTo(other.DataBits);
         }
 
         if (_size > other._size)
         {
             // We must grow the smaller - in this case THIS
-            BigInteger adjustedVal = _int << (other._size - _size);
-            return adjustedVal.CompareTo(other._int) * thisPos;
+            BigInteger adjustedVal = DataBits << (other._size - _size);
+            return adjustedVal.CompareTo(other.DataBits) * thisPos;
         }
 
         // at this point _size < other._size - we must grow the smaller - in this case OTHER
-        BigInteger adjustedOther = other._int << (_size - other._size);
-        return _int.CompareTo(adjustedOther) * thisPos;
+        BigInteger adjustedOther = other.DataBits << (_size - other._size);
+        return DataBits.CompareTo(adjustedOther) * thisPos;
     }
 
     /// <summary>  
@@ -1738,7 +1734,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         if (leastSignificantBitsToIgnore < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(leastSignificantBitsToIgnore), 
+            throw new ArgumentOutOfRangeException(nameof(leastSignificantBitsToIgnore),
                 $"Param cannot be less then -ExtraHiddenBits({-ExtraHiddenBits}).");
         }
 
@@ -1746,9 +1742,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         BigInteger temp = scaleDiff switch
         {
-            > 0 => (a._int >> scaleDiff) - b._int,  // 'a' has more accuracy
-            < 0 => a._int - (b._int >> -scaleDiff), // 'b' has more accuracy
-            _ => a._int - b._int
+            > 0 => (a.DataBits >> scaleDiff) - b.DataBits,  // 'a' has more accuracy
+            < 0 => a.DataBits - (b.DataBits >> -scaleDiff), // 'b' has more accuracy
+            _ => a.DataBits - b.DataBits
         };
 
 
@@ -1780,7 +1776,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int CompareTo(BigInteger bigInteger)
     {
-        int thisSign = _int.Sign;
+        int thisSign = DataBits.Sign;
         int otherSign = bigInteger.Sign;
 
         // A fast sign check.
@@ -1813,7 +1809,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //};
 
         // Option B:
-        return RightShiftWithRound(_int,-Scale + ExtraHiddenBits).CompareTo(bigInteger);
+        return RightShiftWithRound(DataBits, -Scale + ExtraHiddenBits).CompareTo(bigInteger);
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -1843,7 +1839,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
 
             BigInteger mask = ((BigInteger.One << (endMask - begMask)) - 1) << begMask;
-            BigInteger maskApplied = _int & mask;
+            BigInteger maskApplied = DataBits & mask;
             int bitsSet = (int)BigInteger.PopCount(maskApplied);
             return (bitsSet == 0) || (bitsSet == endMask - begMask);
         }
@@ -1852,21 +1848,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Tests to see if the number is in the format of "10000000..." after rounding.
     /// </summary>
-    public bool IsOneBitFollowedByZeroBits
-    {
-        get
-        {
-            return BigInteger.TrailingZeroCount(_int >> (ExtraHiddenBits - 1)) == (_size - ExtraHiddenBits);
-        }
-    }
+    public bool IsOneBitFollowedByZeroBits => BigInteger.TrailingZeroCount(DataBits >> (ExtraHiddenBits - 1)) == (_size - ExtraHiddenBits);
 
     public ulong Lowest64BitsWithHiddenBits
     {
         get
         {
-            ulong raw = (ulong)(_int & ulong.MaxValue);
+            ulong raw = (ulong)(DataBits & ulong.MaxValue);
 
-            if (_int.Sign < 0)
+            if (DataBits.Sign < 0)
             {
                 raw = ~raw + (ulong)(((_size >> 64) > 0) ? 1 : 0);
             }
@@ -1878,20 +1868,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         get
         {
-            if (_int.Sign >= 0)
+            if (DataBits.Sign >= 0)
             {
-                ulong raw = (ulong)((_int >> ExtraHiddenBits) & ulong.MaxValue);
+                ulong raw = (ulong)((DataBits >> ExtraHiddenBits) & ulong.MaxValue);
                 return raw;
             }
             else if (_size >= ExtraHiddenBits)
             {
-                return ~(ulong)(((_int - 1) >> ExtraHiddenBits) & ulong.MaxValue);
+                return ~(ulong)(((DataBits - 1) >> ExtraHiddenBits) & ulong.MaxValue);
                 //return (ulong)((BigInteger.Abs(_int) >> ExtraHiddenBits) & ulong.MaxValue); //perf: benchmark
 
             }
             else
             {
-                ulong raw = (ulong)((_int >> ExtraHiddenBits) & ulong.MaxValue);
+                ulong raw = (ulong)((DataBits >> ExtraHiddenBits) & ulong.MaxValue);
                 //raw--;
                 raw = ~raw;
                 return raw;
@@ -1902,12 +1892,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Returns the 64 most significant data bits. If the number is negative the sign is ignored. If the size is smaller then 64 bits, then the LSBs are padded with zeros.
     /// </summary>
-    public ulong Highest64Bits => (ulong)((BigInteger.IsPositive(_int) ? _int : -_int) >> (_size - 64));
+    public ulong Highest64Bits => (ulong)((BigInteger.IsPositive(DataBits) ? DataBits : -DataBits) >> (_size - 64));
 
     /// <summary>
     /// Returns the 128 most significant data bits. If the number is negative the sign is ignored. If the size is smaller then 128 bits, then the LSBs are padded with zeros.
     /// </summary>
-    public UInt128 Highest128Bits => (UInt128)((BigInteger.IsPositive(_int) ? _int : -_int) >> (_size - 128));
+    public UInt128 Highest128Bits => (UInt128)((BigInteger.IsPositive(DataBits) ? DataBits : -DataBits) >> (_size - 128));
 
     /// <summary>
     /// Rounds to the next integer towards negative infinity. Any fractional bits are removed, negative scales are set
@@ -1932,24 +1922,24 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //   Example: Scale = -11, int=45, size=6+32=38  -> bitsToClear=32+11   -.00000 101101[10101010010...00010]
         if (bitsToClear >= _size)
         {
-            return _int.Sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(-BigInteger.One << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
+            return DataBits.Sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(-BigInteger.One << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
         }
 
-        if (_int.Sign > 0)
+        if (DataBits.Sign > 0)
         {
             // If Positive and Floor, the size should always remain the same.
             // If Scale is between 0 and ExtraHiddenBits..
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
             if (Scale >= 0) // SCALE >= 0 and SCALE < ExtraHiddenBits
             {
-                return new BigFloat((_int >> bitsToClear) << bitsToClear, Scale, _size);
+                return new BigFloat((DataBits >> bitsToClear) << bitsToClear, Scale, _size);
             }
 
             // If Scale is between -size and 0..
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  10.1101[10101010010...00010]  -> 10.[00000000000...00000]
             //BigInteger intPart = ((_int >> bitsToClear) + 1) << ExtraHiddenBits;
             //return new BigFloat((_int >> bitsToClear) +  (IsInteger?0:1));
-            return new BigFloat(_int >> bitsToClear);
+            return new BigFloat(DataBits >> bitsToClear);
         }
         else  // if (_int.Sign <= 0)
         {
@@ -1965,8 +1955,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
             if (Scale >= 0) // SCALE >= 0 and SCALE < ExtraHiddenBits
             {
-                bool roundsUp = (_int & ((1 << bitsToClear) - 1)) > 0;
-                BigInteger intPart = _int >> bitsToClear << bitsToClear;
+                bool roundsUp = (DataBits & ((1 << bitsToClear) - 1)) > 0;
+                BigInteger intPart = DataBits >> bitsToClear << bitsToClear;
                 int newSize = _size;
 
                 if (roundsUp)
@@ -1982,7 +1972,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  -11.1101[10101010010...00010]  -> -100.[00000000000...00000]
             else //if (Scale < 0)
             {
-                return new BigFloat(_int >> bitsToClear);
+                return new BigFloat(DataBits >> bitsToClear);
             }
         }
     }
@@ -2010,7 +2000,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //   Example: Scale = -11, int=45, size=6+32=38  -> bitsToClear=32+11   -.00000 101101[10101010010...00010]
         if (bitsToClear >= _size)
         {
-            return _int.Sign <= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
+            return DataBits.Sign <= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
         }
 
         // Radix point is in the ExtraHiddenBits area
@@ -2020,7 +2010,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // optimization here?
         }
 
-        if (_int.Sign > 0)
+        if (DataBits.Sign > 0)
         {
             //   If Positive and Ceiling, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
             // Lets just remove the bits and clear ExtraHiddenBits
@@ -2030,8 +2020,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (Scale >= 0) // Scale is between 0 and ExtraHiddenBits
             {
                 //  Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-                bool roundsUp = (_int & ((1 << bitsToClear) - 1)) > 0;
-                BigInteger intPart = _int >> bitsToClear << bitsToClear;
+                bool roundsUp = (DataBits & ((1 << bitsToClear) - 1)) > 0;
+                BigInteger intPart = DataBits >> bitsToClear << bitsToClear;
                 int newSize = _size;
 
                 if (roundsUp)
@@ -2047,9 +2037,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             else //if (Scale < 0)
             {
                 // round up if any bits set between (ExtraHiddenBits/2) and (ExtraHiddenBits-Scale) 
-                bool roundsUp = (_int & ((((BigInteger)1 << ((ExtraHiddenBits / 2) - Scale)) - 1) << (ExtraHiddenBits / 2))) > 0;
+                bool roundsUp = (DataBits & ((((BigInteger)1 << ((ExtraHiddenBits / 2) - Scale)) - 1) << (ExtraHiddenBits / 2))) > 0;
 
-                BigInteger intPart = _int >> bitsToClear << ExtraHiddenBits;
+                BigInteger intPart = DataBits >> bitsToClear << ExtraHiddenBits;
 
                 if (roundsUp)
                 {
@@ -2068,9 +2058,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
             if (Scale >= 0)
             {
-                return new BigFloat((_int >> bitsToClear) << bitsToClear, Scale, _size);
+                return new BigFloat((DataBits >> bitsToClear) << bitsToClear, Scale, _size);
             }
-            BigInteger intPart = _int >> bitsToClear;
+            BigInteger intPart = DataBits >> bitsToClear;
 
             if (!IsInteger)
             {
@@ -2107,7 +2097,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //    11111111/100000000 that would have difference b1     so 7 matching bits   
         //    11110000/100000000 that would have difference b10000 so 3 matching bits   
         //   -11110000/100000000 that would have difference b10000 so 0 matching bits
-        
+
         int maxSize = Math.Max(a._size, b._size);
         int expDiff = a.Exponent - b.Exponent;
         if (maxSize == 0 || a.Sign != b.Sign || Math.Abs(expDiff) > 1)
@@ -2119,8 +2109,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int scaleDiff = a.Scale - b.Scale;
 
         BigInteger temp = (scaleDiff < 0) ?
-                a._int - (b._int << scaleDiff)
-                : (a._int >> scaleDiff) - b._int;
+                a.DataBits - (b.DataBits << scaleDiff)
+                : (a.DataBits >> scaleDiff) - b.DataBits;
 
         sign = temp.Sign;
 
@@ -2146,11 +2136,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int sizeDiff = a._size - b._size;
         int newSize = sizeDiff > 0 ? b._size : a._size;
 
-        if (newSize == 0) { return 0;}
+        if (newSize == 0) { return 0; }
 
         BigInteger temp = (sizeDiff < 0) ?
-                a._int - (b._int << sizeDiff)
-                : (a._int >> sizeDiff) - b._int;
+                a.DataBits - (b.DataBits << sizeDiff)
+                : (a.DataBits >> sizeDiff) - b.DataBits;
 
         return newSize - (int)BigInteger.Log2(BigInteger.Abs(temp)) - 1;
     }
@@ -2385,9 +2375,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         return scaleDiff switch
         {
-            > 0 => new(((dividend._int << scaleDiff) % divisor._int) >> scaleDiff, dividend.Scale, true),
-            < 0 => new((dividend._int % (divisor._int >> scaleDiff)) << scaleDiff, divisor.Scale, true),
-            0 => new(dividend._int % divisor._int, divisor.Scale, true),
+            > 0 => new(((dividend.DataBits << scaleDiff) % divisor.DataBits) >> scaleDiff, dividend.Scale, true),
+            < 0 => new((dividend.DataBits % (divisor.DataBits >> scaleDiff)) << scaleDiff, divisor.Scale, true),
+            0 => new(dividend.DataBits % divisor.DataBits, divisor.Scale, true),
         };
 
         // Alternative version - less accurate. 
@@ -2416,7 +2406,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public static BigFloat operator ~(BigFloat value)
     {
-        BigInteger temp = value._int ^ ((BigInteger.One << value._size) - 1);
+        BigInteger temp = value.DataBits ^ ((BigInteger.One << value._size) - 1);
         return new(temp, value.Scale, true);
     }
 
@@ -2433,7 +2423,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift left.</param>
     /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
-    public static BigFloat operator <<(BigFloat x, int shift) => new(x._int << shift, x.Scale, x._size + shift);
+    public static BigFloat operator <<(BigFloat x, int shift)
+    {
+        return new(x.DataBits << shift, x.Scale, x._size + shift);
+    }
 
     /// <summary>
     /// Right shift - Decreases the size by removing the least-signification bits. 
@@ -2443,11 +2436,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift right.</param>
     /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
-    public static BigFloat operator >>(BigFloat x, int shift) => new(x._int >> shift, x.Scale, x._size - shift);
+    public static BigFloat operator >>(BigFloat x, int shift)
+    {
+        return new(x.DataBits >> shift, x.Scale, x._size - shift);
+    }
 
-    public static BigFloat operator +(BigFloat r) => r;
+    public static BigFloat operator +(BigFloat r)
+    {
+        return r;
+    }
 
-    public static BigFloat operator -(BigFloat r) => new(-r._int, r.Scale, r._size);
+    public static BigFloat operator -(BigFloat r)
+    {
+        return new(-r.DataBits, r.Scale, r._size);
+    }
 
     //todo: test
     public static BigFloat operator ++(BigFloat r)
@@ -2463,13 +2465,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // H) .01111|1111    => 1111|1111<< -5  +1  =>  1.01111|1111
 
         int onesPlace = ExtraHiddenBits - r.Scale;
-        
-        if (onesPlace < 1) return r; // A => -2 or less
+
+        if (onesPlace < 1)
+        {
+            return r; // A => -2 or less
+        }
 
         // In the special case, we may not always want to round up when adding a 1 bit just below the LSB. 
-        if (onesPlace == -1 && !r._int.IsEven) onesPlace = 0;
-        
-        BigInteger intVal = r._int + (BigInteger.One << onesPlace);
+        if (onesPlace == -1 && !r.DataBits.IsEven)
+        {
+            onesPlace = 0;
+        }
+
+        BigInteger intVal = r.DataBits + (BigInteger.One << onesPlace);
         int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
         // int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //perf: faster just to calc
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
@@ -2480,12 +2488,18 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         int onesPlace = ExtraHiddenBits - r.Scale;
 
-        if (onesPlace < 1) return r;
+        if (onesPlace < 1)
+        {
+            return r;
+        }
 
         // In the special case, we may not always want to round up when adding a 1 bit just below the LSB. 
-        if (onesPlace == -1 && !r._int.IsEven) onesPlace = 0;
+        if (onesPlace == -1 && !r.DataBits.IsEven)
+        {
+            onesPlace = 0;
+        }
 
-        BigInteger intVal = r._int - (BigInteger.One << onesPlace);
+        BigInteger intVal = r.DataBits - (BigInteger.One << onesPlace);
         int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
         //int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //perf: faster just to calc
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
@@ -2525,19 +2539,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         if (r1.Scale == r2.Scale)
         {
-            BigInteger intVal = r1._int + r2._int;
+            BigInteger intVal = r1.DataBits + r2.DataBits;
             int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
             return new BigFloat(intVal, r1.Scale, sizeVal);
         }
         else if (r1.Scale < r2.Scale)
         {
-            BigInteger intVal = RightShiftWithRound(r1._int, -scaleDiff) + r2._int;
+            BigInteger intVal = RightShiftWithRound(r1.DataBits, -scaleDiff) + r2.DataBits;
             int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
             return new BigFloat(intVal, r2.Scale, sizeVal);
         }
         else // if (r1.Scale > r2.Scale)
         {
-            BigInteger intVal = r1._int + RightShiftWithRound(r2._int, scaleDiff);
+            BigInteger intVal = r1.DataBits + RightShiftWithRound(r2.DataBits, scaleDiff);
             int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
             return new BigFloat(intVal, r1.Scale, sizeVal);
         }
@@ -2586,7 +2600,10 @@ Other:                                         |   |         |         |       |
     /// e.g. 11010101 with 3 bits removed would be 11011.
     /// </summary>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public bool WouldRound() => WouldRound(_int, ExtraHiddenBits);
+    public bool WouldRound()
+    {
+        return WouldRound(DataBits, ExtraHiddenBits);
+    }
 
     /// <summary>
     /// Checks to see if this integerPart would round-up given bottomBitsRemoved. 
@@ -2594,14 +2611,20 @@ Other:                                         |   |         |         |       |
     /// </summary>
     /// <param name="bottomBitsRemoved">The number of newSizeInBits from the least significant bit where rounding would take place.</param>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public bool WouldRound(int bottomBitsRemoved) => WouldRound(_int, bottomBitsRemoved);
+    public bool WouldRound(int bottomBitsRemoved)
+    {
+        return WouldRound(DataBits, bottomBitsRemoved);
+    }
 
     /// <summary>
     /// Checks to see if this integerPart would round-up if ExtraHiddenBits are removed.
     /// </summary>
     /// <param name="bi">The BigInteger we would like check if it would round up.</param>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public static bool WouldRound(BigInteger bi) => WouldRound(bi, ExtraHiddenBits);
+    public static bool WouldRound(BigInteger bi)
+    {
+        return WouldRound(bi, ExtraHiddenBits);
+    }
 
     private static bool WouldRound(BigInteger val, int bottomBitsRemoved)
     {
@@ -2618,13 +2641,19 @@ Other:                                         |   |         |         |       |
     /// Retrieves the internal data bits and removes ExtraHiddenBits and rounds.
     /// </summary>
     /// <param name="x">The _int part where to remove ExtraHiddenBits and round.</param>
-    private static BigInteger DataIntValueWithRound(BigInteger x) => RightShiftWithRound(x, ExtraHiddenBits);
+    private static BigInteger DataIntValueWithRound(BigInteger x)
+    {
+        return RightShiftWithRound(x, ExtraHiddenBits);
+    }
 
     /// <summary>
     /// Removes ExtraHiddenBits and rounds. It also requires the current size and will adjust it if it grows.
     /// </summary>
     /// <param name="x">The _int part where to remove ExtraHiddenBits and round.</param>
-    private static BigInteger DataIntValueWithRound(BigInteger x, ref int size) => RightShiftWithRound(x, ExtraHiddenBits, ref size);
+    private static BigInteger DataIntValueWithRound(BigInteger x, ref int size)
+    {
+        return RightShiftWithRound(x, ExtraHiddenBits, ref size);
+    }
 
     /////////////////////////////////////////////
     ////      RightShift() for BigInteger    ////
@@ -2825,7 +2854,7 @@ Other:                                         |   |         |         |       |
         int newScale = x.Scale + bitsToRemove;
         int size = x._size;
 
-        BigInteger b = RightShiftWithRound(x._int, bitsToRemove, ref size);
+        BigInteger b = RightShiftWithRound(x.DataBits, bitsToRemove, ref size);
 
         return new(b, newScale, size);
     }
@@ -2838,7 +2867,7 @@ Other:                                         |   |         |         |       |
     /// <returns>Returns a BigFloat with the updated scale.</returns>
     public static BigFloat AdjustScale(BigFloat x, int changeScaleAmount)
     {
-        return new BigFloat(x._int, x.Scale + changeScaleAmount, x._size);
+        return new BigFloat(x.DataBits, x.Scale + changeScaleAmount, x._size);
     }
 
     /// <summary>
@@ -2871,7 +2900,7 @@ Other:                                         |   |         |         |       |
     /// <returns>A new BigFloat with the requested precision.</returns>
     public static BigFloat SetPrecision(BigFloat x, int newSize)
     {
-        return new BigFloat(x._int << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + ExtraHiddenBits);
+        return new BigFloat(x.DataBits << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + ExtraHiddenBits);
     }
 
     /// <summary>
@@ -2882,7 +2911,7 @@ Other:                                         |   |         |         |       |
     /// </summary>
     public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
     {
-        return new BigFloat(x._int >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
+        return new BigFloat(x.DataBits >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
     }
 
     /// <summary>
@@ -2913,7 +2942,7 @@ Other:                                         |   |         |         |       |
     {
         return bitsToAdd < 0
             ? throw new ArgumentOutOfRangeException(nameof(bitsToAdd), "cannot be a negative number")
-            : new BigFloat(x._int << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
+            : new BigFloat(x.DataBits << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
     }
 
     public static BigFloat operator -(BigFloat r1, BigFloat r2)
@@ -2925,7 +2954,7 @@ Other:                                         |   |         |         |       |
 
         if (r1.Scale == r2.Scale)
         {
-            BigInteger bi = r1._int - r2._int;
+            BigInteger bi = r1.DataBits - r2.DataBits;
             int size = Math.Max(0, (int)BigInteger.Abs(bi).GetBitLength());
 
             return new BigFloat(bi, r1.Scale, size);
@@ -2933,7 +2962,7 @@ Other:                                         |   |         |         |       |
         else if (r1.Scale < r2.Scale)
         {
             //BigInteger bi = (r1._int >> (r2.Scale - r1.Scale)) - r2._int - (r1._int.Sign < 0 ? 1 : 0); //removed 12/4/2022
-            BigInteger   bi = (r1._int >> (r2.Scale - r1.Scale)) - r2._int; 
+            BigInteger bi = (r1.DataBits >> (r2.Scale - r1.Scale)) - r2.DataBits;
             if (bi.Sign < 0)
             {
                 bi--;
@@ -2945,8 +2974,8 @@ Other:                                         |   |         |         |       |
         }
         else // if (r1.Scale > r2.Scale)
         {
-            BigInteger bi = r1._int - (r2._int >> (r1.Scale - r2.Scale))
-                - (r2._int.Sign < 0 ? 1 : 0);  //todo: do like above
+            BigInteger bi = r1.DataBits - (r2.DataBits >> (r1.Scale - r2.Scale))
+                - (r2.DataBits.Sign < 0 ? 1 : 0);  //todo: do like above
             int size = Math.Max(0, (int)BigInteger.Abs(bi).GetBitLength());
 
             return new BigFloat(bi, r1.Scale, size);
@@ -2955,7 +2984,7 @@ Other:                                         |   |         |         |       |
 
     public static BigFloat PowerOf2(BigFloat val)
     {
-        BigInteger prod = val._int * val._int;
+        BigInteger prod = val.DataBits * val.DataBits;
         int resSize = (int)prod.GetBitLength();
         int shrinkBy = resSize - val._size;
         prod = RightShiftWithRound(prod, shrinkBy, ref resSize);
@@ -2992,7 +3021,7 @@ Other:                                         |   |         |         |       |
                 return p2;
             }
             // output is oversized by 1 
-            return new BigFloat(p2._int, p2.Scale - 1, p2._size);
+            return new BigFloat(p2.DataBits, p2.Scale - 1, p2._size);
         }
 
         // at this point it is oversized by at least 2
@@ -3004,7 +3033,7 @@ Other:                                         |   |         |         |       |
 
         int inputShink = (overSized + 1) / 2;
 
-        BigInteger valWithLessPrec = val._int >> inputShink;
+        BigInteger valWithLessPrec = val.DataBits >> inputShink;
 
         BigInteger prod = valWithLessPrec * valWithLessPrec;
 
@@ -3090,17 +3119,17 @@ Other:                                         |   |         |         |       |
         if (Math.Abs(sizeDiff) < SKIP_IF_SIZE_DIFF_SMALLER)
         {
             shiftBy = 0;
-            prod = b._int * a._int;
+            prod = b.DataBits * a.DataBits;
             shouldBe = Math.Min(a._size, b._size);
         }
         else if (sizeDiff > 0)
         {
-            prod = (a._int >> shiftBy) * b._int;
+            prod = (a.DataBits >> shiftBy) * b.DataBits;
             shouldBe = b._size;
         }
         else //if (sizeDiff < 0)
         {
-            prod = (b._int >> shiftBy) * a._int;
+            prod = (b.DataBits >> shiftBy) * a.DataBits;
             shouldBe = a._size;
         }
 
@@ -3125,7 +3154,7 @@ Other:                                         |   |         |         |       |
         // This is because we would only have a partial bit of precision on the last bit, and it could introduce error.
         // note: We could also left shift dividend so it is left aligned with divisor but that would be more expensive. (but could be more accurate)
         // note: We can maybe speed this up by just checking the top 32 or 64 bits of each.
-        if (divisor._int >> (divisor.Size - dividend.Size) <= dividend._int)
+        if (divisor.DataBits >> (divisor.Size - dividend.Size) <= dividend.DataBits)
         {
             outputSize--;
         }
@@ -3135,10 +3164,10 @@ Other:                                         |   |         |         |       |
 
         int leftShiftTBy = wantedSizeForT - divisor.Size;
 
-        BigInteger leftShiftedT = divisor._int << leftShiftTBy; // rightShift used here instead of SetPrecisionWithRound for performance
+        BigInteger leftShiftedT = divisor.DataBits << leftShiftTBy; // rightShift used here instead of SetPrecisionWithRound for performance
 
         // Now we can just divide, and we should have the correct size
-        BigInteger resIntPart = leftShiftedT / dividend._int;
+        BigInteger resIntPart = leftShiftedT / dividend.DataBits;
 
         int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + ExtraHiddenBits;
 
@@ -3218,7 +3247,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator byte(BigFloat value)
     {
         //return (byte)(value._int << (value.Scale - ExtraHiddenBits));
-        return (byte)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (byte)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
 
     }
 
@@ -3226,7 +3255,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator sbyte(BigFloat value)
     {
         //return (sbyte)(value._int << (value.Scale - ExtraHiddenBits));
-        return (sbyte)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (sbyte)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
@@ -3234,7 +3263,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator ushort(BigFloat value)
     {
         //return (ushort)(value._int << (value.Scale - ExtraHiddenBits));
-        return (ushort)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (ushort)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
@@ -3242,7 +3271,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator short(BigFloat value)
     {
         //return (short)(value._int << (value.Scale - ExtraHiddenBits));
-        return (short)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (short)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
@@ -3250,7 +3279,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator ulong(BigFloat value)
     {
         //return (ulong)(value._int << (value.Scale - ExtraHiddenBits));
-        return (ulong)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (ulong)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
 
     }
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
@@ -3258,7 +3287,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator long(BigFloat value)
     {
         //return (long)(value._int << (value.Scale - ExtraHiddenBits));
-        return (long)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (long)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
@@ -3266,7 +3295,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator UInt128(BigFloat value)
     {
         //return (UInt128)(value._int << (value.Scale - ExtraHiddenBits));
-        return (UInt128)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (UInt128)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed 128-bit integer. 
@@ -3274,7 +3303,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator Int128(BigFloat value)
     {
         //return (Int128)(value._int << (value.Scale - ExtraHiddenBits));
-        return (Int128)BigFloat.DataIntValueWithRound(value._int << value.Scale);
+        return (Int128)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>
@@ -3300,12 +3329,12 @@ Other:                                         |   |         |         |       |
         // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
         if (value.OutOfPrecision)
         {
-            return value.IsZero ? 0.0 : double.NaN ;
+            return value.IsZero ? 0.0 : double.NaN;
         }
         // Aline and move input.val to show top 53 bits then pre-append a "1" bit.
         // was: long mantissa = (long)(value._int >> (value._size - 53)) ^ ((long)1 << 52);
 
-        long mantissa = (long)(BigInteger.Abs(value._int) >> (value._size - 53)) ^ ((long)1 << 52);
+        long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
         long exp = value.Exponent + 1023 - 1;// + 52 -4;
 
         // Check to see if it fits in a normalized double (untested)
@@ -3321,7 +3350,7 @@ Other:                                         |   |         |         |       |
         long dubAsLong = mantissa | (exp << 52);
 
         //set sign if negative
-        if (value._int.Sign < 0)
+        if (value.DataBits.Sign < 0)
         {
             dubAsLong ^= (long)1 << 63;
         }
@@ -3336,7 +3365,7 @@ Other:                                         |   |         |         |       |
     /// <param name="value">The BigFloat to cast as a BigInteger.</param>
     public static explicit operator BigInteger(BigFloat value)
     {
-        return value._int << (value.Scale - ExtraHiddenBits);
+        return value.DataBits << (value.Scale - ExtraHiddenBits);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
@@ -3349,7 +3378,7 @@ Other:                                         |   |         |         |       |
             return value.IsZero ? 0.0f : float.NaN;
         }
 
-        int mantissa = (int)(BigInteger.Abs(value._int) >> (value._size - 24)) ^ (1 << 23);
+        int mantissa = (int)(BigInteger.Abs(value.DataBits) >> (value._size - 24)) ^ (1 << 23);
         int exp = value.Exponent + 127 - 1;
 
         // Check to see if it fits in a normalized double (untested)
@@ -3365,7 +3394,7 @@ Other:                                         |   |         |         |       |
         int singleAsInteger = mantissa | (exp << 23);
 
         //set sign if negative
-        if (value._int.Sign < 0)
+        if (value.DataBits.Sign < 0)
         {
             singleAsInteger ^= 1 << 31;
         }
@@ -3384,13 +3413,13 @@ Other:                                         |   |         |         |       |
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     public static explicit operator int(BigFloat value)
     {
-        return (int)(value._int << (value.Scale - ExtraHiddenBits));
+        return (int)(value.DataBits << (value.Scale - ExtraHiddenBits));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including hidden bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
-        return (uint)(value._int << (value.Scale - ExtraHiddenBits));
+        return (uint)(value.DataBits << (value.Scale - ExtraHiddenBits));
     }
 
     /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
@@ -3433,7 +3462,7 @@ Other:                                         |   |         |         |       |
             //return (Int << _scale) == other;
         }
 
-        return Scale >= 0 ? _int >> ExtraHiddenBits == other >> Scale : _int << (Scale - ExtraHiddenBits) == other;
+        return Scale >= 0 ? DataBits >> ExtraHiddenBits == other >> Scale : DataBits << (Scale - ExtraHiddenBits) == other;
 
     }
 
@@ -3448,12 +3477,12 @@ Other:                                         |   |         |         |       |
         {
             return other == 0;
         }
-        else if (_int.Sign < 0)
+        else if (DataBits.Sign < 0)
         {
             return false; // negative
         }
 
-        return Scale >= 0 ? _int >> ExtraHiddenBits == other >> Scale : _int << (Scale - ExtraHiddenBits) == other;
+        return Scale >= 0 ? DataBits >> ExtraHiddenBits == other >> Scale : DataBits << (Scale - ExtraHiddenBits) == other;
     }
 
     /// <summary>
@@ -3492,7 +3521,7 @@ Other:                                         |   |         |         |       |
     /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
     public override int GetHashCode()
     {
-        return DataIntValueWithRound(_int).GetHashCode() ^ Scale;
+        return DataIntValueWithRound(DataBits).GetHashCode() ^ Scale;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -3513,7 +3542,7 @@ Other:                                         |   |         |         |       |
             wantedPrecision = x._size - ExtraHiddenBits;
         }
 
-        if (x._int == 0)
+        if (x.DataBits == 0)
         {
             return new BigFloat((BigInteger)0, wantedPrecision, 0);
         }
@@ -3521,7 +3550,7 @@ Other:                                         |   |         |         |       |
         // Output should be (_int.GetBitLength()/2)+16 
         int totalLen = x.Scale + (x._size - ExtraHiddenBits);
         int needToShiftInputBy = (2 * wantedPrecision) - (x._size - ExtraHiddenBits) - (totalLen & 1);
-        BigInteger intPart = NewtonPlusSqrt(x._int << (needToShiftInputBy + ExtraHiddenBits));
+        BigInteger intPart = NewtonPlusSqrt(x.DataBits << (needToShiftInputBy + ExtraHiddenBits));
         int retShift = ((totalLen + (totalLen > 0 ? 1 : 0)) / 2) - wantedPrecision;
 
         BigFloat result = new(intPart, retShift, (int)intPart.GetBitLength());    //new version 2022-11-12
@@ -3623,7 +3652,7 @@ Other:                                         |   |         |         |       |
         BigInteger one = BigInteger.One << leftShiftTBy;
 
         // Now we can just divide, and we should have the correct size
-        BigInteger resIntPart = one / x._int;
+        BigInteger resIntPart = one / x.DataBits;
 
         //int resScalePartOrig = x._size - x.Scale - leftShiftTBy + ExtraHiddenBits;
         int resScalePart = -x.Scale - leftShiftTBy + ExtraHiddenBits + ExtraHiddenBits;
@@ -3677,7 +3706,7 @@ Other:                                         |   |         |         |       |
             int removedExp = value.Exponent - 1;
 
             // todo: can be improved without using BigFloat  (See Pow(BigInteger,BigInteger) below)
-            double valAsDouble = (double)new BigFloat(value._int, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+            double valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
 
             //// if final result's scale would not fit in a double. 
             //int finalSizeWillBe = (int)(power * double.Log2(double.Abs(valAsDouble)));
@@ -3691,7 +3720,7 @@ Other:                                         |   |         |         |       |
             value = SetPrecision(tmp, expectedFinalPrecision - ExtraHiddenBits);
 
             // restore Scale
-            value = new BigFloat(value._int, value.Scale + (removedExp * exponent), true);
+            value = new BigFloat(value.DataBits, value.Scale + (removedExp * exponent), true);
 
             return value;
         }
@@ -3819,7 +3848,7 @@ Other:                                         |   |         |         |       |
             switch (exp)
             {
                 case 0:
-                    result =  BigInteger.One; //totalShift = 0
+                    result = BigInteger.One; //totalShift = 0
                     break;
                 case 1:
                     totalShift = valSize - wantedBits;
@@ -3855,7 +3884,7 @@ Other:                                         |   |         |         |       |
                     break;
 
                 default: // negative exp would be less then 1 (unless 1)
-                    result =  val != 1 ? BigInteger.Zero : val.Sign;
+                    result = val != 1 ? BigInteger.Zero : val.Sign;
                     break;
 
             }
@@ -3887,7 +3916,7 @@ Other:                                         |   |         |         |       |
 
             // 3) extract "bottom 52 bits" and that is our answer.
             long bits = BitConverter.DoubleToInt64Bits(normPow);
-            long outMantissa = bits & 0xfffffffffffffL | 0x10000000000000L;
+            long outMantissa = (bits & 0xfffffffffffffL) | 0x10000000000000L;
 
             int bitsToDrop = 53 - wantedBits;  // wantedBits OR size????
             long mask1 = ((long)1 << bitsToDrop) - 1;  // OR ((long)1 << (53 - size)) - 1  ?????
@@ -3895,13 +3924,16 @@ Other:                                         |   |         |         |       |
             // no known issues if val < 13511613  OR removed bits are not all 1's
             if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
             {
-                int outExp = (int)(bits >> 52) - 1023; 
-                totalShift += ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/; 
+                int outExp = (int)(bits >> 52) - 1023;
+                totalShift += ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;
 
                 // outMantissa is 53 in size at this point
                 // we need to Right Shift With Round but if it rounds up to a larger number (e.g. 1111->10000) then we must increment totalShift.
                 bool roundsUp = ((outMantissa >> (bitsToDrop - 1)) & 0x1) > 0;
-                if (!roundsUp) return outMantissa >> bitsToDrop;
+                if (!roundsUp)
+                {
+                    return outMantissa >> bitsToDrop;
+                }
 
                 long withRoundUp = (outMantissa >> bitsToDrop) + 1;
 
@@ -3999,7 +4031,7 @@ Other:                                         |   |         |         |       |
             root = -root;
         }
 
-        bool resultIsPos = value._int.Sign > 0;
+        bool resultIsPos = value.DataBits.Sign > 0;
         if (!resultIsPos)
         {
             value = -value;
@@ -4008,7 +4040,7 @@ Other:                                         |   |         |         |       |
         resultIsPos = resultIsPos || ((root & 1) == 0);
 
         // Check if Value is zero.
-        if (value._int.Sign == 0)
+        if (value.DataBits.Sign == 0)
         {
             return BigFloat.ZeroWithSpecifiedLeastPrecision(value.Size);
         }
@@ -4020,15 +4052,15 @@ Other:                                         |   |         |         |       |
                 return OneWithAccuracy(value.Size);
             case 1:
                 return resultIsPos ? value : -value;
-            //case 2:
-            //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
+                //case 2:
+                //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
                 //case 4:
                 //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
         }
 
         //int xLen = value._size;
         int rootSize = BitOperations.Log2((uint)root);
-        int wantedPrecision = (int)BigInteger.Log2(value._int) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
+        int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
 
 
 
@@ -4041,7 +4073,7 @@ Other:                                         |   |         |         |       |
         ////////// Use double's hardware to get the first 53-bits ////////
         //long tempX = (long)(value._int >> (value._size - 52 /*- newScale*/ +22));
         ////////////////////////////////////////////////////////////////////////////
-        long mantissa = (long)(BigInteger.Abs(value._int) >> (value._size - 53)) ^ ((long)1 << 52);
+        long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
         long exp = value.Exponent + 1023 - 1;// + 52 -4;
 
         // if exp is oversized for double we need to pull out some exp:
@@ -4049,7 +4081,7 @@ Other:                                         |   |         |         |       |
         {
             // old: (1)Pre: pre=(value<<(preShift*root)) (2)Root: result=pre^(1/root) (3)post: result/(1<<s)
             // new:  (1)Pre: pre=(value>>preShift) (2)Root: result=pre^(1/root) (3)post: result/(2^(-preShift/root)
-            
+
             //double finalDiv = Math.Pow(2,-value.Exponent/root);
             exp = 0;
         }
@@ -4059,7 +4091,7 @@ Other:                                         |   |         |         |       |
         //double test = Math.Log2(dubVal); //Math.Log2((double)tempX);
         double tempRoot = Math.Pow(dubVal, 1.0 / root);  //Math.Pow(tempX, 1.0/root)
         ulong bits = (ulong)BitConverter.DoubleToInt64Bits(tempRoot);
-        ulong tempVal = bits & 0x1fffffffffffffL | (1UL << 52);
+        ulong tempVal = (bits & 0x1fffffffffffffL) | (1UL << 52);
         int tempExp = (int)((bits >> 52) & 0x7ffL) - 1023 - 20;
         newScale += tempExp;
 
@@ -4094,7 +4126,7 @@ Other:                                         |   |         |         |       |
         //    t = Pow(x, root) - value;
         //}
         //BigFloat usingBigFloats = x; //new BigFloat(xVal, x_Scale, true);
-        
+
 
 
         BigFloat rt = new((BigInteger)root << value.Size, -value.Size);  // get a proper sized "root" (only needed for BigFloat version)
@@ -4102,54 +4134,53 @@ Other:                                         |   |         |         |       |
 
 
         BigFloat t = Pow(x, root) - value; Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
-        BigInteger biPower = PowMostSignificantBits(xVal << 53, root, out int totalShift2);
-        BigInteger t2 = (value._int << (int)(biPower.GetBitLength() - value._int.GetBitLength())) - biPower; Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
+        BigInteger biPower = PowMostSignificantBits(xVal << 53, root, out _);
+        BigInteger t2 = (value.DataBits << (int)(biPower.GetBitLength() - value.DataBits.GetBitLength())) - biPower; Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
 
-        BigFloat b = rt * Pow(x, root - 1);                                             Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
+        BigFloat b = rt * Pow(x, root - 1); Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
         BigInteger b2;
-         b2 = root * PowMostSignificantBits(xVal, root - 1, out int totalShift, 53, 26);Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
+        b2 = root * PowMostSignificantBits(xVal, root - 1, out _, 53, 26); Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
         // precision: biPower = 53, t2 = 53, b2 = 53, SO tb2 = 53 bits
 
         while (xVal.GetBitLength() < 140)//(t2.GetBitLength() > 20)//(t._size > 3) //(!t.OutOfPrecision)
         {
             Console.WriteLine();
-                BigFloat oldX = x;
+            BigFloat oldX = x;
             BigInteger oldX2 = xVal;
 
-                BigFloat tb = t / b;                                            Console.WriteLine($"F-tb: {tb.GetMostSignificantBits(196)}[{tb._size}]");
-            BigInteger tb2 = (t2 << 53) / b2;                                   Console.WriteLine($"I-tb: {BigIntegerToBinaryString(tb2)}[{tb2.GetBitLength()}]");
-                                                                                 
-                x -= tb;                                                        Console.WriteLine($"F-X:  {x.GetMostSignificantBits(196)}[{x._size}]");
-            xVal = (xVal << ((int)b2.GetBitLength())) + tb2;                    Console.WriteLine($"I-X:  {BigIntegerToBinaryString(xVal)}[{xVal.GetBitLength()}]");
-                                                                                Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001..."); //11001000010110011000001111101111001101111100000110110101011001011110011100100111000010100010010110001001000010011000000101000010101000000000011011011000010111100110010101111011001011011001110001110
-                                                                                Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001000110001111000010001011110100001011001101010000...");
+            BigFloat tb = t / b; Console.WriteLine($"F-tb: {tb.GetMostSignificantBits(196)}[{tb._size}]");
+            BigInteger tb2 = (t2 << 53) / b2; Console.WriteLine($"I-tb: {BigIntegerToBinaryString(tb2)}[{tb2.GetBitLength()}]");
+
+            x -= tb; Console.WriteLine($"F-X:  {x.GetMostSignificantBits(196)}[{x._size}]");
+            xVal = (xVal << ((int)b2.GetBitLength())) + tb2; Console.WriteLine($"I-X:  {BigIntegerToBinaryString(xVal)}[{xVal.GetBitLength()}]");
+            Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001..."); //11001000010110011000001111101111001101111100000110110101011001011110011100100111000010100010010110001001000010011000000101000010101000000000011011011000010111100110010101111011001011011001110001110
+            Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001000110001111000010001011110100001011001101010000...");
             Console.WriteLine($"BF:{oldX} - ({t} / {b} [{tb}]) = {x}");                                // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111010100000101100101000110010110110000100111101101111110111100001101101110111000000001110100100101011100100000100010101101110000111...
                                                                                                        // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111010100000101100101000110010110110000100111101101111110111100001101101110111000000001110100100101011100100
                                                                                                        // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001...
                                                                                                        //Res: 1100100001011001100000111.1101111001101111100000110110101011001011110011100101110110001111001111101111001011
-            Console.WriteLine($"BI:{oldX2} - ({t2} / {b2} [{tb2}]) =  {new BigFloat(xVal, x_Scale-54-32)}"); 
-            biPower = PowMostSignificantBits(xVal /*<< 100*/, root, out totalShift2);
+            Console.WriteLine($"BI:{oldX2} - ({t2} / {b2} [{tb2}]) =  {new BigFloat(xVal, x_Scale - 54 - 32)}");
+            biPower = PowMostSignificantBits(xVal /*<< 100*/, root, out _);
             Console.WriteLine($"F-pow:{Pow(x, root).GetMostSignificantBits(196)}[{Pow(x, root)._size}]");
             Console.WriteLine($"I-pow:{BigIntegerToBinaryString(biPower)}[{biPower.GetBitLength()}]");
 
-            BigInteger val2 = (value._int << (int)(biPower.GetBitLength() - value._int.GetBitLength()));
+            BigInteger val2 = value.DataBits << (int)(biPower.GetBitLength() - value.DataBits.GetBitLength());
             Console.WriteLine($"F-val:{value.GetMostSignificantBits(196)}[{t._size}]");
             Console.WriteLine($"I-val:{BigIntegerToBinaryString(val2)}[{val2.GetBitLength()}]");
 
-            t = Pow(x, root) - value;                                           Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
-            t2 = biPower - val2;                                                Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
-                                                                               
-            b = rt * Pow(x, root - 1);                                          Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
-            b2 = root * PowMostSignificantBits(xVal, root - 1, out totalShift); Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
+            t = Pow(x, root) - value; Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
+            t2 = biPower - val2; Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
+
+            b = rt * Pow(x, root - 1); Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
+            b2 = root * PowMostSignificantBits(xVal, root - 1, out _); Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
 
             // precision: t2 = 106, b2 = 106, SO tb2 = 106 bits
 
-            BigInteger temp = (t2 << (2 * wantedPrecision - (int)t2.GetBitLength())) / b2; Console.WriteLine($"I-tb: {BigIntegerToBinaryString(temp)}[{temp.GetBitLength()}]");
+            BigInteger temp = (t2 << ((2 * wantedPrecision) - (int)t2.GetBitLength())) / b2; Console.WriteLine($"I-tb: {BigIntegerToBinaryString(temp)}[{temp.GetBitLength()}]");
 
         }
 
-        BigFloat usingBigFloats = x; //new BigFloat(xVal, x_Scale, true);
-        BigFloat usingBigInteger = new BigFloat(xVal, x_Scale, true);
+        _ = new BigFloat(xVal, x_Scale, true);
 
         return x;
     }
@@ -4157,7 +4188,7 @@ Other:                                         |   |         |         |       |
     [Conditional("DEBUG")]
     private void AssertValid()
     {
-        int realSize = (int)BigInteger.Abs(_int).GetBitLength();
+        int realSize = (int)BigInteger.Abs(DataBits).GetBitLength();
 
         // Make sure size is set correctly. Zero is allowed to be any size.
         Debug.Assert(_size == realSize, $"_size({_size}), expected ({realSize})");
@@ -4166,7 +4197,7 @@ Other:                                         |   |         |         |       |
     [Conditional("DEBUG")]
     private static void AssertValid(BigFloat val)
     {
-        int realSize = (int)BigInteger.Abs(val._int).GetBitLength();
+        int realSize = (int)BigInteger.Abs(val.DataBits).GetBitLength();
 
         // Make sure size is set correctly. Zero is allowed to be any size.
         Debug.Assert(val._size == realSize, $"_size({val._size}), expected ({realSize})");
