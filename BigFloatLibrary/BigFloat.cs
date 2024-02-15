@@ -244,7 +244,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             : new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
     }
 
-    public static BigFloat NegativeOne => new(-BigInteger.One << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
+    public static BigFloat NegativeOne => new(BigInteger.MinusOne << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
 
     /////////////////////////    INIT / CONVERSION  FUNCTIONS     /////////////////////////
 
@@ -1040,8 +1040,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return true;
         }
 
+        // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
+        if (BigInteger.Abs(asInt).IsOne)
+        {
+            asInt <<= 1;
+            scale -= 1;
+        }
+
         // Set ROUND to 1 to enable round to nearest.
-        // When 1, an extra LSBit is kept and if 1 it will round up. (e.g. 0.1011 => 0.110)
+        // When 1, an extra LSBit is kept and if it's set it will round up. (e.g. 0.1011 => 0.110)
         const int ROUND = 1;
         BigInteger intPart;
 
@@ -1056,7 +1063,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             int multBitLength = (int)a.GetBitLength();
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND;  // added  "-1" because it was adding one to many digits 
-                                                                         // we have to make asInt larger by size of "a" before we divide it by "a"
+                                                                         // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((asInt << shiftAmt) / a) + ROUND) >> ROUND;
             scale += -multBitLength + 1 - radixDepth;
             result = new BigFloat(intPart, scale, true);
@@ -1066,7 +1073,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger a = BigInteger.Pow(5, -radixDepth);
             int multBitLength = (int)a.GetBitLength();
             int shiftAmt = multBitLength - ExtraHiddenBits - ROUND;
-            // since we are making asInt larger by size multiplying it by "a", we now need to shrink it by size "a"
+            // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((asInt * a) >> shiftAmt) + ROUND) >> ROUND;
             scale += multBitLength - radixDepth;
             result = new BigFloat(intPart, scale, true);
@@ -1295,15 +1302,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// Converts the binary text in ReadOnlySpan<char> to a BigFloat. 
-    /// If it fails it returns false.
-    /// An empty or null string returns false.
     /// e.g. '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// </summary>
     /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="result">(out) The BigFloat result.</param>
     /// <param name="scale">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <returns>True is successful; False if it fails.</returns>
+    /// <returns>Returns false if it fails or is given an empty or null string.</returns>
     public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int scale = 0, int forceSign = 0, int includedHiddenBits = -1)
     {
         int inputLen = input.Length;
@@ -1923,7 +1928,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //   Example: Scale = -11, int=45, size=6+32=38  -> bitsToClear=32+11   -.00000 101101[10101010010...00010]
         if (bitsToClear >= _size)
         {
-            return DataBits.Sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(-BigInteger.One << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
+            return DataBits.Sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.MinusOne << ExtraHiddenBits, 0, 1 + ExtraHiddenBits);
         }
 
         if (DataBits.Sign > 0)
@@ -2038,7 +2043,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             else //if (Scale < 0)
             {
                 // round up if any bits set between (ExtraHiddenBits/2) and (ExtraHiddenBits-Scale) 
-                bool roundsUp = (DataBits & ((((BigInteger)1 << ((ExtraHiddenBits / 2) - Scale)) - 1) << (ExtraHiddenBits / 2))) > 0;
+                bool roundsUp = (DataBits & (((BigInteger.One << ((ExtraHiddenBits / 2) - Scale)) - 1) << (ExtraHiddenBits / 2))) > 0;
 
                 BigInteger intPart = DataBits >> bitsToClear << ExtraHiddenBits;
 
