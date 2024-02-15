@@ -532,7 +532,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int scale = val.Scale;
         int valSize = val._size;
 
-        if (scale < 0)// Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
+        if (scale < -1) // Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
+            // -1 is not enough to form a full decimal digit.
         {
             if (includeOutOfPrecisionBits)
             {
@@ -616,10 +617,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
 
             //int maskSize = (int)((scale + 2.86313809) / 3.32192809488736235); // this number was test for a large range of floats
-            int maskSize = (int)((scale + 3.18507) / 3.32192809488736235); // this number was test for a large range of floats
+            int maskSize = (int)((scale + 3.18507) / 3.32192809488736235); // 3.18507 was tested for a wide range of floats
 
-            BigInteger power5 = (intVal) / BigInteger.Pow(5, maskSize);
-            BigInteger power5Scaled = RightShiftWithRound(power5, maskSize + ExtraHiddenBits - scale); // Applies the scale to the number and rounds from bottom bit
+            BigInteger power5 = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+            BigInteger power5Scaled = RightShiftWithRound(power5, ExtraHiddenBits); // Applies the scale to the number and rounds from bottom bit
             //Console.WriteLine(power5Scaled.ToString() + new string('X', maskSize));
             return power5Scaled.ToString() + new string('X', maskSize);
         }
@@ -1592,7 +1593,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return Exponent.CompareTo(other.Exponent) * DataBits.Sign;
         }
 
-        //        At this point, the sign is the same, and the exp are within 1 bit of each other.
+        // At this point, the sign is the same, and the exp are within 1 bit of each other.
 
         //There are three special cases when the Exponent is off by just 1 bit:
         // case 1:  The smaller of the two rounds up to match the size of the larger and, therefore, can be equal(11 | 111 == 100 | 000)
