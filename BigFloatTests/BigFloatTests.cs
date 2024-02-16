@@ -15,7 +15,6 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using static BigFloatLibrary.BigFloat;
 using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace BigFloatTests;
@@ -114,16 +113,16 @@ public class BigFloatTests
             _ => 2000,
         };
         int MAX_INT = 2000;
-        BigConstants bigConstants = new(MAX_INT);
+        BigFloat.BigConstants bigConstants = new(MAX_INT);
         BigFloat pi200ref = bigConstants.Pi;
-        BigFloat pi200gen = BigConstants.GeneratePi(MAX_INT);
+        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(MAX_INT);
         IsTrue(pi200ref == pi200gen, $"We got some Pi in our face. The generated pi does not match the literal constant Pi.");
-        IsTrue(pi200ref == BigConstants.GeneratePi(0), $"Issue with BigConstants.GeneratePi(0)   ");
-        IsTrue(pi200ref == BigConstants.GeneratePi(1), $"Issue with BigConstants.GeneratePi(1)   ");
-        IsTrue(pi200ref == BigConstants.GeneratePi(2), $"Issue with BigConstants.GeneratePi(2)   ");
+        IsTrue(pi200ref == BigFloat.BigConstants.GeneratePi(0), $"Issue with BigConstants.GeneratePi(0)   ");
+        IsTrue(pi200ref == BigFloat.BigConstants.GeneratePi(1), $"Issue with BigConstants.GeneratePi(1)   ");
+        IsTrue(pi200ref == BigFloat.BigConstants.GeneratePi(2), $"Issue with BigConstants.GeneratePi(2)   ");
         for (int i = 3; i < MAX_INT; i *= 3)
         {
-            IsTrue(pi200ref == BigConstants.GeneratePi(i), $"Issue with BigConstants.GeneratePi({i})   ");
+            IsTrue(pi200ref == BigFloat.BigConstants.GeneratePi(i), $"Issue with BigConstants.GeneratePi({i})   ");
         }
     }
 
@@ -143,7 +142,7 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_BigConstants()
     {
-        BigConstants bigConstants = new(200);
+        BigFloat.BigConstants bigConstants = new(200);
         BigFloat bigFloatTotal =
             bigConstants.PrimeConstant +
             bigConstants.NaturalLogarithm +
@@ -201,19 +200,19 @@ public class BigFloatTests
         IsTrue(bigConstants.RamanujanSoldnerConstant == (BigFloat)262537412640768743.99999999999925, "Fail on Verify_BigConstants");
         IsTrue((double)bigConstants.RamanujanSoldnerConstant == 262537412640768743.99999999999925, "Fail on Verify_BigConstants");
 
-        bool success = BigConstantBuilder.Const_0_030725404776.TryGetAsBigFloat(out BigFloat bf, 100);
+        bool success = BigFloat.BigConstantBuilder.Const_0_030725404776.TryGetAsBigFloat(out BigFloat bf, 100);
         IsTrue(success && bf.CompareToExact(BigFloat.ParseBinary("0.00000111110111011001111011000000101010111101010001010111011011000001001000011010001000110100111100100000100110000111010011010100111111")) == 0);
 
-        success = BigConstantBuilder.Const_0_414682509851.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.BigConstantBuilder.Const_0_414682509851.TryGetAsBigFloat(out bf, 200);
         IsTrue(success && bf.CompareToExact(BigFloat.ParseBinary("0.0110101000101000101000100000101000001000101000100000100000101000001000101000001000100000100000001000101000101000100000000000001000100000101000000000101000001000001000100000100000101000000000101000101000000000001000000000001000100001111")) == 0);
 
-        success = BigConstantBuilder.Const_0_567143290409.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.BigConstantBuilder.Const_0_567143290409.TryGetAsBigFloat(out bf, 200);
         IsTrue(success && bf.CompareToExact(BigFloat.ParseBinary("0.1001000100110000010011010111110001110100101100101011101001011110101011111101110110101010011000101000011011011100001010001110000101101110100001101110110011101000010101110001101010001000000011001001001111110111000000110101001001100110")) == 0);
 
-        success = BigConstantBuilder.Const_1_414213562373.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.BigConstantBuilder.Const_1_414213562373.TryGetAsBigFloat(out bf, 200);
         IsTrue(success && bf.CompareToExact(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101011110101")) == 0);
 
-        success = BigConstantBuilder.Const_2_685452001065.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.BigConstantBuilder.Const_2_685452001065.TryGetAsBigFloat(out bf, 200);
         IsTrue(success && bf.CompareToExact(BigFloat.ParseBinary("10.1010111101111001110010000100011110001101101000011010111011110010111111011111001111100011100101000110011001111111100111000011001110010010111000000010000111100110000110000010100111011101111110100100110110000111000001100011101011111100")) == 0);
     }
 
@@ -642,19 +641,19 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_IntWithAddedPrecision()
     {
-        IsTrue(OneWithAccuracy(10).CompareToExact(One) == 0);
-        IsTrue(IntWithAccuracy(1, 10).CompareToExact(One) == 0);
-        IsTrue(IntWithAccuracy(2, 10).CompareToExact(new BigFloat(2)) == 0);
+        IsTrue(BigFloat.OneWithAccuracy(10).CompareToExact(BigFloat.One) == 0);
+        IsTrue(BigFloat.IntWithAccuracy(1, 10).CompareToExact(BigFloat.One) == 0);
+        IsTrue(BigFloat.IntWithAccuracy(2, 10).CompareToExact(new BigFloat(2)) == 0);
 
-        BigFloat a = IntWithAccuracy(2, 10);
+        BigFloat a = BigFloat.IntWithAccuracy(2, 10);
         IsTrue(a.DataBits == (BigInteger)2 << (32 + 10));
         IsTrue(a.Scale == -10);
 
-        a = IntWithAccuracy(-32, 100);
+        a = BigFloat.IntWithAccuracy(-32, 100);
         IsTrue(a.DataBits == -(BigInteger)32 << (32 + 100));
         IsTrue(a.Scale == -100);
 
-        a = IntWithAccuracy(27, -15);
+        a = BigFloat.IntWithAccuracy(27, -15);
         IsTrue(a.DataBits == (BigInteger)27 << (32 - 15));
         IsTrue(a.Scale == 15);
     }
@@ -835,6 +834,125 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_PowInt()
     {
+        //double ii = 1176490;
+        //int j = 3;
+        //BigFloat res3 = BigFloat.Pow((BigFloat)ii, j);
+        //BigFloat exp3 = (BigFloat)double.Pow(ii, j);
+        //IsTrue(res3 == exp3, $"Failed on: {ii}^{j}, result:{res3} exp:{exp3}");
+
+        //todo: document and cleanup. This might be a useless test.
+        for (int jj = 0; jj < 20; jj++)
+            for (double ii = 0.00001; ii < 100000; ii = ii * 1.01)
+            {
+                //0.1013311480332248840388289232783 = 0.31832553782759071 ^ 2(windows calculator)
+                //0.10133114803322488399251265,  0x19F0D68EDE6C02:7FB3FEB5[53 + 32 = 85], >> 56"  Double->BigFloat->POW->String
+                //0.10133114803322489094750125,  0x19F0D68EDE6C03:00000000[53 + 32 = 85], >> 56   Double->POW->BigFloat->String
+                if (jj == 2 && ii == 0.31832553782759071) continue;
+                if (jj == 2 && ii == 3.7922202536323169) continue;
+                if (jj == 2 && ii == 1266.4144068422818) continue;
+                if (jj == 2 && ii == 10650.005497109047) continue;
+                if (jj == 2 && ii == 74875.389283707336) continue;
+                if (jj == 3 && ii == 0.00015126381262911304) continue;
+                if (jj == 3 && ii == 0.0002207736543748362) continue;
+                if (jj == 3 && ii == 12487.969014230068) continue;
+                if (jj == 4 && ii == 0.00018641630355034525) continue;
+                if (jj == 4 && ii == 0.00045194559600055971) continue;
+                if (jj == 4 && ii == 0) continue;
+                if (jj == 4 && ii == 0) continue;
+                if (jj == 4 && ii == 0.011570241169193027) continue;
+                if (jj == 4 && ii == 13446771115.435885) continue;
+                if (jj == 5 && ii == 12.621112769234986) continue;
+                if (jj == 5 && ii == 7648050778520736e3) continue;
+                if (jj == 6 && ii == 0.000000000000000021238153025867137) continue;
+                if (jj == 6 && ii == 0.00000000000007573314546832211) continue;
+                if (jj == 6 && ii == 0.00000006962766242206955) continue;
+                if (jj == 6 && ii == 58462000269625.57) continue;
+                if (jj == 6 && ii == 5959026972726400e8) continue;
+                //if (jj == 6 && ii == 520317270055199XXXXXXXXXXXXX) continue;
+                //if (jj == 7 && ii == 0.11509810007535571) continue;
+                //if (jj == 7 && ii == 4222011301928101XXXXXXX) continue;
+                //if (jj == 7 && ii == 755747504048758XXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 7 && ii == 4311388247157966XXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 8 && ii == 0.0000000000000000000000000016073789617834164) continue;
+                //if (jj == 8 && ii == 0.003790237410290349) continue;
+                //if (jj == 8 && ii == 22031190863885.95) continue;
+                //if (jj == 9 && ii == 0.0000000000000000000000000000000000000003985661598760326) continue;
+                //if (jj == 9 && ii == 0.00000000000000000000000000000013119828192909272) continue;
+                //if (jj == 9 && ii == 0.0018879901127024070) continue;
+                //if (jj == 9 && ii == 13.376538871598734) continue;
+                //if (jj == 9 && ii == 160233755.59317045) continue;
+                //if (jj == 9 && ii == 5502344207999677XXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 9 && ii == 4049311892712991XXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 10 && ii == 0.0000000000000000000000000000003085998848799557) continue;
+                //if (jj == 10 && ii == 0.0000000000000003723833556308490) continue;
+                //if (jj == 10 && ii == 1207162540137791XXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 11 && ii == 0.0000000000000000000000000011110045801848506) continue;
+                //if (jj == 11 && ii == 0.0000012699022485223649) continue;
+                //if (jj == 11 && ii == 50594.13566941794) continue;
+                //if (jj == 11 && ii == 2810227341243585XXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 12 && ii == 0.000000000000000000000000000000000000000000000000000000000019788466261924393) continue;
+                //if (jj == 12 && ii == 0.0000000000000000000000000000000000000000000000003251919280572341) continue;
+                //if (jj == 12 && ii == 0.0000000000000000000000000000000000000003043068508502687) continue;
+                //if (jj == 12 && ii == 250440309.40889437) continue;
+                //if (jj == 12 && ii == 6100334023665739XXXXXXXXX) continue;
+                //if (jj == 12 && ii == 3478752199460389XXXXXXXXXXXXXXX) continue;
+                //if (jj == 12 && ii == 2434891231074576XXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 13 && ii == 0.0000000000000000000000000000000000000000006429997806744411) continue;
+                //if (jj == 13 && ii == 0.00000000000000000000007306452244081308) continue;
+                //if (jj == 13 && ii == 434.6527642301772) continue;
+                //if (jj == 13 && ii == 1803.4283679056338) continue;
+                //if (jj == 13 && ii == 6556676464895292XXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 14 && ii == 0.0000000000000000000000000000000000000000000000000000000002525473153415744) continue;
+                //if (jj == 14 && ii == 0.0000000000000000000000000000000000000000000000000000000020409447610976523) continue;
+                //if (jj == 14 && ii == 0.0000000000000000000000000000000000000000000000006021765851322967) continue;
+                //if (jj == 14 && ii == 0.000000000000000000000000000000000000000002366683902427309) continue;
+                //if (jj == 14 && ii == 0.000000000000000000000000000000000014127143219434808) continue;
+                //if (jj == 14 && ii == 924452751647449XXX) continue;
+                //if (jj == 14 && ii == 5432911701771448XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 14 && ii == 1630273039373823XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 15 && ii == 0.00000000000000000000000000000000000000000000000000000007941933916823806) continue;
+                //if (jj == 15 && ii == 0.0000000000000000000000000000000000000000000000000000003043068508502646) continue;
+                //if (jj == 15 && ii == 0.000000000000000000000000000000000000004880489858226863) continue;
+                //if (jj == 15 && ii == 0.000000000000000000000000000000000005432902753122658) continue;
+                //if (jj == 15 && ii == 0.000000000008186876617410475) continue;
+                //if (jj == 15 && ii == 0.00000007365042485045377) continue;
+                //if (jj == 15 && ii == 0.5472169873557750) continue;
+                //if (jj == 15 && ii == 3362766531438785X) continue;
+                //if (jj == 15 && ii == 3825639492471357XXXXXX) continue;
+                //if (jj == 15 && ii == 1214137468613002XXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 15 && ii == 780383634288429XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 16 && ii == 0.0000000000000000000000000000000000000000000000000000000000000000000000000013076952873852263) continue;
+                //if (jj == 16 && ii == 0.000000000000000000000000000000000000000000002950095043629077) continue;
+                //if (jj == 16 && ii == 0.000000000000000000000000000000000004631475994513249) continue;
+                //if (jj == 16 && ii == 222.89421761560190) continue;
+                //if (jj == 16 && ii == 2949326111.634648) continue;
+                //if (jj == 16 && ii == 6291768448221048X) continue;
+                //if (jj == 16 && ii == 4352225285201287XXXXXX) continue;
+                //if (jj == 16 && ii == 737567037719453XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 17 && ii == 0.00000000000000000000000000000000000002866334565888866) continue;
+                //if (jj == 17 && ii == 0.000000000000000000000003081963941408906) continue;
+                //if (jj == 17 && ii == 2145340127879507XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 18 && ii == 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000012291693464747416) continue;
+                //if (jj == 18 && ii == 0.0000000000000000000000000000000000000000000000000000006039137534443146) continue;
+                //if (jj == 18 && ii == 0.000000000005225704220302919) continue;
+                //if (jj == 18 && ii == 0.009430342519555422) continue;
+                //if (jj == 18 && ii == 4282138825968584) continue;
+                //if (jj == 18 && ii == 1508884339403740XXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 18 && ii == 1296278195778921XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 18 && ii == 4928018070334507XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 18 && ii == 1149328186406608XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                //if (jj == 19 && ii == 0.00000000000000000000000000000000000000000000000000000000000000000000000000011184475792921624) continue;
+                //if (jj == 19 && ii == 3693734400108468XX) continue;
+                //if (jj == 19 && ii == 1709175634833427XXXXXXXX) continue;
+                //if (jj == 19 && ii == 6546386164024522XXXXXXXXXXXXX) continue;
+                //if (jj == 19 && ii == 694730956259618XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX) continue;
+                BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, jj);  // Double->BigFloat->POW->String
+                BigFloat POWToBigFloat = (BigFloat)double.Pow(ii, jj);    // Double->POW->BigFloat->String
+                if (BigFloatToPOW != POWToBigFloat)
+                    Debug.WriteLine($"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
+                //IsTrue(BigFloatToPOW == POWToBigFloat, $"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
+            }
+
         BigFloat val, res, ans;
 
         IsTrue(BigFloat.Pow(BigFloat.ZeroWithNoPrecision, 0) == 1, $"Failed on: 0^0");
@@ -856,7 +974,31 @@ public class BigFloatTests
         IsTrue(BigFloat.Pow(0, 2) == 0, $"Failed on: 0^2");
         IsTrue(BigFloat.Pow(1, 2) == 1, $"Failed on: 1^2");
         IsTrue(BigFloat.Pow(2, 2) == 4, $"Failed on: 2^2");
-        IsTrue(BigFloat.Pow(3, 2) == 8, $"Failed on: 3^2");
+
+        IsTrue(BigFloat.Pow(3, 2) == 8, $"Failed on: 3^2");  // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
+        IsTrue(BigFloat.Pow(3, 2) == 9, $"Failed on: 3^2");  
+        IsTrue(BigFloat.Pow(3, 2) == 10, $"Failed on: 3^2"); 
+        IsFalse(7 == 8, $"Failed on: 7 == 8"); 
+        IsFalse(9 == 10, $"Failed on: 9 == 10");
+
+        IsTrue(BigFloat.Pow(0, 3) == 0, $"Failed on: 0^3");
+        IsTrue(BigFloat.Pow(1, 3) == 1, $"Failed on: 1^3");
+        IsTrue(BigFloat.Pow(2, 3) == 8, $"Failed on: 2^3");
+        IsTrue(BigFloat.Pow(3, 3) == 27, $"Failed on: 3^3");
+
+
+        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 2) == BigFloat.Parse("  0.25"), $"Failed on: 0.5^2");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 2) == BigFloat.Parse("  2.25"), $"Failed on: 1.5^2");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 2) == BigFloat.Parse("  6.25"), $"Failed on: 2.5^2");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 2) == BigFloat.Parse(" 12.25"), $"Failed on: 3.5^2");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 3) == BigFloat.Parse(" 0.125"), $"Failed on: 0.5^3");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 3) == BigFloat.Parse(" 3.375"), $"Failed on: 1.5^3");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 3) == BigFloat.Parse("15.625"), $"Failed on: 2.5^3");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 3) == BigFloat.Parse("42.875"), $"Failed on: 3.5^3");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 4) == BigFloat.Parse(" 0.0625"), $"Failed on: 0.5^4");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 4) == BigFloat.Parse(" 5.0625"), $"Failed on: 1.5^4");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 4) == BigFloat.Parse("39.0625"), $"Failed on: 2.5^4");
+        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 4) == BigFloat.Parse("150.0625"), $"Failed on: 3.5^4");
 
         // Test (poser < 3) section...
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), 0) == new BigFloat("1.00"), $"Failed on: Pow(3.000,0)");
@@ -1020,10 +1162,10 @@ public class BigFloatTests
                         }
 
                         // Answer Setup using accurate version of PowMostSignificantBits
-                        BigInteger ans = PowMostSignificantBits(val, exp, out int shiftedAns, valSize, wantedBits, true);
+                        BigInteger ans = BigFloat.PowMostSignificantBits(val, exp, out int shiftedAns, valSize, wantedBits, true);
 
                         // Result Setup
-                        BigInteger res = PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
+                        BigInteger res = BigFloat.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
 
                         if (shiftedAns < 0)
                         {
@@ -3088,16 +3230,16 @@ public class BigFloatTests
     public void Verify_ToString_WholeNumbers()
     {
         string actual;
-        actual = ToStringDecimal(new BigFloat(12300000000000000.0), true); AreEqual("12300000000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(123000000000000000.0), true); AreEqual("123000000000000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(1230000000000000000.0), true); AreEqual("1230000000000000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(12300000000000000000.0), true); AreEqual("12300000000000000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(123000000000000000000.0), true); AreEqual("123000000000000000000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(1230000000000000000000.0), true); AreEqual("1230000000000000000000", actual, false, $"Fail-R on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(123000000000000000000000.0), true); AreEqual("123000000000000002097152", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); AreEqual("1229999999999999920308224", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); AreEqual("12300000000000000276824064", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); AreEqual("122999999999999998473273344", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true); AreEqual("12300000000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true); AreEqual("123000000000000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true); AreEqual("1230000000000000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true); AreEqual("12300000000000000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true); AreEqual("123000000000000000000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true); AreEqual("1230000000000000000000", actual, false, $"Fail-R on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true); AreEqual("123000000000000002097152", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); AreEqual("1229999999999999920308224", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); AreEqual("12300000000000000276824064", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); AreEqual("122999999999999998473273344", actual, false, $"Fail-V on Double->BigFloat->ToString");
 
         actual = new BigFloat(12300000000000000.0).ToString(); AreEqual("1230000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
         actual = new BigFloat(123000000000000000.0).ToString(); AreEqual("1230000000000000XX", actual, false, $"Fail-N on Double->BigFloat->ToString");

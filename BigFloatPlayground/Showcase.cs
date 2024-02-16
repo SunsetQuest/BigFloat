@@ -123,12 +123,14 @@ public static class Showcase
 
         Console.WriteLine($"Large Number: {largeNumber}");
         Console.WriteLine($"Small Number: {smallNumber}");
-        // Output: Large Number: 0XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        //         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        //         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // Output: Small Number: 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        //         000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        //         0000000000000000000000000000000000000000000000000000000000000000000000000001
+        // Output: Large Number: 1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // Output: Small Number: 0.000000000000000000000000000000000000000000000000000000000000000000000000
+        // 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        // 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        // 000000000000000000000000000000000001
 
         BigFloat num5 = new("12121212.1212"); //8589934593, 17179869185
         BigFloat num6 = new("1234");
@@ -185,8 +187,8 @@ public static class Showcase
     private static void BigConstant_Stuff() //added to test
     {
         BigFloat.BigConstants bigConstants = new(4000);
-        BigFloat pi200ref = bigConstants.Pi;                        // 3.141592653589793238462643383279502884197169399375105820974945
-        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000); // 3.141592653589793238462643383279502884197169399375105820974945
+        BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169399375105820974945
+        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000); 
         Console.WriteLine(pi200ref == pi200gen);
 
         for (int i = 0; i < 500; i++)
@@ -360,12 +362,7 @@ public static class Showcase
     //////////////  Pow() Play Area & Examples //////////////
     private static void Pow_Stuff()
     {
-        double ii = 1176490;
-        int j = 3;
 
-        BigFloat res3 = BigFloat.Pow((BigFloat)ii, j);
-        BigFloat exp3 = (BigFloat)double.Pow(ii, j);
-        IsTrue(res3 == exp3, $"Failed on: {ii}^{j}, result:{res3} exp:{exp3}");
 
         //// BigFloat.Zero  BigFloat.One
         //IsTrue(BigFloat.Pow(BigFloat.Zero, 0) == 1, $"Failed on: 0^0");
@@ -396,18 +393,7 @@ public static class Showcase
         IsTrue(BigFloat.Pow(2, 3) == 8, $"Failed on: 2^3");
         IsTrue(BigFloat.Pow(3, 3) == 27, $"Failed on: 3^3");
 
-        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 2) == BigFloat.Parse("  0.25"), $"Failed on: 0.5^2");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 2) == BigFloat.Parse("  2.25"), $"Failed on: 1.5^2");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 2) == BigFloat.Parse("  6.25"), $"Failed on: 2.5^2");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 2) == BigFloat.Parse(" 12.25"), $"Failed on: 3.5^2");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 3) == BigFloat.Parse(" 0.125"), $"Failed on: 0.5^3");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 3) == BigFloat.Parse(" 3.375"), $"Failed on: 1.5^3");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 3) == BigFloat.Parse("15.625"), $"Failed on: 2.5^3");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 3) == BigFloat.Parse("42.875"), $"Failed on: 3.5^3");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("0.5"), 4) == BigFloat.Parse(" 0.0625"), $"Failed on: 0.5^4");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("1.5"), 4) == BigFloat.Parse(" 5.0625"), $"Failed on: 1.5^4");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("2.5"), 4) == BigFloat.Parse("39.0625"), $"Failed on: 2.5^4");
-        IsTrue(BigFloat.Pow(BigFloat.Parse("3.5"), 4) == BigFloat.Parse("150.0625"), $"Failed on: 3.5^4");
+
 
         for (int k = 3; k < 20; k++)
         {

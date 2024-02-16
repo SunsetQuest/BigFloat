@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Showcase - Copy.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\BigFloatLibrary\BigFloatLibrary.csproj" />
   </ItemGroup>
 
