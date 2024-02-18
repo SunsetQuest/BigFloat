@@ -107,7 +107,7 @@ Learned that..
 	 
  - When multiplying numbers..
      - The number of significant digits is more complicated. 
-	 - In grade school, they taught us the result should be smaller than the two. This is roughly correct but usually overestimates precision.
+	 - In grade school, they taught us the resulting precision should be the smaller of the two. This is roughly correct but usually overestimates precision.
 	 - The best way to figure out precision for an operation is to take the extreme cases. In this case, the smallest and largest.
 	 - Say we multiply 12 and 17. For the smallest extreme, the 12 could be 11.5, and the 17 could be 16.5. Or the largest extreme would be 12.5 x 17.5.
 	 
