@@ -4,7 +4,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/12/2024 this class was written by human hand. This will change soon.
+// As of the 2/18/2024 this class was written by human hand. This will change soon.
 
 using System;
 using System.Diagnostics;
@@ -1623,7 +1623,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             {
                 true => sizeDiff switch  // Both positive values
                 {
-                    > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),
+                    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
+                    > 0 => -(other.DataBits - (BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference))), // slightly more precise version
                     < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
                     _ => expDifference switch
                     {
@@ -1635,7 +1636,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
                 false => sizeDiff switch // Both negative values
                 {
-                    > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),
+                    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
+                    > 0 => -(other.DataBits - (BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference))), // slightly more precise version
                     < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
                     _/*0*/ => expDifference switch
                     {
