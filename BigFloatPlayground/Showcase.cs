@@ -40,12 +40,15 @@ public static class Showcase
 
         // Display results
         Console.WriteLine($"Sum: {sum}"); 
-        Console.WriteLine($"Difference: {difference}"); 
-        Console.WriteLine($"Product: {product}");
-        Console.WriteLine($"Quotient: {quotient}");
         // Output: Sum: 123458023.5802358023581
+
+        Console.WriteLine($"Difference: {difference}"); 
         // Output: Difference: 123455554.4444555554443
+
+        Console.WriteLine($"Product: {product}");
         // Output: Product: 152415787532.38838
+
+        Console.WriteLine($"Quotient: {quotient}");
         // Output: Quotient: 99999.99999999999
 
 
@@ -59,9 +62,11 @@ public static class Showcase
         BigFloat e = bigConstants.E;
 
         Console.WriteLine($"e to 1000 binary digits: {e.ToString()}");
-        // Output: e to 1000 binary digits: 2.718281828459045235360287471352662497757247093699959574966967627724076630353547594571382178525
-        //         166427427466391932003059921817413596629043572900334295260595630738132328627943490763233829880753195251019011573834187930
-        //         7021540891499348841675092447614606680822648001684774118537423454424371075390777449920696
+        // Output:
+        // e to 1000 binary digits: 2.71828182845904523536028747135266249775724709369995957496696
+        // 76277240766303535475945713821785251664274274663919320030599218174135966290435729003342
+        // 95260595630738132328627943490763233829880753195251019011573834187930702154089149934884
+        // 1675092447614606680822648001684774118537423454424371075390777449920696
 
         // Use Pi in a calculation (Area of a circle with r = 100)
         BigFloat radius = new("100.0000000000000000");
@@ -84,33 +89,38 @@ public static class Showcase
         Console.WriteLine($"Int with specified accuracy: {c}");
         // Output: Int with specified accuracy: 10.000000000000000000000000000000
 
+
         //////////////////// Comparing Numbers: ////////////////////
         // Initialize two BigFloat numbers
 
         BigFloat num1 = new("12345.6790");
         BigFloat num2 = new("12345.6789");
 
-        // Compare the numbers
-
+        // Lets compare the numbers that are not equal...
         bool areEqual = num1 == num2;
         bool isFirstBigger = num1 > num2;
 
         Console.WriteLine($"Are the numbers equal? {areEqual}");
-        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
         // Output: Are the numbers equal? False
+
+        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
         // Output: Is the first number bigger? True
 
-        // Initialize a BigFloat that would be equal
 
+
+
+
+        // Do to the nuances of decimal to binary conversion, we end up with...
         BigFloat num3 = new("12345.6789");
-        BigFloat num4 = new("12345.67895");
+        BigFloat num4 = new("12345.67896");
 
         areEqual = num3 == num4;
         isFirstBigger = num3 > num4;
 
         Console.WriteLine($"Are the numbers equal? {areEqual}");
-        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
         // Output: Are the numbers equal? True
+
+        Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
         // Output: Is the first number bigger? False
 
 
@@ -122,15 +132,16 @@ public static class Showcase
         BigFloat smallNumber = new("1e-300");
 
         Console.WriteLine($"Large Number: {largeNumber}");
+        // Output: Large Number: 1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
         Console.WriteLine($"Small Number: {smallNumber}");
-        // Output: Large Number: 1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // Output: Small Number: 0.000000000000000000000000000000000000000000000000000000000000000000000000
-        // 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        // 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        // 000000000000000000000000000000000001
+        // Output: Small Number: 0.00000000000000000000000000000000000000000000000000000000000000
+        // 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        // 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+        // 000000000000000000000000000000000000000000000000000000000000000001
 
         BigFloat num5 = new("12121212.1212"); //8589934593, 17179869185
         BigFloat num6 = new("1234");
@@ -147,17 +158,16 @@ public static class Showcase
         // Output: 12121212.1212 * 3 = 36363636.3636
         // Output: 12121212.1212 * 3 = 0XXXXXXXX
 
-
         num5 = new("121212.1212"); //8589934593, 17179869185
         num6 = new("1234567");
         Console.WriteLine($"1212121212.1212 * 3 = 36363636.3636");
-        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
         // Output: 1212121212.1212 * 3 = 36363636.3636
+
+        Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
         // Output: 121212.1212 * 1234567 = 149644XXXXXX
 
         Console.WriteLine($"GetPrecision: {num6.GetPrecision}");
         // Output: GetPrecision: 21
-
 
 
         ///////////////////////////////////////////////////
@@ -187,7 +197,7 @@ public static class Showcase
     private static void BigConstant_Stuff() //added to test
     {
         BigFloat.BigConstants bigConstants = new(4000);
-        BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169399375105820974945
+        BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169...
         BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000); 
         Console.WriteLine(pi200ref == pi200gen);
 

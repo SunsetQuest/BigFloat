@@ -1619,34 +1619,29 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             int sizeDiff = _size - other._size;
 
-            BigInteger temp = (DataBits.Sign >= 0) switch
-            {
-                true => sizeDiff switch  // Both positive values
-                {
-                    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
-                    > 0 => -(other.DataBits - (BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference))), // slightly more precise version
-                    < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
-                    _ => expDifference switch
-                    {
-                        0 => DataBits - other.DataBits,
-                        1 => DataBits - (other.DataBits >> 1),
-                        _/*-1*/ => (DataBits >> 1) - other.DataBits,
-                    }
-                },
+            //BigInteger temp = sizeDiff switch  // Both positive values
+            //{
+            //    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
+            //    > 0 => BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference) - other.DataBits, // slightly more precise version
+            //                                                                                              //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits), // slightly faster version
+            //    < 0 => DataBits - BigFloat.RightShiftWithRound(other.DataBits, expDifference - sizeDiff),   // slightly more precise version
+            //    0 => expDifference switch
+            //    {
+            //        0 => DataBits - other.DataBits,
+            //        1 => DataBits - (other.DataBits >> 1),
+            //        _/*-1*/ => (DataBits >> 1) - other.DataBits,
+            //    }
+            //};
 
-                false => sizeDiff switch // Both negative values
+
+            BigInteger temp = (sizeDiff - expDifference) switch  // Both positive values
                 {
                     // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
-                    > 0 => -(other.DataBits - (BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference))), // slightly more precise version
-                    < 0 => -((other.DataBits << (sizeDiff - expDifference)) - DataBits),
-                    _/*0*/ => expDifference switch
-                    {
-                        0 => DataBits - other.DataBits,
-                        1 => DataBits - (other.DataBits >> 1),
-                        _/*-1*/ => (DataBits >> 1) - other.DataBits,
-                    }
-                }
-            };
+                    > 0 => BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference) - other.DataBits, // slightly more precise version
+                    //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits), // slightly faster version
+                    < 0 => DataBits - BigFloat.RightShiftWithRound(other.DataBits, expDifference - sizeDiff),   // slightly more precise version
+                    0 => DataBits - other.DataBits
+                };
 
             // a quick exit
             int bytes = temp.GetByteCount();
