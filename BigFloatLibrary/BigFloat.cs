@@ -1566,7 +1566,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    /// Compares two values and returns...
+    ///  Compares the in-precision bits between two values. Only the most significate bit in the HiddenBits is considered.
     ///   Returns negative => this instance is less than other
     ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
     ///     i.e. Sub-Precision bits rounded and removed. 
@@ -1575,91 +1575,115 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int CompareTo(BigFloat other)
     {
+        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
+
+        // At this point, the exponent is equal or off by one because of a rollover.
+
+        int sizeDiff = _size - other._size - Exponent + other.Exponent;
+
+        //todo: instead of "RightShiftWithRound" what about just shifting by "ExtraHiddenBits-1"
+        BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
+        BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
+
+        return a.CompareTo(b);
+    }
+
+    /// <summary>
+    /// A more accurate version of CompareTo() however it is not compatible with IEquatable. Compares the two numbers by subtracting them and if they are less then 0|1000 (i.e. Zero) then they are considered equal.
+    /// e.g. Using 10|01111111 AND 10|10000000, CompareTo() returns not equal, but CompareInPrecisionBitsTo() returns Equal
+    ///   Returns negative => this instance is less than other
+    ///   Returns Zero     => this instance is equal to other. (or the difference is less then 0|1000 )
+    ///     i.e. Sub-Precision bits rounded and removed. 
+    ///     e.g. 1.11 == 1.1,  1.00 == 1.0,  1.11 != 1.10
+    ///   Returns Positive => this instance is greater than other
+    /// </summary>
+    public int CompareInPrecisionBitsTo(BigFloat other)
+    {
+        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
+
+        // At this point, the exponent is equal or off by one because of a rollover.
+
+        int sizeDiff = _size - other._size - Exponent + other.Exponent;
+
+        BigInteger diff = sizeDiff switch
+        {
+            //> 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),    // slightly faster version
+            > 0 => BigFloat.RightShiftWithRound(DataBits, sizeDiff) - other.DataBits, // slightly more precise version
+            //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits),    // slightly faster version
+            < 0 => DataBits - BigFloat.RightShiftWithRound(other.DataBits, -sizeDiff),// slightly more precise version
+            0 => DataBits - other.DataBits
+        };
+
+        // a quick exit
+        int bytes = diff.GetByteCount();
+        if (bytes != 4)
+        {
+            return (bytes > 4) ? diff.Sign : 0;
+        }
+
+        // Since we are subtracting, we can run into an issue where a 0:100000 should be considered a match.  e.g. 11:000 == 10:100
+        diff -= diff.Sign; // decrements towards 0
+
+        // Future: need to benchmark A, B or C
+        //int a = RightShiftWithRound(temp, ExtraHiddenBits).Sign;
+        //int b = (BigInteger.Abs(temp) >> (ExtraHiddenBits - 1)).IsZero ? 0 : temp.Sign;
+        int c = ((int)((diff.Sign >= 0) ? diff : -diff).GetBitLength() < ExtraHiddenBits) ? 0 : diff.Sign;
+
+        return c;
+    }
+
+    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
+    {
         if (OutOfPrecision)
         {
-            return other.OutOfPrecision ? 0 : -other.DataBits.Sign;
+            result = other.OutOfPrecision ? 0 : -other.DataBits.Sign;
+            return true;
         }
 
         if (other.OutOfPrecision)
         {
-            return OutOfPrecision ? 0 : DataBits.Sign;
+            result = OutOfPrecision ? 0 : DataBits.Sign;
+            return true;
         }
 
-        // Lets see if we can escape early by just looking at the Exponent.
+        // Lets see if we can escape early by just looking at the Sign.
         if (DataBits.Sign != other.DataBits.Sign)
         {
-            return DataBits.Sign;
+            result = DataBits.Sign;
+            return true;
         }
 
         // Lets see if we can escape early by just looking at the Exponent.
         int expDifference = Exponent - other.Exponent;
         if (Math.Abs(expDifference) > 1)
         {
-            return Exponent.CompareTo(other.Exponent) * DataBits.Sign;
+            result = Exponent.CompareTo(other.Exponent) * DataBits.Sign;
+            return true;
         }
 
         // At this point, the sign is the same, and the exp are within 1 bit of each other.
 
         //There are three special cases when the Exponent is off by just 1 bit:
         // case 1:  The smaller of the two rounds up to match the size of the larger and, therefore, can be equal(11 | 111 == 100 | 000)
-        // case 2:  The smaller of the two rounds up, but the larger one also rounds up, so they are not equal(depends on #1 happening first)
+        // case 2:  The smaller of the two rounds up, but the larger one also rounds up, so they are again not equal(depends on #1 happening first)
         // case 3:  Both round-up and are, therefore, equal
 
         //If "this" is larger by one bit AND "this" is not in the format 10000000..., THEN "this" must be larger(or smaller if neg)
         if (expDifference == 1 && !IsOneBitFollowedByZeroBits)
         {
-            return DataBits.Sign;
+            result = DataBits.Sign;
+            return true;
         }
+
         // If "other" is larger by one bit AND "other" is not in the format 10000000..., THEN "other" must be larger(or smaller if neg)
         if (expDifference == -1 && !other.IsOneBitFollowedByZeroBits)
         {
-            return -Sign;
+            result = -Sign;
+            return true;
         }
-        else // if (expDifference == 0)
-        {
-            int sizeDiff = _size - other._size;
 
-            //BigInteger temp = sizeDiff switch  // Both positive values
-            //{
-            //    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
-            //    > 0 => BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference) - other.DataBits, // slightly more precise version
-            //                                                                                              //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits), // slightly faster version
-            //    < 0 => DataBits - BigFloat.RightShiftWithRound(other.DataBits, expDifference - sizeDiff),   // slightly more precise version
-            //    0 => expDifference switch
-            //    {
-            //        0 => DataBits - other.DataBits,
-            //        1 => DataBits - (other.DataBits >> 1),
-            //        _/*-1*/ => (DataBits >> 1) - other.DataBits,
-            //    }
-            //};
-
-
-            BigInteger temp = (sizeDiff - expDifference) switch  // Both positive values
-                {
-                    // > 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))), // slightly faster version
-                    > 0 => BigFloat.RightShiftWithRound(DataBits, sizeDiff - expDifference) - other.DataBits, // slightly more precise version
-                    //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits), // slightly faster version
-                    < 0 => DataBits - BigFloat.RightShiftWithRound(other.DataBits, expDifference - sizeDiff),   // slightly more precise version
-                    0 => DataBits - other.DataBits
-                };
-
-            // a quick exit
-            int bytes = temp.GetByteCount();
-            if (bytes != 4)
-            {
-                return (bytes > 4) ? temp.Sign : 0;
-            }
-
-            // since we are subtracting, we can run into an issue where a 0:100000 should be considered a match.  e.g. 11:000 == 10:100
-            temp -= temp.Sign; //decrements towards 0
-
-            // Future: need to benchmark A, B or C
-            //int a = RightShiftWithRound(temp, ExtraHiddenBits).Sign;
-            //int b = (BigInteger.Abs(temp) >> (ExtraHiddenBits - 1)).IsZero ? 0 : temp.Sign;
-            int c = ((int)((temp.Sign >= 0) ? temp : -temp).GetBitLength() < ExtraHiddenBits) ? 0 : temp.Sign;
-
-            return c;
-        }
+        result = 0;
+        return false;
     }
 
     /// <summary> 

@@ -945,8 +945,8 @@ public class BigFloatTests
         IsTrue(BigFloat.Pow(2, 2) == 4, $"Failed on: 2^2");
 
         IsTrue(BigFloat.Pow(3, 2) == 8, $"Failed on: 3^2");  // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
-        IsTrue(BigFloat.Pow(3, 2) == 9, $"Failed on: 3^2");  
-        IsTrue(BigFloat.Pow(3, 2) == 10, $"Failed on: 3^2"); 
+        IsTrue(BigFloat.Pow(3, 2) == 9, $"Failed on: 3^2");
+        IsFalse(BigFloat.Pow(3, 2) == 10, $"Failed on: 3^2");   // does (10|01 == 10|10)?  (10 == 11), so no
         IsFalse(7 == 8, $"Failed on: 7 == 8"); 
         IsFalse(9 == 10, $"Failed on: 9 == 10");
 
