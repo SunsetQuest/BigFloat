@@ -179,7 +179,6 @@ public class BigFloatTests
             Math.E +
             Math.PI;
 
-
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 2) == 0, "Fail on Verify_BigConstants");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 1) == 0, "Fail on Verify_BigConstants");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 0) == 0, "Fail on Verify_BigConstants");
@@ -278,25 +277,23 @@ public class BigFloatTests
         IsFalse(BigFloat.ParseBinary("1:111111111", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsFalse(BigFloat.ParseBinary("1:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
         IsFalse(BigFloat.ParseBinary("0:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:111111111", 0, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
+        IsFalse(BigFloat.ParseBinary("0:111111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) 
         IsFalse(BigFloat.ParseBinary("0:011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
-        IsFalse(BigFloat.ParseBinary("0:011111111", 0, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0:011111111", 1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:001111111", 1, 0).IsZero); //                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:001111111", 2, 0).IsZero); //                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
+        IsFalse(BigFloat.ParseBinary("0:011111111", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:001111111", 1, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:001111111", 2, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsTrue(BigFloat.ParseBinary("0:000111111", 2, 0).IsZero); //
-        IsFalse(BigFloat.ParseBinary("0:000111111", 3, 0).IsZero); //                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:000111111", 3, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsFalse(BigFloat.ParseBinary("1:000000000", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
         IsFalse(BigFloat.ParseBinary("1:000000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1:000000000", 0, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1:000000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsFalse(BigFloat.ParseBinary("0:100000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0:100000000", 0, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:100000000", 1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:100000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0:100000000", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
 
 
         //  IntData    Scale  Precision  Zero
-
-
         //1:111111111 << -2       1       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
         //1:111111111 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) 
         //0:111111111 << -1       0       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)

@@ -61,7 +61,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     // private readonly int _extraPrecOrRepeat;
 
     /// <summary>
-    /// The Scale (or -Accuracy) is the amount to left shift (<<) the integer(user's view) to get to the desired value. 
+    /// The Scale (or -Accuracy) is the amount to left shift (<<) the integer (or right shift the radix point) to get to the desired value. 
     /// When BigFloat is Zero, scale is the point of least accuracy.
     /// note: _scale = Scale-ExtraHiddenBits (or Scale = _scale + ExtraHiddenBits)
     /// </summary>
@@ -1566,7 +1566,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    ///  Compares the in-precision bits between two values. Only the most significate bit in the HiddenBits is considered.
+    ///  Compares the in-precision bits between two values. Only the most significant bit in the HiddenBits is considered.
     ///   Returns negative => this instance is less than other
     ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
     ///     i.e. Sub-Precision bits rounded and removed. 
@@ -2145,7 +2145,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    /// Returns the number of matching leading bits that exactly matchly. HiddenBits are included.
+    /// Returns the number of matching leading bits that exactly match. HiddenBits are included.
     /// i.e. The number of leading bits that exactly match.
     /// e.g. 11010 and 11111 returns 2
     /// e.g. 100000 and 111111 returns 1

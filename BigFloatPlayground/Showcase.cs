@@ -39,10 +39,10 @@ public static class Showcase
         BigFloat quotient = a / b;
 
         // Display results
-        Console.WriteLine($"Sum: {sum}"); 
+        Console.WriteLine($"Sum: {sum}");
         // Output: Sum: 123458023.5802358023581
 
-        Console.WriteLine($"Difference: {difference}"); 
+        Console.WriteLine($"Difference: {difference}");
         // Output: Difference: 123455554.4444555554443
 
         Console.WriteLine($"Product: {product}");
@@ -106,11 +106,7 @@ public static class Showcase
         Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
         // Output: Is the first number bigger? True
 
-
-
-
-
-        // Do to the nuances of decimal to binary conversion, we end up with...
+        // Due to the nuances of decimal to binary conversion, we end up with some undesired rounding.
         BigFloat num3 = new("12345.6789");
         BigFloat num4 = new("12345.67896");
 
@@ -173,7 +169,7 @@ public static class Showcase
         ///////////////////////////////////////////////////
         //////////////////// TEST AREA ////////////////////
         ///////////////////////////////////////////////////
-        
+
         //BigConstant_Stuff();
         //BigConstant_Stuff2();
         //Pow_Stuff();
@@ -198,7 +194,7 @@ public static class Showcase
     {
         BigFloat.BigConstants bigConstants = new(4000);
         BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169...
-        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000); 
+        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000);
         Console.WriteLine(pi200ref == pi200gen);
 
         for (int i = 0; i < 500; i++)
