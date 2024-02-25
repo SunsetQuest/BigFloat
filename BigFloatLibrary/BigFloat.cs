@@ -4,7 +4,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/18/2024 this class was written by human hand. This will change soon.
+// As of the 2/24/2024 this class was written by human hand. This will change soon.
 
 using System;
 using System.Diagnostics;
@@ -51,12 +51,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     //future: Possible future feature
     ///// <summary>
-    ///// When positive, it is the number of extra virtual zeros tacked on the end of the internal _int for better precision and accuracy.  
-    ///// Example: 11.001(with _extraPrecOrRepeat = 3) would be the same as 11.001000  
+    ///// When positive, it's the number of least significant digits in DataBits that repeat.
+    /////    Example: DataBits:11.001(with _extraPrecOrRepeat = 3) would be 11.001001001001...
+    ///// When negative, it is the number of extra virtual zeros tacked on the end of the internal _int for better precision and accuracy.  
+    ///// Example: 11.001(with _extraPrecOrRepeat = -3) would be the same as 11.001000  
     /////   For the above example "000" would not take up any space and is also guaranteed to be all 0 bits.
     ///// When zero, this feature does not get used. (Default)
-    ///// When negative, it's the number of least significant digits that repeat.
-    /////    Example: 11.001(with _extraPrecOrRepeat = -3) would be 11.001001001001...
     ///// </summary>
     // private readonly int _extraPrecOrRepeat;
 
@@ -533,7 +533,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int valSize = val._size;
 
         if (scale < -1) // Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
-            // -1 is not enough to form a full decimal digit.
+                        // -1 is not enough to form a full decimal digit.
         {
             if (includeOutOfPrecisionBits)
             {
@@ -622,7 +622,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger power5 = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
             BigInteger power5Scaled = RightShiftWithRound(power5, ExtraHiddenBits); // Applies the scale to the number and rounds from bottom bit
             //Console.WriteLine(power5Scaled.ToString() + new string('X', maskSize));
-            return power5Scaled.ToString() + new string('X', maskSize);
+            return power5Scaled.ToString()
+                + ((maskSize < 10) ? new string('X', maskSize) : " * 10^" + maskSize.ToString());
         }
     }
 
@@ -4048,10 +4049,11 @@ Other:                                         |   |         |         |       |
         return res;
     }
 
-    // 1/6/2024
     public static BigFloat NthRoot_INCOMPLETE_DRAFT8(BigFloat value, int root)
     {
-        //Console.WriteLine();
+        bool DEBUG = false;
+        
+        //if (DEBUG) Console.WriteLine();
         bool rootIsNeg = root < 0;
         if (rootIsNeg)
         {
@@ -4148,7 +4150,7 @@ Other:                                         |   |         |         |       |
         //    BigFloat oldX = x;
         //    BigFloat tb = t / b;
         //    x -= tb;
-        //    Console.WriteLine($"{oldX} - ({t} / {b}) = {oldX} - {tb} =\r\n     {x}");
+        //    if (DEBUG) Console.WriteLine($"{oldX} - ({t} / {b}) = {oldX} - {tb} =\r\n     {x}");
         //    b = rt * Pow(x, root - 1);
         //    t = Pow(x, root) - value;
         //}
@@ -4160,50 +4162,50 @@ Other:                                         |   |         |         |       |
 
 
 
-        BigFloat t = Pow(x, root) - value; Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
+        BigFloat t = Pow(x, root) - value; if (DEBUG) Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
         BigInteger biPower = PowMostSignificantBits(xVal << 53, root, out _);
-        BigInteger t2 = (value.DataBits << (int)(biPower.GetBitLength() - value.DataBits.GetBitLength())) - biPower; Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
+        BigInteger t2 = (value.DataBits << (int)(biPower.GetBitLength() - value.DataBits.GetBitLength())) - biPower; if (DEBUG) Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
 
-        BigFloat b = rt * Pow(x, root - 1); Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
+        BigFloat b = rt * Pow(x, root - 1); if (DEBUG) Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
         BigInteger b2;
-        b2 = root * PowMostSignificantBits(xVal, root - 1, out _, 53, 26); Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
+        b2 = root * PowMostSignificantBits(xVal, root - 1, out _, 53, 26); if (DEBUG) Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
         // precision: biPower = 53, t2 = 53, b2 = 53, SO tb2 = 53 bits
 
         while (xVal.GetBitLength() < 140)//(t2.GetBitLength() > 20)//(t._size > 3) //(!t.OutOfPrecision)
         {
-            Console.WriteLine();
+            if (DEBUG) Console.WriteLine();
             BigFloat oldX = x;
             BigInteger oldX2 = xVal;
 
-            BigFloat tb = t / b; Console.WriteLine($"F-tb: {tb.GetMostSignificantBits(196)}[{tb._size}]");
-            BigInteger tb2 = (t2 << 53) / b2; Console.WriteLine($"I-tb: {BigIntegerToBinaryString(tb2)}[{tb2.GetBitLength()}]");
+            BigFloat tb = t / b; if (DEBUG) Console.WriteLine($"F-tb: {tb.GetMostSignificantBits(196)}[{tb._size}]");
+            BigInteger tb2 = (t2 << 53) / b2; if (DEBUG) Console.WriteLine($"I-tb: {BigIntegerToBinaryString(tb2)}[{tb2.GetBitLength()}]");
 
-            x -= tb; Console.WriteLine($"F-X:  {x.GetMostSignificantBits(196)}[{x._size}]");
-            xVal = (xVal << ((int)b2.GetBitLength())) + tb2; Console.WriteLine($"I-X:  {BigIntegerToBinaryString(xVal)}[{xVal.GetBitLength()}]");
-            Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001..."); //11001000010110011000001111101111001101111100000110110101011001011110011100100111000010100010010110001001000010011000000101000010101000000000011011011000010111100110010101111011001011011001110001110
-            Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001000110001111000010001011110100001011001101010000...");
-            Console.WriteLine($"BF:{oldX} - ({t} / {b} [{tb}]) = {x}");                                // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111010100000101100101000110010110110000100111101101111110111100001101101110111000000001110100100101011100100000100010101101110000111...
+            x -= tb; if (DEBUG) Console.WriteLine($"F-X:  {x.GetMostSignificantBits(196)}[{x._size}]");
+            xVal = (xVal << ((int)b2.GetBitLength())) + tb2; if (DEBUG) Console.WriteLine($"I-X:  {BigIntegerToBinaryString(xVal)}[{xVal.GetBitLength()}]");
+            if (DEBUG) Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001..."); //11001000010110011000001111101111001101111100000110110101011001011110011100100111000010100010010110001001000010011000000101000010101000000000011011011000010111100110010101111011001011011001110001110
+            if (DEBUG) Console.WriteLine($"Ans:  1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001000110001111000010001011110100001011001101010000...");
+            if (DEBUG) Console.WriteLine($"BF:{oldX} - ({t} / {b} [{tb}]) = {x}");                                // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111010100000101100101000110010110110000100111101101111110111100001101101110111000000001110100100101011100100000100010101101110000111...
                                                                                                        // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111010100000101100101000110010110110000100111101101111110111100001101101110111000000001110100100101011100100
                                                                                                        // 1100100001011001100000111.11011110011011111000001101101010110010111100111001011101100011110011111011010110111011101001110111110010111011100110101101111001011011000010111000110001001000000010100000110011111101101110011010000001...
                                                                                                        //Res: 1100100001011001100000111.1101111001101111100000110110101011001011110011100101110110001111001111101111001011
-            Console.WriteLine($"BI:{oldX2} - ({t2} / {b2} [{tb2}]) =  {new BigFloat(xVal, x_Scale - 54 - 32)}");
+            if (DEBUG) Console.WriteLine($"BI:{oldX2} - ({t2} / {b2} [{tb2}]) =  {new BigFloat(xVal, x_Scale - 54 - 32)}");
             biPower = PowMostSignificantBits(xVal /*<< 100*/, root, out _);
-            Console.WriteLine($"F-pow:{Pow(x, root).GetMostSignificantBits(196)}[{Pow(x, root)._size}]");
-            Console.WriteLine($"I-pow:{BigIntegerToBinaryString(biPower)}[{biPower.GetBitLength()}]");
+            if (DEBUG) Console.WriteLine($"F-pow:{Pow(x, root).GetMostSignificantBits(196)}[{Pow(x, root)._size}]");
+            if (DEBUG) Console.WriteLine($"I-pow:{BigIntegerToBinaryString(biPower)}[{biPower.GetBitLength()}]");
 
             BigInteger val2 = value.DataBits << (int)(biPower.GetBitLength() - value.DataBits.GetBitLength());
-            Console.WriteLine($"F-val:{value.GetMostSignificantBits(196)}[{t._size}]");
-            Console.WriteLine($"I-val:{BigIntegerToBinaryString(val2)}[{val2.GetBitLength()}]");
+            if (DEBUG) Console.WriteLine($"F-val:{value.GetMostSignificantBits(196)}[{t._size}]");
+            if (DEBUG) Console.WriteLine($"I-val:{BigIntegerToBinaryString(val2)}[{val2.GetBitLength()}]");
 
-            t = Pow(x, root) - value; Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
-            t2 = biPower - val2; Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
+            t = Pow(x, root) - value; if (DEBUG) Console.WriteLine($"F-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
+            t2 = biPower - val2; if (DEBUG) Console.WriteLine($"I-t:  {BigIntegerToBinaryString(t2)}[{t2.GetBitLength()}]");
 
-            b = rt * Pow(x, root - 1); Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
-            b2 = root * PowMostSignificantBits(xVal, root - 1, out _); Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
+            b = rt * Pow(x, root - 1); if (DEBUG) Console.WriteLine($"F-b:  {b.GetMostSignificantBits(196)}[{b._size}]");
+            b2 = root * PowMostSignificantBits(xVal, root - 1, out _); if (DEBUG) Console.WriteLine($"I-b:  {BigIntegerToBinaryString(b2)}[{b2.GetBitLength()}]");
 
             // precision: t2 = 106, b2 = 106, SO tb2 = 106 bits
 
-            BigInteger temp = (t2 << ((2 * wantedPrecision) - (int)t2.GetBitLength())) / b2; Console.WriteLine($"I-tb: {BigIntegerToBinaryString(temp)}[{temp.GetBitLength()}]");
+            BigInteger temp = (t2 << ((2 * wantedPrecision) - (int)t2.GetBitLength())) / b2; if (DEBUG) Console.WriteLine($"I-tb: {BigIntegerToBinaryString(temp)}[{temp.GetBitLength()}]");
 
         }
 

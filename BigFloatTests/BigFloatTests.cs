@@ -4,7 +4,7 @@
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/18/2024 this class was written by human hand. This will change soon.
+// As of the 2/24/2024 this class was written by human hand. This will change soon.
 
 using BigFloatLibrary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -3174,10 +3174,10 @@ public class BigFloatTests
         actual = new BigFloat(12300000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
         actual = new BigFloat(123000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
         actual = new BigFloat(1230000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
-        actual = new BigFloat(1230000000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000000.0).ToString(); AreEqual("1230000000000000 * 10^10", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000000000.0).ToString(); AreEqual("1230000000000000 * 10^11", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(1230000000000000000000000000.0).ToString(); AreEqual("1230000000000000 * 10^12", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000000000.0).ToString(); AreEqual("1230000000000000 * 10^13", actual, false, $"Fail-W on Double->BigFloat->ToString");
 
         actual = new BigFloat(99990000000000000.0).ToString(); AreEqual("999900000000000XX", actual, false, $"Fail-M on Double->BigFloat->ToString");
         actual = new BigFloat(999900000000000000.0).ToString(); AreEqual("999900000000000XXX", actual, false, $"Fail-N on Double->BigFloat->ToString");
@@ -3187,23 +3187,23 @@ public class BigFloatTests
         actual = new BigFloat(9999000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXX", actual, false, $"Fail-R on Double->BigFloat->ToString");
         actual = new BigFloat(99990000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
         actual = new BigFloat(999900000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = new BigFloat(9999000000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = new BigFloat(99990000000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = new BigFloat(999900000000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
-        actual = new BigFloat(9999000000000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(9999000000000000000000000.0).ToString(); AreEqual("999900000000000 * 10^10", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = new BigFloat(99990000000000000000000000.0).ToString(); AreEqual("999900000000000 * 10^11", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = new BigFloat(999900000000000000000000000.0).ToString(); AreEqual("999900000000000 * 10^12", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(9999000000000000000000000000.0).ToString(); AreEqual("999900000000000 * 10^13", actual, false, $"Fail-W on Double->BigFloat->ToString");
 
         for ( int i = 1000; i < 90000; i++)
         {
             float floatVal = float.Parse(i.ToString() + "00000000000000.0");
             actual = new BigFloat(floatVal).ToString(); 
-            IsTrue(actual.ToString().Contains("0X"));
+            IsTrue(actual.Contains("0X") || actual.Contains(" * 10^"));
         }
 
         for (int i = 1000; i < 90000; i++)
         {
             double doubleVal = double.Parse(i.ToString() + "000000000000000000000000.0");
             actual = new BigFloat(doubleVal).ToString();
-            IsTrue(actual.ToString().Contains("0X") || actual.ToString().Contains("9X"));
+            IsTrue(actual.Contains("0X") || actual.Contains(" * 10^"));
         }
 
     }
