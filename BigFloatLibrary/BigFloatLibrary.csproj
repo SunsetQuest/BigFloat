@@ -7,9 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="BigConstants0.cs" />
-    <Compile Remove="BigFloat-MargosLaptop.cs" />
-    <Compile Remove="BigFloat0.cs" />
   </ItemGroup>
 
 </Project>

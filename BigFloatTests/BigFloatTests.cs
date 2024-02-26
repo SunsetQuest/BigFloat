@@ -3289,11 +3289,17 @@ public class BigFloatTests
         a = new BigFloat(100000000.000000);
         b = new BigFloat(100000000.000001);
         IsTrue(a < b, $"Fail-80a on VerifyCompareTo");
+        IsFalse(b < a, $"Fail-80aa on VerifyCompareTo");
         IsTrue(b > a, $"Fail-80b on VerifyCompareTo");
+        IsFalse(a > b, $"Fail-80bb on VerifyCompareTo");
         IsTrue(a <= b, $"Fail-80c on VerifyCompareTo");
+        IsFalse(b <= a, $"Fail-80cc on VerifyCompareTo");
         IsTrue(b >= a, $"Fail-80d on VerifyCompareTo");
+        IsFalse(a >= b, $"Fail-80dd on VerifyCompareTo");
         IsFalse(a == b, $"Fail-80e on VerifyCompareTo");
+        IsFalse(b == a, $"Fail-80ee on VerifyCompareTo");
         IsTrue(a != b, $"Fail-80f on VerifyCompareTo");
+        IsTrue(b != a, $"Fail-80ff on VerifyCompareTo");
 
         // Zero ranges
         a = new BigFloat(-1.0000000);

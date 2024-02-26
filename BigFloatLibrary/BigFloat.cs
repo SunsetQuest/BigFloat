@@ -1289,12 +1289,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <returns>A BigFloat result of the input binary string.</returns>
     public static BigFloat ParseBinary(string input, int scale = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            ArgumentNullException.ThrowIfNull(input);
-            ArgumentNullException.ThrowIfNullOrWhiteSpace(input);
-            return 0;
-        }
+        ArgumentNullException.ThrowIfNull(input); // .Net 7 or later
+        //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
 
         return !TryParseBinary(input.AsSpan(), out BigFloat result, scale, forceSign, includesHiddenBits)
             ? throw new Exception("Unable to convert the binary string to a BigFloat.")
@@ -1582,9 +1578,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         int sizeDiff = _size - other._size - Exponent + other.Exponent;
 
-        //todo: instead of "RightShiftWithRound" what about just shifting by "ExtraHiddenBits-1"
         BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
         BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
+
+        //todo: instead of "RightShiftWithRound" what about just shifting by "ExtraHiddenBits-1"
+        //BigInteger a = DataBits >> ((sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits-1);
+        //BigInteger b = other.DataBits >> ((sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits-1);
 
         return a.CompareTo(b);
     }
@@ -2689,56 +2688,35 @@ Other:                                         |   |         |         |       |
 
     // Performance idea: what about doing:  rolledOver = (x == (1 << x.bitLen))   (do this before the inc for neg numbers and do this after the inc for pos numbers)
     // Performance idea: what about doing:  "(b & uint.MaxValue) == 0" first as a quick check. (or use x.IsPowerOfTwo)
-    // Performance idea:  rolledOver = b.IsPowerOfTwo; 
+    // Performance idea: bool rolledOver = b.IsPowerOfTwo || (b<<1).IsPowerOfTwo; 
 
     /// <summary>
     /// Removes x number of bits of precision. 
     /// A special case of RightShift(>>) that will round based off the most significant bit in the removed bits(bitsToRemove).
     /// This function will not adjust the scale. Like any shift, the value with be changed by some power of 2.
-    /// Caution: a round up could cause the number to grow in size. (example: RightShiftWithRound(0b111, 1) --> 0b100
+    /// Caution: Round-ups may percolate to the most significate bit, adding an extra bit in size. 
+    ///   e.g. RightShiftWithRound(0b111, 1) --> 0b100
     /// Notes: 
     /// * Works on positive and negative numbers. 
     /// * If the part being removed has the most significant bit set, then the result will be rounded away from zero. 
-    /// * THIS FUNCTION IS HIGHLY TUNED!
     /// </summary>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
     /// <param name="bitsToRemove">The number of bits to reduce the precision.</param>
     /// <returns>The rounded result of shifting val to the right by bitsToRemove.</returns>
     public static BigInteger RightShiftWithRound(BigInteger val, in int bitsToRemove)
     {
-        //todo: What about this instead of the below?  (basically merge the two below into one)
-        //if (val.Sign < 0) val--;
-        //BigInteger temp = val >> (bitsToRemove - 1);
-        //BigInteger result = temp >>= 1; // on .net 7 and later use >>> instead of >> for a performance boost
-        //if (!temp.IsEven)  // on .net 7 and later use >>> instead of >> for a performance boost
-        //    result++;
-        //return result;
-
         // if bitsToRemove is negative, we would up-shift and no rounding is needed.
         if (bitsToRemove < 0)
         {
-            return val >> bitsToRemove; ;
-        }
-
-        if (val.Sign >= 0)
-        {
-            BigInteger result = val >> bitsToRemove; // on .net 7 and later use >>> instead of >> for a performance boost
-
-            if (!(val >> (bitsToRemove - 1)).IsEven)  // on .net 7 and later use >>> instead of >> for a performance boost
-            {
-                result++;
-            }
-
-            return result;
+            return val >> bitsToRemove;
         }
 
         // BigInteger will automatically round when down-shifting larger negative values.
-        //performance idea...if bits to remove is say 10 and there are zeros in it then val-- does nothing! (so skip this step)
-        val--;
+        if (val.Sign < 0) val--;
 
         BigInteger result2 = val >> bitsToRemove;
 
-        if (!(val >> (bitsToRemove - 1)).IsEven)  // on .net 7 and later use >>> for a slight performance boost
+        if (!(val >>> (bitsToRemove - 1)).IsEven)
         {
             result2++;
         }
@@ -2762,9 +2740,9 @@ Other:                                         |   |         |         |       |
 
         if (val.Sign >= 0)
         {
-            BigInteger result = val >> bitsToRemove; // on .net 7 and later use >>> instead of >> for a slight performance boost
+            BigInteger result = val >>> bitsToRemove; 
 
-            if (!(val >> (bitsToRemove - 1)).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
+            if (!(val >>> (bitsToRemove - 1)).IsEven)
             {
                 result++;
 
@@ -2782,9 +2760,9 @@ Other:                                         |   |         |         |       |
 
         BigInteger result2 = val >> bitsToRemove;
 
-        if ((val >> (bitsToRemove - 1)).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
+        if ((val >>> (bitsToRemove - 1)).IsEven)
         {
-            if (((result2 - 1) >> size).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
+            if (((result2 - 1) >>> size).IsEven)
             {
                 size++;
             }
