@@ -1,10 +1,10 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 1/2024, 2/2024
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024
 
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/24/2024 this class was written by human hand. This will change soon.
+// This struct was written by human hand. This may change soon.
 
 using BigFloatLibrary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -83,15 +83,15 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_BitwiseComplementOperator()
     {
-        _ = BigFloat.TryParseBinary("10.111", out BigFloat a);
-        _ = BigFloat.TryParseBinary(" 1.000 11111111111111111111111111111111", out BigFloat expectedAns, includedHiddenBits: 32);
+        BigFloat a = BigFloat.ParseBinary("10.111");
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includesHiddenBits: 32);
         IsTrue(~a == expectedAns);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
-        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, includedHiddenBits: 32);
+        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, includesHiddenBits: 32);
         IsTrue(~a == expectedAns);
 
-        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, includedHiddenBits: 32);
+        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, includesHiddenBits: 32);
         _ = BigFloat.TryParseBinary("  110110110", out expectedAns);
         IsTrue(~a == expectedAns);
 
@@ -763,7 +763,7 @@ public class BigFloatTests
         // e.g. 0.31832553782759071^2 is 0.10133114803322488, not 0.10133114803322489
         // (note: 97 out of 46300 failed)
         for (int jj = 0; jj < 20; jj++)
-            for (double ii = 0.00001; ii < 100000; ii = ii * 1.01)
+            for (double ii = 0.00001; ii < 100000; ii *= 1.01)
             {
                 switch (jj)
                 {
@@ -2689,6 +2689,9 @@ public class BigFloatTests
     /// Test some string values that can not be converted to a big integer.  
     /// </summary>
     [TestMethod]
+    //[ExpectedException(typeof(ArgumentNullException))]
+    //[ExpectedException(typeof(ArgumentException))]
+
     public void Verify_TryParse_Errors()
     {
         IsFalse(BigFloat.TryParse("", out _), @"BigFloat.TryParse("""") reported True but should be False.");
@@ -2710,6 +2713,11 @@ public class BigFloatTests
         IsFalse(BigFloat.TryParse("0.-", out _), @"BigFloat.TryParse(""0.-"") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1.41.", out _), @"BigFloat.TryParse(""1.41."") reported True but should be False.");
         IsFalse(BigFloat.TryParse(".41.", out _), @"BigFloat.TryParse("".41."") reported True but should be False.");
+        #if !DEBUG
+        _ = Assert.ThrowsException<ArgumentNullException>(() => BigFloat.ParseBinary(null));
+        _ = Assert.ThrowsException<ArgumentException>(() => BigFloat.ParseBinary(""));
+        _ = Assert.ThrowsException<ArgumentException>(() => BigFloat.ParseBinary(" "));
+        #endif
     }
 
     /// <summary>

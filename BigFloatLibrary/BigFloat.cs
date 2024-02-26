@@ -1,10 +1,10 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 1/2024, 2/2024
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024
 
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// As of the 2/24/2024 this class was written by human hand. This will change soon.
+// This struct was written by human hand. This may change soon.
 
 using System;
 using System.Diagnostics;
@@ -1289,11 +1289,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <returns>A BigFloat result of the input binary string.</returns>
     public static BigFloat ParseBinary(string input, int scale = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
-        ArgumentNullException.ThrowIfNull(input); // .Net 7 or later
+        ArgumentException.ThrowIfNullOrEmpty(input); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
 
         return !TryParseBinary(input.AsSpan(), out BigFloat result, scale, forceSign, includesHiddenBits)
-            ? throw new Exception("Unable to convert the binary string to a BigFloat.")
+            ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", input)
             : result;
     }
 
@@ -1305,8 +1305,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <param name="result">(out) The BigFloat result.</param>
     /// <param name="scale">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
+    /// <param name="includesHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits.</param>
     /// <returns>Returns false if it fails or is given an empty or null string.</returns>
-    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int scale = 0, int forceSign = 0, int includedHiddenBits = -1)
+    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int scale = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
         int inputLen = input.Length;
 
@@ -1390,10 +1391,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (hiddenBitsFound >= 0)
         {
             // includedHiddenBits is specified?  if so, they must match!
-            if (includedHiddenBits >= 0)
+            if (includesHiddenBits >= 0)
             {
                 // make sure they match and fail if they do not.
-                if (hiddenBitsFound != includedHiddenBits)
+                if (hiddenBitsFound != includesHiddenBits)
                 {
                     result = new BigFloat(0);
                     return false;
@@ -1401,16 +1402,16 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
             else // includedHiddenBits NOT specified 
             {
-                includedHiddenBits = hiddenBitsFound;
+                includesHiddenBits = hiddenBitsFound;
             }
         }
         //else if (includedHiddenBits >= 0) { } // if no precision spacer (| or :) AND but includedHiddenBits was specified
         //else { } //nether specified.
 
         // Lets add the missing zero hidden bits
-        if (includedHiddenBits >= 0)
+        if (includesHiddenBits >= 0)
         {
-            int zerosNeededStill = ExtraHiddenBits - includedHiddenBits;
+            int zerosNeededStill = ExtraHiddenBits - includesHiddenBits;
             //outputBitPosition += zerosNeededStill;
             if (!radixPointFound)
             {
@@ -1419,7 +1420,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
         else
         {
-            includedHiddenBits = 0;
+            includesHiddenBits = 0;
         }
 
         // If the number is negative, let's perform Two's complement: (1) negate the bits (2) add 1 to the bottom byte
@@ -1450,7 +1451,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         BigInteger bi = new(bytes, !isNeg);
 
-        result = new BigFloat(bi << (ExtraHiddenBits - includedHiddenBits), radixPointFound ? scale + includedHiddenBits : orgScale, true);
+        result = new BigFloat(bi << (ExtraHiddenBits - includesHiddenBits), radixPointFound ? scale + includesHiddenBits : orgScale, true);
 
         result.AssertValid();
 
