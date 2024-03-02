@@ -545,7 +545,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
             // How many digits do we need? (does not need to be exact at this stage)
             int digitsNeeded = (int)Math.Round(-scale / 3.32192809488736235);
-            //int digitsNeeded = (int)(-Scale2 / 3.32192809488736235) + 1;
 
             BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, digitsNeeded);
 
@@ -603,7 +602,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
                 chars[position++] = '.';
 
-                numberText.CopyTo(decimalOffset, chars, position, numberText.Length - decimalOffset);
+                numberText.CopyTo(decimalOffset, chars, position, digitsNeeded);
 
                 return new string(chars);
             }
@@ -616,14 +615,16 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 return RightShiftWithRound(intVal, ExtraHiddenBits - scale).ToString();
             }
 
-            //int maskSize = (int)((scale + 2.86313809) / 3.32192809488736235); // this number was test for a large range of floats
-            int maskSize = (int)((scale + 3.18507) / 3.32192809488736235); // 3.18507 was tested for a wide range of floats
+            int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
 
             BigInteger power5 = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
-            BigInteger power5Scaled = RightShiftWithRound(power5, ExtraHiddenBits); // Applies the scale to the number and rounds from bottom bit
-            //Console.WriteLine(power5Scaled.ToString() + new string('X', maskSize));
-            return power5Scaled.ToString()
-                + ((maskSize < 10) ? new string('X', maskSize) : " * 10^" + maskSize.ToString());
+            
+            // Applies the scale to the number and rounds from bottom bit
+            BigInteger power5Scaled = RightShiftWithRound(power5, ExtraHiddenBits); 
+
+            return power5Scaled.ToString() + ((maskSize < 10) 
+                ? new string('X', maskSize) 
+                : "e+" + maskSize.ToString());
         }
     }
 

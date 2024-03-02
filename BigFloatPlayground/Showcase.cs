@@ -123,17 +123,20 @@ public static class Showcase
 
 
         //////////////////// Handling Very Large or Small Exponents: ////////////////////
-        // Creating a very large number
-        BigFloat largeNumber = new("1e+300");
-
-        // Creating a very small number
-        BigFloat smallNumber = new("1e-300");
+        // Creating a large number 
+        BigFloat largeNumber = new("1234e+7");
 
         Console.WriteLine($"Large Number: {largeNumber}");
-        // Output: Large Number: 1XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        // Output: Large Number: 123XXXXXXXX
+
+        // Creating a very large number
+        BigFloat veryLargeNumber = new("1234e+300");
+
+        Console.WriteLine($"Large Number: {veryLargeNumber}");
+        // Output: Large Number: 123 * 10^301
+
+        // Creating a very small number 
+        BigFloat smallNumber = new("1e-300");
 
         Console.WriteLine($"Small Number: {smallNumber}");
         // Output: Small Number: 0.00000000000000000000000000000000000000000000000000000000000000
