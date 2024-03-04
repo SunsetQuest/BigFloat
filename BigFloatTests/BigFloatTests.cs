@@ -54,7 +54,7 @@ public class BigFloatTests
         IsTrue(temp == new BigFloat("18446744073709551616"));
 
         // Very simple test of GetHashCode();
-        HashSet<int> hashSet = [];
+        HashSet<int> hashSet = new HashSet<int>();
         for (int i = -100; i < 100; i++)
         {
             BigFloat bf = new(i);
