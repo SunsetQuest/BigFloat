@@ -40,8 +40,8 @@ public class BigFloatTests
         {
             // issues at BigFloat(1, -1071).ToString() and BigFloat(1, -8).ToString()
             BigFloat value = new(1, i);
-            IsFalse(new BigFloat(value.ToString()).OutOfPrecision, "Round trip should BigInteger->String->BigInteger should not be zero.");
-            IsFalse(value.OutOfPrecision, "Round trip should BigInteger.OutOfPrecision should not be zero.");
+            IsFalse(new BigFloat(value.ToString()).OutOfPrecision, "0.000...1->BigFloat->String->BigInteger should never be zero.");
+            IsFalse(value.OutOfPrecision, "0.000...1->BigFloat->OutOfPrecision should never be zero.");
         }
 
         IsTrue(new BigFloat(1, -8) % 1 == 0); // 0.00390625 % 01
@@ -70,14 +70,15 @@ public class BigFloatTests
         bf = new BigFloat(-14566005701624942, 96, true);
         //1154037866912041841546539185052621408946880512 or  33bfb47ba4446e000000000000000000000000
         // 14566005701624942 << 96  or 33bfb47ba4446e << 96
-        //should be: "-268695379354069438191721957422006272, 0x33bfb4:7ba4446e[22+32=54], << 96"
-        IsTrue(bf.DebuggerDisplay == "-268695379354069438191721957422006272, -0x33BFB4:7BA4446E[22+32=54], << 96");
+        //is -268695379354069438191721957422006272 but only 16 precision digits so -2686953793540694e+20, 
+        //Correct: -2686953793540694e+20, -0x33BFB4:7BA4446E[22+32=54], << 96
+        IsTrue(bf.DebuggerDisplay == "-2686953793540694e+20, -0x33BFB4:7BA4446E[22+32=54], << 96");
 
         bf = new BigFloat(BigInteger.Parse("0CC404B845BBB924A88E39E", NumberStyles.AllowHexSpecifier), 96, true);
         // 246924491699516410027369374 x 18446744073709551616(for 64 up-shift) = 4554952903911797705753984222769658845550608384
-        //should be: "-4554952903911797705753984222769658845550608384,  0Xcc404b845bbb92:4a88e39e[56+32=88], << 96"
-        //result     "-1154037866912041818479159655028321699980378112, -0x33BFB47BA4446D:B5771C62[54+32=86], << 96" ???
-        IsTrue(bf.DebuggerDisplay == "4554952903911797705753984222769658845550608384,  0x0CC404B845BBB92:4A88E39E[56+32=88], << 96");
+        //is -4554952903911797705753984222769658845550608384 but only first ____ precision digits
+        //Correct: 45549529039117977057539842e+20,  0x0CC404B845BBB92:4A88E39E[56+32=88], << 96
+        IsTrue(bf.DebuggerDisplay == "45549529039117977057539842e+20,  0x0CC404B845BBB92:4A88E39E[56+32=88], << 96");
     }
 
     [TestMethod]
@@ -2652,9 +2653,27 @@ public class BigFloatTests
             cleanedStringVal = cleanedStringVal.TrimStart('0');
         }
 
-        if (cleanedStringVal[0] == '.')     //  .0001 -> 0.0001
+        if (cleanedStringVal[0] == '.')   //  .0001
         {
-            cleanedStringVal = "0" + cleanedStringVal;
+            // lets count leading zeros (just so we can see if we want to format it in 123e-25 format.
+
+            int zerosFound = 0;
+            int cleanedStringValLength = cleanedStringVal.Length;
+            while ((zerosFound+1) < cleanedStringValLength && cleanedStringVal[zerosFound + 1] == '0')
+            {
+                zerosFound++;
+            }
+
+            // if more then 10 zeros, like 0.00000000000123 then output in E notation.
+            if (zerosFound > 10)
+            {
+                cleanedStringVal = cleanedStringVal.TrimStart('.', '0');
+                cleanedStringVal = $"{cleanedStringVal}e-{zerosFound + cleanedStringVal.Length}";
+            }
+            else // if less then 10 zeros, just put our leading zero back on. e.g. 0.0000123.
+            {
+                cleanedStringVal = "0" + cleanedStringVal;  //  .0001 -> 0.0001
+            }
         }
 
         if (isNegitive && cleanedStringVal != "0" && cleanedStringVal != "0.0")   // put negative back in unless it is zero
@@ -2673,15 +2692,21 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_Constructor_BigFloat_WithBigInteger()
     {
-        string strVal = Math.Pow(2, 42 - BigFloat.ExtraHiddenBits).ToString();
-        BigFloat test1;                                                       //when ExtraHiddenBits=32
-        test1 = new BigFloat(512 * BigInteger.Parse("4294967297"), 1, true);  //     1024.00000...1
+        string strVal = "1024.0000002384185791015625";
+        BigFloat test1 = new(512 * BigInteger.Parse("4294967297"), 1, true);
+        int sizeShouldBe = (int)Math.Round(((test1.Size + BigFloat.ExtraHiddenBits) / 3.32192809488736235),0) + 1;
+        // + 1 is for decimal point.
+        IsTrue(strVal[0..sizeShouldBe] == test1.ToString(true));
+
+        test1 = new BigFloat(512 * BigInteger.Parse("4294967297"), 1, true);
+        IsTrue("102X" == test1.ToString(false));
+
+        strVal = "1024.000000000";
+        test1 = new BigFloat(512 * BigInteger.Parse("4294967296"), 1, true);
         IsTrue(strVal == test1.ToString(true));
 
-        test1 = new BigFloat(512 * BigInteger.Parse("4294967296"), 1, true);  //     1024.00000...
-        IsTrue(strVal == test1.ToString(true));
-
-        test1 = new BigFloat(512 * BigInteger.Parse("4294967295"), 1, true);  //     1023.99999...
+        strVal = "1023.999999762"; // 1023.9999997615814208984375
+        test1 = new BigFloat(512 * BigInteger.Parse("4294967295"), 1, true);
         IsTrue(strVal == test1.ToString(true));
     }
 
@@ -3162,16 +3187,26 @@ public class BigFloatTests
     public void Verify_ToString_WholeNumbers()
     {
         string actual;
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true); AreEqual("12300000000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true); AreEqual("123000000000000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true); AreEqual("1230000000000000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true); AreEqual("12300000000000000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true); AreEqual("123000000000000000000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true); AreEqual("1230000000000000000000", actual, false, $"Fail-R on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true); AreEqual("123000000000000002097152", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); AreEqual("1229999999999999920308224", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); AreEqual("12300000000000000276824064", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); AreEqual("122999999999999998473273344", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        // Note: We have includeOutOfPrecisionBits set to true so we expect to see 32 bits of out of precision bits here. 
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true);                    AreEqual("12300000000000000.000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true);                   AreEqual("123000000000000000.00000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true);                  AreEqual("1230000000000000000.0000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true);                 AreEqual("12300000000000000000.000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true);                AreEqual("123000000000000000000.00000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true);               AreEqual("1230000000000000000000.0000", actual, false, $"Fail-R on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true);             AreEqual("123000000000000002097152.00", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true);            AreEqual("1229999999999999920308224.0", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true);           AreEqual("12300000000000000276824064" , actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true);          AreEqual("12299999999999999847327334X", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true);         AreEqual("12300000000000000190924718XX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true);       AreEqual("12300000000000000300875881XXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true);      AreEqual("12299999999999999597188439XXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true);     AreEqual("12299999999999999597188439XXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true);    AreEqual("12300000000000000497908365XXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true);   AreEqual("12300000000000000137620394XXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true);  AreEqual("12300000000000000425850771XXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000000.0), true); AreEqual("12299999999999999503513567XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000000.0), true);AreEqual("12299999999999999503513567e+11", actual, false, $"Fail-V on Double->BigFloat->ToString");
 
         actual = new BigFloat(12300000000000000.0).ToString(); AreEqual("1230000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
         actual = new BigFloat(123000000000000000.0).ToString(); AreEqual("12300000000000000X", actual, false, $"Fail-N on Double->BigFloat->ToString");
@@ -3182,10 +3217,11 @@ public class BigFloatTests
         actual = new BigFloat(12300000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
         actual = new BigFloat(123000000000000000000000.0).ToString(); AreEqual("12300000000000000XXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
         actual = new BigFloat(1230000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000000.0).ToString(); AreEqual("1230000000000000e+10", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000000000000.0).ToString(); AreEqual("12300000000000000e+10", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000000000.0).ToString(); AreEqual("12300000000000000XXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
         actual = new BigFloat(1230000000000000000000000000.0).ToString(); AreEqual("12300000000000000e+11", actual, false, $"Fail-W on Double->BigFloat->ToString");
         actual = new BigFloat(12300000000000000000000000000.0).ToString(); AreEqual("1230000000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000000000000.0).ToString(); AreEqual("12300000000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
 
         actual = new BigFloat(99990000000000000.0).ToString(); AreEqual("9999000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
         actual = new BigFloat(999900000000000000.0).ToString(); AreEqual("9999000000000000XX", actual, false, $"Fail-N on Double->BigFloat->ToString");
@@ -3194,28 +3230,34 @@ public class BigFloatTests
         actual = new BigFloat(999900000000000000000.0).ToString(); AreEqual("9999000000000000XXXXX", actual, false, $"Fail-Q on Double->BigFloat->ToString");
         actual = new BigFloat(9999000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXX", actual, false, $"Fail-R on Double->BigFloat->ToString");
         AreEqual(99990000000000000000000.0, 9999000000000001e+7);
-        actual = new BigFloat(99990000000000000000000.0).ToString(); AreEqual("9999000000000001XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = new BigFloat(999900000000000000000000.0).ToString(); AreEqual("9999000000000000XXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = new BigFloat(9999000000000000000000000.0).ToString(); AreEqual("999900000000000e+10", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = new BigFloat(99990000000000000000000000.0).ToString(); AreEqual("9999000000000000e+10", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = new BigFloat(99990000000000000000000.0).ToString();    AreEqual("9999000000000001XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = new BigFloat(999900000000000000000000.0).ToString();   AreEqual("9999000000000000XXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = new BigFloat(9999000000000000000000000.0).ToString();  AreEqual("999900000000000XXXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = new BigFloat(99990000000000000000000000.0).ToString(); AreEqual("9999000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
         AreEqual(999900000000000000000000000.0, 9999000000000001e+11);
         actual = new BigFloat(999900000000000000000000000.0).ToString(); AreEqual("9999000000000001e+11", actual, false, $"Fail-W on Double->BigFloat->ToString");
         actual = new BigFloat(9999000000000000000000000000.0).ToString(); AreEqual("999900000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
 
-        for ( int i = 1000; i < 90000; i++)
+        for (int i = 1; i < 2883; i++)
         {
             float floatVal = float.Parse(i.ToString() + "00000000000000.0");
-            actual = new BigFloat(floatVal).ToString(); 
-            IsTrue(actual.Contains("0X") || actual.Contains("e+"));
+            actual = new BigFloat(floatVal).ToString();
+            IsTrue(actual.Contains("9X") || actual.Contains("0X") || actual.Contains("1X"));
         }
 
-        for (int i = 100; i < 90000; i++)
+        for (int i = 2883; i < 10000; i++)
         {
-            double doubleVal = double.Parse(i.ToString() + "000000000000000000000000.0");
-            actual = new BigFloat(doubleVal).ToString();
-            IsTrue(actual.Contains("0X") || actual.Contains("e+"));
+            float floatVal = float.Parse(i.ToString() + "00000000000000.0");
+            actual = new BigFloat(floatVal).ToString();
+            IsTrue(actual.Contains("e+"));
         }
 
+        for (int i = 1; i < 10000; i++)
+        {
+            double doubleVal = double.Parse(i.ToString() + "000000000000000000000000000.0");
+            actual = new BigFloat(doubleVal).ToString();
+            IsTrue(actual.Contains("e+"));
+        }
     }
 
     [TestMethod]
@@ -4755,7 +4797,7 @@ public class BigFloatTests
         valResult = BigFloat.Sqrt(inputVal);
         output = valResult.ToString();
         expect = "4844193132957319671709340941797445984823847916300558971839295375794565129018082952319997856028164815858716997110257694105883395223009099123324505808832930067526997557.67942784382363710559954840909262062040844976811740121716293669295087565452542991248498736784872402435202193650709055844125266714299502864068900000000000000000000000000000000000000000000";
-        //              exact:    4844193132957319671709340941797445984823847916300558971839295375794565129018082952319997856028164815858716997110257694105883395223009099123324505808832930067526997557.67942784382363710559954840909262062040844976811740121716293669295087565452542991248498736784872402435202193650709055844125266714299502864068899999999999999999999999999999999999999999999949320041843783
+        // exact: 4844193132957319671709340941797445984823847916300558971839295375794565129018082952319997856028164815858716997110257694105883395223009099123324505808832930067526997557.67942784382363710559954840909262062040844976811740121716293669295087565452542991248498736784872402435202193650709055844125266714299502864068899999999999999999999999999999999999999999999949320041843783
         IsTrue(output == expect, $"Sqrt({inputVal}) was {output} but expected {expect}");
         valExpect = new BigFloat("4844193132957319671709340941797445984823847916300558971839295375794565129018082952319997856028164815858716997110257694105883395223009099123324505808832930067526997557.679427843823637105599548409092620620408449768117401217162936692950875654525429912484987367848724024352021936507090558441252667142995028640689");
         IsTrue(valResult == valExpect, $"Sqrt({inputVal}) was {output} but expected {expect}");

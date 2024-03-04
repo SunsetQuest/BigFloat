@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BigFloatLibrary;
 
@@ -532,45 +533,54 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int scale = val.Scale;
         int valSize = val._size;
 
-        if (scale < -1) // Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
-                        // -1 is not enough to form a full decimal digit.
+        if (includeOutOfPrecisionBits)
         {
-            if (includeOutOfPrecisionBits)
-            {
-                intVal <<= ExtraHiddenBits;
-                scale -= ExtraHiddenBits;
-                valSize += ExtraHiddenBits;
-            }
-            int exponent = scale + valSize - ExtraHiddenBits;
+            intVal <<= ExtraHiddenBits;
+            scale -= ExtraHiddenBits;
+            valSize += ExtraHiddenBits;
+        }
 
-            // How many digits do we need? (does not need to be exact at this stage)
-            int digitsNeeded = (int)Math.Round(-scale / 3.32192809488736235);
+        if (scale < -1)
+        {
+            // Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
+            // -1 is not enough to form a full decimal digit.
 
-            BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, digitsNeeded);
+            // Get the number of places that should be returned after the decimal point.
+            int decimalDigits = -(int)((scale - 1.5) / 3.32192809488736235);
+
+            BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
 
             // Applies the scale to the number and rounds from bottom bit
-            BigInteger power5Scaled = RightShiftWithRound(power5, -scale - digitsNeeded + ExtraHiddenBits);
+            BigInteger power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + ExtraHiddenBits);
 
             // If zero, then special handling required. Add as many precision zeros based on scale.
             if (power5Scaled.IsZero)
             {
                 if (RightShiftWithRound(intVal, ExtraHiddenBits).IsZero)
                 {
-                    return $"0.{new string('0', digitsNeeded)}";
+                    return $"0.{new string('0', decimalDigits)}";
                 }
 
-                // solves an issue when with a "BigFloat(1, -8)" being 0.000
-                digitsNeeded++;
-                power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, digitsNeeded);
-                power5Scaled = RightShiftWithRound(power5, -scale - digitsNeeded + ExtraHiddenBits);
+                // future: The below should not be needed.
+                //// solves an issue when a "BigFloat(1, -8)" being 0.000
+                decimalDigits++;
+                power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
+                power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + ExtraHiddenBits);
             }
 
             string numberText = power5Scaled.ToString();
 
-            int decimalOffset = numberText.Length - digitsNeeded;
+            int decimalOffset = numberText.Length - decimalDigits;
             //int decimalOffset2 = ((int)((_size - ExtraHiddenBits + scale2) / 3.32192809488736235)) - ((numberText[0] - '5') / 8.0);  //alternative
 
-            // The length should have room for [-][digits][.][digits]
+            if (decimalOffset < -10)  // 0.0000000000xxxxx 
+            {
+                return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}e-{decimalDigits}";
+            }
+
+            int exponent = scale + valSize - ExtraHiddenBits;
+
+            // The length should have room for: [-][digits][.][digits]
             int length = (intVal < 0 ? 3 : 2) + numberText.Length - (exponent <= 0 ? decimalOffset : 1);
             char[] chars = new char[length];
             int position = 0;
@@ -580,8 +590,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 chars[position++] = '-';
             }
 
+            // 0.#### or 0.000##### - lets check for these formats
             // We can round a 0.99 to a 1.00, hence the "(Exponent==0 && decimalOffset <= 0)"
-            if (exponent < 0 || (exponent == 0 && decimalOffset <= 0))  // 0.xxxxx 
+            if (exponent < 0 || (exponent == 0 && decimalOffset <= 0))
             {
                 chars[position++] = '0';
                 chars[position++] = '.';
@@ -595,37 +606,46 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
                 return new string(chars);
             }
-            else  // xxxx.xxxx
-            {
-                numberText.CopyTo(0, chars, position, decimalOffset);
-                position += decimalOffset;
 
-                chars[position++] = '.';
+            // ####.##### - at this point it must be this format
+            numberText.CopyTo(0, chars, position, decimalOffset);
+            position += decimalOffset;
 
-                numberText.CopyTo(decimalOffset, chars, position, digitsNeeded);
+            chars[position++] = '.';
 
-                return new string(chars);
-            }
+            numberText.CopyTo(decimalOffset, chars, position, decimalDigits);
+
+            return new string(chars);
         }
-        else  // XXXXX or 7XXXXX  (The numbers with no decimal precision.) (scale >= 0)
+
+        // Check to see if we have an integer, if so no Pow(5) scaling required
+        if (scale == 0)
         {
-            if (includeOutOfPrecisionBits)
-            {
-                // returns integer WITHOUT hidden bits masked.
-                return RightShiftWithRound(intVal, ExtraHiddenBits - scale).ToString();
-            }
-
-            int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
-
-            BigInteger power5 = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
-            
-            // Applies the scale to the number and rounds from bottom bit
-            BigInteger power5Scaled = RightShiftWithRound(power5, ExtraHiddenBits); 
-
-            return power5Scaled.ToString() + ((maskSize < 10) 
-                ? new string('X', maskSize) 
-                : "e+" + maskSize.ToString());
+            return DataIntValueWithRound(intVal).ToString();
         }
+
+        // At this point we the number have a positive exponent. e.g 7XXXXX or 7e+10 (no decimal point)
+
+        int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
+        BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+
+        // Applies the scale to the number and rounds from bottom bit
+        BigInteger resScaled = RightShiftWithRound(resUnScaled, ExtraHiddenBits);
+
+        // Let put together the string. 
+        StringBuilder result = new();
+        result.Append(resScaled);
+        if (maskSize > 10)
+        {
+            result.Append("e+");
+            result.Append(maskSize);
+        }
+        else
+        {
+            result.Append(new string('X', maskSize));
+        }
+
+        return result.ToString();
     }
 
     /// <summary>
@@ -2696,7 +2716,7 @@ Other:                                         |   |         |         |       |
     /// Removes x number of bits of precision. 
     /// A special case of RightShift(>>) that will round based off the most significant bit in the removed bits(bitsToRemove).
     /// This function will not adjust the scale. Like any shift, the value with be changed by some power of 2.
-    /// Caution: Round-ups may percolate to the most significate bit, adding an extra bit in size. 
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit in size. 
     ///   e.g. RightShiftWithRound(0b111, 1) --> 0b100
     /// Notes: 
     /// * Works on positive and negative numbers. 
