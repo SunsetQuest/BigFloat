@@ -4900,6 +4900,48 @@ public class BigFloatTests
             Console.WriteLine($"TrunkAndRnd100 - Should be 128 but got {retBF.Int}");
         }
 
+        inputVal = new BigFloat("1022", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
+        if (retBF.Int != 511)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 511 but got {retBF.Int}");
+        }
+
+        inputVal = new BigFloat("1023", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
+        if (retBF.Int != 512)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 512 but got {retBF.Int}");
+        }
+
+        inputVal = new BigFloat("1022", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
+        if (retBF.Int != 1022)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1022 but got {retBF.Int}");
+        }
+
+        inputVal = new BigFloat("1023", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
+        if (retBF.Int != 1023)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1023 but got {retBF.Int}");
+        }
+
+        inputVal = new BigFloat("1024", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
+        if (retBF.Int != 256)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 256 but got {retBF.Int}");
+        }
+
+        inputVal = new BigFloat("1025", 0);
+        retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
+        if (retBF.Int != 257)
+        {
+            Console.WriteLine($"TrunkAndRnd110 - Should be 257 but got {retBF.Int}");
+        }
+
         inputVal = new BigFloat("2.00000000000", 0);
         BigFloat output = BigFloat.Sqrt(inputVal);
         BigFloat expect = new("1.4142135623730950488016887242097");

@@ -1602,11 +1602,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
         BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
-
-        //todo: instead of "RightShiftWithRound" what about just shifting by "ExtraHiddenBits-1"
-        //BigInteger a = DataBits >> ((sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits-1);
-        //BigInteger b = other.DataBits >> ((sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits-1);
-
         return a.CompareTo(b);
     }
 
@@ -2500,7 +2495,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return new(-r.DataBits, r.Scale, r._size);
     }
 
-    //todo: test
     public static BigFloat operator ++(BigFloat r)
     {
         // hidden bits = 4
@@ -2716,7 +2710,7 @@ Other:                                         |   |         |         |       |
     /// Removes x number of bits of precision. 
     /// A special case of RightShift(>>) that will round based off the most significant bit in the removed bits(bitsToRemove).
     /// This function will not adjust the scale. Like any shift, the value with be changed by some power of 2.
-    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit in size. 
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     ///   e.g. RightShiftWithRound(0b111, 1) --> 0b100
     /// Notes: 
     /// * Works on positive and negative numbers. 
@@ -2750,7 +2744,7 @@ Other:                                         |   |         |         |       |
     /// Removes x number of bits of precision. It also requires the current size and will increment it if it grows by a bit.
     /// If the most significant bit of the removed bits is set, then the least significant bit will increment away from zero. 
     /// e.g. 1010010 << 2 = 10101
-    /// Caution: Round-ups may percolate to the most significate bit, adding an extra bit in size.   
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// THIS FUNCTION IS HIGHLY TUNED!
     /// </summary>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
@@ -2803,6 +2797,7 @@ Other:                                         |   |         |         |       |
     /// e.g. 1010010 << 2 = 10101
     /// Caution: Round-ups may percolate to the most significate bit. This function will automaticlly remove that extra bit. 
     /// e.g. 1111111 << 2 = 10000
+    /// Also see: ReducePrecision, TruncateByAndRound, RightShiftWithRoundWithCarryDownsize
     /// </summary>
     /// <param name="result">The result of val being right shifted and rounded. The size will be "size-bitsToRemove".</param>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
@@ -2867,9 +2862,10 @@ Other:                                         |   |         |         |       |
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
     /// If the most significant bit of the removed bits is set then the least significant bit will increment away from zero. 
     /// e.g. 10.10010 << 2 = 10.101
-    /// Caution: Round-ups may percolate to the most significate bit, adding an extra bit in size.   
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Example: 11.11 with 1 bit removed would result in 100.0 (the same size)
     /// This function uses the internal BigInteger RightShiftWithRound().
+    /// Also see: ReducePrecision, RightShiftWithRoundWithCarryDownsize, RightShiftWithRound
     /// </summary>
     /// <param name="bitsToRemove">Specifies the number of least-significant bits to remove.</param>
     public static BigFloat TruncateByAndRound(BigFloat x, int bitsToRemove)
@@ -2902,8 +2898,9 @@ Other:                                         |   |         |         |       |
     /// This function will reduce the precision of a BigInteger to the number of bits specified.
     /// If the part being removed has the most significant bit set, then the result will be rounded 
     /// away from zero. This can be used to reduce the precision prior to a large calculation.
-    /// Caution: Since the value can be incremented during rounding the result can be newSizeInBits+1 in size. 
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Example: SetPrecisionWithRound(15, 3) = 8[4 bits]
+    /// Also see: SetPrecision, TruncateToAndRound
     /// <param name="newSizeInBits">The new requested size. The resulting size might be rounded up.</param>
     public static BigInteger TruncateToAndRound(BigInteger x, int newSizeInBits)
     {
@@ -2921,7 +2918,7 @@ Other:                                         |   |         |         |       |
     /// This can be useful for extending whole or rational numbers precision. 
     /// No rounding is performed.
     /// Example: SetPrecision(0b1101, 8) --> 0b11010000;  SetPrecision(0b1101, 3) --> 0b110
-    /// Also see: ExtendPrecision, SetPrecisionWithRound
+    /// Also see: TruncateToAndRound, SetPrecisionWithRound
     /// </summary>
     /// <param name="x">The source BigFloat where a new size will be forced.</param>
     /// <param name="newSize">The number of zero bits to add.</param>
@@ -2936,6 +2933,7 @@ Other:                                         |   |         |         |       |
     /// i.e. Down-shifts the value but and increases the scale. 
     /// Example: ReducePrecision(0b1101.1101, 3) --> 0b1101.1; 
     /// No rounding is performed.
+    /// Also see: TruncateByAndRound, RightShiftWithRoundWithCarryDownsize, RightShiftWithRound
     /// </summary>
     public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
     {
@@ -2946,14 +2944,14 @@ Other:                                         |   |         |         |       |
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
     /// When reducing the least significant bit will rounded up if the most significant bit is set of the removed bits. 
     /// This can be used to reduce the precision of a number before prior to a calculation.
-    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size.   
-    /// Also see: SetPrecision
+    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
+    /// Also see: SetPrecision, TruncateToAndRound
     /// </summary>
     /// <param name="newSizeInBits">The desired precision in bits.</param>
     public static BigFloat SetPrecisionWithRound(BigFloat x, int newSizeInBits)
     {
         int reduceBy = x.Size - newSizeInBits;
-        BigFloat result = TruncateByAndRound(x, reduceBy); //todo: what about size when rolls over
+        BigFloat result = TruncateByAndRound(x, reduceBy);
         return result;
     }
 
@@ -2961,7 +2959,6 @@ Other:                                         |   |         |         |       |
     /// Extends the precision and accuracy of a number by appending 0 bits. 
     /// e.g. 1.1 --> 1.100000
     /// This can be useful for extending whole or rational numbers precision. 
-    /// Also see: SetPrecision
     /// </summary>
     /// <param name="x">The source BigFloat that will be extended.</param>
     /// <param name="bitsToAdd">The number of zero bits to add. The number must be positive</param>
@@ -2975,39 +2972,18 @@ Other:                                         |   |         |         |       |
 
     public static BigFloat operator -(BigFloat r1, BigFloat r2)
     {
-        //   "5555"00000   "1000010001110"00100000111100000    Value:4238  Shift:17  DecValue:5555 DecShift:5
-        //    -"55577777"     -"110101000 00000110010110001"
-        //  -------------     = 110101000 (3814)
-        //     "49"9922223   <--- answer is 50, only 2 significant digits.
+        BigInteger r1Bits = (r1.Scale < r2.Scale) ? (r1.DataBits >> (r2.Scale - r1.Scale)) : r1.DataBits;
+        BigInteger r2Bits = (r1.Scale > r2.Scale) ? (r2.DataBits >> (r1.Scale - r2.Scale)) : r2.DataBits;
 
-        if (r1.Scale == r2.Scale)
+        BigInteger diff = r1Bits - r2Bits;
+        if (r1.Scale < r2.Scale ? r1.Sign < 0 : r2.DataBits.Sign < 0)
         {
-            BigInteger bi = r1.DataBits - r2.DataBits;
-            int size = Math.Max(0, (int)BigInteger.Abs(bi).GetBitLength());
-
-            return new BigFloat(bi, r1.Scale, size);
+            diff--;
         }
-        else if (r1.Scale < r2.Scale)
-        {
-            //BigInteger bi = (r1._int >> (r2.Scale - r1.Scale)) - r2._int - (r1._int.Sign < 0 ? 1 : 0); //removed 12/4/2022
-            BigInteger bi = (r1.DataBits >> (r2.Scale - r1.Scale)) - r2.DataBits;
-            if (bi.Sign < 0)
-            {
-                bi--;
-            }
 
-            int size = Math.Max(0, (int)BigInteger.Abs(bi).GetBitLength());
+        int size = Math.Max(0, (int)BigInteger.Abs(diff).GetBitLength());
 
-            return new BigFloat(bi, r2.Scale, size);
-        }
-        else // if (r1.Scale > r2.Scale)
-        {
-            BigInteger bi = r1.DataBits - (r2.DataBits >> (r1.Scale - r2.Scale))
-                - (r2.DataBits.Sign < 0 ? 1 : 0);  //todo: do like above
-            int size = Math.Max(0, (int)BigInteger.Abs(bi).GetBitLength());
-
-            return new BigFloat(bi, r1.Scale, size);
-        }
+        return new BigFloat(diff, r1.Scale < r2.Scale ? r2.Scale : r1.Scale, size);
     }
 
     public static BigFloat PowerOf2(BigFloat val)
@@ -3127,7 +3103,6 @@ Other:                                         |   |         |         |       |
     //    return new(prod, resScalePart, sizePart);
     //}
 
-    // todo: check precision on this - I feel like it can be simplified and "int shouldBe = Math.Min(a.Size, b.Size) + ExtraHiddenBits;" is not right
     public static BigFloat operator *(BigFloat a, BigFloat b)
     {
         BigInteger prod;
@@ -3465,9 +3440,8 @@ Other:                                         |   |         |         |       |
     public bool Equals(long other)
     {
         //Todo: what about zero?
-        if (Exponent > 64)
+        if (Exponent > 64) // 'this' is too large, not possible to be equal.
         {
-            // 'this' is too large, not possible to be equal.
             return false;
         }
         else if (Exponent < 0)
