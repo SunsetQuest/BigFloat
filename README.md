@@ -1,12 +1,14 @@
-A BigFloat Library in C#
-========================
-Ryan Scott White - Updated: 27 Feb 2024 - 14 min read - [MIT](http://www.opensource.org/licenses/mit-license.php "The MIT License") License
+# A BigFloat Library in C#
 
+BigFloat is a C# struct/class library for large Floating-Point numbers
+Ryan Scott White - Updated: 27 Feb 2024 - [MIT](http://www.opensource.org/licenses/mit-license.php "The MIT License") License 
+
+Originally posted on CodeProject
 ![](https://www.codeproject.com/App_Themes/CodeProject/Img/views32.png) 12.3K views - ![](https://www.codeproject.com/App_Themes/CodeProject/Img/download32.png) 183  downloads
 
 BigFloat is a C# struct/class library for large Floating-Point numbers
 
-The BigFloat library for C# offers an innovative solution for handling large floating-point numbers, extending beyond the limitations of standard IEEE floating-point representations. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for scientific computing, financial calculations, and high-precision applications. Available on GitHub, BigFloat is easily integrated into C# projects, providing a robust tool for developers needing advanced numerical computation capabilities.
+BigFloat is both a C# struct data type along with a library of functions. It offers an innovative solution for handling large floating-point numbers, that extend beyond the precision limitations of standard the standard IEEE floating-point. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for high-precision applications. Available here on GitHub, BigFloat easily integrates into C# projects, providing a tool for developers needing advanced numerical computation capabilities.
 
 -   [Download BigFloatProjectFiles](https://www.codeproject.com/KB/Articles/5375327/BigFloat_Project_Files_2024_02_24.zip)
 -   [GitHub Repo](https://github.com/SunsetQuest/BigFloat)
@@ -14,37 +16,31 @@ The BigFloat library for C# offers an innovative solution for handling large flo
 
 ***Note**: This article was co-created with ChatGPT and Grammarly - details [here](https://www.codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp#ArticleCreationProcess).*
 
-Introduction
-------------
+## Introduction
 
-`BigFloat` is a C# library tailored for handling substantially large floating-point numbers. It extends the capabilities of standard IEEE floating points like single and double by providing a flexible-sized mantissa and a large exponent range. This library offers a unique blend of precision and flexibility, making it an ideal choice for computations requiring high accuracy in large numbers like scientific computing. Recently published on [GitHub](https://github.com/SunsetQuest/BigFloat), `BigFloat` is now also featured in this detailed CodeProject article.
+BigFloat is a C# library tailored for handling substantially large floating-point numbers. It extends the capabilities of standard IEEE floating points like single and double by providing a flexible-sized mantissa and a large exponent range. This library offers a unique blend of precision and flexibility, making it an ideal choice for computations requiring high accuracy in large numbers like scientific computing. Recently published on [GitHub](https://github.com/SunsetQuest/BigFloat), BigFloat is now also featured in this detailed CodeProject article.
 
-[![Image of Man holding globe with BigFloat written on it.](https://www.codeproject.com/KB/Projects/5375327/BigFloatLogo_mostly_by_ChatGPT.png)](https://www.codeproject.com/KB/Projects/5375327/BigFloatLogo_mostly_by_ChatGPT-Full.png)
+## Differences from IEEE Floating Points
 
-Key Differences from IEEE Floating Points
------------------------------------------
+BigFloat, while similar to IEEE standards in structure, introduces notable differences:
 
-`BigFloat`, while similar to IEEE standards in structure, introduces notable differences:
+-   **Two's Complement Representation**: BigFloat employs two's complement for its sign as it uses a BigInteger under the hood. Two's complement arithmetic is generally more efficient.
+-   **Scale vs. Exponent**: Unlike IEEE's left-measured exponent, BigFloat's "Scale" measures the radix point from the least significant digit on the right.
+-   **Flexible Mantissa Size**: The mantissa, called `DataBits` in BigFloat, has an adjustable size ranging up to two billion bits.
 
--   **Two's Complement Representation**: `BigFloat` employs two's complement for its sign as it uses `BigInteger`'s under the hood. Two's complement arithmetic is generally more efficient.
--   **Scale vs. Exponent**: Unlike IEEE's left-measured exponent, `BigFloat`'s "Scale" measures the radix point from the least significant digit on the right.
--   **Flexible Mantissa Size**: The mantissa, called `DataBit`s in `BigFloat`, has an adjustable size ranging up to two billion bits.
-
-Data Structure
---------------
+## BigFloat Structure
 
 `BigFloat`'s architecture consists of three core components:
 
--   **DataBits** *(of type `BigInteger`)*: The `DataBit`s represent the mantissa, holding the binary form of the number.
+-   **DataBits** *(of type `BigInteger`)*: The DataBits represent the mantissa, holding the binary form of the number.
 -   **Scale** *(of type `int`)*: Scale dictates the position of the radix point, allowing for scalable precision. A positive value would move the radix point right, increasing the number size; a negative value would move the radix point left, creating a fractional part. A zero value would essentially represent an integer.
 -   **Size** *(of type `int`)*: A cached value representing the size of `DataBit`s. It is added for optimizing frequent access. '`_size`' is equivalent to the function '`int _size = > ABS(dataBits).GetBitSize();`'
 
 ![Image 2](https://www.codeproject.com/KB/Articles/5375327/BigFloatParts.png)
 
-Using the Code
---------------
+## Using the Code
 
-Incorporating `BigFloat` into your project is straightforward. The primary file, '*BigFloat.cs*', contains all necessary functions, while an optional '*BigConstants.cs*' file offers access to extended mathematical constants. Adding these files to your project and optional references is all that's required.
+Incorporating BigFloat into your project is straightforward. The primary file, '*BigFloat.cs*', contains all necessary functions, while an optional '*BigConstants.cs*' file offers access to extended mathematical constants. Adding these files to your project and optional references is all that's required.
 
 Also, because of some language features that are used, C# 11 / .NET 7 is required.
 
@@ -52,7 +48,7 @@ Also, because of some language features that are used, C# 11 / .NET 7 is require
 
 ### Initializing and Basic Arithmetic Examples
 
-A quick note on the output notation. Below, we will see outputs that look like 232XXXXXXXX. When we see this, `BigFloat` lets the user know that only the 232 part is in-precision.
+A quick note on the output notation. Below, we will see outputs that look like 232XXXXXXXX. When we see this, BigFloat lets the user know that only the 232 part is in-precision.
 
 ```cs
 // Initialize BigFloat numbers
@@ -105,7 +101,6 @@ Console.WriteLine($"Area of the circle: {area}");
 ```
 
 ### Precision Manipulation
-
 ```cs
 // Initialize a number with high precision
 BigFloat preciseNumber = new("123.45678901234567890123");
@@ -119,11 +114,10 @@ BigFloat c = BigFloat.IntWithAccuracy(10, 100);
 
 Console.WriteLine($"Int with specified accuracy: {c}");
 // Output: Int with specified accuracy: 10.000000000000000000000000000000
+```
 
 ### Comparing Numbers
-
-C#
-
+```cs
 // Initialize two BigFloat numbers
 BigFloat num1 = new("12345.6790");
 BigFloat num2 = new("12345.6789");
@@ -140,7 +134,6 @@ Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
 ```
 
 Depending on the base, a number could either round up or down. In base 10, the following `12345.67896` would round up to `12345.6790`. However, in binary, it rounds down to `11000000111001.1010110111010`. Since `BigFloat` is base-2, this is correct, but it can cause odd side effects like the example below.
-
 ```cs
 BigFloat num3 = new("12345.6789");
 BigFloat num4 = new("12345.67896");
@@ -157,7 +150,7 @@ Console.WriteLine($"Is the first number bigger? {isFirstBigger}");
 
 ### Handling Very Large or Small Exponents
 
-```cs  
+```cs
 // Creating a large number
 BigFloat largeNumber = new("1234e+7");
 
@@ -203,32 +196,30 @@ Console.WriteLine($"GetPrecision: {num6.GetPrecision}");
 // Output: GetPrecision: 21
 ```
 
-Understanding 'HiddenBits'
---------------------------
+## HiddenBits
 
-In `BigFloat`, the actual "data bits" are stored in a `BigInteger`. `BigFloat` designates the 32 least significant bits as "hidden bits." These bits are not generally considered precise but play a vital role in maintaining accuracy.
+In BigFloat, the actual "data bits" are stored in a `BigInteger`. `BigFloat` designates the 32 least significant bits as "hidden bits." These bits are not generally considered precise but play a vital role in maintaining accuracy.
 
 ### The Role of Hidden Bits
 
-To help with the accuracy of the final result, `BigFloat` keeps some extra bits that act as an extended buffer during arithmetic operations. Think of them as extended precision that is partially accurate and holds the remnants of calculations. This might not be substantial, but it leads to a more precise outcome after several consecutive math operations.
+To help with the accuracy of the final result, BigFloat keeps some extra bits that act as an extended buffer during arithmetic operations. Think of them as extended precision that is partially accurate and holds the remnants of calculations. This might not be substantial, but it leads to a more precise outcome after several consecutive math operations.
 
 ### Example Illustration
 
 Consider the following binary addition, where the pipe character '`|`' separates precise bits from non-precision hidden-bits:
-
-  101.01100|110011001100110011001100110011  (approximately 5.4)
-+ 100.01001|100110011001100110011001100110  (approximately +4.3)
+```
+  101.01100|110011001100110011001100110011 (approximately 5.4)
++ 100.01001|100110011001100110011001100110 (approximately 4.3)
 ==========================================
  1001.1011|0011001100110011001100110011001 (approximately 9.7)
-
+```
 If we were only to add the precise bits, our result would be ``1001.101``, missing the crucial information that the actual result is closer to ``100.110``. These extra bits help with better rounding and accuracy during subsequent mathematical operations.
 
 ### Practical Implications
 
 By carrying these extra 32 hidden bits, `BigFloat` can perform operations with higher accuracy. When multiple operations are chained, these "hidden bits" help to correct cumulative rounding errors that would otherwise lead to significant inaccuracies. In essence, they serve as a "safety net" for precision.
 
-Decimal-to-Binary and Binary-to-Decimal Conversions
----------------------------------------------------
+## Decimal-to-Binary and Binary-to-Decimal Conversions
 
 This section covers some essential points regarding converting decimal strings to binary and back.
 
@@ -248,7 +239,7 @@ Hidden bits to the rescue! Well, kind of. The advantage of keeping some extra hi
 
 #### Accurate Representation of Repeating Bits - a Possible Future Feature
 
-Earlier, I noted there was a better way. While not implemented in `BigFloat`, I wanted to mention it as it is a possible addition in the future or a suggestion for some other class. To store repeated digits, we could introduce a new attribute called '`_repeat`.' If there is a value, then it's the number of least significant digits in `DataBits` that repeat. If zero, there are no repeating numbers; hence, this feature is not used.
+Earlier, I noted there was a better way. While not implemented in BigFloat, I wanted to mention it as it is a possible addition in the future or a suggestion for some other class. To store repeated digits, we could introduce a new attribute called '`_repeat`.' If there is a value, then it's the number of least significant digits in `DataBits` that repeat. If zero, there are no repeating numbers; hence, this feature is not used.
 
 ### Decimal to Binary - Selecting the Number of Target Bits
 
@@ -262,12 +253,11 @@ However, unexpected issues could arise. If we multiply 3 by 7, we expect to get 
 
 When interpreting the outputs from the examples provided, you may encounter figures represented as "`**232XXXXXXXX**`". This format is utilized to differentiate between the segments of the output that are within the bounds of precision and those that are not. Specifically, the "`232`" portion signifies the digits that are precise and reliable. The sequence of "X" characters indicates the digits that fall beyond the scope of precision and, as such, are not displayed because their accuracy cannot be guaranteed.
 
-For outputs where the imprecise portion extends significantly, `BigFloat` adopts scientific notation to convey the scale of these numbers. For instance, an output that might otherwise be shown as "`232XXXXXXXXXXX`" will be presented as "`232 x 10^11`". This shift to scientific notation aids in maintaining clarity, especially when dealing with large numbers where numerous X's can become hard to read.
+For outputs where the imprecise portion extends significantly, BigFloat adopts scientific notation to convey the scale of these numbers. For instance, an output that might otherwise be shown as "`232XXXXXXXXXXX`" will be presented as "`232 x 10^11`". This shift to scientific notation aids in maintaining clarity, especially when dealing with large numbers where numerous X's can become hard to read.
 
 While it's possible to display these numbers with trailing zeros, like "`232000000000`", doing so could misleadingly imply that the number is precise up to the last zero. This representation contrasts with the practices of many basic calculators and computational tools, which might display out-of-precision digits without clear distinction. More sophisticated calculators and tools prefer to use scientific notation to reflect the precision of the results, a practice `BigFloat` aligns with.
 
-Maintaining Precision - A Core Focus
-------------------------------------
+## Maintaining Precision - A Core Focus
 
 Some of `BigFloat`'s recent developments have been focused on rounding to increase accuracy. Initially, `BigFloat` would drop the least significant bits. This is not a huge deal since these removed bits were past even the lower 32 sub-precision hidden bits. However, after billions of math operations of constant rounding down, this could eat up all the 32 hidden bits and cause an unfavorable result. As the project evolved, the importance of rounding these bits became evident. Rounding helps maintain precision, especially in sequential mathematical operations.
 
@@ -284,49 +274,52 @@ Many of the functions have been updated to round the last sub-precision hidden b
 
     In the realm of floating-point arithmetic, particularly with `Float`/`Double` data types, Banker's rounding plays a pivotal role in enhancing accuracy. This rounding technique is commonly applied in IEEE float operations, where, upon encountering extra bits that exceed the capacity of the representation---akin to encountering a situation where a decision must be made whether to round a number ending in 0.5000... up or down---Banker's rounding opts to round to the nearest even number, effectively rounding up only half of the time. This approach is crucial for IEEE floats, which maintain only a limited number of extra bits, making encounters with such borderline rounding decisions relatively frequent.
 
-    However, in the case of `BigFloat`, Banker's rounding is not utilized. The reason behind this deviation lies in `BigFloat`'s capacity to handle significantly more `HiddenBits`. Given this enhanced bit capacity, the likelihood of a rounding decision falling precisely on the halfway mark is exceedingly rare. As such, the specific conditions that necessitate Banker's rounding in IEEE floats are not a concern for `BigFloat`, obviating the need for its implementation.
+    However, in the case of BigFloat, Banker's rounding is not utilized. The reason behind this deviation lies in BigFloat's capacity to handle significantly more `HiddenBits`. Given this enhanced bit capacity, the likelihood of a rounding decision falling precisely on the halfway mark is exceedingly rare. As such, the specific conditions that necessitate Banker's rounding in IEEE floats are not a concern for BigFloat, obviating the need for its implementation.
 
 ### Theoretical Limits of Precision
 
--   **Using Up Hidden Bits**
+Over time, the 32 "hidden bits" in our calculations will gradually be consumed. Each rounding operation—whether up or down—discards a fraction of a bit of precision. Through repeated operations, this loss accumulates. For operations on **BigFloat** that adhere to proper rounding rules (though not all functions do), it would take approximately (2$^{32}$ * 2)$^{2}$ * 4 or 1.5 x 10^21 operations, before all the hidden bits are exhausted and we begin to lose precision in the main significant bits. 
 
-    When rounding up, our 32 hidden bits would take some time to be used up. It would take approximately (2^32^ * 2)^2^ *4 or 1.5 x 10^21 math operations before we get into what we consider in-precision bits. That would take a little while. Also, this is in the perfect world, probably much sooner than that.
+While this suggests the loss of hidden bits would take a considerable amount of time, the reality is that many BigFloat functions and operations do not strictly follow proper rounding rules. As a result, precision degradation will likely occur much sooner in practical use cases.
 
-### Rounding Example
-
+#### Rounding Example
+```
   101.|11001011101101001000101100110100 (approximately 6)
 x 100.|01011001101001011100101110110101 (approximately 4)
 **============================================================**
-  110.|11001100100110110010011001111111[101100...] (true bits to remove)
+  110.|11001100100110110010011001111111[101100...] (for reference, the true answer and bits to removed)
   110.|11001100100110110010011001111111 (if rounding down or dropping bits)
   110.|11001100100110110010011010000000 (if rounded to nearest)
-
+```
 ^** "|" is the separator for the in-precision and out-of-precision hidden bits.*\
 *** "[ ]" bits even past the hidden bits - the bits to be rounded*^
 
 Even though these bits were in the hidden area and are considered out-of-precision, rounding helps with the loss of precision with successive math operations operating on it. The precision slowly decreases with chopping off the bits (i.e., rounding down). However, if rounding is done correctly for some math functions, the rounding up and down of the least significant digit will cancel each other out over time. This is equivalent to counting the number of heads when flipping a coin several times.
 
-Here is an example where hidden bits correct cumulative rounding errors.
-
-#### For Reference, the correct answer...
-
+Here is an example where hidden bits correct cumulative rounding errors. For Reference, the correct answer...
+```
 1000.110100|000000010000000001010110... (exact)
+```
 
 #### Dropping the Bits...
-
+```
   11.101110|011001110100101011001011
  + 1.010001|011001100110110101100010 (add operation)
  **====================================**
  100.111111|110011011011100000101101 (subtotal)
  + 1.010001|011001100110110101100010 (add operation)
- **====================================** 110.010001|001101000010010110001111 (subtotal)
+ **====================================**
+ 110.010001|001101000010010110001111 (subtotal)
  + 1.010001|011001100110110101100010 (add operation)
- **====================================** 111.100010|100110101001001011110001 (subtotal)
- + 1.010001|011001100110110101100010 (add operation) **====================================**
+ **====================================**
+ 111.100010|100110101001001011110001 (subtotal)
+ + 1.010001|011001100110110101100010 (add operation)
+ **====================================**
 1000.110100|000000010000000001010011 (total is off by 3)
+```
 
 #### Using Rounding...
-
+```
   11.101110|011001110100101011001011
  + 1.010001|01100110011011010110001011 (round and add operation)
  **====================================**
@@ -340,51 +333,46 @@ Here is an example where hidden bits correct cumulative rounding errors.
  + 1.010001|01100110011011010110001011 (round and add operation)
 **====================================**
 1000.110100|000000010000000001010111   (total - off by 1)
+```
 
-Background of BigFloat
-----------------------
+## Background of BigFloat
 
-In 2020, I encountered a challenge that required calculations on very large numbers that were not integers. To tackle this, I initially resorted to leveraging a `BigInteger` while manually managing the position of the decimal point. While functional, this makeshift solution proved to be unwieldy, leading to code cluttered, time-intensive to manage, and prone to errors. After a search for an existing tool that met my needs in 2020, I was compelled to create this `BigFloat` library.
+In 2020, I encountered a challenge that required calculations on very large numbers that were not integers. To tackle this, I initially resorted to leveraging a `BigInteger` while manually managing the position of the decimal point. While functional, this makeshift solution proved to be unwieldy, leading to code cluttered, time-intensive to manage, and prone to errors. After a search for an existing tool that met my needs in 2020, I was compelled to create this BigFloat library.
 
-`BigFloat` was conceived as a modest class, its primary function being to accurately track the position of the radix point---a term synonymous with 'decimal point' but applicable across any numerical base. As time progressed, the library underwent numerous enhancements, expanding its repertoire of functions and significantly improving its precision.
+BigFloat was conceived as a modest class, its primary function being to accurately track the position of the radix point---a term synonymous with 'decimal point' but applicable across any numerical base. As time progressed, the library underwent numerous enhancements, expanding its repertoire of functions and significantly improving its precision.
 
-This journey from a simple utility to manage radix points in large-scale arithmetic to a comprehensive `BigFloat` library exemplifies the evolution of a tool designed to address a specific need, which, through continuous refinement and expansion, has grown to offer robust support for high-precision calculations across a wide array of applications.
+This journey from a simple utility to manage radix points in large-scale arithmetic to a comprehensive BigFloat library exemplifies the evolution of a tool designed to address a specific need, which, through continuous refinement and expansion, has grown to offer robust support for high-precision calculations across a wide array of applications.
 
-Questions and Answers
----------------------
+## Questions and Answers
 
--   **Is BigFloat Complete?** While robust and functional, `BigFloat` is a never-ending project with ongoing enhancements and performance optimizations.
--   **How Long Has BigFloat Been Around?** Starting as a personal tool in November 2020, `BigFloat` has evolved since then.
+-   **Is BigFloat Complete?** While robust and functional, BigFloat is a never-ending project with ongoing enhancements and performance optimizations.
+-   **How Long Has BigFloat Been Around?** Starting as a personal tool in November 2020, BigFloat has evolved since then.
 -   **Dependencies:** `BigFloat` requires .NET 7 or later and has no other dependencies.
--   **Data Storage:** At its core, `BigFloat` has three items: (1) `BigInteger` for storing the actual `DataBits`. (2) a `Scale` showing how many binary places to shift the radix point. (3) The data bits size is accessed frequently. To facilitate quick access, this value, equivalent to `ABS(BigInteger).GetBitCount()` is cached.
+-   **Data Storage:** At its core, BigFloat has three items: (1) `BigInteger` for storing the actual `DataBits`. (2) a `Scale` showing how many binary places to shift the radix point. (3) The data bits size is accessed frequently. To facilitate quick access, this value, equivalent to `ABS(BigInteger).GetBitCount()` is cached.
 -   **Why is it called BigFloat?**
     -   `BigFloat`: This would indicate a base-2 number with a floating decimal point.
     -   `BigRational`: This indicates the number is stored as an actual fraction with a numerator and denominator.
     -   `BigDecimal`: This indicates processing/storage is in base-10. However, this class is in base 2. Some projects use Base 2, however, with the name `BigDecimal`.
 
-Future Wish List
-----------------
+## Future Wish List
 
 -   Add the `_repeat` for more exact results storage for rational numbers.
 -   Finish the `NthRoot()` function. It works but needs to be converted to use `BigInteger` internally for better performance.
 
-History
--------
+## History
 
 -   29^th^ November, 2020: Initial version
 -   6^th^ January, 2024: Public release
 -   26^th^ February, 2024: Article posted
 
-Article Creation Process
-------------------------
+## Article Creation Process
 
 The development of this article was a synergy of human creativity and artificial intelligence. Initially, Ryan White crafted a comprehensive draft, which was then refined using Word and Grammarly for initial edits. Subsequently, we leveraged the capabilities of ChatGPT 4 to restructure and condense the article. Initially, the extent of information reduction was a concern; however, we recognized the value in brevity, as ChatGPT's edits transformed the piece from a potentially dry technical narrative into a compelling and succinct read.
 
 This iterative process involved continuous enhancements and refinements between manual inputs and AI suggestions. This collaboration streamlined the content and ensured the article maintained a lively and engaging tone. The final touches included meticulous proofreading with Grammarly and Word, underscoring our commitment to quality.
 
-Additionally, the article features the `BigFloat` image, conceived by ChatGPT, with a minor manual adjustment to incorporate the term `Float` for clarity.
+Additionally, the article features the BigFloat image, conceived by ChatGPT, with a minor manual adjustment to incorporate the term `Float` for clarity.
 
-License
--------
+## License
 
 This article, along with any associated source code and files, is licensed under [The MIT License](http://www.opensource.org/licenses/mit-license.php)
