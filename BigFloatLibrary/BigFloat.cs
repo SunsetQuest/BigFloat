@@ -2716,22 +2716,22 @@ Other:                                         |   |         |         |       |
     /// * If the part being removed has the most significant bit set, then the result will be rounded away from zero. 
     /// </summary>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
-    /// <param name="bitsToRemove">The number of bits to reduce the precision.</param>
+    /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
     /// <returns>The rounded result of shifting val to the right by bitsToRemove.</returns>
-    public static BigInteger RightShiftWithRound(BigInteger val, in int bitsToRemove)
+    public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove)
     {
         // if bitsToRemove is negative, we would up-shift and no rounding is needed.
-        if (bitsToRemove < 0)
+        if (targetBitsToRemove < 0)
         {
-            return val >> bitsToRemove;
+            return val >> targetBitsToRemove;
         }
 
         // BigInteger will automatically round when down-shifting larger negative values.
         if (val.Sign < 0) val--;
 
-        BigInteger result2 = val >> bitsToRemove;
+        BigInteger result2 = val >> targetBitsToRemove;
 
-        if (!(val >>> (bitsToRemove - 1)).IsEven)
+        if (!(val >>> (targetBitsToRemove - 1)).IsEven)
         {
             result2++;
         }
@@ -2747,17 +2747,17 @@ Other:                                         |   |         |         |       |
     /// THIS FUNCTION IS HIGHLY TUNED!
     /// </summary>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
-    /// <param name="bitsToRemove">The number of bits to reduce the precision.</param>
+    /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
     /// <param name="size">IN: the size of Val.  OUT: The size of the output.</param>
-    public static BigInteger RightShiftWithRound(BigInteger val, in int bitsToRemove, ref int size)
+    public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove, ref int size)
     {
-        size = Math.Max(0, size - bitsToRemove);
+        size = Math.Max(0, size - targetBitsToRemove);
 
         if (val.Sign >= 0)
         {
-            BigInteger result = val >>> bitsToRemove;
+            BigInteger result = val >>> targetBitsToRemove;
 
-            if (!(val >>> (bitsToRemove - 1)).IsEven)
+            if (!(val >>> (targetBitsToRemove - 1)).IsEven)
             {
                 result++;
 
@@ -2773,9 +2773,9 @@ Other:                                         |   |         |         |       |
 
         val--;
 
-        BigInteger result2 = val >> bitsToRemove;
+        BigInteger result2 = val >> targetBitsToRemove;
 
-        if ((val >>> (bitsToRemove - 1)).IsEven)
+        if ((val >>> (targetBitsToRemove - 1)).IsEven)
         {
             if (((result2 - 1) >>> size).IsEven)
             {
@@ -2866,18 +2866,18 @@ Other:                                         |   |         |         |       |
     /// This function uses the internal BigInteger RightShiftWithRound().
     /// Also see: ReducePrecision, RightShiftWithRoundWithCarryDownsize, RightShiftWithRound
     /// </summary>
-    /// <param name="bitsToRemove">Specifies the number of least-significant bits to remove.</param>
-    public static BigFloat TruncateByAndRound(BigFloat x, int bitsToRemove)
+    /// <param name="targetBitsToRemove">Specifies the target number of least-significant bits to remove.</param>
+    public static BigFloat TruncateByAndRound(BigFloat x, int targetBitsToRemove)
     {
-        if (bitsToRemove < 0)
+        if (targetBitsToRemove < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(bitsToRemove), $"Param {nameof(bitsToRemove)}({bitsToRemove}) be 0 or greater.");
+            throw new ArgumentOutOfRangeException(nameof(targetBitsToRemove), $"Param {nameof(targetBitsToRemove)}({targetBitsToRemove}) be 0 or greater.");
         }
 
-        int newScale = x.Scale + bitsToRemove;
+        int newScale = x.Scale + targetBitsToRemove;
         int size = x._size;
 
-        BigInteger b = RightShiftWithRound(x.DataBits, bitsToRemove, ref size);
+        BigInteger b = RightShiftWithRound(x.DataBits, targetBitsToRemove, ref size);
 
         return new(b, newScale, size);
     }
@@ -2900,15 +2900,15 @@ Other:                                         |   |         |         |       |
     /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Example: SetPrecisionWithRound(15, 3) = 8[4 bits]
     /// Also see: SetPrecision, TruncateToAndRound
-    /// <param name="newSizeInBits">The new requested size. The resulting size might be rounded up.</param>
-    public static BigInteger TruncateToAndRound(BigInteger x, int newSizeInBits)
+    /// <param name="targetNewSizeInBits">The new requested size. The resulting size might be rounded up.</param>
+    public static BigInteger TruncateToAndRound(BigInteger x, int targetNewSizeInBits)
     {
-        if (newSizeInBits < 0)
+        if (targetNewSizeInBits < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(newSizeInBits), $"Param newSizeInBits({newSizeInBits}) be 0 or greater.");
+            throw new ArgumentOutOfRangeException(nameof(targetNewSizeInBits), $"Param newSizeInBits({targetNewSizeInBits}) be 0 or greater.");
         }
         int currentSize = (int)BigInteger.Abs(x).GetBitLength();
-        BigInteger result = RightShiftWithRound(x, currentSize - newSizeInBits);
+        BigInteger result = RightShiftWithRound(x, currentSize - targetNewSizeInBits);
         return result;
     }
 
@@ -2947,9 +2947,9 @@ Other:                                         |   |         |         |       |
     /// Also see: SetPrecision, TruncateToAndRound
     /// </summary>
     /// <param name="newSizeInBits">The desired precision in bits.</param>
-    public static BigFloat SetPrecisionWithRound(BigFloat x, int newSizeInBits)
+    public static BigFloat SetPrecisionWithRound(BigFloat x, int requestedNewSizeInBits)
     {
-        int reduceBy = x.Size - newSizeInBits;
+        int reduceBy = x.Size - requestedNewSizeInBits;
         BigFloat result = TruncateByAndRound(x, reduceBy);
         return result;
     }
@@ -4328,62 +4328,9 @@ Other:                                         |   |         |         |       |
                 //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
         }
 
-        //int requestedOutputPrecision = value._size;
-        //int OutputPrecisionAfterNRootOpp = value._size / n;
-        //int needToGrowOutputBy = requestedOutputPrecision - OutputPrecisionAfterNRootOpp + 0;
-        //int needToGrowInputBy = needToGrowOutputBy * n;
-
-        //(int resultScale, int bitsRemaining) = Math.DivRem(value.Scale, n);
-
-        //BigInteger valueData = value.DataBits << (needToGrowInputBy + bitsRemaining - 32);
-        //BigInteger root = NewtonNthRoot(ref valueData, n, 0);
-        //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] value._size:{value._size}  needToGrowOutputBy:{needToGrowOutputBy} OutputPrecisionAfterNRootOpp:{OutputPrecisionAfterNRootOpp} needToGrowInputBy:{needToGrowInputBy} bitsRemaining:{bitsRemaining} resultScale:{resultScale} root.size:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} ret:\r\n{ret}");
-        //BigFloat ret = new BigFloat(root, ExtraHiddenBits - needToGrowOutputBy - 0, true);
-
-        
-        int requestedOutputPrecision = value._size;
-        int OutputPrecisionAfterNRootOpp = value._size / n;
-        int needToGrowOutputBy = requestedOutputPrecision - OutputPrecisionAfterNRootOpp + 0;
-        int needToGrowOutputBy2 = value._size - (value._size+1) / n;
-        int needToGrowOutputBy3 = value._size - (value._size-1) / n;
-        int needToGrowOutputBy4 = value._size - value._size / (n+1);
-        int needToGrowOutputBy5 = value._size - value._size / (n-1);
-        int needToGrowInputBy = needToGrowOutputBy * n;
-        (int resultScale, int bitsRemaining) = Math.DivRem(value.Scale, n);
-        (_, int bitsRemaining2) = Math.DivRem(value._size, n);
-
-
-
-
-
-        BigFloat ret = 0;
-
         int mod = n - (32 % n); 
-        int mod1 = n - ((value._size + value.Scale + 32) % n); // or maybe for large values of n?  
-        int shift = (((value._size-32) / n) - mod) * n - (32 % n);
-        int shift1 = (value._size-32) - (mod * n) - n;
-        int shift2 = value._size - 32 - mod * n;
-
-        int topBit = value._size / n;
-
-        int i = 0; int j = 0;
-        //j = shift - needToGrowOutputBy + 20;////////////////////////////  This is pretty close but not exact
-        int j2 = 18 - (value._size - value._size / n) + ((value._size - value._size / n) * n) / (value._size - 32 - (n - (32 % n)) * n);////////////////////////////  This is pretty close but not exact
-        //for (int i = -4; i < 4; i++)
-        //    for (int j = 30; j < 50; j++)
-        //    {
-        BigInteger valueData = value.DataBits << mod+i+0;  //0
+        BigInteger valueData = value.DataBits << mod;  //0
         BigInteger root = NewtonNthRoot(ref valueData, n, 0);
-        //ret = new BigFloat(root, -needToGrowOutputBy+25, true); //0,32
-
-
-        // 111111111111111.111111111111111111111111111111111
-        // |           root.GetBitLen()                    |
-        // |
-
-
-
-        //Console.WriteLine(BigIntegerToBinaryString(root));
         double valueBitLengthyness = BigFloat.Log2(value);
         double resultBitLengthyness = valueBitLengthyness / n;
         double retLog2 = double.Log2((double)root);
@@ -4394,17 +4341,11 @@ Other:                                         |   |         |         |       |
 
         int rootLen = (int)root.GetBitLength();
 
-        ret = new BigFloat(root, resultBitLength - rootLen + 32+1, true);
+        BigFloat ret = new BigFloat(root, resultBitLength - rootLen + 32+1, true);
 
-            //if ((BigInteger)ret == 1862611236825425193)
-            //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
-            //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
-        //}
-
-        // 7777777777777777777777777777777777777777777777777777777777777777
-        // 1340494621.514214278463413501222825825662100997195024832765760458|23859
-        // 1340494621.51421427846341350122282582566210099719502483276576045824 i - 185 j:   3                  26 = (185-3 / 7)    OR    27 = (185+4 / 7) 
-        // 1340494621.514214278463413501222825825662100997195024832765760458 i - 178   j: - 4                  26*7 + 3 = 185      OR    27*7 - 4 = 185
+        //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
+        //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
+        AssertValid(ret);
         return ret;
     }
 
@@ -4527,6 +4468,15 @@ Other:                                         |   |         |         |       |
     //    return val;
     //}
 
+
+    /// <summary>
+    /// Calculates the nth root of a BigInteger. i.e. x^(1/n)
+    /// </summary>
+    /// <param name="x">The input value(or radicand) to find the nth root of.</param>
+    /// <param name="n">The input nth root(or index) that should be used.</param>
+    /// <param name="outputLen">The requested output length. If positive, then this number of bits will be returned. If negative(default), then proper size is returned. If 0, then an output will be returned with the same number of digits as the input. </param>
+    /// <param name="xLen">If available, size in bits of input x. If negative, x.GetBitLength() is called to find the value.</param>
+    /// <returns>Returns the nth root(or radical) or x^(1/n)</returns>
     public static BigInteger NewtonNthRoot(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
     {
         if (x == 0) return 0; // The n-th root of 0 is 0.
@@ -4534,114 +4484,79 @@ Other:                                         |   |         |         |       |
         if (n == 1) return x; // The 1st  root of x is x itself.
         //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
 
-        if (xLen < 0)
-        {
-            xLen = (int)x.GetBitLength();
-        }
+        if (xLen < 0) xLen = (int)x.GetBitLength();
 
         // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
         if (outputLen <= 0)
-        {
-            //outputLen = xLen / n + 1; //(int)BigInteger.Log2(x) / n + 1;
             outputLen = (outputLen == 0)?xLen : (int)BigInteger.Log2(x) / n + 1;
-
-        }
         
         // If xLen is over 1023 bits, reduce the size of x to fit in a double
         int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 0);
-        BigInteger scaledX = x >> n * scaleDownCount; // Right-shift x by n bits
-
-        // Calculate initial guess using scaled down x
-        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+        BigInteger scaledX = x >> n * scaleDownCount;
 
         ////////// Use double's hardware to get the first 53-bits ////////
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
         long bits = BitConverter.DoubleToInt64Bits(initialGuess);
-        // Note that the shift is sign-extended, hence the test against -1 not 1
-        scaleDownCount += (int)((bits >> 52) & 0x7ffL) - 1075;
-        int exponent = (int)((bits >> 52) & 0x7ffL) - 1075;
         long mantissa = bits & 0xfffffffffffffL | (1L << 52);
 
-        if (outputLen < 51) // 51?
+        // Return if we have enough bits.
+        //if (outputLen < 48) return mantissa >> (53 - outputLen);
+        if (outputLen < 48)
         {
-            return mantissa >> scaleDownCount; //untested
+
+            int bitsToRemove = 53 - outputLen;
+            long mask = ((long)1 << (bitsToRemove + 1)) - 1;
+            long removedBits = (mantissa + 1) & mask;
+            if (removedBits == 0)
+                mantissa++;
+
+            return mantissa >> (53 - outputLen);
+                //(mantissa, 53 - outputLen); 
         }
 
-        BigInteger val = new BigInteger(mantissa);
-        UInt128 val2 = (UInt128)mantissa;
-
-        //BigInteger val = new BigInteger(initialGuess);  //241
-        //Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount));
-        //Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
-
-        int loops = 0;
-        int ballparkSize = 100;
+        //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
 
         //////////////////////////////////////////////////////////////
-        val2 <<= (127 - (int)UInt128.Log2(val2));
+        UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
 
         UInt128 pow3 = PowerFast(val2, n - 1);
         UInt128 pow4 = MultHiFast(pow3, val2);
 
         Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
         Int128 denominator2 = n * (Int128)(pow3 >> 89);
-        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1"));
-        //Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1"));
-        //Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2"));
-        //Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator"));
-        val = ((Int128)(val2 >> 44) - numerator2 / denominator2);
-        //Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
-        loops++;
-        ballparkSize *= 2;
+
+        BigInteger val = ((Int128)(val2 >> 44) - numerator2 / denominator2);
+        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
         if (outputLen < 100) // 100?
-        {
-            return mantissa >> (128 - outputLen); //untested
-        }
+            return val >> (84 - outputLen); 
 
         int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
         if (UInt128.Log2(pow4) == 126) tempShift++;
-        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift);
-        val <<= tempShift;
-        //Console.WriteLine(val.GetBitLength());
-
-        //val <<= (scaleDownCount - 53 - 0);
-        // should be 241 now
+        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
+        val <<= tempShift;        // should be 241 now
 
         //////////////////////////////////////////////////////////////
         BigInteger lastVal = 0;
-
+        int loops = 2;
+        int ballparkSize = 200;
         while (val != lastVal) // Repeat until convergence
         {
-            int reduceBy = Math.Max(0, outputLen - ballparkSize);
+            int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
             lastVal = val;
-            // Lets try making the next line smaller by another reduceby
             int valSize = (int)val.GetBitLength();
             BigInteger pow = PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
-            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1))))));
-            //Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1))));
-            BigInteger numerator = ((pow * (val >> (reduceBy * 1)))) - (x >> (reduceBy - valSize + reduceBy)); // i: -200 j: 0  OR  i: -197 j: 2
-            //Console.WriteLine(BigIntegerToBinaryString(numerator));
-            //Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
-            BigInteger denominator = (n * pow) >> (reduceBy * 0);
-            val = ((val >> (reduceBy + 0)) - numerator / denominator) << reduceBy; // FIX: CHANGE +0 to +2
-
-            // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
-            loops++;
+            BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
+            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
+            val = ((val >> (reduceBy + 0)) - numerator / (n * pow)) << reduceBy; // FIX: CHANGE +0 to +2
+            loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
             ballparkSize *= 2;
         }
-        //Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
+        Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
+        Console.WriteLine("Grew by: " + (val.GetBitLength() - xLen));
+
+        
 
         return val;
-    }
-
-    public struct perams
-    {
-        public int a; //-20 to 20
-        public int b; //0-3
-        public int c; //-20 to 20
-        public int d; //0 to 20
-        public int e; //0 to 1
-        public int f; //0 to 1
-        public int g; //0 to 2
     }
 
     /// <summary>
@@ -4768,7 +4683,7 @@ Other:                                         |   |         |         |       |
     /// <param name="exp">The exponent(or power) in Int32 format.</param>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static UInt128 PowerFast(UInt128 b, int exp, perams p = default) //partial source: chatgpt 4
+    public static UInt128 PowerFast(UInt128 b, int exp) //partial source: chatgpt 4
     {
         UInt128 result = UInt128.MaxValue;
         while (true)
