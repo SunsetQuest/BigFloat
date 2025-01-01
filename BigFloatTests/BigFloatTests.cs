@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
@@ -627,6 +628,90 @@ public class BigFloatTests
         IsTrue(BigFloat.Inverse(a) == b, $"Failed on: Inverse(-0.333333333333333333333333333)");
 
         IsTrue(BigFloat.Inverse(new BigFloat("7.9697706335180071911585875567198e-26")) == new BigFloat("12547412541514775369202510"), $"Failed on: Inverse(0.5000)");
+    }
+
+    [TestMethod]
+    public void Verify_Log2Double()
+    {
+        BigFloat aaa = new("0b101"); // Initialize by String  2^59.5
+        double ans = double.Log2((double)aaa);
+        double res = BigFloat.Log2(aaa);
+        //Answer: 2.321928094887362347870319429489390175864831393024580612054756...
+        IsTrue(res == ans);
+
+        aaa = new("0b10110.1010000010011110011001100111111100111011110011001001000"); //pattern: 2^59.5
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(-aaa);
+        IsTrue(res == ans);
+
+        aaa = new("0b101111.111111111111111111111111111111111");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+
+        aaa = new("999999999999999999999999999999999999999999999");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(-aaa);
+        IsTrue(res == ans);
+
+        aaa = new("0.000000000000000000000000000000000000000000000000000000000000123");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(-aaa);
+        IsTrue(res == ans);
+
+        aaa = new("1");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == 0.0);
+        aaa = new("-1");
+        ans = BigFloat.Log2(aaa);
+        IsTrue(res == 0.0);
+
+        aaa = new("0");
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == 0.0);
+
+        aaa = new("123.123e+300");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(-aaa);
+        IsTrue(res == ans);
+
+        aaa = new("7777.7777e-300");
+        ans = double.Log2((double)aaa);
+        res = BigFloat.Log2(aaa);
+        IsTrue(res == ans);
+        ans = BigFloat.Log2(-aaa);
+        IsTrue(res == ans);
+
+        // Result: 3321.92809488741    (using "1e+1000")
+        // Result: 3321.9280948873625  (using "1.0000000000e+1000")
+        // Answer: 3321.9280948873623478703194294893901758648313930245806120547563958  (using https://www.wolframalpha.com/input?i=log2%281e%2B1000%29)
+
+        aaa = new("1e+1000");    
+        res = BigFloat.Log2(aaa);
+        IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887[34]\d*"));
+
+        aaa = new("1.0000000000e+1000");
+        res = BigFloat.Log2(aaa);
+        IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887362[2345]"));
+
+        aaa = new("1e-1000");
+        res = BigFloat.Log2(aaa);
+        IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887[34]\d*"));
+
+        aaa = new("1.0000000000e-1000");
+        res = BigFloat.Log2(aaa);
+        IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887362[2345]"));
     }
 
     [TestMethod]

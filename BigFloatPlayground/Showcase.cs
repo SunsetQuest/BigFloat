@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using BigFloatLibrary;
+using static BigFloatLibrary.BigFloat;
 //using static BigFloatLibrary.BigFloat;
 
 
@@ -24,11 +25,101 @@ namespace ShowCase2;
 
 public static class Showcase
 {
+    
     //////////////  BigConstants Play Area & Examples //////////////
+        static volatile uint lowestScore = 99999999;
     public static void Main()
     {
-        // NthRoot_DRAFT_Stuff();    return;
+        //UInt128 aa = UInt128.Parse("1234567890123456789012345678901");
+        //UInt128 bb = UInt128.Parse("2345678901234567890123456789012");
+        //BigInteger ans = (((BigInteger)aa * (BigInteger)bb) >> 128); //(aa>>37) * (bb>>37);
+        //                                                             //UInt128 ans = (aa>>37) * (bb>>37);
+        //UInt128 res = BigFloat.MultHi((UInt128)aa, bb);
+        //Console.WriteLine($"aa  {BigFloat.BigIntegerToBinaryString((BigInteger)aa)}[{((BigInteger)aa).GetBitLength()}]");
+        //Console.WriteLine($"onl 1110011010101011111101101001100000110010111110001110111110111010110001011010011111001110011001000101010000010010101000001101100011100100001010101100111011000101011...");
+        //Console.WriteLine($"ans {BigFloat.BigIntegerToBinaryString((BigInteger)ans)}[{((BigInteger)ans).GetBitLength()}]");
+        //Console.WriteLine($"res {BigFloat.BigIntegerToBinaryString((BigInteger)res)}[{((BigInteger)res).GetBitLength()}]");
 
+        //long tryCount = 0;
+        //Parallel.For(-15, 17, aaa =>
+        //{
+        //    //for (int aaa = -21; aaa < 21; aaa++){
+        //    for (int bbb = 0; bbb < 4; bbb++)
+        //        for (int ccc = -32; ccc < 1; ccc++)
+        //            for (int ddd = -16; ddd < -5; ddd++)
+        //                for (int eee = 0; eee < 5; eee++)
+        //                    for (int fff = 0; fff < 1; fff++)
+        //                        for (int ggg = 0; ggg < 1; ggg++)
+        //                        {
+        //                            tryCount++;
+        //                            BigFloat.perams p = new perams
+        //                            {
+        //                                a = aaa,
+        //                                b = bbb,
+        //                                c = ccc,
+        //                                d = ddd,
+        //                                e = eee,
+        //                                f = fff,
+        //                                g = ggg,
+        //                            };
+
+        //                            uint totalmiss = 0;
+
+        //                            for (int cons1 = 1; cons1 < 18; cons1++)
+        //                            //for (int cons2 = 1; cons2 < 7; cons2 *= 3)
+        //                            {
+
+        //                                BigInteger temp = ((BigInteger)aa * cons1);
+        //                                UInt128 a2 = (UInt128)(temp << (127 - (int)BigInteger.Log2(temp)));
+        //                                BigInteger ans2 = temp;
+
+        //                                int next = 3;
+        //                                for (int i = 2; i < 10000; i++)
+        //                                {
+        //                                    //Console.WriteLine($"Power " + i);
+
+        //                                    ans2 *= a2;
+        //                                    ans2 >>= (int)ans2.GetBitLength() - 256; //lets not let ans2 get too big.
+        //                                    BigInteger tempAns = ans2 >> (int)ans2.GetBitLength() - 128;
+
+        //                                    if (i == next)
+        //                                    {
+        //                                        next = (int)(i * 1.34);
+
+        //                                        BigInteger res2 = BigFloat.PowerFast(a2, i, p);
+
+        //                                        BigInteger miss = (res2 - tempAns);// * (100 / int.Log2(i)) ;
+
+
+
+
+        //                                        totalmiss += (uint)miss.GetBitLength();
+        //                                        //Console.WriteLine($"res {BigFloat.BigIntegerToBinaryString((BigInteger)res2)}[{((BigInteger)res2).GetBitLength()}]");
+        //                                        //Console.WriteLine($"ans {BigFloat.BigIntegerToBinaryString((BigInteger)tempAns)}[{((BigInteger)tempAns).GetBitLength()}]");
+        //                                        //Console.WriteLine($"dif {miss}");
+        //                                    }
+        //                                }
+
+        //                            }
+        //                            if (aaa == 0) totalmiss--;
+        //                            if (bbb == 0) totalmiss--;
+        //                            if (ccc == 0) totalmiss--;
+        //                            if (ddd == 0) totalmiss--;
+        //                            if (eee == 0) totalmiss--;
+        //                            //if (fff == 0) totalmiss--;
+        //                            if (ggg == 0) totalmiss--;
+
+        //                            if (totalmiss < lowestScore)
+        //                            {
+        //                                lowestScore = totalmiss;
+        //                                Console.WriteLine($"totalmiss {totalmiss} a{p.a,3} b{p.b,3} c{p.c,3} d{p.d,3} e{p.e,3} f{p.f,3} g{p.g} ");
+        //                            }
+        //                        }
+        //});
+        //return;
+
+
+        NthRoot_DRAFT_Stuff(); return;
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
         // Initialize BigFloat numbers
         BigFloat a = new("123456789.012345678901234"); // Initialize by String
@@ -224,127 +315,131 @@ public static class Showcase
     //////////////  NthRoot Play Area & Examples //////////////
     private static void NthRoot_DRAFT_Stuff()
     {
-        Console.WriteLine($"Ans: val^(1/3) -> 26260231.868889058659811670527341)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("77777777777777777777777777777777") >> 32, 3)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 42685972166.249808508213684454450)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("77777777777777777777777777777777"), 3)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 8944271909999158.7856366946749251)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 43088693800.637674435185871330387)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 94574160.900317581330169611988722)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 2402248.8679628624664841997871983)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 207578.16311124268746614482713121)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 36106.407876409947138175505843180)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 9724.9247246607303150644442684673)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("80000000000000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 1000000000000000.0000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 10000000000.000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 31622776.601683793319988935444327)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 1000000.0000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 100000.00000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 19306.977288832501670070747998402)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 5623.4132519034908039495103977648)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 10000000000000.000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 464158883.36127788924100763509194)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 3162277.6601683793319988935444327)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 158489.31924611134852021013733915)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 21544.346900318837217592935665194)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 5179.4746792312111347551746779610)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 1778.2794100389228012254211951927)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 3162277660168.3793319988935444327)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 215443469.00318837217592935665194)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 1778279.4100389228012254211951927)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 100000.00000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 14677.992676220695409205171148169)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 3727.5937203149401661724906094730)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 1333.5214321633240256759317152953)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 1000000000000.0000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 100000000.00000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 1000000.0000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 63095.734448019324943436013662234)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 10000.000000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 2682.6957952797257476988026806276)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 1000.0000000000000000000000000000)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 316227766016.83793319988935444327)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 46415888.336127788924100763509194)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 562341.32519034908039495103977648)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 39810.717055349725077025230508775)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 6812.9206905796128549798817963002)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/7) -> 1930.6977288832501670070747998402)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 7)}");
-        Console.WriteLine($"Ans: val^(1/8) -> 749.89420933245582730218427561514)"); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000000"), 8)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 100000000000.000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 21544346.9003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 316227.766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 25118.8643150958)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 4641.58883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("10000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 31622776601.6838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 9999999.99999997)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 177827.941003892)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 15848.9319246111)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 3162.27766016837)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("1000000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 10000000000.0000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000"), 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 4641588.83361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000"), 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 100000.000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000"), 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 10000.0000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000"), 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 2154.43469003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(BigFloat.Parse("100000000000000000000"), 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 3162277660.16838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 2154434.69003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 56234.1325190350)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 6309.57344480194)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 1467.79926762207)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 1000000000.00000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 1000000.00000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 31622.7766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 3981.07170553497)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 1000.00000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 316227766.016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 464158.883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 17782.7941003892)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 2511.88643150958)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 681.292069057961)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 100000000.000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 215443.469003189)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 10000.0000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 1584.89319246112)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 464.158883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 31622776.6016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 99999.9999999998)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 5623.41325190349)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 1000.00000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 316.227766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 10000000.0000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 46415.8883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 3162.27766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 630.957344480194)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 215.443469003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 3162277.66016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 21544.3469003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 1778.27941003892)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 398.107170553497)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 146.779926762207)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 1000000.00000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 9999.99999999999)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 1000.00000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 251.188643150958)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 100.000000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 316227.766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 4641.58883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 562.341325190349)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 158.489319246111)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 68.1292069057961)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 100000.000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 2154.43469003188)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 316.227766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 100.000000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 46.4158883361278)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(10000000000, 6)}");
-        Console.WriteLine($"Ans: val^(1/2) -> 31622.7766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000, 2)}");
-        Console.WriteLine($"Ans: val^(1/3) -> 1000.00000000000)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000, 3)}");
-        Console.WriteLine($"Ans: val^(1/4) -> 177.827941003892)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000, 4)}");
-        Console.WriteLine($"Ans: val^(1/5) -> 63.0957344480193)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000, 5)}");
-        Console.WriteLine($"Ans: val^(1/6) -> 31.6227766016838)                 "); Console.WriteLine($"             Res: {BigFloat.NthRoot_INCOMPLETE_DRAFT8(1000000000, 6)}");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):1340494621.514214278463413501222825825662100997195024832765760458|23859");        //Console.WriteLine($"ANS:  1100111011001010100110000110100100101101000010110010100101000.10001000010110110011101011111111010101010100001110111010010101110001010111001110100001011011110100111101000100010101001000111110110000011001101111110111110110100011011010001101100011100111010110101110000000001010101010101011111001011011110101010111011111001010011100001101000101010000010010001001001110010010001100001110000001110011010010101110100011011001110010011110001000111101101000100011011110100011000110111101001100000|011");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4)}"); Console.WriteLine($"x^(1/4):9391044157537525.19591975149938555692792588485605707185903878278)");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740|51982282");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777"), 3)}"); Console.WriteLine($"x^(1/3):19813073175.87709934055949316958|138 ");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):25880.89921337705525458987063396|056 ");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777"), 55)}"); Console.WriteLine($"x^(1/55:3.644617186032180086485625982525|169 ");
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("77777777777777777777777777777777"), 3)}");                               Console.WriteLine($"x^(1/3):42685972166.249808508213684454449|731");   
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 2)}");                               Console.WriteLine($"x^(1/2):8944271909999158.7856366946749251|049");   
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 3)}");                               Console.WriteLine($"x^(1/3):43088693800.637674435185871330387|009");   
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 4)}");                               Console.WriteLine($"x^(1/4):94574160.900317581330169611988722|");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 5)}");                               Console.WriteLine($"x^(1/5):2402248.8679628624664841997871983|");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 6)}");                               Console.WriteLine($"x^(1/6):207578.16311124268746614482713121|");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 7)}");                               Console.WriteLine($"x^(1/7):36106.407876409947138175505843180|");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("80000000000000000000000000000000"), 8)}");                               Console.WriteLine($"x^(1/8):9724.9247246607303150644442684673|");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 2)}");                                Console.WriteLine($"x^(1/2):1000000000000000.000000000000000|0");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 3)}");                                Console.WriteLine($"x^(1/3):10000000000.00000000000000000000|0");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 4)}");                                Console.WriteLine($"x^(1/4):31622776.60168379331998893544432|7");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 5)}");                                Console.WriteLine($"x^(1/5):1000000.000000000000000000000000|0");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 6)}");                                Console.WriteLine($"x^(1/6):100000.0000000000000000000000000|0");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 7)}");                                Console.WriteLine($"x^(1/7):19306.97728883250167007074799840|2");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000000000"), 8)}");                                Console.WriteLine($"x^(1/8):5623.413251903490803949510397764|8");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 2)}");                                    Console.WriteLine($"x^(1/2):10000000000000.0000000000000|00000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 3)}");                                    Console.WriteLine($"x^(1/3):464158883.361277889241007635|09194");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 4)}");                                    Console.WriteLine($"x^(1/4):3162277.66016837933199889354|44327");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 5)}");                                    Console.WriteLine($"x^(1/5):158489.319246111348520210137|33915");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 6)}");                                    Console.WriteLine($"x^(1/6):21544.3469003188372175929356|65194");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 7)}");                                    Console.WriteLine($"x^(1/7):5179.47467923121113475517467|79610");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000000"), 8)}");                                    Console.WriteLine($"x^(1/8):1778.27941003892280122542119|51927");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 2)}");                                     Console.WriteLine($"x^(1/2):3162277660168.3793319988935|444327");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 3)}");                                     Console.WriteLine($"x^(1/3):215443469.00318837217592935|665194");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 4)}");                                     Console.WriteLine($"x^(1/4):1778279.4100389228012254211|951927");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 5)}");                                     Console.WriteLine($"x^(1/5):100000.00000000000000000000|000000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 6)}");                                     Console.WriteLine($"x^(1/6):14677.992676220695409205171|148169");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 7)}");                                     Console.WriteLine($"x^(1/7):3727.5937203149401661724906|094730");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000000"), 8)}");                                     Console.WriteLine($"x^(1/8):1333.5214321633240256759317|152953");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 2)}");                                      Console.WriteLine($"x^(1/2):1000000000000.000000000000|0000000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 3)}");                                      Console.WriteLine($"x^(1/3):100000000.0000000000000000|0000000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 4)}");                                      Console.WriteLine($"x^(1/4):1000000.000000000000000000|0000000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 5)}");                                      Console.WriteLine($"x^(1/5):63095.73444801932494343601|3662234");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 6)}");                                        Console.WriteLine($"x^(1/6):10000.00000000000000000000|0000000");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000000"), 7)}");                                        Console.WriteLine($"x^(1/7):2682.695795279725747698802|6806276");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 2)}");                                       Console.WriteLine($"x^(1/2):316227766016.837933199889|35444327");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 3)}");                                       Console.WriteLine($"x^(1/3):46415888.3361277889241007|63509194");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 4)}");                                       Console.WriteLine($"x^(1/4):562341.325190349080394951|03977648");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 5)}");                                       Console.WriteLine($"x^(1/5):39810.7170553497250770252|30508775");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 6)}");                                       Console.WriteLine($"x^(1/6):6812.92069057961285497988|17963002");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 7)}");                                       Console.WriteLine($"x^(1/7):1930.69772888325016700707|47998402");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000000"), 8)}");                                       Console.WriteLine($"x^(1/8):749.894209332455827302184|27561514");      
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000"), 2)}");                                        Console.WriteLine($"x^(1/2):100000000000.000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000"), 3)}");                                        Console.WriteLine($"x^(1/3):21544346.9003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000"), 4)}");                                        Console.WriteLine($"x^(1/4):316227.766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000"), 5)}");                                        Console.WriteLine($"x^(1/5):25118.8643150958                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("10000000000000000000000"), 6)}");                                        Console.WriteLine($"x^(1/6):4641.58883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000"), 2)}");                                         Console.WriteLine($"x^(1/2):31622776601.6838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000"), 3)}");                                         Console.WriteLine($"x^(1/3):9999999.99999997                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000"), 4)}");                                         Console.WriteLine($"x^(1/4):177827.941003892                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000"), 5)}");                                         Console.WriteLine($"x^(1/5):15848.9319246111                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("1000000000000000000000"), 6)}");                                         Console.WriteLine($"x^(1/6):3162.27766016837                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000"), 2)}");                                          Console.WriteLine($"x^(1/2):10000000000.0000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000"), 3)}");                                          Console.WriteLine($"x^(1/3):4641588.83361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000"), 4)}");                                          Console.WriteLine($"x^(1/4):100000.000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000"), 5)}");                                          Console.WriteLine($"x^(1/5):10000.0000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("100000000000000000000"), 6)}");                                          Console.WriteLine($"x^(1/6):2154.43469003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000000, 2)}");                                                             Console.WriteLine($"x^(1/2):3162277660.16838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000000, 3)}");                                                             Console.WriteLine($"x^(1/3):2154434.69003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000000, 4)}");                                                             Console.WriteLine($"x^(1/4):56234.1325190350                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000000, 5)}");                                                             Console.WriteLine($"x^(1/5):6309.57344480194                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000000, 6)}");                                                             Console.WriteLine($"x^(1/6):1467.79926762207                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000000, 2)}");                                                              Console.WriteLine($"x^(1/2):1000000000.00000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000000, 3)}");                                                              Console.WriteLine($"x^(1/3):1000000.00000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000000, 4)}");                                                              Console.WriteLine($"x^(1/4):31622.7766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000000, 5)}");                                                              Console.WriteLine($"x^(1/5):3981.07170553497                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000000, 6)}");                                                              Console.WriteLine($"x^(1/6):1000.00000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000000, 2)}");                                                               Console.WriteLine($"x^(1/2):316227766.016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000000, 3)}");                                                               Console.WriteLine($"x^(1/3):464158.883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000000, 4)}");                                                               Console.WriteLine($"x^(1/4):17782.7941003892                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000000, 5)}");                                                               Console.WriteLine($"x^(1/5):2511.88643150958                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000000, 6)}");                                                               Console.WriteLine($"x^(1/6):681.292069057961                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000, 2)}");                                                                Console.WriteLine($"x^(1/2):100000000.000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000, 3)}");                                                                Console.WriteLine($"x^(1/3):215443.469003189                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000, 4)}");                                                                Console.WriteLine($"x^(1/4):10000.0000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000, 5)}");                                                                Console.WriteLine($"x^(1/5):1584.89319246112                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000000, 6)}");                                                                Console.WriteLine($"x^(1/6):464.158883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000, 2)}");                                                                 Console.WriteLine($"x^(1/2):31622776.6016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000, 3)}");                                                                 Console.WriteLine($"x^(1/3):99999.9999999998                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000, 4)}");                                                                 Console.WriteLine($"x^(1/4):5623.41325190349                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000, 5)}");                                                                 Console.WriteLine($"x^(1/5):1000.00000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000000, 6)}");                                                                 Console.WriteLine($"x^(1/6):316.227766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000, 2)}");                                                                  Console.WriteLine($"x^(1/2):10000000.0000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000, 3)}");                                                                  Console.WriteLine($"x^(1/3):46415.8883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000, 4)}");                                                                  Console.WriteLine($"x^(1/4):3162.27766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000, 5)}");                                                                  Console.WriteLine($"x^(1/5):630.957344480194                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000000, 6)}");                                                                  Console.WriteLine($"x^(1/6):215.443469003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000, 2)}");                                                                   Console.WriteLine($"x^(1/2):3162277.66016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000, 3)}");                                                                   Console.WriteLine($"x^(1/3):21544.3469003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000, 4)}");                                                                   Console.WriteLine($"x^(1/4):1778.27941003892                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000, 5)}");                                                                   Console.WriteLine($"x^(1/5):398.107170553497                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000000, 6)}");                                                                   Console.WriteLine($"x^(1/6):146.779926762207                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000, 2)}");                                                                    Console.WriteLine($"x^(1/2):1000000.00000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000, 3)}");                                                                    Console.WriteLine($"x^(1/3):9999.99999999999                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000, 4)}");                                                                    Console.WriteLine($"x^(1/4):1000.00000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000, 5)}");                                                                    Console.WriteLine($"x^(1/5):251.188643150958                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000000, 6)}");                                                                    Console.WriteLine($"x^(1/6):100.000000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000, 2)}");                                                                     Console.WriteLine($"x^(1/2):316227.766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000, 3)}");                                                                     Console.WriteLine($"x^(1/3):4641.58883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000, 4)}");                                                                     Console.WriteLine($"x^(1/4):562.341325190349                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000, 5)}");                                                                     Console.WriteLine($"x^(1/5):158.489319246111                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(100000000000, 6)}");                                                                     Console.WriteLine($"x^(1/6):68.1292069057961                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000, 2)}");                                                                      Console.WriteLine($"x^(1/2):100000.000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000, 3)}");                                                                      Console.WriteLine($"x^(1/3):2154.43469003188                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000, 4)}");                                                                      Console.WriteLine($"x^(1/4):316.227766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000, 5)}");                                                                      Console.WriteLine($"x^(1/5):100.000000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(10000000000, 6)}");                                                                      Console.WriteLine($"x^(1/6):46.4158883361278                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000, 2)}");                                                                       Console.WriteLine($"x^(1/2):31622.7766016838                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000, 3)}");                                                                       Console.WriteLine($"x^(1/3):1000.00000000000                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000, 4)}");                                                                       Console.WriteLine($"x^(1/4):177.827941003892                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000, 5)}");                                                                       Console.WriteLine($"x^(1/5):63.0957344480193                 ");       
+        Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(1000000000, 6)}");                                                                       Console.WriteLine($"x^(1/6):31.6227766016838                 ");       
 
 
         Stopwatch timer = Stopwatch.StartNew();
-        BigFloat result = BigFloat.NthRoot_INCOMPLETE_DRAFT8(new BigFloat((ulong)3 << 60, -60), 3);
+        BigFloat result = BigFloat.NthRoot_INCOMPLETE_DRAFT9(new BigFloat((ulong)3 << 60, -60), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
-        result = BigFloat.NthRoot_INCOMPLETE_DRAFT8(new BigFloat((BigInteger)3 << 200, -200), 3);
+        result = BigFloat.NthRoot_INCOMPLETE_DRAFT9(new BigFloat((BigInteger)3 << 200, -200), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         timer.Stop();
@@ -358,12 +453,12 @@ public static class Showcase
                     //timer = Stopwatch.StartNew();
                     timer.Restart();
                     timer.Start();
-                    BigFloat result2 = BigFloat.NthRoot_INCOMPLETE_DRAFT8(bf, e);
+                    BigFloat result2 = BigFloat.NthRoot_INCOMPLETE_DRAFT9(bf, e);
                     timer.Stop();
                     if (i == 0) Console.WriteLine($"{m}^(1/{e}) = {result2}  correct:{double.Pow((double)bf, 1 / (double)e)}  ticks {timer.ElapsedTicks}");
                 }
 
-        Console.WriteLine(BigFloat.NthRoot_INCOMPLETE_DRAFT8(100000000000, 5));
+        Console.WriteLine(BigFloat.NthRoot_INCOMPLETE_DRAFT_BF(100000000000, 5));
     }
 
     //////////////  Pow() Play Area & Examples //////////////
