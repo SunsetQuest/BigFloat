@@ -4888,6 +4888,14 @@ public class BigFloatTests
         IsTrue(valResult == valExpect, $"Sqrt({inputVal}) was {output} but expected {expect}");
     }
 
+    //Todo
+    //[TestMethod]
+    //public void Verify_InverseBigInteger()
+    //{
+
+    //}
+
+
     [TestMethod]
     public void Verify_TruncateToAndRound()
     {

@@ -9,6 +9,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +31,134 @@ public static class Showcase
         static volatile uint lowestScore = 99999999;
     public static void Main()
     {
+
+
+        //BigInteger valToTest = BigInteger.Parse("12312312312312312312");
+        //{
+        //    int valLen = (int)valToTest.GetBitLength();
+        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
+        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
+        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
+        //}
+
+        //valToTest = BigInteger.Parse("12312312312312312312123123");
+        //{
+        //    int valLen = (int)valToTest.GetBitLength();
+        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
+        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
+        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
+        //}
+
+        //valToTest = BigInteger.Parse("12312312123123123123123123123123121231231231231231231231231212312312312312312312312312123123");
+        //{
+        //    int valLen = (int)valToTest.GetBitLength();
+        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
+        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
+        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
+        //}
+
+
+        // LEFT OFF HERE WITH ADDING INVERT FUNCTION
+        Console.WriteLine();
+        Stopwatch perfTimer1 = new(), perfTimer2 = new();
+        long perfTimerTotal1 = 0, perfTimerTotal2 = 0;
+        //BigInteger valToTest = BigInteger.Parse("17000000000000000000");
+        BigInteger valToTest = BigInteger.Parse("17000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        //BigInteger valToTest = BigInteger.Parse("54423786437031527763697912279787023177007175773396983622816024035711543468387091978597056733234710315130549820241594446393756345612424802270801471745336113250193667718316040253941103853841621774234813857891663076076715068586343817309246770086732294883423415223673860597326831387240313092477650074951316685417593007167891273031148391605579769517420776570212699556110145652641739426307621148603418506166450038891744322262956504929671467272484497540453925091672914077693364778107681126835011311994757409261811224974104348895160386664369615480529461919450491798311706809949739817420025767850441857925");
+        int OFFSET = 0;
+        BigInteger xInvTst = 0, xInvRes = 0;
+        //xInvRes = BigIntegerTools.InverseBigInteger(0xFF, 7);
+        //xInvTst = BigIntegerTools.InverseBigIntegerClassic(0xFF, 7);
+        //xInvRes = BigIntegerTools.InverseBigInteger(0xFFFFFFFF, 32);
+        //xInvRes = BigIntegerTools.InverseBigIntegerClassic(0xFFFFFFFF, 32);
+        //xInvRes = BigIntegerTools.InverseBigInteger(0xFFFFFFFFFUL, 32 + 4);
+        //xInvRes = BigIntegerTools.InverseBigIntegerClassic(0xFFFFFFFFFUL, 32 + 4);
+        //xInvRes = BigIntegerTools.InverseBigInteger(0xFFFFFFFFFFFFFFFFUL, 64);
+        //xInvRes = BigIntegerTools.InverseBigIntegerClassic(0xFFFFFFFFFFFFFFFFUL, 64);
+        //xInvRes = BigIntegerTools.InverseBigInteger(BigInteger.Parse("1777777777777777777777"), 70);
+        //xInvRes = BigIntegerTools.InverseBigIntegerClassic(BigInteger.Parse("1777777777777777777777"), 70);
+        //xInvRes = BigIntegerTools.InverseBigInteger(BigInteger.Parse("1777777777777777777777777777777777777777777"), 140);
+        //xInvRes = BigIntegerTools.InverseBigIntegerClassic(BigInteger.Parse("1777777777777777777777777777777777777777777"), 140);
+
+
+        for (int i = 0; i < 9700; i++)
+        {
+            int valLen = 0;
+            perfTimerTotal1 += perfTimer1.ElapsedTicks; perfTimerTotal2 += perfTimer2.ElapsedTicks; perfTimer1.Reset(); perfTimer2.Reset();
+            for (int k = 0; k < 12800; k++)
+            {
+                valToTest += 1 + (valToTest / 7727); //(valToTest >> 5); //(valToTest / 100003); 127 251 503 997 7727  100003
+                valLen = (int)valToTest.GetBitLength() + OFFSET;
+                if (valLen < 0) continue;
+
+                GC.Collect();
+                if (k % 2 == 0)
+                {
+                    perfTimer1.Start();
+                    xInvTst = BigIntegerTools.InverseBigIntegerClassic(valToTest, valLen);
+                    perfTimer1.Stop();
+
+                    perfTimer2.Start();
+                    xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
+                    perfTimer2.Stop();
+                }
+                else
+                {
+                    perfTimer2.Start();
+                    xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
+                    perfTimer2.Stop();
+
+                    perfTimer1.Start();
+                    xInvTst = BigIntegerTools.InverseBigIntegerClassic(valToTest, valLen);
+                    perfTimer1.Stop();
+                }
+
+
+                if (xInvRes != xInvTst)
+                {
+                    Console.WriteLine($"Input: {valToTest}\r\ni:{i}-k:{k,3} {xInvRes} != {xInvTst} ");
+
+                    if (xInvRes.GetBitLength() != valLen)
+                        Console.WriteLine($"i:{i}-k:{k,3} {xInvRes.GetBitLength()} != {valLen,-4}  {xInvTst} on Result");
+
+                    if (xInvTst.GetBitLength() != valLen)
+                        Console.WriteLine($"i:{i}-k:{k,3} {xInvTst.GetBitLength()} != {valLen,-4}  {xInvTst} on Classic");
+
+                    int correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
+                    if ((xInvRes.GetBitLength() - correctBits) > 0)
+                        Console.WriteLine($"i:{i}-k: CorrectBits:{correctBits} of {xInvRes.GetBitLength()}. x: {valToTest}");
+                    Console.ReadKey();
+                }
+
+            }
+            long divideBy = (160 * 100 * Stopwatch.Frequency) / 1000000000;
+            int correct = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
+            Console.WriteLine($"{valLen,4} Ticks: {perfTimer1.ElapsedTicks / divideBy,4} -> {perfTimer2.ElapsedTicks / divideBy,4} ({(float)perfTimer1.ElapsedTicks / perfTimer2.ElapsedTicks,-12}) (Total: {(float)perfTimerTotal1 / perfTimerTotal2,-12}) Missed {xInvRes.GetBitLength() - correct,4} of {xInvRes.GetBitLength()}");
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // FindAdjustmentsForMethodToResolveIssue(); return;
         // NewtonNthRootPerformance(); return;
         // NthRoot_DRAFT_Stuff(); return;
