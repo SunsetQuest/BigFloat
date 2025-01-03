@@ -330,11 +330,11 @@ public static class Showcase
         UInt128 bb = UInt128.Parse("2345678901234567890123456789012");
         BigInteger ans = (((BigInteger)aa * (BigInteger)bb) >> 128); //(aa>>37) * (bb>>37);
                                                                      //UInt128 ans = (aa>>37) * (bb>>37);
-        UInt128 res = BigFloat.MultHi((UInt128)aa, bb);
-        Console.WriteLine($"aa  {BigFloat.BigIntegerToBinaryString((BigInteger)aa)}[{((BigInteger)aa).GetBitLength()}]");
+        UInt128 res = Int128Tools.MultHi((UInt128)aa, bb);
+        Console.WriteLine($"aa  {BigIntegerTools.BigIntegerToBinaryString((BigInteger)aa)}[{((BigInteger)aa).GetBitLength()}]");
         Console.WriteLine($"onl 1110011010101011111101101001100000110010111110001110111110111010110001011010011111001110011001000101010000010010101000001101100011100100001010101100111011000101011...");
-        Console.WriteLine($"ans {BigFloat.BigIntegerToBinaryString((BigInteger)ans)}[{((BigInteger)ans).GetBitLength()}]");
-        Console.WriteLine($"res {BigFloat.BigIntegerToBinaryString((BigInteger)res)}[{((BigInteger)res).GetBitLength()}]");
+        Console.WriteLine($"ans {BigIntegerTools.BigIntegerToBinaryString((BigInteger)ans)}[{((BigInteger)ans).GetBitLength()}]");
+        Console.WriteLine($"res {BigIntegerTools.BigIntegerToBinaryString((BigInteger)res)}[{((BigInteger)res).GetBitLength()}]");
 
         long tryCount = 0;
         Parallel.For(-15, 17, aaa =>
@@ -379,7 +379,7 @@ public static class Showcase
                                             {
                                                 next = (int)(i * 1.34);
 
-                                                BigInteger res2 = BigFloat.PowerFast(a2, i/*, p*/);
+                                                BigInteger res2 = Int128Tools.PowerFast(a2, i/*, p*/);
 
                                                 BigInteger miss = (res2 - tempAns);// * (100 / int.Log2(i)) ;
 
@@ -926,13 +926,13 @@ private static void NthRoot_DRAFT_Stuff()
                         // Answer Setup version 2
                         BigInteger p = BigInteger.Pow(val, exp);
                         int shiftedAns = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits, valSize)));
-                        bool overflowed = BigFloat.RightShiftWithRoundWithCarryDownsize(out ans, p, shiftedAns);
+                        bool overflowed = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out ans, p, shiftedAns);
                         if (overflowed) shiftedAns++;
                         if (val.IsZero) shiftedAns = 0;
 
                         // Result Setup
                         timer.Restart();
-                        BigInteger res = BigFloat.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
+                        BigInteger res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
                         timer.Stop();
                         //int needToShiftAgainBy2 = (int)(res.GetBitLength() - wantedBits);
                         //res = BigFloat.RightShiftWithRound(res, needToShiftAgainBy2); shifted += needToShiftAgainBy2;
@@ -955,7 +955,7 @@ private static void NthRoot_DRAFT_Stuff()
                         {
                             if (shiftedRes > shiftedAns + 1)
                             {
-                                ans = BigFloat.RightShiftWithRound(ans, shiftedRes - shiftedAns);
+                                ans = BigIntegerTools.RightShiftWithRound(ans, shiftedRes - shiftedAns);
                             }
                             else
                             {
@@ -1034,10 +1034,10 @@ private static void NthRoot_DRAFT_Stuff()
                     //    continue;
                     timer.Start();
                     //BigInteger res = BigFloat.PowAccurate(val, valSize, /*(int)*/exp, out int shifted);
-                    BigInteger res = BigFloat.PowMostSignificantBits(val, (int)exp, out int shifted, valSize);
+                    BigInteger res = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shifted, valSize);
                     timer.Stop();
                     //BigInteger ans = 0; int shiftedAns =0;
-                    BigInteger ans = BigFloat.PowMostSignificantBits(val, (int)exp, out int shiftedAns, valSize);
+                    BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shiftedAns, valSize);
                     //BigInteger ans = BigFloat.PowAccurate(val, valSize, exp, out int shiftedAns);
                     //BigInteger exact = BigInteger.Pow(val, (int)exp);
                     if (res != ans || shifted != shiftedAns)
@@ -1238,11 +1238,11 @@ private static void NthRoot_DRAFT_Stuff()
 
     private static void TruncateToAndRound_Stuff()
     {
-        Console.WriteLine(BigFloat.TruncateToAndRound((BigInteger)0b111, 1));
-        Console.WriteLine(BigFloat.TruncateToAndRound((BigInteger)0b111, 2));
-        Console.WriteLine(BigFloat.TruncateToAndRound((BigInteger)0b111, 3));
-        Console.WriteLine(BigFloat.TruncateToAndRound((BigInteger)(-0b111), 1));
-        Console.WriteLine(BigFloat.TruncateToAndRound((BigInteger)(-0b1000), 1));
+        Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)0b111, 1));
+        Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)0b111, 2));
+        Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)0b111, 3));
+        Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)(-0b111), 1));
+        Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)(-0b1000), 1));
     }
 
     private static void Remainder_Stuff()
