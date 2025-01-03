@@ -81,6 +81,8 @@ public static class Showcase
         //xInvRes = BigIntegerTools.InverseBigIntegerClassic(BigInteger.Parse("1777777777777777777777777777777777777777777"), 140);
 
 
+
+
         for (int i = 0; i < 9700; i++)
         {
             int valLen = 0;
@@ -135,15 +137,6 @@ public static class Showcase
             int correct = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
             Console.WriteLine($"{valLen,4} Ticks: {perfTimer1.ElapsedTicks / divideBy,4} -> {perfTimer2.ElapsedTicks / divideBy,4} ({(float)perfTimer1.ElapsedTicks / perfTimer2.ElapsedTicks,-12}) (Total: {(float)perfTimerTotal1 / perfTimerTotal2,-12}) Missed {xInvRes.GetBitLength() - correct,4} of {xInvRes.GetBitLength()}");
         }
-
-
-
-
-
-
-
-
-
 
 
 

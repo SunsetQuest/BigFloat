@@ -118,7 +118,7 @@ public static class BigIntegerTools
         int idx = bytes.Length - 1;
 
         // Create a StringBuilder having appropriate capacity.
-        StringBuilder base2 = new StringBuilder(bytes.Length * 8);
+        StringBuilder base2 = new(bytes.Length * 8);
 
         // Convert first byte to binary.
         string binary = Convert.ToString(bytes[idx], 2);
@@ -156,7 +156,7 @@ public static class BigIntegerTools
             // Get the two's complement byte array (little-endian order)
             byte[] bytes = bigInt.ToByteArray();
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new ();
 
             // Process bytes from most significant to least significant
             for (int i = bytes.Length - 1; i >= 0; i--)
@@ -177,12 +177,11 @@ public static class BigIntegerTools
             if (isNegative)
                 bigInt = BigInteger.Abs(bigInt);
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new ();
 
             while (bigInt > 0)
             {
-                BigInteger remainder;
-                bigInt = BigInteger.DivRem(bigInt, 2, out remainder);
+                bigInt = BigInteger.DivRem(bigInt, 2, out BigInteger remainder);
                 sb.Insert(0, remainder.ToString());
             }
 
@@ -278,7 +277,7 @@ public static class BigIntegerTools
         if (x < 144838757784765629)    // 1.448e17 = ~1<<57
         {
             uint vInt = (uint)Math.Sqrt((ulong)x);
-            if (x >= 4503599761588224 && (ulong)vInt * vInt > (ulong)x)  // 4.5e15 =  ~1<<52
+            if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x))  // 4.5e15 =  ~1<<52
             {
                 vInt--;
             }
@@ -289,8 +288,8 @@ public static class BigIntegerTools
         if (xAsDub < 8.5e37)   //  long.max*long.max
         {
             ulong vInt = (ulong)Math.Sqrt(xAsDub);
-            BigInteger v = (vInt + (ulong)(x / vInt)) >> 1;
-            return v * v <= x ? v : v - 1;
+            BigInteger v = (vInt + ((ulong)(x / vInt))) >> 1;
+            return (v * v <= x) ? v : v - 1;
         }
 
         if (xAsDub < 4.3322e127)
@@ -301,10 +300,12 @@ public static class BigIntegerTools
             {
                 v = (v + (x / v)) >> 1;
             }
-            return v * v <= x ? v : v - 1;
+            return (v * v <= x) ? v : v - 1;
         }
 
         int xLen = (int)x.GetBitLength();
+        //int xLen = (int)Math.Ceiling(BigInteger.Log(x, 2));
+
         int wantedPrecision = (xLen + 1) / 2;
         int xLenMod = xLen + (xLen & 1) + 1;
 
@@ -318,11 +319,16 @@ public static class BigIntegerTools
         }
 
         ////////  Classic Newton Iterations ////////
-        BigInteger val = ((BigInteger)valLong << 52) + ((x >> (xLenMod - (3 * 53))) / valLong);
+        BigInteger val = ((BigInteger)valLong << 52) + (x >> xLenMod - (3 * 53)) / valLong;
         int size = 106;
         for (; size < 256; size <<= 1)
         {
-            val = (val << (size - 1)) + ((x >> (xLenMod - (3 * size))) / val);
+            val = (val << (size - 1)) + (x >> xLenMod - (3 * size)) / val;
+            //BigInteger temp1 = (val << (size - 1));
+            //int temp2 = (xLenMod - (3 * size));
+            //BigInteger temp3 = (x >> temp2);
+            //BigInteger temp4 = temp3 / val;
+            //val = temp1 + temp4;
         }
 
         if (xAsDub > 4e254) // 4e254 = 1<<845.76973610139
@@ -346,11 +352,39 @@ public static class BigIntegerTools
             } while (size < wantedPrecision);
         }
 
-        /////// There are a few extra digits here, let's save them. ///////
-        int oversizedBy = size - wantedPrecision;
+        /////// There are a few extra digits here, lets save them ///////
+        int oversidedBy = size - wantedPrecision;
+        BigInteger saveDroppedDigitsBI = val & ((BigInteger.One << oversidedBy) - 1);
+        int downby = (oversidedBy < 64) ? (oversidedBy >> 2) + 1 : (oversidedBy - 32);
+        ulong saveDroppedDigits = (ulong)(saveDroppedDigitsBI >> downby);
+
 
         ////////  Shrink result to wanted Precision  ////////
-        val >>= oversizedBy;
+        val >>= oversidedBy;
+
+
+        ////////  Detect a round-ups  ////////
+        if ((saveDroppedDigits == 0) && (val * val > x))
+        {
+            val--;
+        }
+
+        ////////// Error Detection ////////
+        //// I believe the above has no errors but to guarantee the following can be added.
+        //// If an error is found, please report it.
+        //BigInteger tmp = val * val;
+        //if (tmp > x)
+        //{
+        //    Console.WriteLine($"Missed  , {ToolsForOther.ToBinaryString(saveDroppedDigitsBI, oversidedBy)}, {oversidedBy}, {size}, {wantedPrecision}, {saveDroppedDigitsBI.GetBitLength()}");
+        //    if (saveDroppedDigitsBI.GetBitLength() >= 6)
+        //        Console.WriteLine($"val^2 ({tmp}) < x({x})  off%:{((double)(tmp)) / (double)x}");
+        //    //throw new Exception("Sqrt function had internal error - value too high");
+        //}
+        //if ((tmp + 2 * val + 1) <= x)
+        //{
+        //    Console.WriteLine($"(val+1)^2({((val + 1) * (val + 1))}) >= x({x})");
+        //    //throw new Exception("Sqrt function had internal error - value too low");
+        //}
 
         return val;
     }
@@ -373,11 +407,11 @@ public static class BigIntegerTools
 
         long bits = BitConverter.DoubleToInt64Bits(initialGuess);
         // Note that the shift is sign-extended, hence the test against -1 not 1
-        bool negative = (bits & (1L << 63)) != 0;
+        //bool negative = (bits & (1L << 63)) != 0;
         int exponent = (int)((bits >> 52) & 0x7ffL) - 1075;
         long mantissa = bits & 0xfffffffffffffL | (1L << 52); ;
 
-        BigInteger val = new BigInteger(mantissa);
+        BigInteger val = new(mantissa);
         scaleDownCount += exponent;
 
         //BigInteger val = new BigInteger(initialGuess);  //241
@@ -426,7 +460,7 @@ public static class BigIntegerTools
         // Calculate initial guess using scaled down x
         double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
 
-        BigInteger val = new BigInteger(initialGuess);
+        BigInteger val = new(initialGuess);
 
         val <<= scaleDownCount;
         Console.WriteLine(BigIntegerToBinaryString(val));
@@ -471,7 +505,7 @@ public static class BigIntegerTools
         double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
 
         // Adjust the initial guess by scaling it back up
-        BigInteger val = new BigInteger(initialGuess);
+        BigInteger val = new(initialGuess);
 
         val <<= scaleDownCount;
 
@@ -807,11 +841,11 @@ public static class BigIntegerTools
         byte[] concatenatedBytes = new byte[byteCountA + byteCountB];
         Span<byte> concatenatedSpan = concatenatedBytes.AsSpan();
 
-        a.TryWriteBytes(concatenatedSpan.Slice(0), out int _, isUnsigned: false, isBigEndian: true);
-        b.TryWriteBytes(concatenatedSpan.Slice(byteCountA), out int _, isUnsigned: false, isBigEndian: true);
+        a.TryWriteBytes(concatenatedSpan[..], out int _, isUnsigned: false, isBigEndian: true);
+        b.TryWriteBytes(concatenatedSpan[byteCountA..], out int _, isUnsigned: false, isBigEndian: true);
 
         // Create a new BigInteger from the concatenated bytes
-        BigInteger result = new BigInteger(concatenatedSpan, isUnsigned: true, isBigEndian: true);
+        BigInteger result = new(concatenatedSpan, isUnsigned: true, isBigEndian: true);
         return result;
     }
 
@@ -1366,7 +1400,7 @@ public static class BigIntegerTools
         // remember the values of the radical expression intermediate in accuracy
         while (currentSource >= digitsShift)
         {
-            currentSource = currentSource / digitsShift;
+            currentSource /= digitsShift;
             intermediateResults.AddLast(currentSource);
         }
         // initial setting for the digits-by-digits root extraction method
@@ -1460,74 +1494,74 @@ public static class BigIntegerTools
         var target = BigInteger.Pow(basement, exponent);
         isExactResult = (target == source);
         return basement;
-        // below is an adaptation of Ryan's method for .NET Standard
-        BigInteger NewtonPlusSqrt(BigInteger x)
-        {
-            // 1.448e17 = ~1<<57
-            if (x < 144838757784765629)
-            {
-                uint vInt = (uint)Math.Sqrt((ulong)x);
-                // 4.5e15 = ~1<<52
-                if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x)) vInt--;
-                return vInt;
-            }
-            double xAsDub = (double)x;
-            // 8.5e37 is long.max * long.max
-            if (xAsDub < 8.5e37)
-            {
-                ulong vInt = (ulong)Math.Sqrt(xAsDub);
-                BigInteger v = (vInt + ((ulong)(x / vInt))) >> 1;
-                return (v * v <= x) ? v : v - 1;
-            }
-            if (xAsDub < 4.3322e127)
-            {
-                BigInteger v = (BigInteger)Math.Sqrt(xAsDub);
-                v = (v + (x / v)) >> 1;
-                if (xAsDub > 2e63) v = (v + (x / v)) >> 1;
-                return (v * v <= x) ? v : v - 1;
-            }
-            int xLen = (int)BigInteger.Log(BigInteger.Abs(x), 2) + 1;
-            int wantedPrecision = (xLen + 1) / 2;
-            int xLenMod = xLen + (xLen & 1) + 1;
-            // do the first sqrt on hardware
-            long tempX = (long)(x >> (xLenMod - 63));
-            double tempSqrt1 = Math.Sqrt(tempX);
-            ulong valLong = (ulong)BitConverter.DoubleToInt64Bits(tempSqrt1) & 0x1fffffffffffffL;
-            if (valLong == 0) valLong = 1UL << 53;
-            // classic Newton iterations
-            BigInteger val = ((BigInteger)valLong << (53 - 1)) + (x >> xLenMod - (3 * 53)) / valLong;
-            int size = 106;
-            for (; size < 256; size <<= 1) val = (val << (size - 1)) + (x >> xLenMod - (3 * size)) / val;
-            if (xAsDub > 4e254)
-            {
-                // 1 << 845
-                int numOfNewtonSteps = (int)BigInteger.Log((uint)(wantedPrecision / size), 2) + 2;
-                // apply starting size
-                int wantedSize = (wantedPrecision >> numOfNewtonSteps) + 2;
-                int needToShiftBy = size - wantedSize;
-                val >>= needToShiftBy;
-                size = wantedSize;
-                do
-                {
-                    // Newton plus iterations
-                    int shiftX = xLenMod - (3 * size);
-                    BigInteger valSqrd = (val * val) << (size - 1);
-                    BigInteger valSU = (x >> shiftX) - valSqrd;
-                    val = (val << size) + (valSU / val);
-                    size *= 2;
-                } while (size < wantedPrecision);
-            }
-            // there are a few extra digits here, lets save them
-            int oversidedBy = size - wantedPrecision;
-            BigInteger saveDroppedDigitsBI = val & ((BigInteger.One << oversidedBy) - 1);
-            int downby = (oversidedBy < 64) ? (oversidedBy >> 2) + 1 : (oversidedBy - 32);
-            ulong saveDroppedDigits = (ulong)(saveDroppedDigitsBI >> downby);
-            // shrink result to wanted precision
-            val >>= oversidedBy;
-            // detect a round-ups
-            if ((saveDroppedDigits == 0) && (val * val > x)) val--;
-            return val;
-        }
+        //// below is an adaptation of Ryan's method for .NET Standard
+        //BigInteger NewtonPlusSqrt(BigInteger x)
+        //{
+        //    // 1.448e17 = ~1<<57
+        //    if (x < 144838757784765629)
+        //    {
+        //        uint vInt = (uint)Math.Sqrt((ulong)x);
+        //        // 4.5e15 = ~1<<52
+        //        if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x)) vInt--;
+        //        return vInt;
+        //    }
+        //    double xAsDub = (double)x;
+        //    // 8.5e37 is long.max * long.max
+        //    if (xAsDub < 8.5e37)
+        //    {
+        //        ulong vInt = (ulong)Math.Sqrt(xAsDub);
+        //        BigInteger v = (vInt + ((ulong)(x / vInt))) >> 1;
+        //        return (v * v <= x) ? v : v - 1;
+        //    }
+        //    if (xAsDub < 4.3322e127)
+        //    {
+        //        BigInteger v = (BigInteger)Math.Sqrt(xAsDub);
+        //        v = (v + (x / v)) >> 1;
+        //        if (xAsDub > 2e63) v = (v + (x / v)) >> 1;
+        //        return (v * v <= x) ? v : v - 1;
+        //    }
+        //    int xLen = (int)BigInteger.Log(BigInteger.Abs(x), 2) + 1;
+        //    int wantedPrecision = (xLen + 1) / 2;
+        //    int xLenMod = xLen + (xLen & 1) + 1;
+        //    // do the first sqrt on hardware
+        //    long tempX = (long)(x >> (xLenMod - 63));
+        //    double tempSqrt1 = Math.Sqrt(tempX);
+        //    ulong valLong = (ulong)BitConverter.DoubleToInt64Bits(tempSqrt1) & 0x1fffffffffffffL;
+        //    if (valLong == 0) valLong = 1UL << 53;
+        //    // classic Newton iterations
+        //    BigInteger val = ((BigInteger)valLong << (53 - 1)) + (x >> xLenMod - (3 * 53)) / valLong;
+        //    int size = 106;
+        //    for (; size < 256; size <<= 1) val = (val << (size - 1)) + (x >> xLenMod - (3 * size)) / val;
+        //    if (xAsDub > 4e254)
+        //    {
+        //        // 1 << 845
+        //        int numOfNewtonSteps = (int)BigInteger.Log((uint)(wantedPrecision / size), 2) + 2;
+        //        // apply starting size
+        //        int wantedSize = (wantedPrecision >> numOfNewtonSteps) + 2;
+        //        int needToShiftBy = size - wantedSize;
+        //        val >>= needToShiftBy;
+        //        size = wantedSize;
+        //        do
+        //        {
+        //            // Newton plus iterations
+        //            int shiftX = xLenMod - (3 * size);
+        //            BigInteger valSqrd = (val * val) << (size - 1);
+        //            BigInteger valSU = (x >> shiftX) - valSqrd;
+        //            val = (val << size) + (valSU / val);
+        //            size *= 2;
+        //        } while (size < wantedPrecision);
+        //    }
+        //    // there are a few extra digits here, lets save them
+        //    int oversidedBy = size - wantedPrecision;
+        //    BigInteger saveDroppedDigitsBI = val & ((BigInteger.One << oversidedBy) - 1);
+        //    int downby = (oversidedBy < 64) ? (oversidedBy >> 2) + 1 : (oversidedBy - 32);
+        //    ulong saveDroppedDigits = (ulong)(saveDroppedDigitsBI >> downby);
+        //    // shrink result to wanted precision
+        //    val >>= oversidedBy;
+        //    // detect a round-ups
+        //    if ((saveDroppedDigits == 0) && (val * val > x)) val--;
+        //    return val;
+        //}
     }
 
     /// <summary>

@@ -3420,9 +3420,6 @@ Other:                                         |   |         |         |       |
 
     public static BigFloat NthRoot_INCOMPLETE_DRAFT9(BigFloat value, int root)
     {
-        bool DEBUG = true;
-
-        //if (DEBUG) Console.WriteLine();
         bool rootIsNeg = root < 0;
         if (rootIsNeg)
         {
@@ -3575,7 +3572,7 @@ Other:                                         |   |         |         |       |
 
         int scale = -x_size + ExtraHiddenBits - a + 1;
 
-        BigFloat ret = new BigFloat(x, scale, x_size);
+        BigFloat ret = new(x, scale, x_size);
         return ret;
     }
 
@@ -3645,7 +3642,7 @@ Other:                                         |   |         |         |       |
 
         int rootLen = (int)root.GetBitLength();
 
-        BigFloat ret = new BigFloat(root, resultBitLength - rootLen + 32+1, true);
+        BigFloat ret = new(root, resultBitLength - rootLen + 32+1, true);
 
         //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
         //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
