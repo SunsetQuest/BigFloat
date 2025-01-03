@@ -276,6 +276,8 @@ public static class BigIntegerTools
     {
         if (x < 144838757784765629)    // 1.448e17 = ~1<<57
         {
+            if (x.Sign < 0)
+                throw new ArgumentException("Negitive numbers are not supported.");
             uint vInt = (uint)Math.Sqrt((ulong)x);
             if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x))  // 4.5e15 =  ~1<<52
             {
@@ -970,6 +972,7 @@ public static class BigIntegerTools
         BigInteger tempResult = result >> desiredStartSize - requestedPrecision;
         return isPos ? tempResult : (-tempResult);
     }
+
 
 
     public static BigInteger InverseBigInteger7(BigInteger x, int requestedPrecision)

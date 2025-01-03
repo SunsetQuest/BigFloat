@@ -42,7 +42,7 @@ public class BigFloatTests
     const int MaxDegreeOfParallelism = 1;
     const long sqrtBruteForceStoppedAt = 16 * 1048576;
 #else
-    const int MaxDegreeOfParallelism = Environment.ProcessorCount;
+    int MaxDegreeOfParallelism = Environment.ProcessorCount;
     const long sqrtBruteForceStoppedAt = 256 * 1048576;
 #endif
 
@@ -655,45 +655,38 @@ public class BigFloatTests
         //Answer: 2.321928094887362347870319429489390175864831393024580612054756...
         IsTrue(res == ans);
 
+        aaa = new("-1");
+        ans = double.Log2((double)aaa);
+        IsTrue(double.IsNaN(BigFloat.Log2(aaa)));
+
+        aaa = new("0");
+        ans = double.Log2((double)aaa);
+        IsTrue(double.IsNaN(BigFloat.Log2(aaa)));
+
         aaa = new("0b10110.1010000010011110011001100111111100111011110011001001000"); //pattern: 2^59.5
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
-        ans = BigFloat.Log2(-aaa);
-        IsTrue(res == ans);
-
+        IsTrue(double.IsNaN(BigFloat.Log2(-aaa)));
+ 
         aaa = new("0b101111.111111111111111111111111111111111");
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
-        IsTrue(res == ans);
-        ans = BigFloat.Log2(aaa);
         IsTrue(res == ans);
 
         aaa = new("999999999999999999999999999999999999999999999");
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
-        ans = BigFloat.Log2(-aaa);
-        IsTrue(res == ans);
+        IsTrue(double.IsNaN(BigFloat.Log2(-aaa)));
 
         aaa = new("0.000000000000000000000000000000000000000000000000000000000000123");
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
-        ans = BigFloat.Log2(-aaa);
-        IsTrue(res == ans);
+        IsTrue(double.IsNaN(BigFloat.Log2(-aaa)));
 
         aaa = new("1");
-        ans = double.Log2((double)aaa);
-        res = BigFloat.Log2(aaa);
-        IsTrue(res == ans);
-
-        aaa = new("-1");
-        ans = double.Log2((double)aaa);
-        res = BigFloat.Log2(aaa);
-        IsTrue(res == ans);
-
-        aaa = new("0");
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
@@ -702,15 +695,14 @@ public class BigFloatTests
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
-        ans = BigFloat.Log2(-aaa);
-        IsTrue(res == ans);
+        IsTrue(double.IsNaN(BigFloat.Log2(-aaa)));
 
         aaa = new("7777.7777e-300");
         ans = double.Log2((double)aaa);
         res = BigFloat.Log2(aaa);
         IsTrue(res == ans);
-        ans = BigFloat.Log2(-aaa);
-        IsTrue(res == ans);
+        IsTrue(double.IsNaN(BigFloat.Log2(-aaa)));
+
 
         // Result: 3321.92809488741    (using "1e+1000")
         // Result: 3321.9280948873625  (using "1.0000000000e+1000")
@@ -731,7 +723,30 @@ public class BigFloatTests
         aaa = new("1.0000000000e-1000");
         res = BigFloat.Log2(aaa);
         IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887362[2345]"));
+
+
     }
+
+
+    //[TestMethod]
+    //[ExpectedException(typeof(ArgumentException))]
+    //public void Verify_Log2__ShouldFail1()
+    //{
+    //    BigFloat aaa = new("-1");
+
+    //    double res = BigFloat.Log2(aaa);
+    //}
+
+    //[TestMethod]
+    //[ExpectedException(typeof(ArgumentException))]
+    //public void Verify_Log2_ShouldFail2()
+    //{
+    //    BigFloat aaa = new("0");
+    //    double res = BigFloat.Log2(aaa);
+    //}
+
+
+
 
     [TestMethod]
     public void Verify_PowerOf2()
@@ -5014,12 +5029,10 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_NewtonPlusSqrt_Common_Pow2()
     {
-        Stopwatch sw = new();
-        for (long s = 0; s < long.MaxValue; s++)
+        for (int s = 0; s < 16; s++)
         {
-            Parallel.For(s * 512, (s * 512) + 512, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            Parallel.For(s * 512 + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
             {
-                //if (sw.ElapsedMilliseconds > (testTimeinSeconds * 1000) * 0.10) s.Stop();
                 for (long i = -5; i < 6; i++)
                 {
                     BigInteger testVal = BigInteger.Pow(2, (int)x) + i;

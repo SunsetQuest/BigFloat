@@ -3652,19 +3652,17 @@ Other:                                         |   |         |         |       |
 
     //todo: untested
     /// <summary>
-    /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the decimal point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Negative values will return the same value as there positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
-    /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often use to indicated size in bits so returning 0 with Log2(0) is in-line with this.
+    /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
+    /// Sign is ignored. Zero and negative values is undefined and will return double.NaN.
     /// </summary>
     /// <param name="n">The BigFloat input argument.</param>
-    /// <returns>Returns the Log2 of the value (or exponent) as a double.</returns>
+    /// <returns>Returns the Log2 of the value (or exponent) as a double. If Zero or less then returns Not-a-Number.</returns>
     public static double Log2(BigFloat n)
     {
-        // Special case for Log2(0).
-        if (n.IsZero) 
-        {
-            return 0.0;
-        }
+        // Special case for zero and negative numbers.
+        if (((n._size >= ExtraHiddenBits - 1) ? n.DataBits.Sign : 0) <= 0)
+        // if (!n.IsPositive)
+            return double.NaN;
 
         //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
         long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
