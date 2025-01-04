@@ -107,14 +107,14 @@ public static class BigIntegerTools
             //Span<char> charsSpan = new(chars);
             BigIntegerToBinarySpan(x, ref charsSpan);
             return new string(charsSpan);
-
         }
     }
 
+    // todo - can we merge this into the fast I made above
     // Source: https://stackoverflow.com/a/15447131/2352507  Kevin P. Rice  2013 (modified by Ryan Scott White)
-    public static string ToBinaryString(BigInteger bigint, int padZeros = 0)
+    public static string ToBinaryString(BigInteger bigIntValue, int padLeadingZeros = 0)
     {
-        byte[] bytes = bigint.ToByteArray();
+        byte[] bytes = bigIntValue.ToByteArray();
         int idx = bytes.Length - 1;
 
         // Create a StringBuilder having appropriate capacity.
@@ -138,12 +138,18 @@ public static class BigIntegerTools
             base2.Append(Convert.ToString(bytes[idx], 2).PadLeft(8, '0'));
         }
 
-        return base2.ToString().TrimStart('0').PadLeft(padZeros, '0');
+        return base2.ToString().TrimStart('0').PadLeft(padLeadingZeros, '0');
     }
-    public static string ToBinaryShades(BigInteger bigint, int padZeros = 0)
+
+    /// <summary>
+    /// Returns a BigInteger value as a string in Binary with █ and · in place of 1 and 0
+    /// </summary>
+    /// <param name="padLeadingZeros">Pads the value with leading zeros, in this case, leading '·'.</param>
+    public static string ToBinaryShades(BigInteger x, int padLeadingZeros = 0)
     {
-        return ToBinaryString(bigint, padZeros).Replace('1', '█').Replace('0', '·'); // · ░
+        return ToBinaryString(x, padLeadingZeros).Replace('1', '█').Replace('0', '·'); // · ░
     }
+
 
     //source: ChatGPT 01-preview on 10-6-2024
     public static string ToBinaryString2(BigInteger bigInt, bool useTwoComplement = false)
