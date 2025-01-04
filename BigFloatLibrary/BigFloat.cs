@@ -1,11 +1,8 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024
-
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024, 2025
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// Written by human hand - unless noted. This may change soon.
-// Code written by Ryan Scott White unless otherwise noted.
+// Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
 
 using System;
 using System.Diagnostics;
@@ -114,17 +111,17 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
     /// </summary>
-    public bool OutOfPrecision => _size < ExtraHiddenBits;
+    public bool IsOutOfPrecision => _size < ExtraHiddenBits;
 
     /// <summary>
     /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits(HiddenBits) that are deemed precise. 
     /// </summary>
-    public int GetPrecision => _size - ExtraHiddenBits;
+    public int Precision => _size - ExtraHiddenBits;
 
     /// <summary>
     /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate decimal places(in binary) the number has.
     /// </summary>
-    public int GetAccuracy => -Scale;
+    public int Accuracy => -Scale;
 
     /// <summary>
     /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in ExtraHiddenBits is counted.
@@ -252,7 +249,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /////////////////////////    INIT / CONVERSION  FUNCTIONS     /////////////////////////
 
     /// <summary>
-    /// Contracts a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <param name="scale"> and <param name="rawValueSize">.
+    /// Contracts a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="scale"/> and <paramref name="rawValueSize"/>.
     /// </summary>
     /// <param name="rawValue">The raw integerPart. It should INCLUDE the ExtraHiddenBits.</param>
     /// <param name="rawValueSize">The size of rawValue. </param>
@@ -268,8 +265,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Constructs a BigFloat using its elemental parts.
     /// </summary>
-    /// <param name="integerPart">The integer part of the BigFloat that will have a <param name="scale"> applied to it. </param>
-    /// <param name="scale">How much should the <param name="integerPart"> be shifted or scaled? This shift (base-2 exponent) will be applied to the <param name="integerPart">.</param>
+    /// <param name="integerPart">The integer part of the BigFloat that will have a <paramref name="scale"/> applied to it. </param>
+    /// <param name="scale">How much should the <paramref name="integerPart"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="valueIncludesHiddenBits">if true, then the hidden bits should be included in the integer part.</param>
     public BigFloat(BigInteger integerPart, int scale = 0, bool valueIncludesHiddenBits = false)
     {
@@ -863,7 +860,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    /// Parses a <param name="numericString"> to a BigFloat. 
+    /// Parses a <paramref name="numericString"/> to a BigFloat. 
     /// This function supports: 
     ///  - Positive or negative leading signs or no sign. 
     ///  - Radix point (aka. decimal point for base 10)
@@ -1485,15 +1482,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
     {
-        if (OutOfPrecision)
+        if (IsOutOfPrecision)
         {
-            result = other.OutOfPrecision ? 0 : -other.DataBits.Sign;
+            result = other.IsOutOfPrecision ? 0 : -other.DataBits.Sign;
             return true;
         }
 
-        if (other.OutOfPrecision)
+        if (other.IsOutOfPrecision)
         {
-            result = OutOfPrecision ? 0 : DataBits.Sign;
+            result = IsOutOfPrecision ? 0 : DataBits.Sign;
             return true;
         }
 
@@ -1539,9 +1536,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary> 
     /// Compares two values(including the hidden precision bits) and returns: 
-    ///   Returns -1 when this instance is less than <param name="other">
-    ///   Returns  0 when this instance is equal to <param name="other">
-    ///   Returns +1 when this instance is greater than <param name="other">
+    ///   Returns -1 when this instance is less than <paramref name="other"/>
+    ///   Returns  0 when this instance is equal to <paramref name="other"/>
+    ///   Returns +1 when this instance is greater than <paramref name="other"/>
     /// An Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
     /// This Function is faster then the CompareTo() as no rounding needs to take place.
     /// </summary>
@@ -1595,9 +1592,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Compares two values ignoring the least number of significant bits specified. 
     /// e.g. CompareToIgnoringLeastSigBits(0b1001.1111, 0b1000.111101, 3) => (b1001.11, 0b1001.0)
     /// Valid ranges are from -ExtraHiddenBits and up.
-    ///   Returns -1 when <param name="b"> is less than <param name="a">
-    ///   Returns  0 when <param name="b"> is equal to <param name="a"> when ignoring the least significant bits.
-    ///   Returns  1 when <param name="b"> is greater than <param name="a">
+    ///   Returns -1 when <paramref name="b"/> is less than <paramref name="a"/>
+    ///   Returns  0 when <paramref name="b"/> is equal to <paramref name="a"/> when ignoring the least significant bits.
+    ///   Returns  1 when <paramref name="b"/> is greater than <paramref name="a"/>
     /// </summary>
     public static int CompareToIgnoringLeastSigBits(BigFloat a, BigFloat b, int leastSignificantBitsToIgnore)
     {
@@ -2982,7 +2979,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator double(BigFloat value)
     {
         // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
-        if (value.OutOfPrecision)
+        if (value.IsOutOfPrecision)
         {
             return value.IsZero ? 0.0 : double.NaN;
         }
@@ -3028,7 +3025,7 @@ Other:                                         |   |         |         |       |
     public static explicit operator float(BigFloat value)
     {
         // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
-        if (value.OutOfPrecision)
+        if (value.IsOutOfPrecision)
         {
             return value.IsZero ? 0.0f : float.NaN;
         }

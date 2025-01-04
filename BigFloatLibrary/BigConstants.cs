@@ -1,11 +1,8 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024
-
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024, 2025
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// This struct was written by human hand. This may change soon.
-
+// Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
 // Ignore Spelling: Lemniscate Mascheroni Pisots Theodorus Khintchines Ramanujan Soldner
 
 using System;
@@ -42,8 +39,8 @@ public readonly partial struct BigFloat
     /// Popular math constants.
     /// </summary>
     /// <param name="requestedAccuracyInBits">The target number of bits that should be loaded into memory.</param>
-    /// <param name="cutOnTrailingZero">If true, the result will stop on or after <param name="requestedAccuracyInBits"> the first bit that has a zero bit following it. If false, the returned length will be a stop at exactly <param name="requestedAccuracyInBits">.></param>
-    /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <param name="requestedAccuracyInBits">,</param>
+    /// <param name="cutOnTrailingZero">If true, the result will stop on or after <paramref name="requestedAccuracyInBits"/> the first bit that has a zero bit following it. If false, the returned length will be a stop at exactly <paramref name="requestedAccuracyInBits"/>.></param>
+    /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <paramref name="requestedAccuracyInBits"/>,</param>
     public class BigConstants
     {
         readonly int requestedAccuracyInBits;
@@ -551,10 +548,10 @@ public readonly partial struct BigFloat
         ////      => (int)((trimmed.Length - 6) * 3.3219280948873623) + int.Log2(int.Parse(trimmed[..6])) + 2; // fast but approximate version
 
         /// <summary>
-        /// Returns a common constant as a BigFloat with the given accuracy. The accuracy bits will stop on the first 0 after the <param name="targetAccuracyInBits">.
-        /// e.g. 110.110110 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.11011
-        /// e.g. 110.110100 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.1101
-        /// e.g. 110.111000 with a <param name="targetAccuracyInBits"> of 4 and <param name="cutOnTrailingZero">=true returns 110.1110
+        /// Returns a common constant as a BigFloat with the given accuracy. The accuracy bits will stop on the first 0 after the <paramref name="targetAccuracyInBits"/>.
+        /// e.g. 110.110110 with a <paramref name="targetAccuracyInBits"/> of 4 and <paramref name="cutOnTrailingZero"/>=true returns 110.11011
+        /// e.g. 110.110100 with a <paramref name="targetAccuracyInBits"/> of 4 and <paramref name="cutOnTrailingZero"/>=true returns 110.1101
+        /// e.g. 110.111000 with a <paramref name="targetAccuracyInBits"/> of 4 and <paramref name="cutOnTrailingZero"/>=true returns 110.1110
         /// </summary>
         /// <param name="value">The BigFloat to return.</param>
         /// <param name="targetAccuracyInBits">The target binary accuracy that should be fetched. The result will be this size or larger.</param>

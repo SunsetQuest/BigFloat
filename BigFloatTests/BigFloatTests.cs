@@ -1,28 +1,21 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024
-
+﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024, 2025
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// Written by human hand. This may change soon.
+// Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
 
 using BigFloatLibrary;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-
 using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
-//using static BigFloatLibrary.BigIntegerTools;
-//using static BigFloatLibrary.Int128Tools;
 
 namespace BigFloatTests;
 
@@ -60,8 +53,8 @@ public class BigFloatTests
         {
             // issues at BigFloat(1, -1071).ToString() and BigFloat(1, -8).ToString()
             BigFloat value = new(1, i);
-            IsFalse(new BigFloat(value.ToString()).OutOfPrecision, "0.000...1->BigFloat->String->BigInteger should never be zero.");
-            IsFalse(value.OutOfPrecision, "0.000...1->BigFloat->OutOfPrecision should never be zero.");
+            IsFalse(new BigFloat(value.ToString()).IsOutOfPrecision, "0.000...1->BigFloat->String->BigInteger should never be zero.");
+            IsFalse(value.IsOutOfPrecision, "0.000...1->BigFloat->OutOfPrecision should never be zero.");
         }
 
         IsTrue(new BigFloat(1, -8) % 1 == 0); // 0.00390625 % 01
@@ -87,6 +80,7 @@ public class BigFloatTests
     public void Verify_DebuggerDisplay()
     {
         BigFloat bf;
+
         bf = new BigFloat(-14566005701624942, 96, true);
         //1154037866912041841546539185052621408946880512 or  33bfb47ba4446e000000000000000000000000
         // 14566005701624942 << 96  or 33bfb47ba4446e << 96
@@ -210,10 +204,18 @@ public class BigFloatTests
         // bigFloat(true ans):23.462879545477391625..
 
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
+        BigFloat BigFloatdiff = bigFloatTotal - (BigFloat)doubleTotal;
         IsTrue(bigFloatTotal == (BigFloat)doubleTotal, "Fail on Verify_BigConstants");
 
+
         // following does not pass because of limitations of double.  (i.e. OK to fail)
-        //IsTrue((double)bigFloatTotal == doubleTotal, "Fail on Verify_BigConstants");
+        
+        double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
+        double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
+        double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 3;
+
+        // Since we are doing repetitive addition, it is expected that doubleTotal is off by 1 or 2 bits.
+        IsTrue(doubleDiff1 < acceptableTolarance, "Fail on Verify_BigConstants");
 
         IsTrue(bigConstants.RamanujanSoldnerConstant == (BigFloat)262537412640768743.99999999999925, "Fail on Verify_BigConstants");
         IsTrue((double)bigConstants.RamanujanSoldnerConstant == 262537412640768743.99999999999925, "Fail on Verify_BigConstants");
@@ -370,30 +372,30 @@ public class BigFloatTests
     public void Verify_GetPrecision()
     {
         //public int GetPrecision => _size - ExtraHiddenBits;
-        IsTrue(BigFloat.ParseBinary("100.01").GetPrecision == 5);
-        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").GetPrecision == 1);
-        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).GetPrecision == 1 - 32);
-        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, 32).GetPrecision == 1 - 32);
-        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).GetPrecision == 4 - 32);
-        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, 32).GetPrecision == 9 - 32);
-        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).GetPrecision == 17 - 32);
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).GetPrecision == 25 - 32);
-        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).GetPrecision == 33 - 32);
+        IsTrue(BigFloat.ParseBinary("100.01").Precision == 5);
+        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").Precision == 1);
+        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).Precision == 1 - 32);
+        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, 32).Precision == 1 - 32);
+        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).Precision == 4 - 32);
+        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, 32).Precision == 9 - 32);
+        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).Precision == 17 - 32);
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).Precision == 25 - 32);
+        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).Precision == 33 - 32);
     }
 
     [TestMethod]
     public void Verify_GetAccuracy()
     {
         //public int GetPrecision => _size - ExtraHiddenBits;
-        IsTrue(BigFloat.ParseBinary("100.01").GetAccuracy == 2);
-        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").GetAccuracy == 23);
-        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).GetAccuracy == 23 - 32);
-        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, 32).GetAccuracy == 5 - 32);
-        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).GetAccuracy == 18 - 32);     // 0|00000000000000.00000000000000000000001" (accuracy is -14)
-        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, 32).GetAccuracy == 32 - 32);                //0.|00000000000000000000000100000000        (accuracy is 0)
-        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).GetAccuracy == 32 - 32);        //0.|00000000000000010000000000000000        (accuracy is 0)
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).GetAccuracy == 32 - 32);//0.|00000001000000000000000000000000        (accuracy is 0)
-        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).GetAccuracy == 32 - 32);//1.|00000000000000000000000000000000(accuracy is 0)
+        IsTrue(BigFloat.ParseBinary("100.01").Accuracy == 2);
+        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").Accuracy == 23);
+        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).Accuracy == 23 - 32);
+        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, 32).Accuracy == 5 - 32);
+        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).Accuracy == 18 - 32);     // 0|00000000000000.00000000000000000000001" (accuracy is -14)
+        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, 32).Accuracy == 32 - 32);                //0.|00000000000000000000000100000000        (accuracy is 0)
+        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).Accuracy == 32 - 32);        //0.|00000000000000010000000000000000        (accuracy is 0)
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).Accuracy == 32 - 32);//0.|00000001000000000000000000000000        (accuracy is 0)
+        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).Accuracy == 32 - 32);//1.|00000000000000000000000000000000(accuracy is 0)
     }
 
     [TestMethod]
