@@ -11,17 +11,11 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
-using static BigFloatLibrary.Int128Tools;
-
 
 namespace BigFloatLibrary;
-
-
-// for notes on zero see "BigFloatZeroNotes.txt"
 
 /// <summary>
 /// BigFloat stores a BigInteger with a floating decimal point.
@@ -36,7 +30,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public const int ExtraHiddenBits = 32;  // 0-62, must be even (for sqrt)
 
     /// <summary>
-    /// Gets the full integer with the hidden bits.
+    /// Gets the full integer, including the hidden bits.
     /// </summary>
     public readonly BigInteger DataBits { get; }
 
@@ -109,6 +103,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     // 0:011111111 <<  1   31    32     -1       N
     // 0:001111111 <<  1   31    32     -2       Y (borderline)
     // 0:001111111 <<  2   31    33     -2       N
+
+
+    /// <summary>
+    /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
+    /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "1.3 * 2 - 2.6"
+    /// </summary>
+    public bool IsStrictZero => DataBits.IsZero; 
 
     /// <summary>
     /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
@@ -828,9 +829,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         return BigIntegerToBinaryString(Int);
     }
-
-
     /////////////////////////// [END] TO_STRING FUNCTIONS [END] ////////////////////////////////
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////// PARSE  FUNCTIONS  FUNCTIONS ////////////////////////////////
@@ -1208,8 +1208,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// Converts the binary number in a string to a BigFloat. 
-    /// If it fails, an exception is thrown.
+    /// Negative values must have a leading '-'.
     /// e.g, '-11111100.101' would set the BigFloat to that rawValue, -252.625.
+    /// If it fails, an exception is thrown.
     /// </summary>
     /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="scale">(optional)Additional scale - can be positive or negative</param>
@@ -1228,6 +1229,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// Converts the binary text in ReadOnlySpan<char> to a BigFloat. 
+    /// Negative values must have a leading '-'.
     /// e.g. '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// </summary>
     /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
@@ -3416,6 +3418,61 @@ Other:                                         |   |         |         |       |
 
 
 
+    public static BigFloat NthRoot_INCOMPLETE_DRAFT_10(BigFloat value, int n)
+    {
+        bool rootIsNeg = n < 0;
+        if (rootIsNeg)
+        {
+            n = -n;
+        }
+
+        bool resultIsPos = value.DataBits.Sign > 0;
+        if (!resultIsPos)
+        {
+            value = -value;
+        }
+
+        resultIsPos = resultIsPos || ((n & 1) == 0);
+
+        // Check if Value is zero.
+        if (value.DataBits.Sign == 0)
+        {
+            return BigFloat.ZeroWithSpecifiedLeastPrecision(value.Size);
+        }
+
+        // Check for common roots. 
+        switch (n)
+        {
+            case 0:
+                return OneWithAccuracy(value.Size);
+            case 1:
+                return resultIsPos ? value : -value;
+                //case 2:
+                //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
+                //case 4:
+                //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
+        }
+
+        int mod = n - (32 % n);
+        BigInteger valueData = value.DataBits << mod;  //0
+        BigInteger root = NewtonNthRoot(ref valueData, n, 0);
+        double valueBitLengthyness = BigFloat.Log2(value);
+        double resultBitLengthyness = valueBitLengthyness / n;
+        double retLog2 = double.Log2((double)root);
+        double retLog3 = (retLog2 - double.Floor(retLog2));
+
+        resultBitLengthyness -= retLog3;
+        int resultBitLength = (int)(resultBitLengthyness + 0.5);
+
+        int rootLen = (int)root.GetBitLength();
+
+        BigFloat ret = new(root, resultBitLength - rootLen + 32 + 1, true);
+
+        //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
+        //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
+        AssertValid(ret);
+        return ret;
+    }
 
 
     public static BigFloat NthRoot_INCOMPLETE_DRAFT9(BigFloat value, int root)
@@ -3594,61 +3651,6 @@ Other:                                         |   |         |         |       |
         Debug.Assert(val._size == realSize, $"_size({val._size}), expected ({realSize})");
     }
 
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT_10(BigFloat value, int n)
-    {
-        bool rootIsNeg = n < 0;
-        if (rootIsNeg)
-        {
-            n = -n;
-        }
-
-        bool resultIsPos = value.DataBits.Sign > 0;
-        if (!resultIsPos)
-        {
-            value = -value;
-        }
-
-        resultIsPos = resultIsPos || ((n & 1) == 0);
-
-        // Check if Value is zero.
-        if (value.DataBits.Sign == 0)
-        {
-            return BigFloat.ZeroWithSpecifiedLeastPrecision(value.Size);
-        }
-
-        // Check for common roots. 
-        switch (n)
-        {
-            case 0:
-                return OneWithAccuracy(value.Size);
-            case 1:
-                return resultIsPos ? value : -value;
-                //case 2:
-                //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
-                //case 4:
-                //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
-        }
-
-        int mod = n - (32 % n); 
-        BigInteger valueData = value.DataBits << mod;  //0
-        BigInteger root = NewtonNthRoot(ref valueData, n, 0);
-        double valueBitLengthyness = BigFloat.Log2(value);
-        double resultBitLengthyness = valueBitLengthyness / n;
-        double retLog2 = double.Log2((double)root);
-        double retLog3 = (retLog2 - double.Floor(retLog2));
-
-        resultBitLengthyness -= retLog3;
-        int resultBitLength = (int)(resultBitLengthyness + 0.5);
-
-        int rootLen = (int)root.GetBitLength();
-
-        BigFloat ret = new(root, resultBitLength - rootLen + 32+1, true);
-
-        //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
-        //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
-        AssertValid(ret);
-        return ret;
-    }
 
     //todo: untested
     /// <summary>
@@ -3863,11 +3865,11 @@ Other:                                         |   |         |         |       |
     /// <param name="a">The first UInt128 to multiply.</param>
     /// <param name="b">The second UInt128 to multiply.</param>
     /// <returns>Returns the result as a BigInteger.</returns>
-    public static BigInteger BigIntegerMult(UInt128 a, UInt128 b)
+    public static BigInteger Multiply(UInt128 a, UInt128 b)
     {
-        UInt128 a_lo = (UInt64)a;
+        UInt128 a_lo = (ulong)a;
         UInt128 a_hi = a >> 64;
-        UInt128 b_lo = (UInt64)b;
+        UInt128 b_lo = (ulong)b;
         UInt128 b_hi = b >> 64;
 
         UInt128 p0 = a_lo * b_lo;
@@ -3875,14 +3877,10 @@ Other:                                         |   |         |         |       |
         UInt128 p2 = a_hi * b_lo;
         UInt128 p3 = a_hi * b_hi;
 
-        UInt64 cy = (UInt64)(((p0 >> 64) + (UInt64)p1 + (UInt64)p2) >> 64);
+        ulong cy = (ulong)(((p0 >> 64) + (ulong)p1 + (ulong)p2) >> 64);
 
         UInt128 lo = p0 + (p1 << 64) + (p2 << 64);
         UInt128 hi = p3 + (p1 >> 64) + (p2 >> 64) + cy;
         return ((BigInteger)hi << 128) + lo;
     }
-
-
-
-
 }

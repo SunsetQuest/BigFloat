@@ -32,7 +32,6 @@ public static class Showcase
     public static void Main()
     {
 
-
         //BigInteger valToTest = BigInteger.Parse("12312312312312312312");
         //{
         //    int valLen = (int)valToTest.GetBitLength();
@@ -81,15 +80,14 @@ public static class Showcase
         //xInvRes = BigIntegerTools.InverseBigIntegerClassic(BigInteger.Parse("1777777777777777777777777777777777777777777"), 140);
 
 
-
-
+        if (true)
         for (int i = 0; i < 9700; i++)
         {
             int valLen = 0;
             perfTimerTotal1 += perfTimer1.ElapsedTicks; perfTimerTotal2 += perfTimer2.ElapsedTicks; perfTimer1.Reset(); perfTimer2.Reset();
             for (int k = 0; k < 12800; k++)
             {
-                valToTest += 1 + (valToTest / 7727); //(valToTest >> 5); //(valToTest / 100003); 127 251 503 997 7727  100003
+                valToTest += 1 + (valToTest / 127); //(valToTest >> 5); //(valToTest / 100003); 127 251 503 997 7727  100003
                 valLen = (int)valToTest.GetBitLength() + OFFSET;
                 if (valLen < 0) continue;
 
@@ -135,7 +133,7 @@ public static class Showcase
             }
             long divideBy = (160 * 100 * Stopwatch.Frequency) / 1000000000;
             int correct = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
-            Console.WriteLine($"{valLen,4} Ticks: {perfTimer1.ElapsedTicks / divideBy,4} -> {perfTimer2.ElapsedTicks / divideBy,4} ({(float)perfTimer1.ElapsedTicks / perfTimer2.ElapsedTicks,-12}) (Total: {(float)perfTimerTotal1 / perfTimerTotal2,-12}) Missed {xInvRes.GetBitLength() - correct,4} of {xInvRes.GetBitLength()}");
+            Console.WriteLine($"[{valLen,4}] Ticks: {perfTimer1.ElapsedTicks / divideBy,4} -> {perfTimer2.ElapsedTicks / divideBy,4} ({(float)perfTimer1.ElapsedTicks / perfTimer2.ElapsedTicks,-12}) (Total: {(float)perfTimerTotal1 / perfTimerTotal2,-12}) Missed {xInvRes.GetBitLength() - correct,4} of {xInvRes.GetBitLength()}");
         }
 
 

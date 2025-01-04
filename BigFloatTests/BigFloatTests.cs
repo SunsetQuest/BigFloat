@@ -347,6 +347,26 @@ public class BigFloatTests
     }
 
     [TestMethod]
+    public void Verify_IsStrictZero()
+    {
+        BigFloat result = ((BigFloat)1.3 * (BigFloat)2 - (BigFloat)2.6);
+        IsFalse(result.IsStrictZero);
+        IsTrue(result.IsZero);
+
+        result = 0;
+        IsTrue(result.IsStrictZero);
+        IsTrue(result.IsZero);
+
+        result = BigFloat.ParseBinary("1", 0, 0, 32);
+        IsFalse(result.IsStrictZero);
+        IsTrue(result.IsZero);
+
+        result = BigFloat.ParseBinary("-1", 0, 0, 32);
+        IsFalse(result.IsStrictZero);
+        IsTrue(result.IsZero);
+    }
+
+    [TestMethod]
     public void Verify_GetPrecision()
     {
         //public int GetPrecision => _size - ExtraHiddenBits;
@@ -883,7 +903,7 @@ public class BigFloatTests
     public void Verify_PowInt()
     {
 
-        int m2 = 0, m1 = 0, m0 = 0, p1 = 0, p2 = 0, ne=0;
+        int m2 = 0, m1 = 0, eq = 0, p1 = 0, p2 = 0, ne=0;
 
         for (int jj = 0; jj < 20; jj++)
             for (double ii = 0.00001; ii < 100000; ii *= 1.01)
@@ -898,7 +918,25 @@ public class BigFloatTests
             }
 
 
-        for (int jj = 0; jj < 20; jj++)
+        // Power = 0
+        for (double ii = 0.00001; ii < 100000; ii *= 1.01)
+        {
+            BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, 0); // Double->BigFloat->POW->String
+            BigFloat POWToBigFloat = (BigFloat)double.Pow(ii, 0); // Double->POW->BigFloat->String
+            
+            IsTrue(BigFloatToPOW == POWToBigFloat, $"Failed on: {ii}^0, is {BigFloatToPOW} but should be 0.");
+        }
+
+        // Power = 1
+        for (double ii = 0.00001; ii < 100000; ii *= 1.23)
+        {
+            BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, 1); // Double->BigFloat->POW->String
+            
+            IsTrue(BigFloatToPOW == (BigFloat)ii, $"Failed on: {ii}^1, is {BigFloatToPOW} but should be 0.");
+        }
+
+        for (int jj = 2; jj < 20; jj++)
+        {
             for (double ii = 0.00001; ii < 100000; ii *= 1.01)
             {
                 BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, jj);                    // Double->BigFloat->POW->String
@@ -908,22 +946,22 @@ public class BigFloatTests
                 BigFloat miss = BigFloatToPOW - (BigFloat)double.Pow(ii, jj);
                 if (!miss.IsZero)
                     ne++;
+                //if (BigFloatToPOW < POWToBigFloatLo)
+                //    m2++;
+                //if (BigFloatToPOW == POWToBigFloatLo)
+                //    m1++;
+                //if (BigFloatToPOW > POWToBigFloatLo & BigFloatToPOW < POWToBigFloatHi)
+                //    eq++;
+                //if (BigFloatToPOW == POWToBigFloatHi)
+                //    p1++;
+                //if (BigFloatToPOW > POWToBigFloatHi)
+                //    p2++;
 
-                if (BigFloatToPOW < POWToBigFloatLo) 
-                    m2++;
-                else if (BigFloatToPOW == POWToBigFloatLo) 
-                    m1++;
-                else if (BigFloatToPOW > POWToBigFloatLo & BigFloatToPOW < POWToBigFloatHi) 
-                    m0++;
-                else if (BigFloatToPOW == POWToBigFloatHi) 
-                    p1++;
-                else if (BigFloatToPOW > POWToBigFloatHi) 
-                    p2++;
-
-                IsTrue(BigFloatToPOW >= POWToBigFloatLo && BigFloatToPOW <= POWToBigFloatHi,
+                IsTrue(BigFloatToPOW > POWToBigFloatLo && BigFloatToPOW < POWToBigFloatHi,
                     $"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}, " +
                     $"should be in the range {POWToBigFloatLo} to {POWToBigFloatHi}.");
             }
+        }
         { }
         //// The below TEST has several exceptions from the few that were spot checked the issue was actually with the POW function. 
         //// e.g. 0.31832553782759071^2 is 0.10133114803322488, not 0.10133114803322489

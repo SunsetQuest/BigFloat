@@ -283,7 +283,8 @@ public static class BigIntegerTools
         if (x < 144838757784765629)    // 1.448e17 = ~1<<57
         {
             if (x.Sign < 0)
-                throw new ArgumentException("Negitive numbers are not supported.");
+                throw new ArgumentException("Negative numbers are not supported.");
+            
             uint vInt = (uint)Math.Sqrt((ulong)x);
             if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x))  // 4.5e15 =  ~1<<52
             {
@@ -875,10 +876,12 @@ public static class BigIntegerTools
         if (!isPos)
             x = -x;
 
-        // Trailing Zeros never matter
-        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
-        x >>= trailingZeros;
-        xLen -= trailingZeros;
+
+
+        //// Trailing Zeros never matter
+        //int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        //x >>= trailingZeros;
+        //xLen -= trailingZeros;
 
         if (xLen < 65)
         {
@@ -909,13 +912,25 @@ public static class BigIntegerTools
 
 
 
+
+        //BigInteger scaledOne2 = (BigInteger.One << ((desiredStartSize << 1) + EXTRA * 2));
+        //BigInteger result = scaledOne2 / (x >> (xLen - desiredStartSize - 1 - EXTRA));
+        //int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        //result >>= reduceBy2;
+        //desiredStartSize = desiredStartSize - reduceBy2 + EXTRA;
+
+
+
         //BigInteger result = (BigInteger.One << ((int)x.GetBitLength() + requestedPrecision - 1)) / x;
+
+
+
         BigInteger result;
         while (true)
         {
             BigInteger scaledOne2 = (BigInteger.One << ((desiredStartSize << 1) + EXTRA * 2));
             result = scaledOne2 / (x >> (xLen - desiredStartSize - 1 - EXTRA));
-            //issue here when 1000000000000000000000000
+            //todo: issue here when 1000000000000000000000000
             int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
             result >>= reduceBy2;
             int desiredStartSize2 = desiredStartSize - reduceBy2 + EXTRA;
@@ -931,24 +946,24 @@ public static class BigIntegerTools
 
         ////////////////////// Newton version  //////////////////////
         int EXTRA_BITS_TO_REMOVE = 1;
-        while (desiredStartSize <= requestedPrecision)
-        {
-            int doubleDesiredStartSize = (desiredStartSize << 1);
+        //while (desiredStartSize <= requestedPrecision)
+        //{
+        //    int doubleDesiredStartSize = (desiredStartSize << 1);
 
-            BigInteger scalingFactor = BigInteger.One << (doubleDesiredStartSize + 1);
-            BigInteger xTimesY = ((x >> (xLen - doubleDesiredStartSize)) * result) >> (desiredStartSize - 1); // future: we only need the bottom half of this.
-            BigInteger twoMinusXy = scalingFactor - xTimesY;
-            result = (result * twoMinusXy) >> (desiredStartSize + EXTRA_BITS_TO_REMOVE);
+        //    BigInteger scalingFactor = BigInteger.One << (doubleDesiredStartSize + 1);
+        //    BigInteger xTimesY = ((x >> (xLen - doubleDesiredStartSize)) * result) >> (desiredStartSize - 1); // future: we only need the bottom half of this.
+        //    BigInteger twoMinusXy = scalingFactor - xTimesY;
+        //    result = (result * twoMinusXy) >> (desiredStartSize + EXTRA_BITS_TO_REMOVE);
 
-            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
-            result >>= reduceBy;
+        //    int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
+        //    result >>= reduceBy;
 
-            desiredStartSize = doubleDesiredStartSize - reduceBy - EXTRA_BITS_TO_REMOVE;
+        //    desiredStartSize = doubleDesiredStartSize - reduceBy - EXTRA_BITS_TO_REMOVE;
 
-            // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
-            if (desiredStartSize > 1024)
-                break;
-        }
+        //    // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
+        //    if (desiredStartSize > 1024)
+        //        break;
+        //}
 
         ////////////////////// NewtonPlus version  //////////////////////
         EXTRA_BITS_TO_REMOVE = 1;
@@ -1622,6 +1637,3 @@ public static class BigIntegerTools
     }
     ////////////////// Above by Nikolai TheSquid ///////////////////////////////////////////////
 }
-
-
-
