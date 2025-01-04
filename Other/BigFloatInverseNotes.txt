@@ -1,5 +1,464 @@
-// below is as of 12/10/2024.  There are several different versions.  
 
+
+// as of 12/29/2024 - Ryan Scott White
+    public static BigInteger InverseBigInteger9(BigInteger x, int requestedPrecision = 0)
+    {
+        int xLen = (int)x.GetBitLength();
+        if (requestedPrecision <= 0)
+        {
+            if (requestedPrecision < 0)
+                throw new DivideByZeroException("'precisionBits' can not be negative.");
+            requestedPrecision = xLen;
+        }
+
+        bool isPos = x.Sign >= 0;
+        if (!isPos)
+            x = -x;
+
+        // can we pre-shrink x to requestedPrecision? (or just keep 32 bits?)
+
+        //// Trailing Zeros never matter
+        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        x >>= trailingZeros;
+        xLen -= trailingZeros;
+
+        // 111111111111101100111110000000001000111000111100010000110100110010100000011110011111000.01
+        // 11111111111110110011111000000000100011100011110001000011010011000  (res)
+        // 11111111111110110011111000000000100011100011110001000011010011001  (ans)
+
+        //  x         requestedPrecision Can Be
+        // 1101[4]  -> 128-4  =124
+        // 1101[64] -> 128-64 =64
+        // 1101[100]-> 128-100=28
+        if ((requestedPrecision + xLen) <= 128)
+        {
+            ulong x2 = (ulong)x;
+            //int leadingZeros= (int)ulong.LeadingZeroCount(x2);
+
+            // or if xLen = 33 then requestedPrecision <34
+            if ((requestedPrecision + xLen) <= 64)
+            {
+                ulong result64 = (1UL << 63) / x2; // 63 /  31
+                result64 >>= 64- (int)ulong.LeadingZeroCount(result64) - requestedPrecision;
+                return isPos ? result64 : (-(BigInteger)result64);
+            }
+#if (NET7_0_OR_GREATER)
+            UInt128 result128 = (UInt128.One << 127) / x2;
+            result128 >>= (int)UInt128.Log2(result128) + 1 - requestedPrecision; //what about ulong.Log2(res>>64) +64
+            return isPos ? result128 : (-(BigInteger)result128);
+#endif
+        }
+
+        if ((requestedPrecision + xLen) <= 1024)
+        {
+            BigInteger resultBI = (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
+            return isPos ? resultBI : (-resultBI);
+        }
+
+        const bool dbug = false;
+
+        ////////  Get Starting Size  //////// 8-282 7-281 6-285 5-297 4-290 3-293 2-299 1-271
+        const int EXTRA = 4;
+        int desiredStartSize = requestedPrecision + EXTRA * 2;
+        int temp = 0;
+        while (desiredStartSize > 400) //300=291  [330]=292  400=295 500=291
+        {
+            desiredStartSize = (desiredStartSize >> 1) + 1;
+            if (dbug) temp++;
+        }
+        int curSize = desiredStartSize;
+
+        BigInteger scaledOne2 = (BigInteger.One << ((curSize << 1) + EXTRA * 2));
+        BigInteger result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA));
+        curSize += EXTRA;
+        
+
+        if (dbug) Console.WriteLine($"");
+        ////////////////////// Newton version  //////////////////////
+        const int EXTRA_BITS_TO_REMOVE1 = 1;
+        while (curSize <= Math.Min(1024, requestedPrecision)) // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
+        {
+            int doubleCurSize = (curSize << 1);
+
+            if (dbug) Console.Write($"{(( (double)(curSize << temp) / requestedPrecision) + "     ").Substring(0,4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+            BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+            BigInteger twoMinusXy = scalingFactor - xTimesY;
+            result = (result * twoMinusXy) >> (curSize + EXTRA_BITS_TO_REMOVE1);
+
+            curSize = doubleCurSize - EXTRA_BITS_TO_REMOVE1;
+            if (dbug) temp--;
+        }
+
+        // Lets make sure we are 100% accurate at this point.
+        const int SKIP_LOWEST = 4;  //3 fails 
+        result >>= SKIP_LOWEST;
+        // back off until we see both a zero and one
+        int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
+        result >>= reduceBy2;
+        curSize -= reduceBy2 + SKIP_LOWEST;
+
+        //CheckIfCorrectSoFar(x, xLen, curSize, result);
+
+        // Let's shift into high gear...
+        ////////////////////// NewtonPlus version  //////////////////////
+        const int EXTRA_BITS_TO_REMOVE2 = 1;
+        while (curSize <= requestedPrecision)
+        {
+            int doubleCurSize = (curSize << 1);
+
+            //if ((double)doubleCurSize / requestedPrecision > 0.9)
+            if (dbug) Console.Write($"{(((double)(curSize << temp) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+            // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
+            result++; // we could just do a add a "(1 << doublecurSize)"
+            BigInteger mask22 = (BigInteger.One << (curSize + 1)) - 1;
+            BigInteger xTimesY22 = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+            result = ((result << (doubleCurSize)) - (result * (xTimesY22 & mask22))) >> (curSize + EXTRA_BITS_TO_REMOVE2);
+
+            //// back off until we see both a zero and one
+            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
+            result >>= reduceBy;
+
+            //CheckIfCorrectSoFar(x, xLen, curSize, result);
+
+            curSize = doubleCurSize - reduceBy - EXTRA_BITS_TO_REMOVE2;
+            if (dbug) temp--;
+        }
+
+        if (dbug) Console.Write($"{(((double)(curSize << temp) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+        //if (trailingZeros> 14) Console.Write(trailingZeros);
+        BigInteger tempResult = result >> curSize - requestedPrecision;
+        return isPos ? tempResult : (-tempResult);
+
+         // Check if correct so far and output info if not
+        static void CheckIfCorrectSoFar(BigInteger x, int xLen, int curSize, BigInteger result)
+        {
+            BigInteger checkResult = (BigInteger.One << (xLen + xLen - 1)) / x;
+            int correctBits2 = ToBinaryString(result).Zip(ToBinaryString(checkResult), static (c1, c2) => c1 == c2).TakeWhile(static b => b).Count();
+            if (correctBits2 < Math.Min(curSize, checkResult.GetBitLength()))
+                Console.WriteLine($"not 100% !!\r\nAns: {ToBinaryString(checkResult)}[{checkResult.GetBitLength()}]\r\nRes: {ToBinaryString(result)}[{result.GetBitLength()}]");
+        }
+    }
+
+
+    // simple version just for verification.
+    public static BigInteger InverseBigIntegerClassic(BigInteger x, int requestedPrecision = 0)
+    {
+        int xLen = (int)x.GetBitLength();
+        return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+    }
+
+
+    public static BigInteger InverseBigInteger8(BigInteger x, int requestedPrecision = 0)
+    {
+        int xLen = (int)x.GetBitLength();
+        if (requestedPrecision <= 0)
+        {
+            if (requestedPrecision < 0)
+                throw new DivideByZeroException("'precisionBits' can not be negative.");
+            requestedPrecision = xLen;
+        }
+
+        bool isPos = x.Sign >= 0;
+        if (!isPos)
+            x = -x;
+
+
+
+        //// Trailing Zeros never matter
+        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        x >>= trailingZeros;
+        xLen -= trailingZeros;
+
+        if (xLen < 65)
+        {
+            // or if xLen = 33 then requestedPrecision <34
+            if (xLen < 33)
+            {
+                ulong result64 = (1UL << 63) / (ulong)x; // 63 /  31
+                result64 >>= 64 - (int)ulong.LeadingZeroCount(result64) - requestedPrecision;
+                return isPos ? result64 : (-(BigInteger)result64);
+            }
+            UInt128 result128 = (UInt128.One << 127) / (ulong)x;
+            result128 >>= (int)UInt128.Log2(result128) - requestedPrecision + 1; //what about uint.Log2(res>>32) +32
+            return isPos ? result128 : (-(BigInteger)result128);
+        }
+
+        if (xLen < 512)
+        {
+            BigInteger resultBI = (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
+            return isPos ? resultBI : (-resultBI);
+        }
+
+        const bool dbug = false;
+
+
+        ////////  Get Starting Size  //////// 8-282 7-281 6-285 5-297 4-290 3-293 2-299 1-271
+        const int EXTRA = 4;
+        int desiredStartSize = requestedPrecision + EXTRA * 2;
+        int temp = 0;
+        while (desiredStartSize > 400) //300=291  [330]=292  400=295 500=291
+        {
+            desiredStartSize = (desiredStartSize >> 1) + 1;
+            if (dbug) temp++;
+        }
+        int curSize = desiredStartSize;
+
+
+
+
+        // Option 1: issue with the below as reduceBy2 could fully shrink the result, can be fixed by adding to a loop that makes it larger
+        //BigInteger scaledOne2 = (BigInteger.One << ((curSize << 1) + EXTRA * 2));
+        //BigInteger result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA));
+        //int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        //result >>= reduceBy2;
+        //curSize = curSize - reduceBy2 + EXTRA;
+
+        // Option 2: 
+        //BigInteger result;
+        //while (true)
+        //{
+        //    BigInteger scaledOne2 = (BigInteger.One << ((curSize << 1) + EXTRA * 2));
+        //    result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA));
+        //    //todo: issue here when 1000000000000000000000000
+        //    int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        //    result >>= reduceBy2;
+        //    int newSize = curSize + EXTRA- reduceBy2 ;
+        //    if (newSize > 100)
+        //    {
+        //        curSize = newSize;
+        //        break;
+        //    }
+        //    curSize <<= 1;
+        //}
+
+        // Option 3: it does not need to be perfect yet
+        BigInteger scaledOne2 = (BigInteger.One << ((curSize << 1) + EXTRA * 2));
+        BigInteger result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA));
+        curSize = curSize + EXTRA;
+
+
+        if (dbug) Console.WriteLine($"");
+        ////////////////////// Newton version  //////////////////////
+        const int EXTRA_BITS_TO_REMOVE1 = 1;
+        while (curSize <= Math.Min(1024, requestedPrecision)) // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
+        {
+            int doubleCurSize = (curSize << 1);
+
+            if (dbug) Console.Write($"{(((double)(curSize << temp) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+            BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+            BigInteger twoMinusXy = scalingFactor - xTimesY;
+            result = (result * twoMinusXy) >> (curSize + EXTRA_BITS_TO_REMOVE1);
+
+            curSize = doubleCurSize - EXTRA_BITS_TO_REMOVE1;
+            if (dbug) temp--;
+        }
+
+        // Lets make sure we are 100% accurate at this point.
+        const int SKIP_LOWEST = 3;
+        result >>= SKIP_LOWEST;
+        // back off until we see both a zero and one
+        int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
+        result >>= reduceBy2;
+        curSize -= reduceBy2 + SKIP_LOWEST;
+
+        ////////////////////// NewtonPlus version  //////////////////////
+        const int EXTRA_BITS_TO_REMOVE2 = 1;
+        while (curSize <= requestedPrecision)
+        {
+            int doubleCurSize = (curSize << 1);
+
+            //if ((double)doubleCurSize / requestedPrecision > 0.9)
+            if (dbug) Console.Write($"{(((double)(curSize << temp) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+            // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
+            result++; // we could just do a add a "(1 << doublecurSize)"
+            BigInteger mask22 = (BigInteger.One << (curSize + 1)) - 1;
+            BigInteger xTimesY22 = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+            result = ((result << (doubleCurSize)) - (result * (xTimesY22 & mask22))) >> (curSize + EXTRA_BITS_TO_REMOVE2);
+
+            //// back off until we see both a zero and one
+            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
+            result >>= reduceBy;
+
+
+            //// Check if correct so far and output info if not
+            //BigInteger checkResult = (BigInteger.One << (xLen + xLen - 1)) / x;
+            //int correctBits2 = ToBinaryString(result).Zip(ToBinaryString(checkResult), static (c1, c2) => c1 == c2).TakeWhile(static b => b).Count();
+            //if (correctBits2 < Math.Min(curSize, checkResult.GetBitLength()))
+            //    Console.WriteLine($"not 100% !!\r\nAns: {ToBinaryString(checkResult)}[{checkResult.GetBitLength()}]\r\nRes: {ToBinaryString(result)}[{result.GetBitLength()}]");
+
+            curSize = doubleCurSize - reduceBy - EXTRA_BITS_TO_REMOVE2;
+            if (dbug) temp--;
+
+        }
+
+        if (dbug) Console.Write($"{(((double)(curSize << temp) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << temp) - requestedPrecision}]  ");
+
+
+        //if (trailingZeros> 14) Console.Write(trailingZeros);
+        BigInteger tempResult = result >> curSize - requestedPrecision;
+        return isPos ? tempResult : (-tempResult);
+    }
+
+
+
+
+
+
+    public static BigInteger InverseBigInteger7(BigInteger x, int requestedPrecision)
+    {
+        int xLen = (int)x.GetBitLength();
+        if (requestedPrecision > xLen)
+        {
+            throw new DivideByZeroException("'precisionBits' can not be greater then x's length.");
+        }
+
+        bool isPos = x.Sign >= 0;
+        if (!isPos)
+            x = -x;
+
+        if (xLen < 65)
+        {
+            if (xLen < 33)
+            {
+                ulong result64 = (1UL << 63) / (ulong)x; // 63 /  31
+                result64 >>= 64 - (int)ulong.LeadingZeroCount(result64) - requestedPrecision;
+                return isPos ? result64 : (-(BigInteger)result64);
+            }
+            UInt128 result128 = (UInt128.One << 127) / (ulong)x;
+            result128 >>= (int)UInt128.Log2(result128) - requestedPrecision + 1; //what about uint.Log2(res>>32) +32
+            return isPos ? result128 : (-(BigInteger)result128);
+        }
+
+        if (xLen < 512)
+        {
+            BigInteger resultBI = (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
+            return isPos ? resultBI : (-resultBI);
+        }
+
+        ////////  Get Starting Size  ////////
+        const int EXTRA = 8;
+        int desiredStartSize = requestedPrecision + EXTRA * 2;
+        while (desiredStartSize > 330)
+            desiredStartSize = (desiredStartSize >> 1) + 1;
+
+        BigInteger scaledOne2 = (BigInteger.One << ((desiredStartSize << 1) + EXTRA * 2));
+        BigInteger result = scaledOne2 / (x >> (xLen - desiredStartSize - 1 - EXTRA));
+
+        int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        result >>= reduceBy2;
+
+        desiredStartSize = desiredStartSize - reduceBy2 + EXTRA;
+
+        ////////////////////// Newton version  //////////////////////
+        int EXTRA_BITS_TO_REMOVE = 1;
+        while (desiredStartSize <= requestedPrecision)
+        {
+            int doubleDesiredStartSize = (desiredStartSize << 1);
+
+            BigInteger scalingFactor = BigInteger.One << (doubleDesiredStartSize + 1);
+            BigInteger xTimesY = ((x >> (xLen - doubleDesiredStartSize)) * result) >> (desiredStartSize - 1); // future: we only need the bottom half of this.
+            BigInteger twoMinusXy = scalingFactor - xTimesY;
+            result = (result * twoMinusXy) >> (desiredStartSize + EXTRA_BITS_TO_REMOVE);
+
+            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
+            result >>= reduceBy;
+
+            desiredStartSize = doubleDesiredStartSize - reduceBy - EXTRA_BITS_TO_REMOVE;
+
+            // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
+            if (desiredStartSize > 1024)
+                break;
+        }
+
+        ////////////////////// NewtonPlus version  //////////////////////
+        EXTRA_BITS_TO_REMOVE = 1;
+        while (desiredStartSize <= requestedPrecision)
+        {
+            int doubleDesiredStartSize = (desiredStartSize << 1);
+
+            // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
+            result++; // we could just do a add a "(1 << doubleDesiredStartSize)"
+            BigInteger mask22 = (BigInteger.One << (desiredStartSize + 1)) - 1;
+            BigInteger xTimesY22 = ((x >> (xLen - doubleDesiredStartSize)) * result) >> (desiredStartSize - 1); // future: we only need the bottom half of this.
+            result = ((result << (doubleDesiredStartSize)) - (result * (xTimesY22 & mask22))) >> (desiredStartSize + EXTRA_BITS_TO_REMOVE);
+
+            //// back off until we see both a zero and one
+            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
+            result >>= reduceBy;
+
+            // Check if correct so far and output info if not
+            BigInteger checkResult = (BigInteger.One << (xLen + xLen - 1)) / x;
+            int correctBits2 = ToBinaryString(result).Zip(ToBinaryString(checkResult), static (c1, c2) => c1 == c2).TakeWhile(static b => b).Count();
+            if (correctBits2 < Math.Min(requestedPrecision, doubleDesiredStartSize - reduceBy - EXTRA_BITS_TO_REMOVE))
+                Console.WriteLine($"not 100% !!\r\nAns: {ToBinaryString(checkResult)}[{checkResult.GetBitLength()}]\r\nRes: {ToBinaryString(result)}[{result.GetBitLength()}]");
+
+            desiredStartSize = doubleDesiredStartSize - reduceBy - EXTRA_BITS_TO_REMOVE;
+        }
+
+        BigInteger tempResult = result >> desiredStartSize - requestedPrecision;
+        return isPos ? tempResult : (-tempResult);
+    }
+
+
+    /// <summary>
+    /// A high performance BigInteger to binary string converter
+    /// that supports 0 and negative numbers.
+    /// License: MIT / Created by Ryan Scott White, 7/16/2022;
+    /// https://stackoverflow.com/a/73009264/2352507
+    /// </summary>
+    public static string ToBinaryString3(BigInteger x)
+    {
+        // Setup source
+        ReadOnlySpan<byte> srcBytes = x.ToByteArray();
+        int srcLoc = srcBytes.Length - 1;
+
+        // Find the first bit set in the first byte so we don't print extra zeros.
+        int msb = BitOperations.Log2(srcBytes[srcLoc]);
+
+        // Setup Target
+        Span<char> dstBytes = stackalloc char[srcLoc * 8 + msb + 2];
+        int dstLoc = 0;
+
+        // Add leading '-' sign if negative.
+        if (x.Sign < 0)
+        {
+            dstBytes[dstLoc++] = '-';
+        }
+        //else if (!x.IsZero) dstBytes[dstLoc++] = '0'; // add adding leading '0' (optional)
+
+        // The first byte is special because we don't want to print leading zeros.
+        byte b = srcBytes[srcLoc--];
+        for (int j = msb; j >= 0; j--)
+        {
+            dstBytes[dstLoc++] = (char)('0' + ((b >> j) & 1));
+        }
+
+        // Add the remaining bits.
+        for (; srcLoc >= 0; srcLoc--)
+        {
+            byte b2 = srcBytes[srcLoc];
+            for (int j = 7; j >= 0; j--)
+            {
+                dstBytes[dstLoc++] = (char)('0' + ((b2 >> j) & 1));
+            }
+        }
+
+        return dstBytes.ToString();
+    }
+
+
+
+
+
+
+// below is as of 12/10/2024
 public static BigInteger InverseBigIntegerClassicNewton(BigInteger x, int requestedPrecision)
 {
 	int xLen = (int)x.GetBitLength();

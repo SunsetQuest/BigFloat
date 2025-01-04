@@ -11,22 +11,22 @@ public class Int128Tools
 {
     /// <summary>
     /// Multiplies two UInt128 values and only returns the high UInt128, discarding the lower 128 bits.
-    /// Source: njuffa, 2015, https://stackoverflow.com/a/31662911/23187163
+    /// Partial Source: njuffa, 2015, https://stackoverflow.com/a/31662911/23187163
     /// </summary>
     /// <param name="a">The first UInt128 to multiply.</param>
     /// <param name="b">The second UInt128 to multiply.</param>
-    public static UInt128 MultHi(UInt128 a, UInt128 b)
+    public static UInt128 MultiplyHigh(UInt128 a, UInt128 b)
     {
-        UInt128 a_lo = (UInt64)a;
+        UInt128 a_lo = (ulong)a;
         UInt128 a_hi = a >> 64;
-        UInt128 b_lo = (UInt64)b;
+        UInt128 b_lo = (ulong)b;
         UInt128 b_hi = b >> 64;
 
         UInt128 p0 = (a_lo * b_lo) >> 64;
         UInt128 p1 = a_lo * b_hi;
         UInt128 p2 = a_hi * b_lo;
 
-        UInt64 cy = (UInt64)((p0 + (UInt64)p1 + (UInt64)p2) >> 64);
+        ulong cy = (ulong)((p0 + (ulong)p1 + (ulong)p2) >> 64);
 
         return (a_hi * b_hi) + (p1 >> 64) + (p2 >> 64) + cy;
     }
@@ -36,25 +36,26 @@ public class Int128Tools
     /// </summary>
     /// <param name="a">The first UInt128 to multiply.</param>
     /// <param name="b">The second UInt128 to multiply.</param>
-    public static UInt128 MultHiFast(UInt128 a, UInt128 b)
+    public static UInt128 MultiplyHighApprox(UInt128 a, UInt128 b)
     {
         UInt128 a_hi = a >> 64;
         UInt128 b_hi = b >> 64;
-        return (a_hi * b_hi) + (((UInt64)a * b_hi) >> 64) + ((a_hi * (UInt64)b) >> 64);
+        return (a_hi * b_hi) + (((ulong)a * b_hi) >> 64) + ((a_hi * (ulong)b) >> 64);
     }
 
     /// <summary>
     /// Multiplies two UInt128 values and only returns the high UInt128 and low UInt128.
-    /// Source: njuffa, 2015, https://stackoverflow.com/a/31662911/23187163
+    /// Source: njuffa, 2015, https://stackoverflow.com/a/31662911/23187163 
+    /// Ported to C# and modified for 128 bit use by Ryan Scott White
     /// </summary>
     /// <param name="a">The first UInt128 to multiply.</param>
     /// <param name="b">The second UInt128 to multiply.</param>
     /// <returns>Returns the result in two UInt128 - high and 128 bits.</returns>
-    public static (UInt128 hi, UInt128 lo) Mult(UInt128 a, UInt128 b)
+    public static (UInt128 hi, UInt128 lo) Multiply(UInt128 a, UInt128 b)
     {
-        UInt128 a_lo = (UInt64)a;
+        UInt128 a_lo = (ulong)a;
         UInt128 a_hi = a >> 64;
-        UInt128 b_lo = (UInt64)b;
+        UInt128 b_lo = (ulong)b;
         UInt128 b_hi = b >> 64;
 
         UInt128 p0 = a_lo * b_lo;
@@ -62,14 +63,12 @@ public class Int128Tools
         UInt128 p2 = a_hi * b_lo;
         UInt128 p3 = a_hi * b_hi;
 
-        UInt64 cy = (UInt64)(((p0 >> 64) + (UInt64)p1 + (UInt64)p2) >> 64);
+        ulong cy = (ulong)(((p0 >> 64) + (ulong)p1 + (ulong)p2) >> 64);
 
         UInt128 lo = p0 + (p1 << 64) + (p2 << 64);
         UInt128 hi = p3 + (p1 >> 64) + (p2 >> 64) + cy;
         return (hi, lo);
     }
-
-
 
     /// <summary>
     /// Squares a UInt128 and only returns the high UInt128, discarding the bottom 128 bits.
@@ -88,7 +87,6 @@ public class Int128Tools
         return hi * hi + (2 * (p >> 64)) + cy;
     }
 
-
     /// <summary>
     /// Squares a UInt128 and only returns the high UInt128, discarding the bottom 128 bits. The result can be short by up to 2.
     /// </summary>
@@ -103,12 +101,13 @@ public class Int128Tools
     /// <summary>
     /// Calculates the power of a value. For overflows, the top 128 bits are returned. 
     /// This is a fast approximate function and the lowest order bits may not be correct.
+    /// Partial source: ChatGPT 4
     /// </summary>
     /// <param name="b">The base in UInt128 format.</param>
     /// <param name="exp">The exponent(or power) in Int32 format.</param>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static UInt128 PowerFast(UInt128 b, int exp) //partial source: chatgpt 4
+    public static UInt128 PowerFast(UInt128 b, int exp) 
     {
         UInt128 result = UInt128.MaxValue;
         while (true)
@@ -116,7 +115,7 @@ public class Int128Tools
             // If the exponent is odd, multiply the result by val.
             if ((exp & 1) == 1)
             {
-                result = MultHiFast(result, b) + 2;
+                result = MultiplyHighApprox(result, b) + 2;
                 if (result >> 127 == 0)
                 {
                     result <<= 1;

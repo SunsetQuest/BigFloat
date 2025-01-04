@@ -3821,7 +3821,7 @@ Other:                                         |   |         |         |       |
         UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
         
         UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
-        UInt128 pow4 = Int128Tools.MultHiFast(pow3, val2);
+        UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
 
         Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
         Int128 denominator2 = n * (Int128)(pow3 >> 89);
