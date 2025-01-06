@@ -79,32 +79,29 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public int Exponent => Scale + _size - ExtraHiddenBits;
 
     //see BigFloatZeroNotes.txt for notes
-    //perf: should we keep the shortcut "...&& Scale < 0 &&..."?
     /// <summary>
-    /// Returns true if the internal data bits round to zero. 
+    /// Returns true if the value is essentially zero.
     /// </summary>
-    public bool IsZero => _size < (ExtraHiddenBits - 2) && (_size + Scale) < ExtraHiddenBits; // && Scale < 0
+    public bool IsZero => _size == 0 || ((_size + Scale) < ExtraHiddenBits && _size < ExtraHiddenBits);
 
-    // What is considered Zero: any dataInt that is LESS then 0:100000000, and also the shift results in a 0:100000000.
-    // 
+    // What is considered Zero: any dataInt that is LESS then 0:10000000, and also the shift results in a 0:10000000.
     //   IntData    Scale Size Sz+Sc Precision  Zero
-    // 1:111111111 << -2   33    31      1       N
-    // 1:000000000 << -2   33    31      1       N
-    // 1:000000000 << -1   33    32      1       N
-    // 1:000000000 <<  0   33    33      1       N
-    // 0:111111111 << -1   32    31      0       N
-    // 0:100000000 << -1   32    31      0       N
-    // 0:100000000 <<  0   32    32      0       N
-    // 0:011111111 << -1   31    30     -1       Y
-    // 0:011111111 <<  0   31    31     -1       Y (borderline)
-    // 0:011111111 <<  1   31    32     -1       N
-    // 0:001111111 <<  1   31    32     -2       Y (borderline)
-    // 0:001111111 <<  2   31    33     -2       N
-
+    // 1:11111111.. << -2   33    31      1       N
+    // 1:00000000.. << -2   33    31      1       N
+    // 1:00000000.. << -1   33    32      1       N
+    // 1:00000000.. <<  0   33    33      1       N
+    // 0:11111111.. << -1   32    31      0       N
+    // 0:10000000.. << -1   32    31      0       N
+    // 0:10000000.. <<  0   32    32      0       N
+    // 0:01111111.. << -1   31    30     -1       Y
+    // 0:01111111.. <<  0   31    31     -1       Y (borderline)
+    // 0:01111111.. <<  1   31    32     -1       N
+    // 0:00111111.. <<  1   31    32     -2       Y (borderline)
+    // 0:00111111.. <<  2   31    33     -2       N
 
     /// <summary>
     /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
-    /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "1.3 * 2 - 2.6"
+    /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
     /// </summary>
     public bool IsStrictZero => DataBits.IsZero; 
 
@@ -141,7 +138,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Gets the integer part of the BigFloat. No scaling is applied. ExtraHiddenBits are rounded and removed.
     /// </summary>
-    public readonly BigInteger Int => DataIntValueWithRound(DataBits);
+    public readonly BigInteger UnscaledValue => DataIntValueWithRound(DataBits);
 
     public string DebuggerDisplay
     {
@@ -172,7 +169,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         Console.WriteLine($"   Debug : {DebuggerDisplay}");
         Console.WriteLine($"  String : {ToString()}");
         //Console.WriteLine($"  Int|hex: {_int >> ExtraHiddenBits:X}:{(_int & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
-        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
+        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRoundUp() ? "up" : "down")})");
         Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
         Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}{((double)(DataBits & (((ulong)1 << ExtraHiddenBits) - 1)) / ((ulong)1 << ExtraHiddenBits)).ToString()[1..]} {shift}");
         Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}:{DataBits & (((ulong)1 << ExtraHiddenBits) - 1)} {shift}");  // decimal part (e.g. .75)
@@ -824,7 +821,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public string GetBitsAsString()
     {
-        return BigIntegerToBinaryString(Int);
+        return BigIntegerToBinaryString(UnscaledValue);
     }
     /////////////////////////// [END] TO_STRING FUNCTIONS [END] ////////////////////////////////
 
@@ -2474,9 +2471,42 @@ Other:                                         |   |         |         |       |
     /// </summary>
     /// <param name="bi">The BigInteger we would like check if it would round up.</param>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public static bool WouldRound(BigInteger bi)
+    public static bool WouldRoundUp(BigInteger bi)
     {
-        return BigIntegerTools.WouldRound(bi, ExtraHiddenBits);
+        return WouldRoundUp(bi, ExtraHiddenBits);
+    }
+
+    /// <summary>
+    /// Checks to see if the integerPart would round-up if the ExtraHiddenBits were removed. 
+    /// e.g. 11010101 with 3 bits removed would be 11011.
+    /// </summary>
+    /// <returns>Returns true if this integerPart would round away from zero.</returns>
+    public bool WouldRoundUp()
+    {
+        return WouldRoundUp(DataBits, ExtraHiddenBits);
+    }
+
+    /// <summary>
+    /// Checks to see if this integerPart would round-up given bottomBitsRemoved. 
+    /// e.g. 11010101 with bottomBitsRemoved=3 would be 11011
+    /// </summary>
+    /// <param name="bottomBitsRemoved">The number of newSizeInBits from the least significant bit where rounding would take place.</param>
+    /// <returns>Returns true if this integerPart would round away from zero.</returns>
+    public bool WouldRoundUp(int bottomBitsRemoved)
+    {
+        return WouldRoundUp(DataBits, bottomBitsRemoved);
+    }
+
+    /// <summary>
+    /// Checks to see if the integerPart would round-up if the ExtraHiddenBits were removed. 
+    /// e.g. 11010101 with 3 bits removed would be 11011.
+    /// </summary>
+    /// <returns>Returns true if this integerPart would round away from zero.</returns>
+    private static bool WouldRoundUp(BigInteger val, int bottomBitsRemoved)
+    {
+        // for .net 7 and later use ">>>" instead of >> for a slight performance boost.
+        bool isPos = val.Sign >= 0;
+        return isPos ^ ((isPos ? val : val - 1) >> (bottomBitsRemoved - 1)).IsEven;
     }
 
     /////////////////////////////////////////////
@@ -2499,27 +2529,6 @@ Other:                                         |   |         |         |       |
     private static BigInteger DataIntValueWithRound(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, ExtraHiddenBits, ref size);
-    }
-
-    /// <summary>
-    /// Checks to see if the integerPart would round-up if the ExtraHiddenBits were removed. 
-    /// e.g. 11010101 with 3 bits removed would be 11011.
-    /// </summary>
-    /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public bool WouldRound()
-    {
-        return BigIntegerTools.WouldRound(DataBits, ExtraHiddenBits);
-    }
-
-    /// <summary>
-    /// Checks to see if this integerPart would round-up given bottomBitsRemoved. 
-    /// e.g. 11010101 with bottomBitsRemoved=3 would be 11011
-    /// </summary>
-    /// <param name="bottomBitsRemoved">The number of newSizeInBits from the least significant bit where rounding would take place.</param>
-    /// <returns>Returns true if this integerPart would round away from zero.</returns>
-    public bool WouldRound(int bottomBitsRemoved)
-    {
-        return BigIntegerTools.WouldRound(DataBits, bottomBitsRemoved);
     }
 
     ///////////////////////////////////////////////////
@@ -3142,7 +3151,7 @@ Other:                                         |   |         |         |       |
     /// </summary>
     public bool Equals(BigInteger other)
     {
-        return other.Equals(Int);
+        return other.Equals(UnscaledValue);
     }
 
     /// <summary>
@@ -3324,7 +3333,7 @@ Other:                                         |   |         |         |       |
 
 
 
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT_BF(BigFloat value, int root)
+    public static BigFloat NthRoot_INCOMPLETE_DRAFT(BigFloat value, int root)
     {
         bool DEBUG = true;
 
@@ -3412,7 +3421,6 @@ Other:                                         |   |         |         |       |
         }
         return x;
     }
-
 
 
     public static BigFloat NthRoot_INCOMPLETE_DRAFT_10(BigFloat value, int n)

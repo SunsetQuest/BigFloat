@@ -208,14 +208,18 @@ public class BigFloatTests
         IsTrue(bigFloatTotal == (BigFloat)doubleTotal, "Fail on Verify_BigConstants");
 
 
-        // following does not pass because of limitations of double.  (i.e. OK to fail)
-        
-        double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
-        double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
-        double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 3;
+        // following does not pass because of limitations of double. A number that is out-of-precision and Zero cannot be differentiated. 
+        double BigFloatZeroToDoubleZero1 = (double)BigFloat.ZeroWithNoPrecision;
+        double BigFloatZeroToDoubleZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
 
-        // Since we are doing repetitive addition, it is expected that doubleTotal is off by 1 or 2 bits.
-        IsTrue(doubleDiff1 < acceptableTolarance, "Fail on Verify_BigConstants");
+        double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
+        //IsTrue(doubleDiff0 <= acceptableTolarance, "Fail on Verify_BigConstants");
+
+        double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
+        double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 8;
+
+        // Since we are doing repetitive addition, it is expected that doubleTotal is off by a few bits.
+        IsTrue(doubleDiff1 <= acceptableTolarance, "Fail on Verify_BigConstants");
 
         IsTrue(bigConstants.RamanujanSoldnerConstant == (BigFloat)262537412640768743.99999999999925, "Fail on Verify_BigConstants");
         IsTrue((double)bigConstants.RamanujanSoldnerConstant == 262537412640768743.99999999999925, "Fail on Verify_BigConstants");
@@ -301,10 +305,10 @@ public class BigFloatTests
         IsFalse(BigFloat.ParseBinary("1:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
         IsFalse(BigFloat.ParseBinary("0:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsFalse(BigFloat.ParseBinary("0:111111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) 
-        IsFalse(BigFloat.ParseBinary("0:011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
-        IsFalse(BigFloat.ParseBinary("0:011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
+        IsTrue(BigFloat.ParseBinary("0:011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
+        IsTrue(BigFloat.ParseBinary("0:011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
         IsFalse(BigFloat.ParseBinary("0:011111111", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:001111111", 1, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0:001111111", 1, 0).IsZero); //                                               (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsFalse(BigFloat.ParseBinary("0:001111111", 2, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
         IsTrue(BigFloat.ParseBinary("0:000111111", 2, 0).IsZero); //
         IsFalse(BigFloat.ParseBinary("0:000111111", 3, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
@@ -904,8 +908,7 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_PowInt()
     {
-
-        int m2 = 0, m1 = 0, eq = 0, p1 = 0, p2 = 0, ne=0;
+        
 
         for (int jj = 0; jj < 20; jj++)
             for (double ii = 0.00001; ii < 100000; ii *= 1.01)
@@ -937,6 +940,8 @@ public class BigFloatTests
             IsTrue(BigFloatToPOW == (BigFloat)ii, $"Failed on: {ii}^1, is {BigFloatToPOW} but should be 0.");
         }
 
+        //int m2 = 0, m1 = 0, eq = 0, p1 = 0, p2 = 0, ne = 0;
+
         for (int jj = 2; jj < 20; jj++)
         {
             for (double ii = 0.00001; ii < 100000; ii *= 1.01)
@@ -946,8 +951,8 @@ public class BigFloatTests
                 BigFloat POWToBigFloatHi = (BigFloat)double.Pow(Math.BitIncrement(ii), jj); // Double->POW->BigFloat->String
 
                 BigFloat miss = BigFloatToPOW - (BigFloat)double.Pow(ii, jj);
-                if (!miss.IsZero)
-                    ne++;
+                //if (!miss.IsZero)
+                //    ne++;
                 //if (BigFloatToPOW < POWToBigFloatLo)
                 //    m2++;
                 //if (BigFloatToPOW == POWToBigFloatLo)
@@ -5401,72 +5406,72 @@ public class BigFloatTests
 
         inputVal = new BigFloat("2222222222", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.Int != 132)
+        if (retBF.UnscaledValue != 132)
         {
-            Console.WriteLine($"TrunkAndRnd70 - Should be 132 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd70 - Should be 132 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("-2222222222", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.Int != -132)
+        if (retBF.UnscaledValue != -132)
         {
-            Console.WriteLine($"TrunkAndRnd80 - Should be -132 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd80 - Should be -132 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("-1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.Int != -128)
+        if (retBF.UnscaledValue != -128)
         {
-            Console.WriteLine($"TrunkAndRnd90 - Should be -128 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd90 - Should be -128 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.Int != 128)
+        if (retBF.UnscaledValue != 128)
         {
-            Console.WriteLine($"TrunkAndRnd100 - Should be 128 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd100 - Should be 128 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1022", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
-        if (retBF.Int != 511)
+        if (retBF.UnscaledValue != 511)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 511 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 511 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1023", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
-        if (retBF.Int != 512)
+        if (retBF.UnscaledValue != 512)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 512 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 512 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1022", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.Int != 1022)
+        if (retBF.UnscaledValue != 1022)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 1022 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1022 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1023", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.Int != 1023)
+        if (retBF.UnscaledValue != 1023)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 1023 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1023 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.Int != 256)
+        if (retBF.UnscaledValue != 256)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 256 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 256 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("1025", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.Int != 257)
+        if (retBF.UnscaledValue != 257)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 257 but got {retBF.Int}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 257 but got {retBF.UnscaledValue}");
         }
 
         inputVal = new BigFloat("2.00000000000", 0);

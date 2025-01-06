@@ -1,48 +1,61 @@
-2/2024 
-
-Zero = any dataInt that is LESS than 0:100000000, and also the shift results in a 0:100000000.
-
-public bool IsZero => (_size < ExtraHiddenBits-1) && (Scale + _size - ExtraHiddenBits) < 0;
-
-
-    //  IntData     Scale   Precision    Zero   Why
-    //1:00000000[9] << -2       1         N     (no because _size[9] >= ExtraHiddenBits[8]) 
-    //1:00000000[9] << -1       1         N     (no because _size[9] >= ExtraHiddenBits[8]) AND (no because (Scale[-1] + _size[9] - ExtraHiddenBits[8]) < 0)
-    //1:00000000[9] <<  0       1         N     (no because _size[9] >= ExtraHiddenBits[8]) AND (no because (Scale[ 0] + _size[9] - ExtraHiddenBits[8]) < 0)
-    //0:10000000[8] << -1       0         N     (no because _size[8] >= ExtraHiddenBits[8])
-    //0:10000000[8] <<  0       0         N     (no because _size[8] >= ExtraHiddenBits[8]) AND (no because (Scale[ 0] + _size[8] - ExtraHiddenBits[8]) < 0)
-    //0:10000000[8] <<  1       0         N     (no because _size[8] >= ExtraHiddenBits[8]) AND (no because (Scale[-1] + _size[8] - ExtraHiddenBits[8]) < 0)[	]																		 [ ]
-    //1:11111111[9] << -2       1         N     (no because _size[9] >= ExtraHiddenBits[8]) AND (no because (Scale[-2] + _size[9] - ExtraHiddenBits[8]) < 0)
-    //1:11111111[9] << -1       1         N     (no because _size[9] >= ExtraHiddenBits[8]) 
-    //0:11111111[8] << -1       0         N     (no because _size[8] >= ExtraHiddenBits[8]) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-    //0:11111111[8] <<  0       0         N     (no because _size[8] >= ExtraHiddenBits[8]) 
-    //0:01111111[7] << -1      -1         N                                                 (no because (Scale + _size - ExtraHiddenBits) < 0)                              
-    //0:01111111[7] <<  0      -1         Y     (borderline)
-    //0:01111111[7] <<  1      -1         N                                                 (no because (Scale + _size - ExtraHiddenBits) < 0)
-    //0:00111111[6] <<  1      -2         Y     (borderline)
-    //0:00111111[6] <<  2      -2         N                                                 (no because (Scale + _size - ExtraHiddenBits) < 0)
-    //0:00011111[5] <<  2      -3         Y     (borderline)
-    //0:00011111[5] <<  3      -3         N                                                 (no because (Scale + _size - ExtraHiddenBits) < 0)
-
-======================================================
-NUMBER         IS_ZERO   NOTES
-1|1111... << 0   NO    
-0|1111... << 0   NO    (rounds to 1)
-0|0111... << 0   YES   (rounds to 0)
-0|1000... << 1   NO    (rounds to 1)
-0|0111... << 1   NO?   (rounds to 1 after shift?)
-0|0100... << 1   NO?   (rounds to 1 after shift?)
-0|0010... << 3   NO?   (rounds to 1)
-0|0001... << 3   YES?  (rounds to 0)
-0|1111... >> 1   YES?  (rounds to 0)
-1|1111... >> 1   NO    (rounds to 1 from 0.11111)
-0|1111... >> 1   NO    (round to 1 before shift)
-0|0111... >> 1   YES   (rounds to 0)
-
-
-======================================================
 Notes on Zero 
-  Zero has a "point of least precision", stored in _scale, but no size. Size is 0.
+Created 2023
+Updated 2/2024-RSW
+Updated 1/2025-RSW
+
+Zero = any dataInt that is LESS than 0:100000000 AND also the shift results in a 0:100000000.
+
+Current: 
+  bool IsZero => _size == 0 || ((_size + Scale) < ExtraHiddenBits && _size < ExtraHiddenBits);// (CURRENT - as of 1/2025)
+Past versions:
+  bool IsZero => DataBits.IsZero || (_size < (ExtraHiddenBits - 2) && (_size + Scale) < ExtraHiddenBits); // PAST 1/2025
+  bool IsZero => _size < (ExtraHiddenBits - 2) && (_size + Scale) < ExtraHiddenBits;    // (PAST - as of 2/2024)
+  bool IsZero => _size < ExtraHiddenBits && (Scale + _size - ExtraHiddenBits) < 0;      // (PAST - as of 8/2023)
+  bool IsZero => (_size < ExtraHiddenBits-1) && (Scale + _size - ExtraHiddenBits) < 0;  // (PAST)
+
+
+==================== 1/2025 Example with (ExtraHiddenBits being of size 8) ==================================
+    IntData     Scale  Precision  Zero    Why
+  1:00000000 << -2       1        ___    ___ (_size(9) < ExtraHiddenBits(8)-1) AND ___ (Scale(-2) + _size(9) < ExtraHiddenBits(8))
+  1:00000000 << -1       1        ___    ___ (_size(9) < ExtraHiddenBits(8)-1) AND YES (Scale(-1) + _size(9) < ExtraHiddenBits(8))
+  1:00000000 <<  0       1        ___    ___ (_size(9) < ExtraHiddenBits(8)-1) AND ___ (Scale( 0) + _size(9) < ExtraHiddenBits(8))
+  0:10000000 << -1       0        ___    ___ (_size(8) < ExtraHiddenBits(8)-1) AND YES (Scale(-1) + _size(8) < ExtraHiddenBits(8))
+  0:10000000 <<  0       0        ___    ___ (_size(8) < ExtraHiddenBits(8)-1) AND ___ (Scale( 0) + _size(8) < ExtraHiddenBits(8))
+  0:10000000 <<  1       0        ___    ___ (_size(8) < ExtraHiddenBits(8)-1) AND ___ (Scale( 1) + _size(8) < ExtraHiddenBits(8))
+  1:11111111 << -2       1        ___    ___ (_size(9) < ExtraHiddenBits(8)-1) AND YES (Scale(-2) + _size(9) < ExtraHiddenBits(8))
+  1:11111111 << -1       1        ___    ___ (_size(9) < ExtraHiddenBits(8)-1) AND ___ (Scale(-1) + _size(9) < ExtraHiddenBits(8))
+  0:11111111 << -1       0        ___    ___ (_size(8) < ExtraHiddenBits(8)-1) AND YES (Scale(-1) + _size(8) < ExtraHiddenBits(8))
+  0:11111111 <<  0       0        ___    ___ (_size(8) < ExtraHiddenBits(8)-1) AND ___ (Scale( 0) + _size(8) < ExtraHiddenBits(8))
+  0:01111111 << -1      -1        ___    ___ (_size(7) < ExtraHiddenBits(8)-1) AND YES (Scale(-1) + _size(7) < ExtraHiddenBits(8))                                    
+  0:01111111 <<  0      -1        ___    ___ (_size(7) < ExtraHiddenBits(8)-1) AND YES (Scale( 0) + _size(7) < ExtraHiddenBits(8))
+  0:01111111 <<  1      -1        ___    ___ (_size(7) < ExtraHiddenBits(8)-1) AND ___ (Scale( 1) + _size(7) < ExtraHiddenBits(8))
+  0:00111111 <<  1      -2        YES    YES (_size(6) < ExtraHiddenBits(8)-1) AND YES (Scale( 1) + _size(6) < ExtraHiddenBits(8))
+  0:00111111 <<  2      -2        ___    YES (_size(6) < ExtraHiddenBits(8)-1) AND ___ (Scale( 2) + _size(6) < ExtraHiddenBits(8))
+  0:00011111 <<  2      -3        YES    YES (_size(5) < ExtraHiddenBits(8)-1) AND YES (Scale( 2) + _size(5) < ExtraHiddenBits(8))
+  0:00011111 <<  3      -3        ___    YES (_size(5) < ExtraHiddenBits(8)-1) AND ___ (Scale( 3) + _size(5) < ExtraHiddenBits(8))
+  0:00000000 << -1      -1        YES    YES (_size(0) < ExtraHiddenBits(8)-1) AND YES (Scale(-1) + _size(0) < ExtraHiddenBits(8))
+  0:00000000 <<  0       0        YES    YES (_size(0) < ExtraHiddenBits(8)-1) AND YES (Scale( 0) + _size(0) < ExtraHiddenBits(8))
+  0:00000000 <<  1       1        YES    YES (_size(0) < ExtraHiddenBits(8)-1) AND YES (Scale( 1) + _size(0) < ExtraHiddenBits(8))
+
+======================================================
+  NUMBER         IS_ZERO   NOTES
+  1|1111... >> 1   NO    (round to 2 before shift)
+  1|1111... << 0   NO    (is 2)
+  0|1111... << 0   NO    (rounds to 1)
+  0|1111... >> 1   NO    (rounds to 0)
+  0|1111... >> 1   NO    (round to 1 before shift)
+  0|1000... << 1   NO    (rounds to 1 - borderline case)
+  0|0111... << 0   YES   (rounds to 0)
+  0|0111... >> 1   YES   (rounds to 0)
+  0|0111... << 1   NO    (rounds to 1)
+  0|0100... << 1   NO    (rounds to 1 - borderline case)
+  0|0010... << 3   NO    (is 1)
+  0|0001... << 3   NO    (rounds to 0)
+
+
+=========================================================================================
+Observation: Zero has a point of least precision, stored in _scale, but no size. Since size is 0, the lower bound of the precision is the _scale.
+=========================================================================================
 Examples:
            $1.00    -  $1.00   = $0.00
      Time: 2hr15min -  1hr     = 1hr

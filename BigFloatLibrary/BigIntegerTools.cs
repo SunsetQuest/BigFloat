@@ -804,64 +804,14 @@ public static class BigIntegerTools
         return res;
     }
 
-    //source: ChatGPT 10-6-2024 o1
-    public static BigInteger ConcatenateBigIntegers(BigInteger a, BigInteger b)
-    {
-        // Assume both BigIntegers are positive (ignore negative numbers)
-        // Get the byte counts needed for 'a' and 'b'
-        int byteCountA = a.GetByteCount();//a.GetByteCount(isUnsigned: true);
-        int byteCountB = b.GetByteCount();//.GetByteCount(isUnsigned: true);
 
-        // Allocate a single buffer for the concatenated bytes
-        byte[] concatenatedBytes = new byte[byteCountA + byteCountB];
-        Span<byte> concatenatedSpan = concatenatedBytes.AsSpan();
 
-        // Write the bytes of 'a' into the first part of the span
-        if (!a.TryWriteBytes(concatenatedSpan[..byteCountA], out int bytesWrittenA, isUnsigned: false, isBigEndian: true) ||
-            bytesWrittenA != byteCountA)
-        {
-            throw new InvalidOperationException("Failed to write bytes of BigInteger 'a'");
-        }
-
-        // Write the bytes of 'b' into the second part of the span
-        if (!b.TryWriteBytes(concatenatedSpan.Slice(byteCountA, byteCountB), out int bytesWrittenB, isUnsigned: false, isBigEndian: true) ||
-            bytesWrittenB != byteCountB)
-        {
-            throw new InvalidOperationException("Failed to write bytes of BigInteger 'b'");
-        }
-
-        // Create a new BigInteger from the concatenated bytes
-        BigInteger result = new(concatenatedSpan, isUnsigned: true, isBigEndian: true);
-        return result;
-    }
-
-    //source: ChatGPT 10-6-2024 o1  (modified by Ryan)
-    public static BigInteger ConcatenateBigIntegers2(BigInteger a, BigInteger b)
-    {
-        // Assume both BigIntegers are positive (ignore negative numbers)
-        // Get the byte counts needed for 'a' and 'b'
-        int byteCountA = a.GetByteCount(isUnsigned: true);
-        int byteCountB = b.GetByteCount(isUnsigned: true);
-
-        // Allocate a single buffer for the concatenated bytes
-        byte[] concatenatedBytes = new byte[byteCountA + byteCountB];
-        Span<byte> concatenatedSpan = concatenatedBytes.AsSpan();
-
-        a.TryWriteBytes(concatenatedSpan[..], out int _, isUnsigned: false, isBigEndian: true);
-        b.TryWriteBytes(concatenatedSpan[byteCountA..], out int _, isUnsigned: false, isBigEndian: true);
-
-        // Create a new BigInteger from the concatenated bytes
-        BigInteger result = new(concatenatedSpan, isUnsigned: true, isBigEndian: true);
-        return result;
-    }
 
     public static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
         return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
     }
-
-
 
 
 
@@ -1036,12 +986,6 @@ public static class BigIntegerTools
     /////////////////////////////////
 
 
-    public static bool WouldRound(BigInteger val, int bottomBitsRemoved)
-    {
-        // for .net 7 and later use ">>>" instead of >> for a slight performance boost.
-        bool isPos = val.Sign >= 0;
-        return isPos ^ ((isPos ? val : val - 1) >> (bottomBitsRemoved - 1)).IsEven;
-    }
 
 
     /////////////////////////////////////////////
