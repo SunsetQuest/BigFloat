@@ -103,7 +103,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
     /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
     /// </summary>
-    public bool IsStrictZero => DataBits.IsZero; 
+    public bool IsStrictZero => DataBits.IsZero;
 
     /// <summary>
     /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
@@ -3464,7 +3464,7 @@ Other:                                         |   |         |         |       |
         double valueBitLengthyness = BigFloat.Log2(value);
         double resultBitLengthyness = valueBitLengthyness / n;
         double retLog2 = double.Log2((double)root);
-        double retLog3 = (retLog2 - double.Floor(retLog2));
+        double retLog3 = retLog2 - double.Floor(retLog2);
 
         resultBitLengthyness -= retLog3;
         int resultBitLength = (int)(resultBitLengthyness + 0.5);
@@ -3608,13 +3608,13 @@ Other:                                         |   |         |         |       |
                                                                       //Console.WriteLine("Exact:000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999000000000011111111112222222222333333333344444444445555555555666666666677777777778888888888999999999900000000001111111111222222");
 
 
-        while (((x.GetBitLength() * 7) / 8) < value.Size)
+        while ((x.GetBitLength() * 7 / 8) < value.Size)
         {
             //Console.WriteLine($"========================== {((x.GetBitLength() * 7) / 8)} < {value.Size} ============================================="); 
             size *= 2;
             pow = PowMostSignificantBits(x, root, out _, (int)x.GetBitLength(), size * 2);  //Console.WriteLine($"pow:{BigIntegerToBinaryString(pow)}[{pow.GetBitLength()}]");
                                                                                             //Console.WriteLine($"val:{BigIntegerToBinaryString((value.DataBits >> (int)(value.DataBits.GetBitLength() - pow.GetBitLength())))}[{(value.DataBits.GetBitLength() - pow.GetBitLength())}]");
-            t = pow - (value.DataBits >> (value._size - size * 2));                       //Console.WriteLine($"t:  {BigIntegerToBinaryString(t)}[{t.GetBitLength()}]");
+            t = pow - (value.DataBits >> (value._size - (size * 2)));                       //Console.WriteLine($"t:  {BigIntegerToBinaryString(t)}[{t.GetBitLength()}]");
             b = root * PowMostSignificantBits(x, root - 1, out _);                        //Console.WriteLine($"b:  {BigIntegerToBinaryString(b)}[{b.GetBitLength()}]");
             tb = (t << (size - ADJ)) / b;                                                   //Console.WriteLine($"tb: {BigIntegerToBinaryString(tb)}[{tb.GetBitLength()}]");
             x = (x << size) - tb;
@@ -3668,12 +3668,14 @@ Other:                                         |   |         |         |       |
     {
         // Special case for zero and negative numbers.
         if (((n._size >= ExtraHiddenBits - 1) ? n.DataBits.Sign : 0) <= 0)
-        // if (!n.IsPositive)
+        {
+            // if (!n.IsPositive)
             return double.NaN;
+        }
 
         //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
         long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
-        long dubAsLong =  (1023L << 52) | long.Abs(mantissa);
+        long dubAsLong = (1023L << 52) | long.Abs(mantissa);
         double val = BitConverter.Int64BitsToDouble(dubAsLong);
         return double.Log2(val) + n.Exponent - 1;
     }
@@ -3790,20 +3792,25 @@ Other:                                         |   |         |         |       |
         if (n == 1) return x; // The 1st  root of x is x itself.
         //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
 
-        if (xLen < 0) xLen = (int)x.GetBitLength();
+        if (xLen < 0)
+        {
+            xLen = (int)x.GetBitLength();
+        }
 
         // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
         if (outputLen <= 0)
-            outputLen = (outputLen == 0)?xLen : (int)BigInteger.Log2(x) / n + 1;
-        
+        {
+            outputLen = (outputLen == 0) ? xLen : ((int)BigInteger.Log2(x) / n) + 1;
+        }
+
         // If xLen is over 1023 bits, reduce the size of x to fit in a double
         int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 0);
-        BigInteger scaledX = x >> n * scaleDownCount;
+        BigInteger scaledX = x >> (n * scaleDownCount);
 
         ////////// Use double's hardware to get the first 53-bits ////////
         double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
         long bits = BitConverter.DoubleToInt64Bits(initialGuess);
-        long mantissa = bits & 0xfffffffffffffL | (1L << 52);
+        long mantissa = (bits & 0xfffffffffffffL) | (1L << 52);
 
         // Return if we have enough bits.
         //if (outputLen < 48) return mantissa >> (53 - outputLen);
@@ -3814,30 +3821,37 @@ Other:                                         |   |         |         |       |
             long mask = ((long)1 << (bitsToRemove + 1)) - 1;
             long removedBits = (mantissa + 1) & mask;
             if (removedBits == 0)
+            {
                 mantissa++;
+            }
 
             return mantissa >> (53 - outputLen);
-                //(mantissa, 53 - outputLen); 
+            //(mantissa, 53 - outputLen); 
         }
 
         //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
 
         //////////////////////////////////////////////////////////////
         UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
-        
+
         UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
         UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
 
         Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
         Int128 denominator2 = n * (Int128)(pow3 >> 89);
 
-        BigInteger val = ((Int128)(val2 >> 44) - numerator2 / denominator2);
+        BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
         //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
         if (outputLen < 100) // 100?
-            return val >> (84 - outputLen); 
+        {
+            return val >> (84 - outputLen);
+        }
 
         int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
-        if (UInt128.Log2(pow4) == 126) tempShift++;
+        if (UInt128.Log2(pow4) == 126)
+        {
+            tempShift++;
+        }
         //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
         val <<= tempShift;        // should be 241 now
 
@@ -3853,7 +3867,7 @@ Other:                                         |   |         |         |       |
             BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
             BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
             //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
-            val = ((val >> (reduceBy + 0)) - numerator / (n * pow)) << reduceBy; // FIX: CHANGE +0 to +2
+            val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
             loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
             ballparkSize *= 2;
         }

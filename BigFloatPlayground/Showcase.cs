@@ -4,6 +4,7 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
 
+using BigFloatLibrary;
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -11,21 +12,20 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-
-using BigFloatLibrary;
 using static BigFloatLibrary.BigFloat;
 
 
 #pragma warning disable IDE0051  // Ignore unused private members
 //#pragma warning disable CS0162 // Ignore unreachable code
 
-namespace ShowCase2;
+namespace PlaygroundAndShowCase;
 
 public static class Showcase
 {
     //////////////  BigConstants Play Area & Examples //////////////
     public static void Main()
     {
+
         ///////////////////////////////////////////////////
         //////////////////// TEST AREA ////////////////////
         ///////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public static class Showcase
 
         //////////////////// Working with Mathematical Constants: ////////////////////
         // Access constants like Pi or E from BigConstants
-        BigFloat.BigConstants bigConstants = new(
+        BigConstants bigConstants = new(
             requestedAccuracyInBits: 1000,
             onInsufficientBitsThenSetToZero: true,
             cutOnTrailingZero: true);
@@ -104,13 +104,13 @@ public static class Showcase
         //////////////////// Precision Manipulation: ////////////////////
         // Initialize a number with high precision
         BigFloat preciseNumber = new("123.45678901234567890123");
-        BigFloat morePreciseNumber = BigFloat.ExtendPrecision(preciseNumber, bitsToAdd: 50);
+        BigFloat morePreciseNumber = ExtendPrecision(preciseNumber, bitsToAdd: 50);
 
         Console.WriteLine($"Extend Precision result: {morePreciseNumber}");
         // Output: Extend Precision result: 123.45678901234567890122999999999787243
 
         // Initialize an integer with custom precision
-        BigFloat c = BigFloat.IntWithAccuracy(10, 100);
+        BigFloat c = IntWithAccuracy(10, 100);
         Console.WriteLine($"Int with specified accuracy: {c}");
         // Output: Int with specified accuracy: 10.000000000000000000000000000000
 
@@ -243,6 +243,7 @@ public static class Showcase
 
 
         if (true)
+        {
             for (int i = 0; i < 9700; i++)
             {
                 int valLen = 0;
@@ -285,49 +286,59 @@ public static class Showcase
                         Console.WriteLine($"i:{i}-k:{k,3} \r\n{xInvRes} != \r\n{xInvTst} with input {valToTest}");
 
                         if (xInvRes.GetBitLength() != valLen)
+                        {
                             Console.WriteLine($"i:{i}-k:{k,3} Result: [{xInvRes.GetBitLength()}] != [{valLen,-4}]  {xInvTst}");
+                        }
 
                         if (xInvTst.GetBitLength() != valLen)
+                        {
                             Console.WriteLine($"i:{i}-k:{k,3} Classic: [{xInvTst.GetBitLength()}] != [{valLen,-4}]  {xInvTst}");
+                        }
 
                         int correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
-                        if ((xInvRes.GetBitLength() - correctBits) > 0)
+                        if (xInvRes.GetBitLength() - correctBits > 0)
+                        {
                             Console.WriteLine($"i:{i}-k: CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}] x:{valToTest}");
-                        Console.ReadKey();
+                        }
+
                     }
 
                 }
-                long divideBy = (160 * 100 * Stopwatch.Frequency) / 1000000000;
+                long divideBy = 160 * 100 * Stopwatch.Frequency / 1000000000;
                 int correct = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
                 Console.WriteLine($"[{valLen,4}] Ticks: {perfTimer1.ElapsedTicks / divideBy,4} -> {perfTimer2.ElapsedTicks / divideBy,4} ({(float)perfTimer1.ElapsedTicks / perfTimer2.ElapsedTicks,-12}) (Total: {(float)perfTimerTotal1 / perfTimerTotal2,-12}) Missed {xInvRes.GetBitLength() - correct,4} of {xInvRes.GetBitLength()}");
             }
+        }
     }
 
-
-
-    static volatile uint lowestScore = 99999999;
+    private static volatile uint lowestScore = 99999999;
 
     private static void FindAdjustmentsForMethodToResolveIssue()
     {
         UInt128 aa = UInt128.Parse("1234567890123456789012345678901");
         UInt128 bb = UInt128.Parse("2345678901234567890123456789012");
-        BigInteger ans = (((BigInteger)aa * (BigInteger)bb) >> 128); //(aa>>37) * (bb>>37);
-                                                                     //UInt128 ans = (aa>>37) * (bb>>37);
-        UInt128 res = Int128Tools.MultiplyHigh((UInt128)aa, bb);
+        BigInteger ans = ((BigInteger)aa * (BigInteger)bb) >> 128; //(aa>>37) * (bb>>37);
+                                                                   //UInt128 ans = (aa>>37) * (bb>>37);
+        UInt128 res = Int128Tools.MultiplyHigh(aa, bb);
         Console.WriteLine($"aa  {BigIntegerTools.BigIntegerToBinaryString((BigInteger)aa)}[{((BigInteger)aa).GetBitLength()}]");
         Console.WriteLine($"onl 1110011010101011111101101001100000110010111110001110111110111010110001011010011111001110011001000101010000010010101000001101100011100100001010101100111011000101011...");
-        Console.WriteLine($"ans {BigIntegerTools.BigIntegerToBinaryString((BigInteger)ans)}[{((BigInteger)ans).GetBitLength()}]");
+        Console.WriteLine($"ans {BigIntegerTools.BigIntegerToBinaryString(ans)}[{ans.GetBitLength()}]");
         Console.WriteLine($"res {BigIntegerTools.BigIntegerToBinaryString((BigInteger)res)}[{((BigInteger)res).GetBitLength()}]");
 
         long tryCount = 0;
-        Parallel.For(-15, 17, aaa =>
+        _ = Parallel.For(-15, 17, aaa =>
         {
             //for (int aaa = -21; aaa < 21; aaa++){
             for (int bbb = 0; bbb < 4; bbb++)
+            {
                 for (int ccc = -32; ccc < 1; ccc++)
+                {
                     for (int ddd = -16; ddd < -5; ddd++)
+                    {
                         for (int eee = 0; eee < 5; eee++)
+                        {
                             for (int fff = 0; fff < 1; fff++)
+                            {
                                 for (int ggg = 0; ggg < 1; ggg++)
                                 {
                                     tryCount++;
@@ -345,7 +356,7 @@ public static class Showcase
                                     for (int cons1 = 1; cons1 < 18; cons1++)
                                     //for (int cons2 = 1; cons2 < 7; cons2 *= 3)
                                     {
-                                        BigInteger temp = ((BigInteger)aa * cons1);
+                                        BigInteger temp = (BigInteger)aa * cons1;
                                         UInt128 a2 = (UInt128)(temp << (127 - (int)BigInteger.Log2(temp)));
                                         BigInteger ans2 = temp;
 
@@ -356,7 +367,7 @@ public static class Showcase
 
                                             ans2 *= a2;
                                             ans2 >>= (int)ans2.GetBitLength() - 256; //lets not let ans2 get too big.
-                                            BigInteger tempAns = ans2 >> (int)ans2.GetBitLength() - 128;
+                                            BigInteger tempAns = ans2 >> ((int)ans2.GetBitLength() - 128);
 
                                             if (i == next)
                                             {
@@ -364,7 +375,7 @@ public static class Showcase
 
                                                 BigInteger res2 = Int128Tools.PowerFast(a2, i/*, p*/);
 
-                                                BigInteger miss = (res2 - tempAns);// * (100 / int.Log2(i)) ;
+                                                BigInteger miss = res2 - tempAns;// * (100 / int.Log2(i)) ;
 
                                                 totalmiss += (uint)miss.GetBitLength();
                                                 //Console.WriteLine($"res {BigFloat.BigIntegerToBinaryString((BigInteger)res2)}[{((BigInteger)res2).GetBitLength()}]");
@@ -387,35 +398,44 @@ public static class Showcase
                                         //Console.WriteLine($"totalmiss {totalmiss} a{p.a,3} b{p.b,3} c{p.c,3} d{p.d,3} e{p.e,3} f{p.f,3} g{p.g} ");
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
         });
-        Console.ReadKey();
+        _ = Console.ReadKey();
     }
 
     private static void BigConstant_Stuff() //added to test
     {
-        BigFloat.BigConstants bigConstants = new(4000);
+        BigConstants bigConstants = new(4000);
         BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169...
-        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(4000);
+        BigFloat pi200gen = BigConstants.GeneratePi(4000);
         Console.WriteLine(pi200ref == pi200gen);
 
         for (int i = 0; i < 500; i++)
-            Console.WriteLine(pi200ref == BigFloat.BigConstants.GeneratePi(i));
+        {
+            Console.WriteLine(pi200ref == BigConstants.GeneratePi(i));
+        }
 
-        BigFloat.BigConstants c = new(10);
+        BigConstants c = new(10);
         Console.WriteLine(c);
         Console.WriteLine(c.Pi);
     }
 
     private static void BigConstant_Stuff2() //added to test
     {
-        BigFloat[] bigFloats1000 = BigFloat.BigConstantBuilder.GenerateArrayOfCommonConstants();
-        BigFloat[] bigFloats2000 = BigFloat.BigConstantBuilder.GenerateArrayOfCommonConstants();
+        BigFloat[] bigFloats1000 = BigConstantBuilder.GenerateArrayOfCommonConstants();
+        BigFloat[] bigFloats2000 = BigConstantBuilder.GenerateArrayOfCommonConstants();
         for (int i = 0; i < bigFloats1000.Length; i++)
         {
             BigFloat bf1000 = bigFloats1000[i];
             BigFloat bf2000 = bigFloats2000[i];
             if (bf1000 != bf2000)
+            {
                 Console.WriteLine(bf2000 - bf1000);
+            }
         }
     }
 
@@ -424,7 +444,7 @@ public static class Showcase
     //////////////  NthRoot Play Area & Examples //////////////
 
 
-    static long NewtonNthRootPerformance()
+    private static long NewtonNthRootPerformance()
     {
         Stopwatch sw = new();
         Stopwatch swBase = new();
@@ -443,15 +463,14 @@ public static class Showcase
             byte[] bytes = new byte[(bits + 7) / 8];
             random.NextBytes(bytes);
             // For the top byte, place a leading 1-bit then down-shift to achieve desired length.
-            bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - (bits - 1) % 8));
+            bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - ((bits - 1) % 8)));
             BigInteger val = new(bytes, true);
 
             //////// Generate a random nth root ////////
             int n = random.Next(3, 400);
 
-            int outputBits = (int)BigInteger.Log2(val) / n + 1;
-            if (outputBits < 48
-            && outputBits > 1)
+            int outputBits = ((int)BigInteger.Log2(val) / n) + 1;
+            if (outputBits is < 48 and > 1)
             {
 
                 //////// Let run our algorithm and benchmark it. ////////
@@ -461,7 +480,7 @@ public static class Showcase
 
                 //////// Lets make sure it is correct. ////////
                 swBase.Restart();
-                BigInteger answer = NthRoot(val, n, out BigInteger remainder);
+                BigInteger answer = NthRoot(val, n, out _);
                 swBase.Stop();
                 bool fail = answer != result;
                 if (fail)
@@ -496,13 +515,21 @@ public static class Showcase
         //special conditions
         if (value < 2)
         {
-            if (value < 0) throw new Exception("value must be a positive integer");
+            if (value < 0)
+            {
+                throw new Exception("value must be a positive integer");
+            }
+
             remainder = 0;
             return value;
         }
         if (root < 2)
         {
-            if (root < 1) throw new Exception("root must be greater than or equal to 1");
+            if (root < 1)
+            {
+                throw new Exception("root must be greater than or equal to 1");
+            }
+
             remainder = 0;
             return value;
         }
@@ -513,9 +540,13 @@ public static class Showcase
 
         while (true)
         {
-            var nval = (upperbound + lowerbound) / 2;
-            var tstsq = BigInteger.Pow(nval, root);
-            if (tstsq > value) upperbound = nval;
+            BigInteger nval = (upperbound + lowerbound) / 2;
+            BigInteger tstsq = BigInteger.Pow(nval, root);
+            if (tstsq > value)
+            {
+                upperbound = nval;
+            }
+
             if (tstsq < value)
             {
                 lowerbound = nval;
@@ -525,14 +556,17 @@ public static class Showcase
                 lowerbound = nval;
                 break;
             }
-            if (lowerbound == upperbound - 1) break;
+            if (lowerbound == upperbound - 1)
+            {
+                break;
+            }
         }
         remainder = value - BigInteger.Pow(lowerbound, root);
         return lowerbound;
     }
 
 
-private static void NthRoot_DRAFT_Stuff()
+    private static void NthRoot_DRAFT_Stuff()
     {
         //                                                                                                                                                                                        7777777777777777777777777777777777777777777777777777777777777777                   
         Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):1340494621.514214278463413501222825825662100997195024832765760458|23859");        //Console.WriteLine($"ANS:  1100111011001010100110000110100100101101000010110010100101000.10001000010110110011101011111111010101010100001110111010010101110001010111001110100001011011110100111101000100010101001000111110110000011001101111110111110110100011011010001101100011100111010110101110000000001010101010101011111001011011110101010111011111001010011100001101000101010000010010001001001110010010001100001110000001110011010010101110100011011001110010011110001000111101101000100011011110100011000110111101001100000|011");
@@ -783,29 +817,34 @@ private static void NthRoot_DRAFT_Stuff()
 
 
         Stopwatch timer = Stopwatch.StartNew();
-        BigFloat result = BigFloat.NthRoot_INCOMPLETE_DRAFT9(new BigFloat((ulong)3 << 60, -60), 3);
+        BigFloat result = NthRoot_INCOMPLETE_DRAFT9(new BigFloat((ulong)3 << 60, -60), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
-        result = BigFloat.NthRoot_INCOMPLETE_DRAFT9(new BigFloat((BigInteger)3 << 200, -200), 3);
+        result = NthRoot_INCOMPLETE_DRAFT9(new BigFloat((BigInteger)3 << 200, -200), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         timer.Stop();
         timer.Reset();
 
         for (int i = 2; i >= 0; i--)
+        {
             for (int m = 7; m < 300; m *= 31)
+            {
                 for (int e = 5; e < 10; e++)
                 {
-                    BigFloat bf = new((ulong)(m) << 60, -60);
+                    BigFloat bf = new((ulong)m << 60, -60);
                     //timer = Stopwatch.StartNew();
                     timer.Restart();
                     timer.Start();
-                    BigFloat result2 = BigFloat.NthRoot_INCOMPLETE_DRAFT9(bf, e);
+                    BigFloat result2 = NthRoot_INCOMPLETE_DRAFT9(bf, e);
                     timer.Stop();
                     if (i == 0) Console.WriteLine($"{m}^(1/{e}) = {result2}  correct:{double.Pow((double)bf, 1 / (double)e)}  ticks {timer.ElapsedTicks}");
+                    
                 }
+            }
+        }
 
-        Console.WriteLine(BigFloat.NthRoot_INCOMPLETE_DRAFT(100000000000, 5));
+        Console.WriteLine(NthRoot_INCOMPLETE_DRAFT(100000000000, 5));
     }
 
     //////////////  Pow() Play Area & Examples //////////////
@@ -830,17 +869,17 @@ private static void NthRoot_DRAFT_Stuff()
 
         //IsTrue(BigFloat.Pow(BigFloat.Zero, 2) == 0, $"Failed on: 0^2");
         //IsTrue(BigFloat.Pow(BigFloat.One, 2) == 1, $"Failed on: 1^2");
-        IsTrue(BigFloat.Pow(0, 2) == 0, $"Failed on: 0^2");
-        IsTrue(BigFloat.Pow(1, 2) == 1, $"Failed on: 1^2");
-        IsTrue(BigFloat.Pow(2, 2) == 4, $"Failed on: 2^2");
-        IsTrue(BigFloat.Pow(3, 2) == 9, $"Failed on: 3^2");
+        IsTrue(Pow(0, 2) == 0, $"Failed on: 0^2");
+        IsTrue(Pow(1, 2) == 1, $"Failed on: 1^2");
+        IsTrue(Pow(2, 2) == 4, $"Failed on: 2^2");
+        IsTrue(Pow(3, 2) == 9, $"Failed on: 3^2");
 
         //IsTrue(BigFloat.Pow(BigFloat.Zero, 3) == 0, $"Failed on: 0^3");
         //IsTrue(BigFloat.Pow(BigFloat.One, 3) == 1, $"Failed on: 1^3");
-        IsTrue(BigFloat.Pow(0, 3) == 0, $"Failed on: 0^3");
-        IsTrue(BigFloat.Pow(1, 3) == 1, $"Failed on: 1^3");
-        IsTrue(BigFloat.Pow(2, 3) == 8, $"Failed on: 2^3");
-        IsTrue(BigFloat.Pow(3, 3) == 27, $"Failed on: 3^3");
+        IsTrue(Pow(0, 3) == 0, $"Failed on: 0^3");
+        IsTrue(Pow(1, 3) == 1, $"Failed on: 1^3");
+        IsTrue(Pow(2, 3) == 8, $"Failed on: 2^3");
+        IsTrue(Pow(3, 3) == 27, $"Failed on: 3^3");
 
 
 
@@ -849,19 +888,19 @@ private static void NthRoot_DRAFT_Stuff()
             for (double i = 1; i < 20; i = 1 + (i * 1.7))
             {
                 BigFloat exp2 = (BigFloat)double.Pow(i, k);
-                BigFloat res2 = BigFloat.Pow((BigFloat)i, k);
+                BigFloat res2 = Pow((BigFloat)i, k);
                 IsTrue(res2 == exp2, $"Failed on: {i}^{k}, result:{res2} exp:{exp2}");
             }
         }
 
         BigFloat tbf = new(255, 0);
-        _ = BigFloat.Pow(tbf, 3);
+        _ = Pow(tbf, 3);
         tbf = new BigFloat(256, 0);
-        _ = BigFloat.Pow(tbf, 3);
+        _ = Pow(tbf, 3);
         tbf = new BigFloat(511, 0);
-        _ = BigFloat.Pow(tbf, 3);
+        _ = Pow(tbf, 3);
         tbf = new BigFloat(512, 0);
-        _ = BigFloat.Pow(tbf, 3);
+        _ = Pow(tbf, 3);
     }
 
     private static void PowMostSignificantBits_Stuff()
@@ -869,7 +908,7 @@ private static void NthRoot_DRAFT_Stuff()
         Stopwatch timer = Stopwatch.StartNew();
         long errorTotal = 0; // too high or low by 2 or more
 
-        Parallel.For(2, 8192, bitSize =>
+        _ = Parallel.For(2, 8192, bitSize =>
         //for (int bitSize = 2; bitSize < 1026; bitSize += 1)
         {
 
@@ -890,7 +929,7 @@ private static void NthRoot_DRAFT_Stuff()
                 {
                     int wantedBits;
                     //int wantedBits = valSize;  
-                    for (wantedBits = 1; wantedBits < (valSize + 2); wantedBits++)
+                    for (wantedBits = 1; wantedBits < valSize + 2; wantedBits++)
                     {
                         exp = (int)GenerateRandomBigInteger(expSize);
 
@@ -911,8 +950,15 @@ private static void NthRoot_DRAFT_Stuff()
                         BigInteger p = BigInteger.Pow(val, exp);
                         int shiftedAns = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits, valSize)));
                         bool overflowed = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out ans, p, shiftedAns);
-                        if (overflowed) shiftedAns++;
-                        if (val.IsZero) shiftedAns = 0;
+                        if (overflowed)
+                        {
+                            shiftedAns++;
+                        }
+
+                        if (val.IsZero)
+                        {
+                            shiftedAns = 0;
+                        }
 
                         // Result Setup
                         timer.Restart();
@@ -951,29 +997,30 @@ private static void NthRoot_DRAFT_Stuff()
                         correctBits = ans.GetBitLength() - miss.GetBitLength();
                         //Console.Write($", {valSize}, {(val.IsEven?1:0)}, {exp}, {(exp % 2 == 0 ? 1 : 0)}, {expSize}, wantedBits:{wantedBits}, got:{correctBits} ({ans.GetBitLength()} - {diff.GetBitLength()})  miss:({wantedBits- correctBits})\r\n");
 
-                        Interlocked.Increment(ref counter);
+                        _ = Interlocked.Increment(ref counter);
 
                         if (BigInteger.Abs(miss) > 1)
                         {
                             Console.Write($"!!!!!!! diff:{miss,-2}[{miss.GetBitLength()}] valSize:{valSize,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val}\r\n");
-                            Interlocked.Increment(ref errorTotal);
+                            _ = Interlocked.Increment(ref errorTotal);
                         }
                         else if (miss > 0)
                         {
                             //Console.Write($"OK but ans 1 too Low, valSize:{valSize,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val}\r\n");
-                            Interlocked.Increment(ref oneTooLo);
+                            _ = Interlocked.Increment(ref oneTooLo);
                         }
                         else if (miss < 0)
                         {
                             Console.Write($"OK but ans 1 too High,  valSize:{valSize,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val}\r\n");
-                            Interlocked.Increment(ref oneTooHi);
+                            _ = Interlocked.Increment(ref oneTooHi);
                         }
                     }
                     if (val % 8192 == 777)
+                    {
                         Console.Write($"sz:{bitSize,3},diff:{miss,-3}[{miss.GetBitLength()}] valSize:{valSize,-4}exp:{exp,-9}[{expSize,-2}] wantedBits:{wantedBits,-4}" +
-                                        $" got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} count:{counter,-7}(Lo({(float)oneTooLo / counter,-4:F5} hi{(float)(oneTooHi /*/ (float)counter*/),-1})" +
-                                        $" time:{(timer.ElapsedTicks),3} val:{val}\r\n");
-
+                                                            $" got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} count:{counter,-7}(Lo({(float)oneTooLo / counter,-4:F5} hi{(float)oneTooHi /*/ (float)counter*/,-1})" +
+                                                            $" time:{timer.ElapsedTicks,3} val:{val}\r\n");
+                    }
                 }
             }
 
@@ -1002,7 +1049,7 @@ private static void NthRoot_DRAFT_Stuff()
         for (int b = 0; b < 99999999; b += 7)
         {
             timer.Reset();
-            for (BigInteger val = BigInteger.One << b; val < (BigInteger.One << (b + 1)); val += BigInteger.Max(BigInteger.One, BigInteger.One << (b - 6 + 1)))
+            for (BigInteger val = BigInteger.One << b; val < BigInteger.One << (b + 1); val += BigInteger.Max(BigInteger.One, BigInteger.One << (b - 6 + 1)))
             //for (int v = b * 1000; v < (b + 1) * 1000; v ++)
             //Parallel.For(b * 1000, (b + 1) * 1000, v =>
             {
@@ -1106,12 +1153,14 @@ private static void NthRoot_DRAFT_Stuff()
     private static void Pow_Stuff4()
     {
         for (BigFloat val = 777; val < 778; val++)
+        {
             for (int exp = 5; exp < 6; exp++)
             {
-                BigFloat res = BigFloat.Pow(val, exp);
+                BigFloat res = Pow(val, exp);
                 double correct = Math.Pow((double)val, exp);
                 Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.UnscaledValue,4} << {res.Scale,2})  Correct: {correct,8}");
             }
+        }
     }
 
     private static void ToStringHexScientific_Stuff()
@@ -1120,8 +1169,8 @@ private static void NthRoot_DRAFT_Stuff()
         //  "251134829809281403347287120873437924350329252743484439244628997274301027607406903709343370034928716748655001465051518787153237176334136103968388536906997846967216432222442913720806436056149323637764551144212026757427701748454658614667942436236181162060262417445778332054541324179358384066497007845376000000000, 0x596:82F00000[11+32=43],  << 1014"
         //  with BigFloat Pow(BigFloat value, 4)
 
-        (new BigFloat("1.8814224e11")).DebugPrint("1.8814224e11"); //18814224____
-        (new BigFloat("-10000e4")).DebugPrint("-10000e4");
+        new BigFloat("1.8814224e11").DebugPrint("1.8814224e11"); //18814224____
+        new BigFloat("-10000e4").DebugPrint("-10000e4");
         Console.WriteLine(new BigFloat("-32769").ToStringHexScientific(showInTwosComplement: true));
         Console.WriteLine(new BigFloat("-32769").ToStringHexScientific());
         new BigFloat("-32769").DebugPrint(); //100000000
@@ -1170,7 +1219,7 @@ private static void NthRoot_DRAFT_Stuff()
         for (int i = 400000; i <= 400000; i += 4)
         {
             Stopwatch timer = Stopwatch.StartNew();
-            BigFloat res2 = BigFloat.BigConstants.GeneratePi(i);
+            BigFloat res2 = BigConstants.GeneratePi(i);
             timer.Stop();
             Console.WriteLine($"{i,4} {res2.ToString("")} {timer.ElapsedTicks}");
         }
@@ -1179,43 +1228,43 @@ private static void NthRoot_DRAFT_Stuff()
 
     private static void Parse_Stuff()
     {
-        BigFloat aa = BigFloat.Parse("0b100000.0");
-        BigFloat bb = BigFloat.Parse("0b100.0");
+        BigFloat aa = Parse("0b100000.0");
+        BigFloat bb = Parse("0b100.0");
         BigFloat rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b100000");
-        bb = BigFloat.Parse("0b100.0");
+        aa = Parse("0b100000");
+        bb = Parse("0b100.0");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b100000.0");
-        bb = BigFloat.Parse("0b100");
+        aa = Parse("0b100000.0");
+        bb = Parse("0b100");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b10000.0");
-        bb = BigFloat.Parse("0b1000");
+        aa = Parse("0b10000.0");
+        bb = Parse("0b1000");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b1000.00000");
-        bb = BigFloat.Parse("0b10000");
+        aa = Parse("0b1000.00000");
+        bb = Parse("0b10000");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b1000.0");
-        bb = BigFloat.Parse("0b10000.000");
+        aa = Parse("0b1000.0");
+        bb = Parse("0b10000.000");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b1.0000");
-        bb = BigFloat.Parse("0b10000000.");
+        aa = Parse("0b1.0000");
+        bb = Parse("0b10000000.");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
 
-        aa = BigFloat.Parse("0b1000.00000000000000000000000000");
-        bb = BigFloat.Parse("0b10000.0000000");
+        aa = Parse("0b1000.00000000000000000000000000");
+        bb = Parse("0b10000.0000000");
         rr = aa * bb;
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
     }
@@ -1233,7 +1282,7 @@ private static void NthRoot_DRAFT_Stuff()
     {
         //BigFloat bf = new BigFloat(1, -8);
         BigFloat bf = new("0.00390625");
-        BigFloat res = BigFloat.Remainder(bf, new BigFloat("1.00000000")); // i.e. "bf % 1;"
+        BigFloat res = Remainder(bf, new BigFloat("1.00000000")); // i.e. "bf % 1;"
         // Answer of 0.00390625 % 1 is:
         //   0.00390625 or 0.0039063 or 0.003906 or 0.00391 or 0.0039 or 0.004 or 0.00 or or 0.0 or or 0
 
@@ -1280,7 +1329,7 @@ private static void NthRoot_DRAFT_Stuff()
     private static void Sqrt_Stuff()
     {
         BigFloat inpParam = new("2.0000000000000000000000000000000");
-        BigFloat fnOutput = BigFloat.Sqrt(inpParam);
+        BigFloat fnOutput = Sqrt(inpParam);
         BigFloat expected = new("1.4142135623730950488016887242097");
         Console.WriteLine($"Calculate Sqrt( {inpParam} )\r\n" +
                           $"              = {fnOutput}\r\n" +
@@ -1368,7 +1417,7 @@ private static void NthRoot_DRAFT_Stuff()
     {
         Console.WriteLine($"Input As String:  {origStingValue,22}");
         Console.WriteLine($" ->Double  ->Str: {double.Parse(origStingValue).ToString("G17", CultureInfo.InvariantCulture),22}");
-        bool success = BigFloat.TryParse(origStingValue, out BigFloat bf);
+        bool success = TryParse(origStingValue, out BigFloat bf);
         if (success)
         {
             Console.WriteLine($" ->BigFloat->Str: {bf,22}");

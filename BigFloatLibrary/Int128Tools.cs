@@ -85,7 +85,7 @@ public static class Int128Tools
 
         ulong cy = (ulong)((((lo * lo) >> 64) + (ulong)p + (ulong)p) >> 64);
 
-        return hi * hi + (2 * (p >> 64)) + cy;
+        return (hi * hi) + (2 * (p >> 64)) + cy;
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public static class Int128Tools
     /// <param name="exp">The exponent(or power) in Int32 format.</param>
     /// <param name="p"></param>
     /// <returns></returns>
-    public static UInt128 PowerFast(UInt128 b, int exp) 
+    public static UInt128 PowerFast(UInt128 b, int exp)
     {
         UInt128 result = UInt128.MaxValue;
         while (true)
@@ -125,7 +125,9 @@ public static class Int128Tools
 
             exp >>= 1;
             if (exp == 0)
+            {
                 break;
+            }
 
             b = SquareHiFast(b) + 2;
 

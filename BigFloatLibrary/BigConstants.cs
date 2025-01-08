@@ -43,9 +43,9 @@ public readonly partial struct BigFloat
     /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <paramref name="requestedAccuracyInBits"/>,</param>
     public class BigConstants
     {
-        readonly int requestedAccuracyInBits;
-        readonly bool cutOnTrailingZero;
-        readonly bool onInsufficientBitsThenSetToZero = true;
+        private readonly int requestedAccuracyInBits;
+        private readonly bool cutOnTrailingZero;
+        private readonly bool onInsufficientBitsThenSetToZero = true;
 
         public BigConstants(int requestedAccuracyInBits = 2000, bool cutOnTrailingZero = true, bool onInsufficientBitsThenSetToZero = true)
         {
@@ -112,10 +112,9 @@ public readonly partial struct BigFloat
 
         private BigFloat BuildNumber(BigConstantInfo c)
         {
-            if (c.TryGetAsBigFloat(out BigFloat res, requestedAccuracyInBits, cutOnTrailingZero))
-                return res;
-            else
-                return onInsufficientBitsThenSetToZero ? default : BigFloat.Parse(c.ConstantAsString) ;
+            return c.TryGetAsBigFloat(out BigFloat res, requestedAccuracyInBits, cutOnTrailingZero)
+                ? res
+                : onInsufficientBitsThenSetToZero ? default : BigFloat.Parse(c.ConstantAsString);
         }
 
         /// <summary>
@@ -177,7 +176,7 @@ public readonly partial struct BigFloat
                 throw new ArgumentOutOfRangeException(nameof(minimumAccuracy), "The minimum accuracy should be at least a few bits.");
             }
 
-            List<BigFloat> bfList = new();
+            List<BigFloat> bfList = [];
 
             // Add included numbers...
             if (includedWholeNumbers != null)
