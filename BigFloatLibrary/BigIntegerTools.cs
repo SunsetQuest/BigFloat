@@ -819,6 +819,14 @@ public static class BigIntegerTools
     public static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
+        if (requestedPrecision <= 0)
+        {
+            if (requestedPrecision < 0)
+            {
+                throw new DivideByZeroException("'precisionBits' can not be negative.");
+            }
+            return (BigInteger.One << (xLen + xLen - 1)) / x;
+        }
         return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
     }
 
@@ -826,65 +834,48 @@ public static class BigIntegerTools
     public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
+        
         if (requestedPrecision <= 0)
         {
             if (requestedPrecision < 0)
             {
                 throw new DivideByZeroException("'precisionBits' can not be negative.");
             }
-
             requestedPrecision = xLen;
+
         }
 
-        bool isPos = x.Sign >= 0;
-        if (!isPos)
-        {
-            x = -x;
-        }
 
         // can we pre-shrink x to requestedPrecision? (or just keep 32 bits?)
 
         //// Trailing Zeros never matter
-        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
-        x >>= trailingZeros;
-        xLen -= trailingZeros;
+        //int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        //x >>= trailingZeros;
+        //xLen -= trailingZeros;
 
-        if ((requestedPrecision + xLen) <= 128)
-        {
-            ulong x2 = (ulong)x;
 
-            if ((requestedPrecision + xLen) <= 64)
-            {
-                ulong result64 = (1UL << 63) / x2; // 63 /  31
-                result64 >>= 64 - (int)ulong.LeadingZeroCount(result64) - requestedPrecision;
-                return isPos ? result64 : (-(BigInteger)result64);
-            }
-#if NET7_0_OR_GREATER
-            UInt128 result128 = (UInt128.One << 127) / x2;
-            result128 >>= (int)UInt128.Log2(result128) + 1 - requestedPrecision; //what about ulong.Log2(res>>64) +64
-            return isPos ? result128 : (-(BigInteger)result128);
-#endif
-        }
-        //                     error at:           2867  3576
-        const int SIMPLE_CUTOFF =   1024; // 1024  1024  1024  
-        const int EXTRA_START =        4; //    4     4     4  
-        const int START_CUTOFF =     350; //  400   300   400  
-        const int NEWTON_CUTOFF =    900; // 1024  1024  1024  
-        const int EXTRA_TO_REMOVE1 =   1; //    1     2     2  
-        const int SKIP_LOWEST =        4; //    4     0     0  
-        const int EXTRA_TO_REMOVE2 =   1; //    1     1     1  
-        //===============================================================================================================
-        //                           219            
-        //                           222           
-        //                                    
-        //                                                           
-        //                                                            
+        //               error at:                     ERR  ERR          
+        const int SIMPLE_CUTOFF =   1024; // 1024 1024 1024 1024
+        const int EXTRA_START =        4; //    4    4    4    4
+        const int START_CUTOFF =     400; //  400  400  400  400
+        const int NEWTON_CUTOFF =    800; //  800  1024 1024 1024
+        const int EXTRA_TO_REMOVE1 =   2; //    2    2    1    3
+        const int SKIP_LOWEST =        0; //    0    0    0    0
+        const int EXTRA_TO_REMOVE2 =   1; //    1    1    1    1
+        const int BOOST_LARGER_NUMS=   2; //    2    2    2    2
+        //========================================================================================================
+        //                                     48                       
+        //                                     53                
+        //                                     51            
+        //                                                                        
+        //                                                                                
 
         if ((requestedPrecision + xLen) <= SIMPLE_CUTOFF)
-        {
-            BigInteger resultBI = (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
-            return isPos ? resultBI : (-resultBI);
-        }
+            return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+
+        bool isPos = x.Sign >= 0;
+        if (!isPos)
+            x = -x;
 
         const bool dbug = false;
 
@@ -892,14 +883,13 @@ public static class BigIntegerTools
         //we can then reduce the buffer as we go along.
 
         ////////  Get Starting Size  ////////
-
         int desiredStartSize = requestedPrecision + (EXTRA_START * 2);
         int loops = 0;
         while (desiredStartSize > START_CUTOFF)
         {
-            desiredStartSize = (desiredStartSize >> 1) + 1;
+            desiredStartSize = ((desiredStartSize+1) >> 1) + BOOST_LARGER_NUMS;
             if (dbug) loops++;
-            }
+        }
         int curSize = desiredStartSize;
 
         BigInteger scaledOne2 = BigInteger.One << ((curSize << 1) + (EXTRA_START * 2));
@@ -911,77 +901,134 @@ public static class BigIntegerTools
         ////////////////////// Newton version  //////////////////////
         // what about a fixed number of loops?
         //while (curSize <= Math.Min(NEWTON_CUTOFF, requestedPrecision)) // When we reach out 1000 bits lets move to NewtonPlus as it is slightly faster.
+        //if (curSize <= requestedPrecision)
         //for (int i = 0; i < 2; i++)
-        if (curSize <= requestedPrecision)
+
+        // 1024 - cut off      but calc to 1024
+        // 1500 - cut off      but calc to 1500+100
+        // 2048 - skip to next but calc to 1024
+
+        int cuttoff = Math.Min(NEWTON_CUTOFF, requestedPrecision);
+        while (true)
         {
             int doubleCurSize = curSize << 1;
 
-            if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << loops) - requestedPrecision}]  ");
+            if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ")[..4]} [{(curSize << loops) - requestedPrecision}]  ");
 
             BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
             BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
             BigInteger twoMinusXy = scalingFactor - xTimesY;
+            result *= twoMinusXy;
 
-
-            result = (result * twoMinusXy) >> (curSize + EXTRA_TO_REMOVE1);
-
+            int pendingInaccurateBottomHalfToRemove = (curSize + EXTRA_TO_REMOVE1);
             curSize = doubleCurSize - EXTRA_TO_REMOVE1;
 
             if (dbug) loops--;
-
-            if (curSize <= requestedPrecision)
+            //if (curSize > cuttoff) break;
+            if (curSize > ((requestedPrecision < NEWTON_CUTOFF * 2) ? requestedPrecision : NEWTON_CUTOFF))
             {
-                doubleCurSize = curSize << 1;
-
-                scalingFactor = BigInteger.One << (doubleCurSize + 1);
-                xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
-                twoMinusXy = scalingFactor - xTimesY;
-                result = (result * twoMinusXy) >> (curSize + EXTRA_TO_REMOVE1);
-                curSize = doubleCurSize - EXTRA_TO_REMOVE1;
+                if (curSize > requestedPrecision)
+                {
+                    //Console.WriteLine($"return result:[{result.GetBitLength()}] >> {curSize - requestedPrecision + pendingInaccurateBottomHalfToRemove}");
+                    BigInteger tempResult2 = (result) >> (curSize - requestedPrecision + pendingInaccurateBottomHalfToRemove);
+                    return isPos ? tempResult2 : -tempResult2;
+                }
+                result = (result ) >> pendingInaccurateBottomHalfToRemove + SKIP_LOWEST;
+                //Console.WriteLine($"exit   result:[{result.GetBitLength()}] >> a({pendingInaccurateBottomHalfToRemove}) + {SKIP_LOWEST}");
+                //Console.WriteLine($"{requestedPrecision,10}:  {curSize} > {((requestedPrecision < NEWTON_CUTOFF * 2) ? requestedPrecision : NEWTON_CUTOFF)}");
+                break;
             }
+
+            result >>= pendingInaccurateBottomHalfToRemove;
+            //pendingInaccurateBottomHalfToRemove = 0;
+            //// is last loop???  we should reduce the size - is this needed since it should start with the correct size????
+            //if (curSize * 2 > requestedPrecision)
+            //{
+            //    int diff = curSize * 2 - requestedPrecision;
+            //    Console.WriteLine($"1-more result:[{result.GetBitLength()}] >> {diff}  (OR curSize({curSize})*2 - {requestedPrecision})");
+            //    //result >>= diff;
+            //    //curSize -= diff;
+            //}
         }
 
         // can we merge the "result >>= SKIP_LOWEST;" into the result shift above?
 
         // Lets make sure we are 100% accurate at this point.
-        result >>= SKIP_LOWEST;
+        //result >>= SKIP_LOWEST;
         // back off until we see both a zero and one
         int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1; // need one for things like ..100000
-        result >>= reduceBy2;
-        curSize -= reduceBy2 + SKIP_LOWEST;
+        if (reduceBy2 < 32) // 32 is flexible
+        {
+            result >>= reduceBy2;
+            curSize -= reduceBy2 + SKIP_LOWEST;
+        }
+        else
+        {
+            // if we have something with lots of trailing zeros or ones, lets just use the classic method to ensure correctness.
+            BigInteger res = (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+            return isPos ? res : -res;
+        }
 
         //CheckIfCorrectSoFar(x, xLen, curSize, result);
 
 
         ////////////////////// NewtonPlus version  ////////////////////// Let's shift into high gear...
-        while (curSize <= requestedPrecision)
+        if (curSize > requestedPrecision)
+        {
+            BigInteger tempResult2 = result >> (curSize - requestedPrecision);
+            return isPos ? tempResult2 : (-tempResult2);
+        }
+
+        while (true)
         {
             int doubleCurSize = curSize << 1;
 
             //if ((double)doubleCurSize / requestedPrecision > 0.9)
-            if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << loops) - requestedPrecision}]  ");
+            if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ")[..4]} [{(curSize << loops) - requestedPrecision}]  ");
 
             // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
             result++; // we could just do a add a "(1 << doublecurSize)"
             BigInteger mask22 = (BigInteger.One << (curSize + 1)) - 1;
             BigInteger xTimesY22 = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
-            result = ((result << (doubleCurSize)) - (result * (xTimesY22 & mask22))) >> (curSize + EXTRA_TO_REMOVE2);
 
             //// back off until we see both a zero and one
+
+            if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision) // maybe remove EXTRA_TO_REMOVE2
+            {
+                //curSize = doubleCurSize - EXTRA_TO_REMOVE2;
+                //if (result.GetBitLength() > requestedPrecision * 1.1) Console.WriteLine($"  {result.GetBitLength()} > {requestedPrecision * 1.1}");
+                result = ((result << (2 * curSize - 0)) - ((result >> 0) * (xTimesY22 & mask22))) >> (3 * curSize - 0 - requestedPrecision);
+
+
+                return isPos ? result : -result;
+            }
+            result = ((result << (doubleCurSize)) - (result * (xTimesY22 & mask22))) >> (curSize + EXTRA_TO_REMOVE2);
+
+            curSize = doubleCurSize - EXTRA_TO_REMOVE2;
+
             int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
-            result >>= reduceBy;
+            if (reduceBy < 100)
+            {
+                result >>= reduceBy;
+                curSize -= reduceBy;
+            }
+            else
+            {
+            }
 
             //CheckIfCorrectSoFar(x, xLen, curSize, result);
 
-            curSize = doubleCurSize - reduceBy - EXTRA_TO_REMOVE2;
             if (dbug) loops--;
-            }
+        }
 
-        if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ").Substring(0, 4)} [{(curSize << loops) - requestedPrecision}]  ");
+        //if (dbug) Console.Write($"{(((double)(curSize << loops) / requestedPrecision) + "     ")[..4]} [{(curSize << loops) - requestedPrecision}]  ");
 
-        //if (trailingZeros> 14) Console.Write(trailingZeros);
-        BigInteger tempResult = result >> (curSize - requestedPrecision);
-        return isPos ? tempResult : (-tempResult);
+        ////if (trailingZeros> 14) Console.Write(trailingZeros);
+
+        //if (result.GetBitLength()/4 < curSize - requestedPrecision) Console.WriteLine($"  {result.GetBitLength() / 4} < {curSize - requestedPrecision}");
+
+        //BigInteger tempResult = result >> (curSize - requestedPrecision);
+        //return isPos ? tempResult : (-tempResult);
 
         // Check if correct so far and output info if not
         static void CheckIfCorrectSoFar(BigInteger x, int xLen, int curSize, BigInteger result)
@@ -992,12 +1039,6 @@ public static class BigIntegerTools
                 Console.WriteLine($"not 100% !!\r\nAns: {ToBinaryString(checkResult)}[{checkResult.GetBitLength()}]\r\nRes: {ToBinaryString(result)}[{result.GetBitLength()}]");
     }
     }
-
-    /////////////////////////////////
-    ////      WouldRound()
-    /////////////////////////////////
-
-
 
 
     /////////////////////////////////////////////

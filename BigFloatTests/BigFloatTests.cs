@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,11 +36,14 @@ public class BigFloatTests
     private readonly int TestTargetInMillseconds = 100;
 
 #if DEBUG
-    private const int MaxDegreeOfParallelism = 1;
-    private const long sqrtBruteForceStoppedAt = 262144;
+    const int MaxDegreeOfParallelism = 1;
+    const long sqrtBruteForceStoppedAt = 262144;
+    const long inverseBruteForceStoppedAt = 262144;
 #else
     int MaxDegreeOfParallelism = Environment.ProcessorCount;
     const long sqrtBruteForceStoppedAt = 524288;
+    const long inverseBruteForceStoppedAt = 524288;
+
 #endif
 
     private const int RAND_SEED = 22;// new Random().Next();
@@ -5087,7 +5091,7 @@ public class BigFloatTests
     }
 
     /// <summary>
-    /// Verification 2: Brute Force testing (starting at 0)
+    /// Sqrt - Verification 2: Brute Force testing (starting at 0)
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_Brute_Force()
@@ -5102,7 +5106,7 @@ public class BigFloatTests
     }
 
     /// <summary>
-    ///  Verification 3: 2^n + [-5 to +5] Testing
+    /// Sqrt - Verification 3: 2^n + [-5 to +5] Testing
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_2_Pow_n_Testing()
@@ -5133,7 +5137,7 @@ public class BigFloatTests
     }
 
     /// <summary>
-    ///  Verification 4: 11111[n]00000[n] Testing
+    /// Sqrt - Verification 4: 11111[n]00000[n] Testing
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_11110000()
@@ -5162,8 +5166,8 @@ public class BigFloatTests
     }
 
     /// <summary>
-    ///  Verification 5: 1010101010101... Testing 
-    ///  example: 1, 10, 101, 1010, 10101....
+    /// Sqrt - Verification 5: 1010101010101... Testing 
+    /// example: 1, 10, 101, 1010, 10101....
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_10101010()
@@ -5198,8 +5202,8 @@ public class BigFloatTests
     }
 
     /// <summary>
-    // Verification 6: n^2 -[0,1] Testing
-    //note: n^2 some overlap here with the "n^[2,3,5,6,7] + [-2,-1,0,1,2] Testing"
+    /// Sqrt - Verification 6: n^2 -[0,1] Testing
+    /// note: n^2 some overlap here with the "n^[2,3,5,6,7] + [-2,-1,0,1,2] Testing"
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_Pow2()
@@ -5234,7 +5238,7 @@ public class BigFloatTests
     }
 
     /// <summary>
-    // Verification 7: Random number testing...
+    /// Sqrt - Verification 7: Random number testing...
     /// </summary>
     [TestMethod]
     public void Verify_NewtonPlusSqrt_RandomNumberTesting()
@@ -5329,11 +5333,253 @@ public class BigFloatTests
 
 
     //Todo
-    //[TestMethod]
-    //public void Verify_InverseBigInteger()
-    //{
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
 
+    /// <summary>
+    /// Inverse Verification 1: Common Fails
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_Common_Fails()
+    {
+        CheckInverse(BigInteger.Zero);
+        CheckInverse(BigInteger.MinusOne);
+
+        CheckInverse(BigInteger.Parse("645939712405401427719711254063813468156213415200850699928240890973548642930906671628067939561389768742610260274947216253535958539046510117181847336215500441547828988008499863283321060888285180958716586132295468008708718750886004174750090339672254391327068510418655854996295608654912181466562066392576946408280444645720652219224611465788921115672007871684057345123697713619795572111218976868165977088388076018155579127963692414645217516226582443109944361333778959142017020766702585614084557002374143856684835403030114576877613125361001081612661505866535992828793261026218710006019409384286248553489144084836908483354058059174031935080941095970669550752672290188012935344941625941224776598832005105461709062131845129678963155310027422917876006618051141488519807701539489712459454171376535906228081656842506129847531133807702931600418505954342868857145344054108555281592568541709103974802015219413388401920300146704419785634503745727784608594651862819775429285667691480255596598355137918884688681242925903869182365424076667891828794970711995156501553646245103285321272836088502175303126383961643724861657121768832605051542254287022038928115325910288733210686961346257986675795521419117484112569337949140264990"));
+        CheckInverse(BigInteger.Parse("14226342718751118987907712656792939014609116305038288508984965665170435278580333690269830569305522770533115648153109977677970505910625922454536026835852861332513459837041790011369159613511987064990374692209153941946410250817507783093926309366818470453091487613497831683214972282433680630982532763190683188379014716931664367628856712864496549434590849436602433350062473844636337430852410107263030344416723319870714159741005261604289621571405370996571482202189946969590725396299242462841573118206347715965805077151815088089898712040656448748652946583617809438541519496216169721658653723720561561601101228727064752442615455482001090437223561687360017043925134663500743462770265751193548606236574887993897708234798015778243132964667428178856994844952952767372869586443371631986024216806390351458153350155473742698605698036672929293892925483318864445513221152207924537215494391086982099603955047363639252292415150243702042020253673557543258256080860766767245166366206504042341743664890169812601231127032334294569486704846172949043552949441316944714028840689338784401867179801203613271182276331013888454830352391740343025859921596673531204457761831252242526173047406966821405710834640264664514325319700094788810229600338339048034248472906440829567003568352904106454211600272772441256937357011526350840028766974271849878883968029793821029979280359368212174059092944193932724591216533306907868949240183508100414983415165523499662280683154859830743035090387199495274469840495806979622786301340"));
+        CheckInverse(BigInteger.Parse("41597037944448288110263031477097654167384303281785501659348547438859712932895265129174863537442219208764808367754224325676189013224863230815238211318298805347258792422345044074873622426170281290814220505198280942180680987026072516738908213582080426073114716009829990895938425085364287895467011390686208508278438730461229031670604488583132047013295327251056792004212211984418619663447584994978851293935131110818345158735090825798050014339956039806087253671405307536505969146032086905214682999371273072327848485190337222112654049779316736398006552350156349884603007360240860067257909482396786549588732357562118172137668037090856181026987902018187123355906466294875863290720195176549809520330510535389796132984892059640168902171480943753536264315689507100966013546691280187870571451205108217441077590372742568828587495458227141473387320433587383078311146940539855321485599293540008356160519179316373740003907476816065356834101152604366223141056328388148703861540389801990631343518586799040845656241392934834522495698513979794700246917693292354190436213407849292690244331619453139129528311878463071451903744767274814238809831756377838973380878611727693240233305958509793663676407892016477218846901984357526107274350245333587892891647258020839563922086967136639138149549163501535002313407476514168371528265958304129029559790809555296315581870799758675251593555164438335668433357530966606494565841539517226231078555238897938082287091553434761476447011358899223501505465429569334182561228540892303214811082283526723697168379678479540727712438070861914927293109710911106707261295892041586638725763206110753540190896772169081260784380"));
+        CheckInverse(BigInteger.Parse("20671763530409241324943099770758453374656073519208971837161323019736968598213040550063501802843843456188225260341175120190769282417510043673943805824640880119134633219211469954969974507848904555803334435197882765457136716437770296957048078656754075697050046118996825841746205252785206097369685430981035558594791602963045501531421510566506194772075275382440945200939540465695659828408838690926414042171936271541955906046169138710632745679881280602279076605388037666825339189737803887302307968158073837560120798580516365956420797937652142269159027921716745566978929345859123514450786114694292421480838182220087427088137015527356463359164029442792965441472949808342336219707591834015713549019248836633995886752934832102060114592550617810155254165659790003713516074868150437007539368900584118148822975181129863262810822587766092176976232054649447450476816188080046345755470758840829614272451921461411169209034550634190302697887369075179799790792706543812224247601683087038546841649124042977325954599894194019670455284451378580405359721112229130305343154584037097021290350012473718157459368363791"));
+    }
+
+    /// <summary>
+    /// Inverse Verification 2: Brute Force testing (starting at 0)
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_Brute_Force()
+    {
+        Parallel.For(0, inverseBruteForceStoppedAt, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (valToTest, s) =>
+        {
+            CheckInverse(valToTest);
+        });
+    }
+
+    /// <summary>
+    /// Inverse Verification 3: 2^n + [-5 to +5] Testing
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_2_Pow_n_Testing()
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        for (int s = 0; s < 32; s++)
+        {
+            Parallel.For((s * 512) + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            {
+                if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
+                {
+                    s.Stop();
+                }
+
+                for (long i = -5; i < 6; i++)
+                {
+                    BigInteger valToTest = BigInteger.Pow(2, x) + i;
+                    CheckInverse(valToTest);
+                }
+            });
+        }
+    }
+
+    /// <summary>
+    /// Inverse Verification 4: 11111[n]00000[n] Testing
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_11110000()
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        int startAt = BitOperations.Log2(inverseBruteForceStoppedAt) - 1;
+
+        Parallel.For(startAt, 1000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        {
+            if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
+            {
+                s.Stop();
+            }
+
+            for (int i = 1; i <= length; i++)
+            {
+                BigInteger valToTest = ((BigInteger.One << i) - 1) << (length - i);
+                CheckInverse(valToTest);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Inverse Verification 5: 1010101010101... Testing 
+    /// example: 1, 10, 101, 1010, 10101....
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_10101010()
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        int startAt = BitOperations.Log2(inverseBruteForceStoppedAt) - 1;
+
+        Parallel.For(startAt, 10000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        {
+            if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
+            {
+                s.Stop();
+            }
+
+            BigInteger valToTest = 1;
+            for (int i = 2; i < length; i += 2)
+            {
+                valToTest = (valToTest << 2) + 1;
+            }
+            if ((length & 1) == 0)
+            {
+                valToTest <<= 1;
+            }
+            CheckInverse(valToTest);
+
+        });
+    }
+
+    /// <summary>
+    // Inverse Verification 6: n^2 -[0,1] Testing
+    //note: n^2 some overlap here with the "n^[2,3,5,6,7] + [-2,-1,0,1,2] Testing"
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_Pow2()
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        BigInteger c = (BigInteger)Math.Sqrt(inverseBruteForceStoppedAt);
+
+        while (sw.ElapsedMilliseconds < TestTargetInMillseconds)
+        {
+            Parallel.For(0, 1024, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    BigInteger valToTest = (2 * (c + x)) - i;
+                    CheckInverse(valToTest);
+                }
+
+                if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
+                {
+                    s.Stop();
+                }
+            });
+
+            c += 1024;
+        }
+    }
+
+    /// <summary>
+    // Inverse Verification 7: Random number testing...
+    /// </summary>
+    [TestMethod]
+    public void Verify_Inverse_RandomNumberTesting()
+    {
+        int randomMinBitSize = -1;
+        int randomMaxBitSize = 5000;
+
+        Stopwatch sw = Stopwatch.StartNew();
+
+        Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
+        {
+            Random r = new(p + RAND_SEED);
+            int counter = 0;
+            while (true)
+            {
+                //int bitLenRangeBeg = (int)Math.Log2(4e34) + 10;//BitOperations.Log2((ulong)BruteForceStoppedAt)-1; //(int)Math.Log2(4e254) -3;
+                //int bitLenRangeEnd = (int)Math.Log2(4e34) + 12; //1e308
+
+                int bitLenBeg = (randomMinBitSize >= 0) ? randomMinBitSize : (BitOperations.Log2(inverseBruteForceStoppedAt) - 1); //(int)Math.Log2(4e254) -3;
+                int bitLenEnd = randomMaxBitSize;
+
+                int bitLen = r.Next(bitLenBeg, bitLenEnd) + 1;
+                int byteCt = (bitLen + 7) / 8;
+                byte[] bytes = new byte[byteCt];
+                r.NextBytes(bytes);
+                bytes[byteCt - 1] |= 0x80;
+                bytes[byteCt - 1] >>= 7 - ((bitLen - 1) % 8);
+                BigInteger valToTest = new(bytes, true, false);
+
+                CheckInverse(valToTest);
+
+                if (counter++ % 0x1000000 == 0)
+                {
+                    Debug.WriteLine($"Status {string.Format("{0:T}", DateTime.Now)}: thread:{p}\tCount:{counter}\t2^{valToTest.GetBitLength() - 1}/{(double)valToTest}");
+                }
+
+                if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
+                {
+                    s.Break();
+                    break;
+                }
+            }
+        });
+    }
+
+    //[TestMethod]
+    //[ExpectedException(typeof(ArgumentException))]
+    //public void Verify_Inverse_ShouldFail1()
+    //{
+    //    _ = BigIntegerTools.Inverse(-1,-1);
     //}
+
+    //[TestMethod]
+    //[ExpectedException(typeof(ArgumentException))]
+    //public void Verify_Inverse_ShouldFail2()
+    //{
+    //    BigInteger input = (BigInteger)double.MinValue + (BigInteger)double.MinValue;
+    //    _ = BigIntegerTools.Inverse(input);
+    //}
+
+    private static bool CheckInverse(BigInteger x)
+    {
+        Debug.WriteLine(x);
+        BigInteger xInvRes = BigIntegerTools.Inverse(x);
+        BigInteger xInvTst = BigIntegerTools.InverseClassic(x);
+
+        int correctBits = 0;
+        bool success = xInvRes == xInvTst;
+        StringBuilder sb = new();
+
+        if (!success)
+        {
+            sb.AppendLine($"Inverse Fail with input {x}");
+            sb.AppendLine($"  Result: {xInvRes} !=");
+            sb.AppendLine($"  Answer: {xInvTst}");
+
+
+            if (xInvRes.GetBitLength() != x.GetBitLength())
+            {
+                sb.AppendLine($"  Result length incorrect:  [{xInvRes.GetBitLength()}] != [{x.GetBitLength(),-4}]");
+            }
+
+            if (xInvTst.GetBitLength() != x.GetBitLength())
+            {
+                sb.AppendLine($"  Classic length incorrect: [{xInvTst.GetBitLength()}] != [{x.GetBitLength(),-4}]");
+            }
+
+            correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
+            if (xInvRes.GetBitLength() - correctBits > 0)
+            {
+                sb.AppendLine($"  incorrect bits:[{xInvRes.GetBitLength()-correctBits}]  CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}]");
+            }
+        }
+
+        IsTrue(success, sb.ToString());
+
+        return success;
+    }
+
+    ////////////////
+
 
 
     [TestMethod]
