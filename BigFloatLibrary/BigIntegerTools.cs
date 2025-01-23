@@ -834,15 +834,17 @@ public static class BigIntegerTools
     public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
-        
+        if (x.IsZero)
+        {
+            throw new DivideByZeroException("'x' can not be 0.");
+        }
         if (requestedPrecision <= 0)
         {
             if (requestedPrecision < 0)
             {
-                throw new DivideByZeroException("'precisionBits' can not be negative.");
+                throw new ArgumentException("'precisionBits' can not be negative.");
             }
             requestedPrecision = xLen;
-
         }
 
 
