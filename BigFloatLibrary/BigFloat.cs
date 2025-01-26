@@ -61,7 +61,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// The Size is the precision. It in number of bits required to hold the number. 
-    /// ExtraHiddenBits are subtracted out.
+    /// ExtraHiddenBits are subtracted out. Use SizeWithHiddenBits to include ExtraHiddenBits.
     /// </summary>
     public readonly int Size => Math.Max(0, _size - ExtraHiddenBits);
 
@@ -3217,7 +3217,6 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
-
     /// <summary>
     /// Returns the inverse of a BigFloat.
     /// </summary>
@@ -3226,20 +3225,28 @@ Other:                                         |   |         |         |       |
         // We need to oversize T (using left shift) so when we divide, it is the correct size.
         int leftShiftTBy = 2 * (x._size - 1);
 
-        BigInteger one = BigInteger.One << leftShiftTBy;
-
-        // Now we can just divide, and we should have the correct size
-        BigInteger resIntPart = one / x.DataBits;
-
-        //int resScalePartOrig = x._size - x.Scale - leftShiftTBy + ExtraHiddenBits;
         int resScalePart = -x.Scale - leftShiftTBy + ExtraHiddenBits + ExtraHiddenBits;
-        //int resScalePart2 = x._size - (x.Scale*2) - leftShiftTBy + ExtraHiddenBits - 1;
 
-        int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
+        //// Past Method - Now we can just divide, and we should have the correct size
+        BigInteger one = BigInteger.One << leftShiftTBy;
+        BigInteger resIntPartOrg = one / x.DataBits;
+        int sizePartOrg = (int)BigInteger.Abs(resIntPartOrg).GetBitLength();
+        BigFloat resultOrg = new(resIntPartOrg, resScalePart, sizePartOrg);
 
-        BigFloat result = new(resIntPart, resScalePart, sizePart);
-        return result;
+        //// New Method
+        BigInteger resIntPartNew = BigIntegerTools.Inverse(x.DataBits, x._size);
+        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo? resScalePart : resScalePart - 1, x.SizeWithHiddenBits);
+
+        // TODO: resolve 
+        if (resultOrg != resultNew)
+        {
+            //Console.WriteLine("InverseOrg: " + resultOrg);
+            //Console.WriteLine("InverseNew: " + resultNew);
+        }
+
+        return resultOrg;
     }
+
 
     /// <summary>
     /// Calculates the a BigFloat as the base and an integer as the exponent. The integer part is treated as exact.

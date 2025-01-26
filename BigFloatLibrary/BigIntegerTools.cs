@@ -819,20 +819,28 @@ public static class BigIntegerTools
     public static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
-        if (requestedPrecision <= 0)
+
+        if (requestedPrecision == 0)
         {
-            if (requestedPrecision < 0)
-            {
-                throw new DivideByZeroException("'precisionBits' can not be negative.");
-            }
-            return (BigInteger.One << (xLen + xLen - 1)) / x;
+            requestedPrecision = xLen;
         }
+        else if (requestedPrecision < 0)
+        {
+            throw new DivideByZeroException("'precisionBits' can not be negative.");
+        }
+        
+        if (x.IsPowerOfTwo)
+        {
+            return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
+        }
+
         return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
     }
 
 
     public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
     {
+        //uint(x & uint.MaxValue)
         int xLen = (int)x.GetBitLength();
         if (x.IsZero)
         {
@@ -847,30 +855,31 @@ public static class BigIntegerTools
             requestedPrecision = xLen;
         }
 
-
         // can we pre-shrink x to requestedPrecision? (or just keep 32 bits?)
 
-        //// Trailing Zeros never matter
-        //int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
-        //x >>= trailingZeros;
-        //xLen -= trailingZeros;
+
+        // Trailing Zeros never matter
+        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        if (trailingZeros + 1 == xLen)
+        {
+            return (BigInteger.One * x.Sign) << trailingZeros;
+        }
+        x >>= trailingZeros;
+        xLen -= trailingZeros;
 
 
-        //               error at:                     ERR  ERR          
-        const int SIMPLE_CUTOFF =   1024; // 1024 1024 1024 1024
-        const int EXTRA_START =        4; //    4    4    4    4
-        const int START_CUTOFF =     400; //  400  400  400  400
-        const int NEWTON_CUTOFF =    800; //  800  1024 1024 1024
-        const int EXTRA_TO_REMOVE1 =   2; //    2    2    1    3
-        const int SKIP_LOWEST =        0; //    0    0    0    0
-        const int EXTRA_TO_REMOVE2 =   1; //    1    1    1    1
-        const int BOOST_LARGER_NUMS=   2; //    2    2    2    2
+        // Tuning constants     error at:                             
+        const int SIMPLE_CUTOFF =   1024; // 1024
+        const int EXTRA_START =        4; //    4
+        const int START_CUTOFF =     400; //  400
+        const int NEWTON_CUTOFF =    800; //  800
+        const int EXTRA_TO_REMOVE1 =   2; //    2
+        const int SKIP_LOWEST =        0; //    0
+        const int EXTRA_TO_REMOVE2 =   1; //    1
+        const int BOOST_LARGER_NUMS=   2; //    2
         //========================================================================================================
-        //                                     48                       
-        //                                     53                
-        //                                     51            
-        //                                                                        
-        //                                                                                
+        //                                    291                       
+
 
         if ((requestedPrecision + xLen) <= SIMPLE_CUTOFF)
             return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
@@ -1223,11 +1232,45 @@ public static class BigIntegerTools
     }
 
 
+    /// <summary>
+    /// Returns a random BigInteger of a specific bit length.
+    /// </summary>
+    /// <param name="bitLength">The bit length the BigInteger should be.</param>
+    public static BigInteger CreateRandomBigInteger(this Random rnd, int bitLength)
+    {
+        if (bitLength < 0) throw new ArgumentOutOfRangeException();
+        if (bitLength == 0) return BigInteger.Zero;
+        byte[] bytes = new byte[(bitLength + 7) / 8];
+        rnd.NextBytes(bytes);
+        // For the top byte, place a leading 1-bit then down-shift to achieve desired length.
+        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - (bitLength - 1) % 8));
+        return new BigInteger(bytes, true);
+    }
+
+
+    /// <summary>
+    /// Returns a random BigInteger with a bit length between <paramref name="minBitLength"/>(inclusive) and <paramref name="maxBitLength"/>(exclusive).
+    /// https://stackoverflow.com/a/72107573/2352507 Ryan S. White in 5/2022
+    /// </summary>
+    /// <param name="minBitLength">The inclusive lower bit length of the random BigInteger returned.</param>
+    /// <param name="maxBitLength">The exclusive upper bit length of the random BigInteger returned. 
+    /// <paramref name="maxBitLength"/> must be greater than or equal to minValue.</param>
+    public static BigInteger CreateRandomBigInteger(this Random rnd, int minBitLength, int maxBitLength)
+    {
+        if (minBitLength < 0) throw new ArgumentOutOfRangeException();
+        int bits = rnd.Next(minBitLength, maxBitLength);
+        if (bits == 0) return BigInteger.Zero;
+        byte[] bytes = new byte[(bits + 7) / 8];
+        rnd.NextBytes(bytes);
+        // For the top byte, place a leading 1-bit then down-shift to achieve desired length.
+        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - (bits - 1) % 8));
+        return new BigInteger(bytes, true);
+    }
+
+
     //// Converts a double value to a string in base 2 for display.
     //// Example: 123.5 --> "0:10000000101:1110111000000000000000000000000000000000000000000000"
-    //// Created by Ryan S. White in 2020
-    //// Released under the MIT license (should contain author somewhere)
-    //// https://stackoverflow.com/a/68052530/2352507
+    //// https://stackoverflow.com/a/68052530/2352507  Ryan S. White in 2020
     //public static string DoubleToBinaryString(double val)
     //{
     //    long v = BitConverter.DoubleToInt64Bits(val);
@@ -1236,14 +1279,14 @@ public static class BigIntegerTools
     //}
 
     //// Converts a double value in Int64 format to a string in base 2 for display.
-    //// Created by Ryan S. White in 2020
-    //// Released under the MIT license (should contain author somewhere)
+    //// https://stackoverflow.com/a/68052530/2352507  Ryan S. White in 2020
     //static string DoubleToBinaryString(long doubleInInt64Format)
     //{
     //    string binary = Convert.ToString(doubleInInt64Format, 2);
     //    binary = binary.PadLeft(64, '0').Insert(12, ":").Insert(1, ":");
     //    return binary;
     //}
+
 
 
 

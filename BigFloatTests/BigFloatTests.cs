@@ -5308,6 +5308,7 @@ public class BigFloatTests
         });
     }
 
+#if !DEBUG
     [TestMethod]
     [ExpectedException(typeof(ArgumentException))]
     public void Verify_NewtonPlusSqrt_ShouldFail1()
@@ -5322,6 +5323,7 @@ public class BigFloatTests
         BigInteger input = (BigInteger)double.MinValue + (BigInteger)double.MinValue;
         _ = BigIntegerTools.NewtonPlusSqrt(input);
     }
+#endif
 
     private static bool IsSqrt(BigInteger n, BigInteger root)
     {
@@ -5514,6 +5516,7 @@ public class BigFloatTests
         });
     }
 
+#if !DEBUG
     [TestMethod]
     [ExpectedException(typeof(DivideByZeroException))]
     public void Verify_Inverse_ShouldFailOnZeroInput()
@@ -5527,6 +5530,7 @@ public class BigFloatTests
     {
         _ = BigIntegerTools.Inverse(1,-1);
     }
+#endif
 
     private static bool CheckInverse(BigInteger x)
     {
