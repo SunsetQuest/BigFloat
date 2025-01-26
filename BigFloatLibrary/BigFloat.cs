@@ -3220,33 +3220,20 @@ Other:                                         |   |         |         |       |
     /// <summary>
     /// Returns the inverse of a BigFloat.
     /// </summary>
+    //public static BigFloat Inverse(BigFloat x)
+    //{
+    //    BigInteger resIntPartNew = BigIntegerTools.Inverse(x.DataBits, x._size);
+    //    int resScalePart = -x.Scale - 2 * (x._size - ExtraHiddenBits - 1) - (resIntPartNew.IsPowerOfTwo ? 0 : -1);
+    //    BigFloat resultNew = new(resIntPartNew, resScalePart, x.SizeWithHiddenBits);
+    //    return resultNew;
+    //}
     public static BigFloat Inverse(BigFloat x)
     {
-        // We need to oversize T (using left shift) so when we divide, it is the correct size.
-        int leftShiftTBy = 2 * (x._size - 1);
-
-        int resScalePart = -x.Scale - leftShiftTBy + ExtraHiddenBits + ExtraHiddenBits;
-
-        //// Past Method - Now we can just divide, and we should have the correct size
-        BigInteger one = BigInteger.One << leftShiftTBy;
-        BigInteger resIntPartOrg = one / x.DataBits;
-        int sizePartOrg = (int)BigInteger.Abs(resIntPartOrg).GetBitLength();
-        BigFloat resultOrg = new(resIntPartOrg, resScalePart, sizePartOrg);
-
-        //// New Method
+        int resScalePart = -x.Scale - (2 * (x._size - 1)) + ExtraHiddenBits + ExtraHiddenBits;
         BigInteger resIntPartNew = BigIntegerTools.Inverse(x.DataBits, x._size);
-        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo? resScalePart : resScalePart - 1, x.SizeWithHiddenBits);
-
-        // TODO: resolve 
-        if (resultOrg != resultNew)
-        {
-            //Console.WriteLine("InverseOrg: " + resultOrg);
-            //Console.WriteLine("InverseNew: " + resultNew);
-        }
-
-        return resultOrg;
+        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithHiddenBits);
+        return resultNew;
     }
-
 
     /// <summary>
     /// Calculates the a BigFloat as the base and an integer as the exponent. The integer part is treated as exact.

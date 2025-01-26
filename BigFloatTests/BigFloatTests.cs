@@ -639,6 +639,7 @@ public class BigFloatTests
     {
         IsTrue(BigFloat.Inverse(new BigFloat("1.000")) == new BigFloat("1.000"), $"Failed on: Inverse(1.000)");
         IsTrue(BigFloat.Inverse(new BigFloat("2.000")) == new BigFloat("0.5000"), $"Failed on: Inverse(2.000)");
+        // To-Do: reviewed this and it should pass - we need to update the compare function
         IsTrue(BigFloat.Inverse(new BigFloat("3.000")) == new BigFloat("0.3333"), $"Failed on: Inverse(3.000)");
         IsTrue(BigFloat.Inverse(new BigFloat("0.5000")) == new BigFloat("2.000"), $"Failed on: Inverse(0.5000)");
         IsTrue(BigFloat.Inverse(new BigFloat("0.3333")) == new BigFloat("3.000"), $"Failed on: Inverse(0.3333)");
@@ -1189,11 +1190,13 @@ public class BigFloatTests
         // Test (poser < 3) section...
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), 0) == new BigFloat("1.00"), $"Failed on: Pow(3.000,0)");
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), 1) == new BigFloat("3.00"), $"Failed on: Pow(3.000,1)");
+        // To-Do: reviewed this and it should pass - we need to update the compare function
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), -1) == new BigFloat("0.3333"), $"Failed on: Pow(3.000,-1)");
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), 2) == new BigFloat("9.00"), $"Failed on: Pow(3.000,2)");
         IsTrue(BigFloat.Pow(new BigFloat("3.000"), -2) == new BigFloat("0.1111"), $"Failed on: Pow(3.000,2)");
         IsTrue(BigFloat.Pow(new BigFloat("-3.000"), 0) == new BigFloat("1.00"), $"Failed on: Pow(-3.000,0)");
         IsTrue(BigFloat.Pow(new BigFloat("-3.000"), 1) == new BigFloat("-3.00"), $"Failed on: Pow(-3.000,1)");
+        // To-Do: reviewed this and it should pass - we need to update the compare function
         IsTrue(BigFloat.Pow(new BigFloat("-3.000"), -1) == new BigFloat("-0.3333"), $"Failed on: Pow(-3.000,-1)");
         IsTrue(BigFloat.Pow(new BigFloat("-3.000"), 2) == new BigFloat("9.00"), $"Failed on: Pow(-3.000,2)");
         IsTrue(BigFloat.Pow(new BigFloat("-3.000"), -2) == new BigFloat("0.1111"), $"Failed on: Pow(-3.000,2)");
