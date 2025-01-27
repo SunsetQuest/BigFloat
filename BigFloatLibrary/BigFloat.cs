@@ -1428,9 +1428,40 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         int sizeDiff = _size - other._size - Exponent + other.Exponent;
 
-        BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
-        BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
-        return a.CompareTo(b);
+        BigInteger diff;
+
+        if (sizeDiff == 0)
+        {
+            diff = other.DataBits - DataBits;
+        }
+        else if (sizeDiff > 0)
+        {
+            diff = other.DataBits - (DataBits >> sizeDiff);
+        }
+        else
+        {
+            diff = (other.DataBits << sizeDiff) - DataBits;
+        }
+
+        if (diff.Sign >= 0)
+        {
+            return -(diff >> (ExtraHiddenBits - 1)).Sign;
+        }
+        else
+        {
+            return (-diff >> (ExtraHiddenBits - 1)).Sign;
+        }
+
+        // Alternative Method - this method rounds off the ExtraHiddenBits and then compares the numbers. 
+        // The drawback to this method are...
+        //   - the two numbers can be one tick apart in the hidden bits but considered not equal.
+        //   - the two numbers can be very near 1 apart but considered not equal..
+        // The advantage to this method are...
+        //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
+        //   - may have slightly better performance.
+        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
+        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
+        // return a.CompareTo(b);
     }
 
     /// <summary>

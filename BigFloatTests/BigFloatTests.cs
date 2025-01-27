@@ -913,8 +913,6 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_PowInt()
     {
-
-
         for (int jj = 0; jj < 20; jj++)
         {
             for (double ii = 0.00001; ii < 100000; ii *= 1.01)
@@ -929,8 +927,6 @@ public class BigFloatTests
             }
         }
 
-
-        // Power = 0
         for (double ii = 0.00001; ii < 100000; ii *= 1.01)
         {
             BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, 0); // Double->BigFloat->POW->String
@@ -1164,7 +1160,8 @@ public class BigFloatTests
 
         IsTrue(BigFloat.Pow(3, 2) == 8, $"Failed on: 3^2");  // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
         IsTrue(BigFloat.Pow(3, 2) == 9, $"Failed on: 3^2");
-        IsFalse(BigFloat.Pow(3, 2) == 10, $"Failed on: 3^2");   // does (10|01 == 10|10)?  (10 == 11), so no
+        // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
+        IsTrue(BigFloat.Pow(3, 2) == 10, $"Failed on: 3^2");  // does (10|01. == 1010.|00)?  1001-1010=00|01, so less then 00|1, so true 
         IsFalse(7 == 8, $"Failed on: 7 == 8");
         IsFalse(9 == 10, $"Failed on: 9 == 10");
 
@@ -1543,24 +1540,29 @@ public class BigFloatTests
         //  101011_.  (86)   (aka 101011|0.) 
         // % 1101__.  (52)   (a    1101|00.)
         //=========
-        //   100010.  (34)   (aka  1000|10.)
+        //   100010.  (34)   (aka  1000|10.) 
         //     --  (out of precision digits)
         BigFloat v = new(0b101011, 1);
         BigFloat w = new(0b1101, 2);
         ModVerify__True(v, w, new BigFloat(0b100010, 0)); // 1000.1<<2 == 100010<<0
         ModVerify__True(v, w, new BigFloat(0b10001, 1));  // 1000.1<<2 ==  10001<<1
         ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 ==   1000<<2 or 1001!=1000  (if we do not round up)
-        ModVerify__True(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
-        IsFalse(v % w == new BigFloat(0b1000, 2)); //reverse order:  1000<<2 == 1000.1<<2 or 1000!=1001  (if we do not round up)
-        IsTrue(v % w == new BigFloat(0b1001, 2));   //reverse order:  1001<<2 == 1000.1<<2 or 1001=1001  (if we do     round up)
+        // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
+        ModVerify_False(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
+        
+        // Below two tests are the same as above two tests.
+        // IsFalse(v % w == new BigFloat(0b1000, 2));  //reverse order:  1000<<2 == 1000.1<<2 or 1000!=1001  (if we do not round up)
+        // IsFalse(v % w == new BigFloat(0b1001, 2));  //reverse order:  1001<<2 == 1000.1<<2 or 1001=1001  (if we do     round up)
         ModVerify__True(v, w, new BigFloat(0b100, 3));    // 1000.1<<2 ==    100<<3 
         ModVerify__True(v, w, new BigFloat(0b100011, 0)); // 1000.1<<2 == 100011<<0 
-        ModVerify__True(v, w, new BigFloat(0b10010, 1));  // 1000.1<<2 ==  10010<<1 ("1000|10 == 10010|0." can be considered 1001==1001 but questionable)
-        ModVerify__True(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 !=   1001<<2 ("1000|10 == 1001|00." can be considered 1001==1001 but questionable)
+        // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
+        ModVerify_False(v, w, new BigFloat(0b10010, 1));  // 1000.1<<2 ==  10010<<1 ("1000|10 == 10010|0." can be considered 1001==1001 but questionable)
+        // Below test is the same as above test.
+        //ModVerify__True(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 !=   1001<<2 ("1000|10 == 1001|00." can be considered 1001==1001 but questionable)
         ModVerify_False(v, w, new BigFloat(0b100000, 0)); // 1000.1<<2 != 100000<<0
         ModVerify_False(v, w, new BigFloat(0b011111, 0)); // 1000.1<<2 !=  11111<<0
         ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 !=   1000<<2
-
+         
         ModVerify__True(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
         ModVerify__True(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
         ModVerify__True(new BigFloat("-1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
