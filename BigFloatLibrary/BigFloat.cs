@@ -3251,13 +3251,6 @@ Other:                                         |   |         |         |       |
     /// <summary>
     /// Returns the inverse of a BigFloat.
     /// </summary>
-    //public static BigFloat Inverse(BigFloat x)
-    //{
-    //    BigInteger resIntPartNew = BigIntegerTools.Inverse(x.DataBits, x._size);
-    //    int resScalePart = -x.Scale - 2 * (x._size - ExtraHiddenBits - 1) - (resIntPartNew.IsPowerOfTwo ? 0 : -1);
-    //    BigFloat resultNew = new(resIntPartNew, resScalePart, x.SizeWithHiddenBits);
-    //    return resultNew;
-    //}
     public static BigFloat Inverse(BigFloat x)
     {
         int resScalePart = -x.Scale - (2 * (x._size - 1)) + ExtraHiddenBits + ExtraHiddenBits;

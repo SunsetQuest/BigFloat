@@ -6,6 +6,7 @@
 
 using BigFloatLibrary;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -60,7 +61,10 @@ public static class Showcase
         //////////////////// TEST AREA ////////////////////
         ///////////////////////////////////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
-        InverseTesting();
+        TurboDivideTesting();
+        Console.WriteLine("Press any key to exit...");
+        return;
+        //InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
         // NewtonNthRootPerformance(); return;
         // NthRoot_DRAFT_Stuff(); return;
@@ -220,6 +224,133 @@ public static class Showcase
         // Output: GetPrecision: 21
     }
 
+
+
+    private static void TurboDivideTesting()
+    {
+        BigInteger nToTest = 0, xInvTst = 0, xInvRes = 0;
+        int valLen;
+
+        nToTest = BigInteger.Parse("8273153554255617868983008432299507701873690283447163912225368429446311715550180068658483561349865846704311797996005892990494607142525675800342567010930760478881504606029054999488050624099750939339790755426321297478858807972510657577430552150649899640468901338121294090979219428234512847003533414175726178693610069347755095659695353545360529790683181065043538446867918248788742705333365840422466199773229341881841562551926235483545177894989221351527346588987721531194144175285969973689640218042094418808237706900648114671371775300698367651383174442595695957899162146670906778789201530522867749937550298524431256635047932");
+        valLen = (int)nToTest.GetBitLength();
+        xInvTst = BigIntegerTools.NormalDivide(nToTest, valLen); 
+        xInvRes = BigIntegerTools.ClassicDivide(nToTest, valLen);
+        //xInvTst = BigIntegerTools.TurboDivideClass(valToTest, valLen);
+        //xInvRes = BigIntegerTools.TurboDivideDraft(valToTest, valLen);
+        if (xInvTst != xInvRes)
+            Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
+
+
+
+        Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
+        Thread.CurrentThread.Priority = ThreadPriority.Highest;
+        //Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)19; // Binary 0001
+
+        Console.WriteLine();
+
+        nToTest = BigInteger.Parse("170000");
+
+        if (true)
+        {
+            Random rnd = new();
+            bool stoppedAready = false;
+            Stopwatch perfTimerClassic = new(), perfTimerNew = new();
+            double totalSpeedup = 0;
+            int totalCount = 0;
+            long divideBy = 160 * 100 * Stopwatch.Frequency / 1000000000;
+            //long perfTimerTotal1 = 0, perfTimerTotal2 = 0;
+            for (int i = 0; i < 9700; i++)
+            {
+                for (int k = 0; k < 12800; k++)
+                {
+                    nToTest += 1 + (nToTest / 23); //(valToTest >> 5); //(valToTest / 100003); 23 127 251 503 997 7727  100003
+                    int valLenth = (int)nToTest.GetBitLength();
+                    if (valLenth < 0) continue;
+                    if (valLenth > 10000 && !stoppedAready) { DisplayStatus(nToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy); Console.ReadKey(); stoppedAready = true; }
+                    
+                    BigInteger dToTest = rnd.CreateRandomBigInteger(2,valLenth);
+
+                    TestTurboDivideMethods(nToTest, dToTest, perfTimerClassic, perfTimerNew, k, valLenth);
+                }
+                //perfTimerTotal1 += perfTimerClassic.ElapsedTicks; perfTimerTotal2 += perfTimerNew.ElapsedTicks;
+                DisplayStatus(nToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy);
+            }
+        }
+
+        static void DisplayStatus(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, ref double totalSpeedup, ref int totalCount, long divideBy)
+        {
+            double thisTotal = (double)perfTimerClassic.ElapsedTicks / perfTimerNew.ElapsedTicks;
+            totalSpeedup = totalSpeedup + thisTotal;
+            totalCount++;
+            Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} -> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) (Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
+        }
+    }
+
+    private static void TestTurboDivideMethods(BigInteger nToTest, BigInteger dToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, int k, int valLen)
+    {
+        BigInteger resultClassic = 0, resultDraft = 0;
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        int nLen = (int)nToTest.GetBitLength();
+        int dLen = (int)dToTest.GetBitLength();
+        int resultLen = nLen - dLen;
+        int halfResultLen = resultLen/2;
+
+        if (k % 2 == 0)
+        {
+            perfTimerClassic.Start();
+            resultClassic = BigIntegerTools.ClassicDivide(nToTest, dToTest);//, valLen);
+            perfTimerClassic.Stop();
+
+            perfTimerNew.Start();
+            resultDraft = nToTest * BigIntegerTools.Inverse(dToTest);//, valLen);
+            //resultDraft = BigIntegerTools.TurboDivideDraft(nToTest, dToTest);//, valLen);
+            perfTimerNew.Stop();
+        }
+        else
+        {
+            perfTimerNew.Start();
+            resultDraft = nToTest * BigIntegerTools.Inverse(dToTest);//, valLen);
+            //resultDraft = BigIntegerTools.TurboDivideDraft(nToTest, dToTest);//, valLen);
+            perfTimerNew.Stop();
+
+            perfTimerClassic.Start();
+            resultClassic = BigIntegerTools.ClassicDivide(nToTest, dToTest);//, valLen);
+            perfTimerClassic.Stop();
+        }
+
+        // if xInvRes not in [a,b,c,d] then print
+        if (new BigInteger[] { 1, 2, 3, 4, 5 }.Contains(resultDraft)) { }
+
+    //    if (resultDraft < resultClassic - 1 || resultDraft > resultClassic + 1)
+    //    {
+    //        int correctBits = BigIntegerTools.ToBinaryString(resultDraft).Zip(BigIntegerTools.ToBinaryString(resultClassic), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
+    //        Console.WriteLine($"{BigIntegerTools.ToBinaryString(resultDraft >> ((int)resultDraft.GetBitLength() - 10))}..." +
+    //            $"{BigIntegerTools.ToBinaryString(resultDraft & (BigInteger.One << ((int)resultDraft.GetBitLength() - correctBits + 10)) - 1)}" +
+    //            $"[{resultDraft.GetBitLength()}] !=\r\n" +
+    //            $"{BigIntegerTools.ToBinaryString(resultClassic >> ((int)resultClassic.GetBitLength() - 10))}..." +
+    //            $"{BigIntegerTools.ToBinaryString(resultClassic & (BigInteger.One << ((int)resultClassic.GetBitLength() - correctBits + 10)) - 1)}" +
+    //            $"[{resultClassic.GetBitLength()}]\r\n" +
+    //            //$"{BigIntegerTools.ToBinaryString(xInvTst)}[{xInvTst.GetBitLength()}]\r\n" +
+    //            $"  with numerator   {BigIntegerTools.ToBinaryString(nToTest)}[{nToTest.GetBitLength()}] " +
+    //            $"  with denominator {BigIntegerTools.ToBinaryString(dToTest)}[{dToTest.GetBitLength()}] " +
+    //            $"  CorrectBits:[{correctBits,5}] of [{resultClassic.GetBitLength(),5}]");
+    //    }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static void InverseTesting()
     {
         BigInteger valToTest = 0, xInvTst = 0, xInvRes = 0;
@@ -268,30 +399,6 @@ public static class Showcase
             Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
 
 
-        //valToTest = BigInteger.Parse("12312312312312312312");
-        //{
-        //    int valLen = (int)valToTest.GetBitLength();
-        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
-        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
-        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
-        //}
-
-        //valToTest = BigInteger.Parse("12312312312312312312123123");
-        //{
-        //    int valLen = (int)valToTest.GetBitLength();
-        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
-        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
-        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
-        //}
-
-        //valToTest = BigInteger.Parse("12312312123123123123123123123123121231231231231231231231231212312312312312312312312312123123");
-        //{
-        //    int valLen = (int)valToTest.GetBitLength();
-        //    BigInteger xInvTst = (((BigInteger)1 << (valLen * 2 + 10)) / valToTest) >> 10;
-        //    BigInteger xInvRes = BigIntegerTools.InverseBigInteger(valToTest, valLen);
-        //    Console.WriteLine($"missed last {xInvRes.GetBitLength() - BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()} (Correct:{BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()})");
-        //}
-
         Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
         Thread.CurrentThread.Priority = ThreadPriority.Highest;
         //Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)19; // Binary 0001
@@ -299,20 +406,6 @@ public static class Showcase
         Console.WriteLine();
 
         valToTest = BigInteger.Parse("170000");
-        //valToTest = BigInteger.Parse("17000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-        //BigInteger valToTest = BigInteger.Parse("54423786437031527763697912279787023177007175773396983622816024035711543468387091978597056733234710315130549820241594446393756345612424802270801471745336113250193667718316040253941103853841621774234813857891663076076715068586343817309246770086732294883423415223673860597326831387240313092477650074951316685417593007167891273031148391605579769517420776570212699556110145652641739426307621148603418506166450038891744322262956504929671467272484497540453925091672914077693364778107681126835011311994757409261811224974104348895160386664369615480529461919450491798311706809949739817420025767850441857925");
-        //xInvRes = BigIntegerTools.Inverse(0xFF, 7);
-        //xInvTst = BigIntegerTools.InverseClassic(0xFF, 7);
-        //xInvRes = BigIntegerTools.Inverse(0xFFFFFFFF, 32);
-        //xInvRes = BigIntegerTools.InverseClassic(0xFFFFFFFF, 32);
-        //xInvRes = BigIntegerTools.Inverse(0xFFFFFFFFFUL, 32 + 4);
-        //xInvRes = BigIntegerTools.InverseClassic(0xFFFFFFFFFUL, 32 + 4);
-        //xInvRes = BigIntegerTools.Inverse(0xFFFFFFFFFFFFFFFFUL, 64);
-        //xInvRes = BigIntegerTools.InverseClassic(0xFFFFFFFFFFFFFFFFUL, 64);
-        //xInvRes = BigIntegerTools.Inverse(BigInteger.Parse("1777777777777777777777"), 70);
-        //xInvRes = BigIntegerTools.InverseClassic(BigInteger.Parse("1777777777777777777777"), 70);
-        //xInvRes = BigIntegerTools.Inverse(BigInteger.Parse("1777777777777777777777777777777777777777777"), 140);
-
 
         if (true)
         {
@@ -336,7 +429,6 @@ public static class Showcase
                 //perfTimerTotal1 += perfTimerClassic.ElapsedTicks; perfTimerTotal2 += perfTimerNew.ElapsedTicks;
                 DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy);
             }
-
         }
 
         static void DisplayStatus(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, ref double totalSpeedup, ref int totalCount, long divideBy)
@@ -396,128 +488,6 @@ public static class Showcase
             }
         }
     }
-
-    private static volatile uint lowestScore = 99999999;
-
-    private static void FindAdjustmentsForMethodToResolveIssue()
-    {
-        UInt128 aa = UInt128.Parse("1234567890123456789012345678901");
-        UInt128 bb = UInt128.Parse("2345678901234567890123456789012");
-        BigInteger ans = ((BigInteger)aa * (BigInteger)bb) >> 128; //(aa>>37) * (bb>>37);
-                                                                   //UInt128 ans = (aa>>37) * (bb>>37);
-        UInt128 res = Int128Tools.MultiplyHigh(aa, bb);
-        Console.WriteLine($"aa  {BigIntegerTools.BigIntegerToBinaryString((BigInteger)aa)}[{((BigInteger)aa).GetBitLength()}]");
-        Console.WriteLine($"onl 1110011010101011111101101001100000110010111110001110111110111010110001011010011111001110011001000101010000010010101000001101100011100100001010101100111011000101011...");
-        Console.WriteLine($"ans {BigIntegerTools.BigIntegerToBinaryString(ans)}[{ans.GetBitLength()}]");
-        Console.WriteLine($"res {BigIntegerTools.BigIntegerToBinaryString((BigInteger)res)}[{((BigInteger)res).GetBitLength()}]");
-
-        long tryCount = 0;
-        _ = Parallel.For(-15, 17, aaa =>        {
-            //for (int aaa = -21; aaa < 21; aaa++){
-            for (int bbb = 0; bbb < 4; bbb++)            {
-                for (int ccc = -32; ccc < 1; ccc++)                {
-                    for (int ddd = -16; ddd < -5; ddd++)                    {
-                        for (int eee = 0; eee < 5; eee++)                        {
-                            for (int fff = 0; fff < 1; fff++)                            {
-                                for (int ggg = 0; ggg < 1; ggg++)                                {
-                                    tryCount++;
-                                    //Config p = new Config(
-                                    //    aaa,
-                                    //    bbb,
-                                    //    ccc,
-                                    //    ddd,
-                                    //    eee,
-                                    //    fff,
-                                    //    ggg );
-
-                                    uint totalmiss = 0;
-
-                                    for (int cons1 = 1; cons1 < 18; cons1++)
-                                    //for (int cons2 = 1; cons2 < 7; cons2 *= 3)
-                                    {
-                                        BigInteger temp = (BigInteger)aa * cons1;
-                                        UInt128 a2 = (UInt128)(temp << (127 - (int)BigInteger.Log2(temp)));
-                                        BigInteger ans2 = temp;
-
-                                        int next = 3;
-                                        for (int i = 2; i < 10000; i++)
-                                        {
-                                            //Console.WriteLine($"Power " + i);
-
-                                            ans2 *= a2;
-                                            ans2 >>= (int)ans2.GetBitLength() - 256; //lets not let ans2 get too big.
-                                            BigInteger tempAns = ans2 >> ((int)ans2.GetBitLength() - 128);
-
-                                            if (i == next)
-                                            {
-                                                next = (int)(i * 1.34);
-
-                                                BigInteger res2 = Int128Tools.PowerFast(a2, i/*, p*/);
-
-                                                BigInteger miss = res2 - tempAns;// * (100 / int.Log2(i)) ;
-
-                                                totalmiss += (uint)miss.GetBitLength();
-                                                //Console.WriteLine($"res {BigFloat.BigIntegerToBinaryString((BigInteger)res2)}[{((BigInteger)res2).GetBitLength()}]");
-                                                //Console.WriteLine($"ans {BigFloat.BigIntegerToBinaryString((BigInteger)tempAns)}[{((BigInteger)tempAns).GetBitLength()}]");
-                                                //Console.WriteLine($"dif {miss}");
-                                            }
-                                        }
-                                    }
-                                    if (aaa == 0) totalmiss--;
-                                    if (bbb == 0) totalmiss--;
-                                    if (ccc == 0) totalmiss--;
-                                    if (ddd == 0) totalmiss--;
-                                    if (eee == 0) totalmiss--;
-                                    //if (fff == 0) totalmiss--;
-                                    if (ggg == 0) totalmiss--;
-
-                                    if (totalmiss < lowestScore)
-                                    {
-                                        lowestScore = totalmiss;
-                                        //Console.WriteLine($"totalmiss {totalmiss} a{p.a,3} b{p.b,3} c{p.c,3} d{p.d,3} e{p.e,3} f{p.f,3} g{p.g} ");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        _ = Console.ReadKey();
-    }
-
-    private static void BigConstant_Stuff() //added to test
-    {
-        BigConstants bigConstants = new(4000);
-        BigFloat pi200ref = bigConstants.Pi;   // 3.141592653589793238462643383279502884197169...
-        BigFloat pi200gen = BigConstants.GeneratePi(4000);
-        Console.WriteLine(pi200ref == pi200gen);
-
-        for (int i = 0; i < 500; i++)
-        {
-            Console.WriteLine(pi200ref == BigConstants.GeneratePi(i));
-        }
-
-        BigConstants c = new(10);
-        Console.WriteLine(c);
-        Console.WriteLine(c.Pi);
-    }
-
-    private static void BigConstant_Stuff2() //added to test
-    {
-        BigFloat[] bigFloats1000 = BigConstantBuilder.GenerateArrayOfCommonConstants();
-        BigFloat[] bigFloats2000 = BigConstantBuilder.GenerateArrayOfCommonConstants();
-        for (int i = 0; i < bigFloats1000.Length; i++)
-        {
-            BigFloat bf1000 = bigFloats1000[i];
-            BigFloat bf2000 = bigFloats2000[i];
-            if (bf1000 != bf2000)
-            {
-                Console.WriteLine(bf2000 - bf1000);
-            }
-        }
-    }
-
 
 
     //////////////  NthRoot Play Area & Examples //////////////
