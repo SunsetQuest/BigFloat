@@ -5540,7 +5540,7 @@ public class BigFloatTests
     private static bool CheckInverse(BigInteger x)
     {
         BigInteger xInvRes = BigIntegerTools.Inverse(x);
-        BigInteger xInvTst = BigIntegerTools.InverseClassic(x);
+        BigInteger xInvTst = InverseClassic(x);
 
         int correctBits = 0;
         bool success = xInvRes == xInvTst;
@@ -5572,7 +5572,26 @@ public class BigFloatTests
         IsTrue(success, sb.ToString());
 
         return success;
+
+    static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
+    {
+        int xLen = (int)x.GetBitLength();
+        if (requestedPrecision == 0)
+        {
+            requestedPrecision = xLen;
+        }
+        else if (requestedPrecision < 0)
+        {
+            throw new DivideByZeroException("'precisionBits' can not be negative.");
+        }
+        if (x.IsPowerOfTwo)
+        {
+            return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
+        }
+        return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
     }
+    }
+
 
 
     [TestMethod]
