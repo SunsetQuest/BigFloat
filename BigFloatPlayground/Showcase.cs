@@ -6,7 +6,6 @@
 
 using BigFloatLibrary;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -30,10 +29,10 @@ public static class Showcase
         //////////////////// TEST AREA ////////////////////
         ///////////////////////////////////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
+        NewtonNthRootPerformance(); return;
         // TurboDivideTesting();
         // InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
-        // NewtonNthRootPerformance(); return;
         // NthRoot_DRAFT_Stuff(); return;
         // BigConstant_Stuff();
         // BigConstant_Stuff2();
@@ -336,11 +335,24 @@ public static class Showcase
 
     private static void NewtonNthRootPerformance()
     {
+        BigInteger valToTest, xInvAns, xInvRes;
+        int valLen;
+        // fails on 1-30-2025
+        //val: 3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780 n: 18  FAIL: Ans: 106320008476723 != Res:106320008476722
+        //val: 8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974 n: 18  FAIL: Ans:76708292649963 != Res:76708292649962
+        //val: 70571123296489793781553712027899927780558056179673160447087318248032678626371547461506359424365874164665583058856159466155131437409959528764720285534060900017062263715144437342933055107384635613858949910104986257450521976082018068091106642658583149207845696158337073888727304442 n: 20  FAIL: Ans:78060504093987 != Res:78060504093988
+
+        valToTest = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
+        xInvAns = BigInteger.Parse("106320008476723");
+        xInvRes = BigIntegerTools.NewtonNthRoot(ref valToTest, 18);
+        if (xInvRes != xInvAns)
+            Console.WriteLine($"Res: {xInvRes} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()})");
+
         Stopwatch sw = new();
         Stopwatch swBase = new();
-        Random random = new(5);
+        Random random = new(6);
         //Parallel.For(0, 1000000, i => 
-        for (int i = 0; i < 1000000; i++)
+        for (int i = 0; i < 10000000; i++)
         {
             long totalTime = 0 , totalTimeBase=0;
             //////// Generate a random non-zero BigInteger for the value ////////
@@ -348,39 +360,34 @@ public static class Showcase
 
             //////// Generate a random nth root ////////
             int n = random.Next(3, 400);
-            int outputBits = ((int)BigInteger.Log2(val) / n) + 1;
-            if (outputBits is < 48 and > 1)
+
+            int outputBits = (int)(BigInteger.Log(val, 2) / n) + 1;
+            if (outputBits < 1 || outputBits > 85)
+                continue;
+
+            //////// Let run our algorithm and benchmark it. ////////
+            sw.Restart();
+            //BigInteger result = BigIntegerTools.NewtonNthRootV5_3_31(ref val, n);
+            BigInteger result = BigIntegerTools.NewtonNthRoot(ref val, n);
+            sw.Stop();
+
+
+
+            // |---------------|----------------|
+            bool isTooSmall = BigInteger.Pow(result, n-1) > val;
+            bool isTooLarge = val >= BigInteger.Pow(result + 2, n);
+                
+            if (isTooSmall || isTooLarge)
             {
-                //////// Lets make sure it is correct. ////////
-                swBase.Restart();
                 BigInteger answer = NthRootBisection(val, n, out _);
-                swBase.Stop();
-
-                //////// Let run our algorithm and benchmark it. ////////
-                sw.Restart();
-                BigInteger result = NewtonNthRoot(ref val, n);
-                sw.Stop();
-
-                bool fail = answer != result;
-                if (fail)
-                {
-                    Console.WriteLine($"val: {val} n:{n,3}  {(fail ? $"FAIL: Ans:{answer} != Res:{result}" : "")} ");
-                }
-                //////// bottom bits ////////
-
-                /////// Lets check bottom 64 bit
-                //ulong low64Bits = (ulong)(val & ulong.MaxValue);
-                //ulong total = low64Bits;
-                //for (int jj = 1; jj < n; jj++)
-                //    total *= low64Bits;
-
-                //if ((ulong)(answer & ulong.MaxValue) != total)
-                //    Console.WriteLine($"{answer} (ulong)answer != {total} total");
-
-                Interlocked.Add(ref totalTime, sw.ElapsedTicks); //totalTime += sw.ElapsedTicks;
-                Interlocked.Add(ref totalTimeBase, swBase.ElapsedTicks); //totalTime += sw.ElapsedTicks;
+                BigInteger diff = answer - result;
+                Console.WriteLine($"MissBy:{diff,2}  val: {val}^(1/{n}) Ans:{answer}[{outputBits}] != Res:{result} valBits: {BigIntegerTools.ToBinaryString(answer)}");
             }
-            if (i % 10 == 0)
+
+            Interlocked.Add(ref totalTime, sw.ElapsedTicks); //totalTime += sw.ElapsedTicks;
+            Interlocked.Add(ref totalTimeBase, swBase.ElapsedTicks); //totalTime += sw.ElapsedTicks;
+                        
+            if (i % 1000 == 0 && totalTime > 0)
                 Console.WriteLine($"i:{i} TotalTime:{totalTime} Speed-up: {totalTimeBase / totalTime}X");
         }
         //);

@@ -15,7 +15,7 @@ using static BigFloatLibrary.BigIntegerTools;
 namespace BigFloatLibrary;
 
 /// <summary>
-/// BigFloat stores a BigInteger with a floating decimal point.
+/// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>
 [DebuggerDisplay("{DebuggerDisplay}")]
 public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
@@ -53,7 +53,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     // private readonly int _extraPrecOrRepeat;
 
     /// <summary>
-    /// The Scale (or -Accuracy) is the amount to left shift (<<) the integer (or right shift the radix point) to get to the desired value. 
+    /// The binary Scale (or -Accuracy) is the amount to left shift (<<) the DataBits (i.e. right shift the radix point) to get to the desired value.
+    /// When Scale is Zero, the value is equal to the DataBits with the ExtraHiddenBits removed. (i.e. DataBits >> ExtraHiddenBits)
     /// When BigFloat is Zero, scale is the point of least accuracy.
     /// note: _scale = Scale-ExtraHiddenBits (or Scale = _scale + ExtraHiddenBits)
     /// </summary>
@@ -66,7 +67,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public readonly int Size => Math.Max(0, _size - ExtraHiddenBits);
 
     /// <summary>
-    /// The number of data bits. ExtraHiddenBits are counted.
+    /// The number of data bits. ExtraHiddenBits are included.  
     /// </summary>
     public readonly int SizeWithHiddenBits => _size;
 
@@ -116,7 +117,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public int Precision => _size - ExtraHiddenBits;
 
     /// <summary>
-    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate decimal places(in binary) the number has.
+    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places(in binary) to the right of the radix point.
     /// </summary>
     public int Accuracy => -Scale;
 
@@ -246,40 +247,41 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /////////////////////////    INIT / CONVERSION  FUNCTIONS     /////////////////////////
 
     /// <summary>
-    /// Contracts a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="scale"/> and <paramref name="rawValueSize"/>.
+    /// Constructs a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="rawValueSize"/> with respect to the ExtraHiddenBits.
     /// </summary>
     /// <param name="rawValue">The raw integerPart. It should INCLUDE the ExtraHiddenBits.</param>
     /// <param name="rawValueSize">The size of rawValue. </param>
-    private BigFloat(BigInteger rawValue, int scale, int rawValueSize)
+    /// 
+    private BigFloat(BigInteger rawValue, int binaryScaler, int rawValueSize)
     {
         DataBits = rawValue;
-        Scale = scale;
+        Scale = binaryScaler;
         _size = rawValueSize;
 
         AssertValid();
     }
 
     /// <summary>
-    /// Constructs a BigFloat using its elemental parts.
+    /// Constructs a BigFloat using its elemental parts. A starting <paramref name="integerPart"/> on how may binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
     /// </summary>
-    /// <param name="integerPart">The integer part of the BigFloat that will have a <paramref name="scale"/> applied to it. </param>
-    /// <param name="scale">How much should the <paramref name="integerPart"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
+    /// <param name="integerPart">The integer part of the BigFloat that will have a <paramref name="binaryScaler"/> applied to it. </param>
+    /// <param name="binaryScaler">How much should the <paramref name="integerPart"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="valueIncludesHiddenBits">if true, then the hidden bits should be included in the integer part.</param>
-    public BigFloat(BigInteger integerPart, int scale = 0, bool valueIncludesHiddenBits = false)
+    public BigFloat(BigInteger integerPart, int binaryScaler = 0, bool valueIncludesHiddenBits = false)
     {
         int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
         // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
         DataBits = integerPart << applyHiddenBits;
         _size = (int)BigInteger.Abs(DataBits).GetBitLength();
-        Scale = scale; // _int of zero can have scale
+        Scale = binaryScaler; // _int of zero can have scale
 
         AssertValid();
     }
 
-    public BigFloat(char integerPart, int scale = 0)
+    public BigFloat(char integerPart, int binaryScaler = 0)
     {
         DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
 
         // Special handing required for int.MinValue
         _size = integerPart >= 0
@@ -291,15 +293,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(byte integerPart, int scale = 0)
+    public BigFloat(byte integerPart, int binaryScaler = 0)
     {
         DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
         _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits;
         AssertValid();
     }
 
-    public BigFloat(int integerPart, int scale = 0) : this((long)integerPart, scale) { }
+    public BigFloat(int integerPart, int binaryScaler = 0) : this((long)integerPart, binaryScaler) { }
 
     public BigFloat(uint value, int scale = 0)
     {
@@ -309,10 +311,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(long value, int scale = 0)
+    public BigFloat(long value, int binaryScaler = 0)
     {
         DataBits = (BigInteger)value << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
         _size = value switch
         {
             > 0 => BitOperations.Log2((ulong)value) + 1 + ExtraHiddenBits,
@@ -322,18 +324,18 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(ulong value, int scale = 0)
+    public BigFloat(ulong value, int binaryScaler = 0)
     {
         DataBits = (BigInteger)value << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
         _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
         AssertValid();
     }
 
-    public BigFloat(Int128 integerPart, int scale = 0)
+    public BigFloat(Int128 integerPart, int binaryScaler = 0)
     {
         DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
             ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
@@ -342,10 +344,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(Int128 integerPart, int scale, bool valueIncludesHiddenBits)
+    public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesHiddenBits)
     {
         DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = scale;
+        Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
             ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
@@ -357,11 +359,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
         _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
         DataBits = integerPart << applyHiddenBits;
-        Scale = scale; // _int of zero can have scale
+        Scale = binaryScaler; // _int of zero can have scale
         AssertValid();
     }
 
-    public BigFloat(double value, int additionalScale = 0)
+    public BigFloat(double value, int binaryScaler = 0)
     {
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
@@ -390,7 +392,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 mantissa = -mantissa;
             }
             DataBits = new BigInteger(mantissa) << ExtraHiddenBits;
-            Scale = exp - 1023 - 52 + additionalScale;
+            Scale = exp - 1023 - 52 + binaryScaler;
             _size = 53 + ExtraHiddenBits; //_size = BitOperations.Log2((ulong)Int);
         }
         else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
@@ -401,7 +403,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (mantissa == 0)
             {
                 DataBits = 0;
-                Scale = additionalScale;
+                Scale = binaryScaler;
                 _size = 0;
             }
             else
@@ -412,7 +414,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     mantissa = -mantissa;
                 }
                 DataBits = (new BigInteger(mantissa)) << (ExtraHiddenBits);
-                Scale = -1023 - 52 + 1 + additionalScale;
+                Scale = -1023 - 52 + 1 + binaryScaler;
                 _size = size + ExtraHiddenBits;
             }
         }
@@ -420,7 +422,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(float value, int additionalScale = 0)
+    public BigFloat(float value, int binaryScaler = 0)
     {
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007fffff;
@@ -450,7 +452,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 mantissa = -mantissa;
             }
             DataBits = new BigInteger(mantissa) << ExtraHiddenBits;
-            Scale = exp - 127 - 23 + additionalScale;
+            Scale = exp - 127 - 23 + binaryScaler;
             _size = 24 + ExtraHiddenBits;
         }
         else // exp is 0 so this is a denormalized(Subnormal) float (leading "1" is "0" instead)
@@ -458,14 +460,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (mantissa == 0)
             {
                 DataBits = 0;
-                Scale = additionalScale;
+                Scale = binaryScaler;
                 _size = 0; //24 + ExtraHiddenBits;
             }
             else
             {
                 BigInteger mant = new(value >= 0 ? mantissa : -mantissa);
                 DataBits = mant << ExtraHiddenBits;
-                Scale = -126 - 23 + additionalScale; //hack: 23 is a guess
+                Scale = -126 - 23 + binaryScaler; //hack: 23 is a guess
                 _size = 32 - BitOperations.LeadingZeroCount((uint)mantissa) + ExtraHiddenBits;
             }
         }
@@ -487,11 +489,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
-    /// <param name="numericString">The input decimal/hex/binary number.</param>
-    /// <param name="additionalScale">Optional apply positive or negative base-2 scaling.(default is zero)</param>
-    public BigFloat(string value, int additionalScale = 0)
+    /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
+    /// <param name="binaryScaler">Optional apply positive or negative base-2 scaling.(default is zero)</param>
+    public BigFloat(string numericString, int binaryScaler = 0)
     {
-        this = Parse(value, additionalScale);
+        this = Parse(numericString, binaryScaler);
     }
     ///////////////////////// [END] INIT / CONVERSION  FUNCTIONS [END] /////////////////////////
 
@@ -647,7 +649,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Writes a BigFloat in Hex('X') or Binary('B'). A radix point is supported. Negative values must have a leading '-'. 
     /// </summary>
-    /// <param name="format">Format specifier: 'X' for hex, 'B' for binary, or empty for decimal.</param>
+    /// <param name="format">Format specifier: 'X' for hex, 'B' for binary, or empty for base-10 decimal.</param>
     /// <returns>The value as a string.</returns>
     public string ToString(string format)
     {
@@ -733,7 +735,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
                 dstIndex += outputBitsBeforePoint;
 
-                //Write Decimal point
+                //Write the point
                 dstBytes[dstIndex++] = '.';
                 WriteValueBits(srcBytes, leadingZeroCount + outputBitsBeforePoint, outputBitsAfterPoint, dstBytes[dstIndex..]);
             }
@@ -840,11 +842,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
-    /// <param name="numericString">The input decimal/hex/binary number.</param>
-    /// <param name="scale">Optional apply positive or negative base-2 scaling.(default is zero)</param>
-    public static BigFloat Parse(string numericString, int scale = 0)
+    /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
+    /// <param name="binaryScaler">Optional apply positive or negative base-2 scaling.(default is zero)</param>
+    public static BigFloat Parse(string numericString, int binaryScaler = 0)
     {
-        bool success = TryParse(numericString, out BigFloat biRes, scale);
+        bool success = TryParse(numericString, out BigFloat biRes, binaryScaler);
 
         if (!success)
         {
@@ -864,11 +866,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
-    /// <param name="numericString">The input decimal/hex/binary number.</param>
+    /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
     /// <param name="result">The resulting BigFloat. Zero is returned if conversion failed.</param>
-    /// <param name="scale">Optional apply positive or negative base-2 scaling.(default is zero)</param>
+    /// <param name="binaryScaler">Optional, apply positive or negative base-2 scaling.(default is zero)</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParse(string numericString, out BigFloat result, int scale = 0)
+    public static bool TryParse(string numericString, out BigFloat result, int binaryScaler = 0)
     {
         //string orgValue = numericString;
         if (string.IsNullOrEmpty(numericString))
@@ -892,11 +894,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 {
                     // remove leading "0x" or "-0x"
 
-                    return TryParseBinary(numericString.AsSpan(isNeg ? 3 : 2), out result, scale, isNeg ? -1 : 0);
+                    return TryParseBinary(numericString.AsSpan(isNeg ? 3 : 2), out result, binaryScaler, isNeg ? -1 : 0);
                 }
                 else if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
                 {
-                    return TryParseHex(numericString, out result, scale);
+                    return TryParseHex(numericString, out result, binaryScaler);
                 }
                 //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
             }
@@ -951,7 +953,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return false;
         }
 
-        // There is no decimal point, so let's use BigInteger to convert.
+        // There is no point, so let's use BigInteger to convert.
         if (radixLoc < 0)
         {
             radixLoc = numericString.Length;
@@ -968,7 +970,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (BigInteger.Abs(asInt).IsOne)
         {
             asInt <<= 1;
-            scale -= 1;
+            binaryScaler -= 1;
         }
 
         // Set ROUND to 1 to enable round to nearest.
@@ -979,7 +981,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int radixDepth = numericString.Length - radixLoc - exp;
         if (radixDepth == 0)
         {
-            result = new BigFloat(asInt, scale);
+            result = new BigFloat(asInt, binaryScaler);
         }
         else if (radixDepth >= 0) //111.111 OR 0.000111
         {
@@ -989,8 +991,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND;  // added  "-1" because it was adding one to many digits 
                                                                          // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((asInt << shiftAmt) / a) + ROUND) >> ROUND;
-            scale += -multBitLength + 1 - radixDepth;
-            result = new BigFloat(intPart, scale, true);
+            binaryScaler += -multBitLength + 1 - radixDepth;
+            result = new BigFloat(intPart, binaryScaler, true);
         }
         else // 100010XX
         {
@@ -999,8 +1001,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             int shiftAmt = multBitLength - ExtraHiddenBits - ROUND;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((asInt * a) >> shiftAmt) + ROUND) >> ROUND;
-            scale += multBitLength - radixDepth;
-            result = new BigFloat(intPart, scale, true);
+            binaryScaler += multBitLength - radixDepth;
+            result = new BigFloat(intPart, binaryScaler, true);
         }
 
         //Console.WriteLine(
@@ -1029,14 +1031,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     //  * 123,456 789  mixing different kinds of separators)
 
     /// <summary>
-    /// Parses a hex string to a BigFloat. It supports a radix point(like a decimal point in base 10) and
-    /// negative numbers. It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
+    /// Parses a hex string to a BigFloat. It supports a binaryScaler (base-2 point shifting) and negative numbers. 
+    /// It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
     /// </summary>
     /// <param name="input">The value to parse.</param>
     /// <param name="result">(out) The returned result.</param>
-    /// <param name="additionalScale">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
+    /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParseHex(ReadOnlySpan<char> input, out BigFloat result, int additionalScale = 0)
+    public static bool TryParseHex(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0)
     {
         if (input.IsEmpty)
         {
@@ -1183,7 +1185,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // hex are just bits of 4 so the scale is easy
-        int newScale = (radixLocation * 4) + additionalScale;
+        int newScale = (radixLocation * 4) + binaryScaler;
 
         if (!BigInteger.TryParse(cleaned, NumberStyles.AllowHexSpecifier, null, out BigInteger asInt))
         {
@@ -1281,7 +1283,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     }
                     break;
                 case '.':
-                    // Let's make sure the decimal was not already found.
+                    // Let's make sure the radix was not already found.
                     if (radixPointFound)
                     {
                         result = new BigFloat(0);
@@ -1890,7 +1892,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // 'Scale' will be zero or positive. (since all fraction bits are stripped away)
         // 'Size'  will be the size of the new integer part.
-        // Precision of the decimal bits are stripped away. 
+        // Fractional bits are removed. (i.e. Negative precisions are set to zero.)
 
         // If bitsToClear <= 0, then all fraction bits are implicitly zero and nothing needs to be done.
         //   Example: Scale = 32+7, int=45, size=6+32=38 -> bitsToClear=-7   -101101[10101010010...00010]0000000.
@@ -3700,7 +3702,7 @@ Other:                                         |   |         |         |       |
 
     //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
     /// <summary>
-    /// Returns the Log2 of a BigFloat number as a integer. Log2 is equivalent to the number of bits between the decimal point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
+    /// Returns the Log2 of a BigFloat number as a integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
     /// Sign is ignored. Negative values will return the same value as there positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
     /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often use to indicated size in bits so returning 0 with Log2(0) is in-line with this.
     /// </summary>
@@ -3795,105 +3797,7 @@ Other:                                         |   |         |         |       |
     //}
 
 
-    /// <summary>
-    /// Calculates the nth root of a BigInteger. i.e. x^(1/n)
-    /// </summary>
-    /// <param name="x">The input value(or radicand) to find the nth root of.</param>
-    /// <param name="n">The input nth root(or index) that should be used.</param>
-    /// <param name="outputLen">The requested output length. If positive, then this number of bits will be returned. If negative(default), then proper size is returned. If 0, then an output will be returned with the same number of digits as the input. </param>
-    /// <param name="xLen">If available, size in bits of input x. If negative, x.GetBitLength() is called to find the value.</param>
-    /// <returns>Returns the nth root(or radical) or x^(1/n)</returns>
-    public static BigInteger NewtonNthRoot(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
-    {
-        if (x == 0) return 0; // The n-th root of 0 is 0.
-        if (n == 0) return 1; // The 1st  root of x is x itself.
-        if (n == 1) return x; // The 1st  root of x is x itself.
-        //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
 
-        if (xLen < 0)
-        {
-            xLen = (int)x.GetBitLength();
-        }
-
-        // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
-        if (outputLen <= 0)
-        {
-            outputLen = (outputLen == 0) ? xLen : ((int)BigInteger.Log2(x) / n) + 1;
-        }
-
-        // If xLen is over 1023 bits, reduce the size of x to fit in a double
-        int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 0);
-        BigInteger scaledX = x >> (n * scaleDownCount);
-
-        ////////// Use double's hardware to get the first 53-bits ////////
-        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
-        long bits = BitConverter.DoubleToInt64Bits(initialGuess);
-        long mantissa = (bits & 0xfffffffffffffL) | (1L << 52);
-
-        // Return if we have enough bits.
-        //if (outputLen < 48) return mantissa >> (53 - outputLen);
-        if (outputLen < 48)
-        {
-
-            int bitsToRemove = 53 - outputLen;
-            long mask = ((long)1 << (bitsToRemove + 1)) - 1;
-            long removedBits = (mantissa + 1) & mask;
-            if (removedBits == 0)
-            {
-                mantissa++;
-            }
-
-            return mantissa >> (53 - outputLen);
-            //(mantissa, 53 - outputLen); 
-        }
-
-        //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
-
-        //////////////////////////////////////////////////////////////
-        UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
-
-        UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
-        UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
-
-        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
-        Int128 denominator2 = n * (Int128)(pow3 >> 89);
-
-        BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
-        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
-        if (outputLen < 100) // 100?
-        {
-            return val >> (84 - outputLen);
-        }
-
-        int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
-        if (UInt128.Log2(pow4) == 126)
-        {
-            tempShift++;
-        }
-        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
-        val <<= tempShift;        // should be 241 now
-
-        //////////////////////////////////////////////////////////////
-        BigInteger lastVal = 0;
-        int loops = 2;
-        int ballparkSize = 200;
-        while (val != lastVal) // Repeat until convergence
-        {
-            int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
-            lastVal = val;
-            int valSize = (int)val.GetBitLength();
-            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
-            BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
-            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
-            val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
-            loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
-            ballparkSize *= 2;
-        }
-        Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
-        Console.WriteLine("Grew by: " + (val.GetBitLength() - xLen));
-
-        return val;
-    }
 
     /// <summary>
     /// Multiplies two UInt128 values and only returns product as a BigInteger.
