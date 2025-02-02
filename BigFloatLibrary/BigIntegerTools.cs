@@ -627,7 +627,6 @@ public static class BigIntegerTools
 
         }
 
-
         // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
         if ((wantedBits > 2) && (wantedBits < 53) && (valSize * exp) < 3807)
         {
@@ -774,9 +773,16 @@ public static class BigIntegerTools
         return res;
     }
 
-
-
-
+    /// <summary>
+    /// This number will take a BigInteger and return the bits to the right side of the decimal point. 
+    /// Example: Inverse of 0b11011(i.e. 18) would be 0.037037 and returned as 0b00010010(i.e. 18).
+    /// Note: Initial version of this was started with ChatGPT but it was not Newton Plus. (see inverseNotes.txt)
+    /// </summary>
+    /// <param name="x">The value you want to find the inverse (1/x) of x. Negative values are allowed.</param>
+    /// <param name="requestedPrecision"></param>
+    /// <returns></returns>
+    /// <exception cref="DivideByZeroException">if x is zero, then the inverse is undefined or infinity.</exception>
+    /// <exception cref="ArgumentException">A negative requested Precision is not allowed.</exception>
     public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
@@ -793,7 +799,7 @@ public static class BigIntegerTools
             requestedPrecision = xLen;
         }
 
-        // future: should we pre-shrink x to requestedPrecision OR just keep 32 bits past the
+        // future: can we pre-shrink x to requestedPrecision OR just keep 32 bits past the
         // precision? This can cause an inaccurate result (a round up for results like 122.999999
         // to 123 on the result) however might offer better performance in some cases.
 
@@ -844,7 +850,8 @@ public static class BigIntegerTools
             int doubleCurSize = curSize << 1;
 
             BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
-            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); 
+            // future: we only need the bottom half of this.
             BigInteger twoMinusXy = scalingFactor - xTimesY;
             result *= twoMinusXy;
 
@@ -991,12 +998,9 @@ public static class BigIntegerTools
             return result;
         }
 
-        // is Neg
-
+        // val is Neg
         val--;
-
         BigInteger result2 = val >> targetBitsToRemove;
-
         if ((val >>> (targetBitsToRemove - 1)).IsEven)
         {
             if (((result2 - 1) >>> size).IsEven)
@@ -1154,317 +1158,4 @@ public static class BigIntegerTools
     //    return binary;
     //}
 
-
-
-
-    ////////////////////////////// Below by Nikolai TheSquid ///////////////////////////////////////////////
-    // C# implementation to quickly calculate an Nth root for BigInteger value.
-    // MIT License, Copyright(c) 2023 TheSquidCombatant
-    // https://github.com/TheSquidCombatant/TheSquid.Numerics.Extensions
-
-    /// <summary>
-    /// Nth root for non negative BigInteger values.
-    /// </summary>
-    /// <param name="source">
-    /// Root radicand value.
-    /// </param>
-    /// <param name="exponent">
-    /// Root degree value.
-    /// </param>
-    /// <param name="isExactResult">
-    /// True value for exact result or False value for approximate result.
-    /// </param>
-    /// <returns>
-    /// It returns the exact value, in case of the root is completely extracted, otherwise it returns nearest value from below.
-    /// </returns>
-    /// <exception cref="ArithmeticException">
-    /// The value of the exponent leads to an ambiguous results.
-    /// </exception>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Negative exponent values and negative source values are not supported.
-    /// </exception>
-    public static BigInteger NthRoot(ref BigInteger source, int exponent, out bool isExactResult)
-    {
-        // validation of input parameter values
-        const string negativeValuesMessage = "Negative exponent values and negative source values are not supported.";
-        if ((source < 0) || (exponent < 0))
-        {
-            throw new ArgumentOutOfRangeException(negativeValuesMessage);
-        }
-
-        const string ambiguousResultMessage = "The value of the exponent leads to an ambiguous results.";
-        if (exponent == 0)
-        {
-            throw new ArithmeticException(ambiguousResultMessage);
-        }
-        // stub for the case of trivial values of the radical expression
-        isExactResult = true;
-        if ((source == 0) || (source == 1))
-        {
-            return source;
-        }
-        // calculate the worst-case cost for each root extraction method
-        int digitsRootWeight = RootByDigitsWeight(ref source, exponent, out bool isDigitsApplicable);
-        int newtonRootWeight = RootByNewtonWeight(ref source, exponent, out bool isNewtonApplicable);
-        int doubleRootWeight = RootByDoubleWeight(ref source, exponent, out bool isDoubleApplicable);
-        // choose the fastest root extraction method for current parameters
-        int min = new[] { digitsRootWeight, newtonRootWeight, doubleRootWeight }.Min();
-        // call the fastest root extraction method for current parameters
-        if ((min == digitsRootWeight) && isDigitsApplicable) return GetRootByDigits(ref source, exponent, out isExactResult);
-        if ((min == newtonRootWeight) && isNewtonApplicable) return GetRootByNewton(ref source, exponent, out isExactResult);
-        if ((min == doubleRootWeight) && isDoubleApplicable) return GetRootByDouble(ref source, exponent, out isExactResult);
-        // stub if something went wrong when extending the functionality
-        const string notSupportedMethodMessage = "Not supported nthroot calculation method.";
-        throw new NotSupportedException(notSupportedMethodMessage);
-    }
-
-
-    /// <summary>
-    /// Method for calculating Nth roots for large N degrees.
-    /// </summary>
-    /// <remarks>
-    /// Digit-by-digit extraction method.
-    /// </remarks>
-    private static BigInteger GetRootByDigits(ref BigInteger source, int exponent, out bool isExactResult)
-    {
-        // calculate how many digits of accuracy are cut off from the radicand value for each digit of root value
-        const int floor = 10;
-        BigInteger digitsShift = BigInteger.Pow(floor, exponent);
-        BigInteger currentSource = source;
-        LinkedList<BigInteger> intermediateResults = new();
-        _ = intermediateResults.AddLast(currentSource);
-        // remember the values of the radical expression intermediate in accuracy
-        while (currentSource >= digitsShift)
-        {
-            currentSource /= digitsShift;
-            _ = intermediateResults.AddLast(currentSource);
-        }
-        // initial setting for the digits-by-digits root extraction method
-        isExactResult = false;
-        BigInteger minResult = new(1);
-        BigInteger maxResult = new(floor);
-        LinkedListNode<BigInteger> sourceNode = intermediateResults.Last;
-        BigInteger currentResult = 0, currentPower = 0;
-        // looking for the root one by one digit starting from the most significant digit
-        while (sourceNode != null)
-        {
-            // initial setting for the current iteration of digits-by-digits extraction
-            currentSource = sourceNode.Value;
-            isExactResult = false;
-            // followed by an optional, but almost zero-cost optimization
-            if (sourceNode != intermediateResults.Last)
-            {
-                // use data from previous iteration
-                currentResult *= floor;
-                currentPower *= digitsShift;
-                // build a tangent (y=k*x+b) to the point of the previous root value 
-                BigInteger k = exponent * currentPower / currentResult;
-                BigInteger b = currentPower - (k * currentResult);
-                BigInteger x = ((currentSource - b) / k) + 1;
-                // reduces approximately 20% of iterations
-                if (x < maxResult)
-                {
-                    maxResult = x;
-                }
-            }
-            // initial setting for the binary search method
-            currentResult = (minResult + maxResult) / 2;
-            BigInteger previousResult = 0;
-            // looking for the new last digit of the root using the binary search
-            while (previousResult != currentResult)
-            {
-                currentPower = BigInteger.Pow(currentResult, exponent);
-                if (currentPower == currentSource) { isExactResult = true; break; }
-                previousResult = currentResult;
-                if (currentPower < currentSource)
-                {
-                    minResult = currentResult;
-                }
-                else
-                {
-                    maxResult = currentResult;
-                }
-
-                currentResult = (minResult + maxResult) / 2;
-            }
-            // shift digits to the left for the next iteration
-            minResult = currentResult * floor;
-            maxResult = (currentResult + 1) * floor;
-            sourceNode = sourceNode.Previous;
-        }
-        // return accumulated root value
-        return currentResult;
-    }
-
-    /// <summary>
-    /// Method for calculating Nth roots for small N degrees.
-    /// </summary>
-    /// <remarks>
-    /// By Newton simplest extraction method.
-    /// </remarks>
-    private static BigInteger GetRootByNewton(ref BigInteger source, int exponent, out bool isExactResult)
-    {
-        // calculate the initial guess (equal or greater) the root value with accuracy up to one digit
-        const int floor = 10;
-        int quotient = (int)Math.Ceiling(BigInteger.Log(source, floor) / exponent);
-        BigInteger currentResult = BigInteger.Pow(floor, quotient);
-        // initial setting for applying Newton's method
-        BigInteger previousResult = 0;
-        BigInteger delta = 0;
-        // looking for the root by averaging the maximum and minimum values by Newton's method
-        while ((previousResult != currentResult) && (delta >= 0))
-        {
-            BigInteger counterweight = BigInteger.Pow(currentResult, exponent - 1);
-            previousResult = currentResult;
-            currentResult = (((exponent - 1) * currentResult) + (source / counterweight)) / exponent;
-            delta = previousResult - currentResult;
-        }
-        // on any condition loop end, previousResult contains the desired value
-        currentResult = previousResult;
-        // check if the last obtained approximation is the exact value of the root
-        isExactResult = BigInteger.Pow(currentResult, exponent) == source;
-        // return accumulated root value
-        return currentResult;
-    }
-
-    /// <summary>
-    /// Method for calculating Nth roots for doubling N degrees.
-    /// </summary>
-    /// <remarks>
-    /// Inner well optimized square root extraction method was released by Ryan Scott White.
-    /// </remarks>
-    private static BigInteger GetRootByDouble(ref BigInteger source, int exponent, out bool isExactResult)
-    {
-        BigInteger basement = source;
-        int power = exponent;
-        for (; power > 1; power >>= 1)
-        {
-            basement = NewtonPlusSqrt(basement);
-        }
-
-        BigInteger target = BigInteger.Pow(basement, exponent);
-        isExactResult = target == source;
-        return basement;
-        //// below is an adaptation of Ryan's method for .NET Standard
-        //BigInteger NewtonPlusSqrt(BigInteger x)
-        //{
-        //    // 1.448e17 = ~1<<57
-        //    if (x < 144838757784765629)
-        //    {
-        //        uint vInt = (uint)Math.Sqrt((ulong)x);
-        //        // 4.5e15 = ~1<<52
-        //        if ((x >= 4503599761588224) && ((ulong)vInt * vInt > (ulong)x)) vInt--;
-        //        return vInt;
-        //    }
-        //    double xAsDub = (double)x;
-        //    // 8.5e37 is long.max * long.max
-        //    if (xAsDub < 8.5e37)
-        //    {
-        //        ulong vInt = (ulong)Math.Sqrt(xAsDub);
-        //        BigInteger v = (vInt + ((ulong)(x / vInt))) >> 1;
-        //        return (v * v <= x) ? v : v - 1;
-        //    }
-        //    if (xAsDub < 4.3322e127)
-        //    {
-        //        BigInteger v = (BigInteger)Math.Sqrt(xAsDub);
-        //        v = (v + (x / v)) >> 1;
-        //        if (xAsDub > 2e63) v = (v + (x / v)) >> 1;
-        //        return (v * v <= x) ? v : v - 1;
-        //    }
-        //    int xLen = (int)BigInteger.Log(BigInteger.Abs(x), 2) + 1;
-        //    int wantedPrecision = (xLen + 1) / 2;
-        //    int xLenMod = xLen + (xLen & 1) + 1;
-        //    // do the first sqrt on hardware
-        //    long tempX = (long)(x >> (xLenMod - 63));
-        //    double tempSqrt1 = Math.Sqrt(tempX);
-        //    ulong valLong = (ulong)BitConverter.DoubleToInt64Bits(tempSqrt1) & 0x1fffffffffffffL;
-        //    if (valLong == 0) valLong = 1UL << 53;
-        //    // classic Newton iterations
-        //    BigInteger val = ((BigInteger)valLong << (53 - 1)) + (x >> xLenMod - (3 * 53)) / valLong;
-        //    int size = 106;
-        //    for (; size < 256; size <<= 1) val = (val << (size - 1)) + (x >> xLenMod - (3 * size)) / val;
-        //    if (xAsDub > 4e254)
-        //    {
-        //        // 1 << 845
-        //        int numOfNewtonSteps = (int)BigInteger.Log((uint)(wantedPrecision / size), 2) + 2;
-        //        // apply starting size
-        //        int wantedSize = (wantedPrecision >> numOfNewtonSteps) + 2;
-        //        int needToShiftBy = size - wantedSize;
-        //        val >>= needToShiftBy;
-        //        size = wantedSize;
-        //        do
-        //        {
-        //            // Newton plus iterations
-        //            int shiftX = xLenMod - (3 * size);
-        //            BigInteger valSqrd = (val * val) << (size - 1);
-        //            BigInteger valSU = (x >> shiftX) - valSqrd;
-        //            val = (val << size) + (valSU / val);
-        //            size *= 2;
-        //        } while (size < wantedPrecision);
-        //    }
-        //    // there are a few extra digits here, lets save them
-        //    int oversidedBy = size - wantedPrecision;
-        //    BigInteger saveDroppedDigitsBI = val & ((BigInteger.One << oversidedBy) - 1);
-        //    int downby = (oversidedBy < 64) ? (oversidedBy >> 2) + 1 : (oversidedBy - 32);
-        //    ulong saveDroppedDigits = (ulong)(saveDroppedDigitsBI >> downby);
-        //    // shrink result to wanted precision
-        //    val >>= oversidedBy;
-        //    // detect a round-ups
-        //    if ((saveDroppedDigits == 0) && (val * val > x)) val--;
-        //    return val;
-        //}
-    }
-
-    /// <summary>
-    /// Method for calculating weight of digit-by-digit extraction method.
-    /// </summary>
-    /// <remarks>
-    /// The formula for calculating weight is very approximate and relative, so I will be grateful if someone can clarify.
-    /// </remarks>
-    private static int RootByDigitsWeight(ref BigInteger source, int exponent, out bool isApplicableMethod)
-    {
-        const int floor = 10;
-        isApplicableMethod = true;
-        int quotient = (int)Math.Ceiling(BigInteger.Log(source, floor) / exponent);
-        int weight = (int)(0.8 * quotient * (BigInteger.Log(floor, 2) + 1));
-        return weight;
-    }
-
-    /// <summary>
-    /// Method for calculating weight of Newton simplest extraction method.
-    /// </summary>
-    /// <remarks>
-    /// The formula for calculating weight is very approximate and relative, so I will be grateful if someone can clarify.
-    /// </remarks>
-    private static int RootByNewtonWeight(ref BigInteger source, int exponent, out bool isApplicableMethod)
-    {
-        const int floor = 10;
-        isApplicableMethod = true;
-        int quotient = (int)Math.Ceiling(BigInteger.Log(source, floor) / exponent);
-        int weight = (int)((Math.Log(BigInteger.Log(BigInteger.Pow(floor, quotient) - BigInteger.Pow(floor, quotient - 1), 2), 2) * exponent / 2) + 3);
-        return weight;
-    }
-
-    /// <summary>
-    /// Method for calculating weight of optimized doubling extraction method.
-    /// </summary>
-    /// <remarks>
-    /// The formula for calculating weight is very approximate and relative, so I will be grateful if someone can clarify.
-    /// </remarks>
-    private static int RootByDoubleWeight(ref BigInteger source, int exponent, out bool isApplicableMethod)
-    {
-        const int floor = 10;
-        bool isPowerOfTwo = exponent != 0 && ((exponent & (exponent - 1)) == 0);
-        isApplicableMethod = false;
-        if (!isPowerOfTwo)
-        {
-            return int.MaxValue;
-        }
-
-        isApplicableMethod = true;
-        int quotient = (int)Math.Ceiling(BigInteger.Log(source, floor) / exponent);
-        int weight = (int)(0.2 * quotient * (BigInteger.Log(floor, 2) + 1));
-        return weight;
-    }
-    ////////////////// Above by Nikolai TheSquid ///////////////////////////////////////////////
 }

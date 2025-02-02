@@ -1,0 +1,249 @@
+
+Note: also see "BigFloatNthRootNotes.txt"
+
+   
+    /// <summary>
+    /// Calculates the nth root of a BigInteger. i.e. x^(1/n)
+    /// </summary>
+    /// <param name="x">The input value(or radicand) to find the nth root of.</param>
+    /// <param name="n">The input nth root(or index) that should be used.</param>
+    /// <param name="outputLen">The requested output length. If positive, then this number of bits will be returned. If negative(default), then proper size is returned. If 0, then an output will be returned with the same number of digits as the input. </param>
+    /// <param name="xLen">If available, size in bits of input x. If negative, x.GetBitLength() is called to find the value.</param>
+    /// <returns>Returns the nth root(or radical) or x^(1/n)</returns>
+    public static BigInteger NewtonNthRoot(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 0) return 1; // The 1st  root of x is x itself.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        if (xLen < 0)
+        {
+            xLen = (int)x.GetBitLength();
+        }
+
+        // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
+        if (outputLen <= 0)
+        {
+            outputLen = (outputLen == 0) ? xLen : ((int)BigInteger.Log2(x) / n) + 1;
+        }
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 0);
+        BigInteger scaledX = x >> (n * scaleDownCount);
+
+        ////////// Use double's hardware to get the first 53-bits ////////
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+        long bits = BitConverter.DoubleToInt64Bits(initialGuess);
+        long mantissa = (bits & 0xfffffffffffffL) | (1L << 52);
+
+        // Return if we have enough bits.
+        //if (outputLen < 48) return mantissa >> (53 - outputLen);
+        if (outputLen < 48)
+        {
+
+            int bitsToRemove = 53 - outputLen;
+            long mask = ((long)1 << (bitsToRemove + 1)) - 1;
+            long removedBits = (mantissa + 1) & mask;
+            if (removedBits == 0)
+            {
+                mantissa++;
+            }
+
+            return mantissa >> (53 - outputLen);
+            //(mantissa, 53 - outputLen); 
+        }
+
+        //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
+
+        //////////////////////////////////////////////////////////////
+        UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
+
+        UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
+        UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
+
+        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
+        Int128 denominator2 = n * (Int128)(pow3 >> 89);
+
+        BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
+        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
+        if (outputLen < 100) // 100?
+        {
+            return val >> (84 - outputLen);
+        }
+
+        int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
+        if (UInt128.Log2(pow4) == 126)
+        {
+            tempShift++;
+        }
+        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
+        val <<= tempShift;        // should be 241 now
+
+        //////////////////////////////////////////////////////////////
+        BigInteger lastVal = 0;
+        int loops = 2;
+        int ballparkSize = 200;
+        while (val != lastVal) // Repeat until convergence
+        {
+            int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
+            lastVal = val;
+            int valSize = (int)val.GetBitLength();
+            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
+            BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
+            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
+            val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
+            loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
+            ballparkSize *= 2;
+        }
+        Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
+        Console.WriteLine("Grew by: " + (val.GetBitLength() - xLen));
+
+        return val;
+    }
+
+
+
+
+
+    public static BigInteger NewtonNthRootV5_3_31(ref BigInteger x, int n)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        int xLen = (int)x.GetBitLength();
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 1);
+        BigInteger scaledX = x >> (n * scaleDownCount); // Right-shift x by n bits
+
+        // Calculate initial guess using scaled down x
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+
+
+        long bits = BitConverter.DoubleToInt64Bits(initialGuess);
+        // Note that the shift is sign-extended, hence the test against -1 not 1
+        //bool negative = (bits & (1L << 63)) != 0;
+        int exponent = (int)((bits >> 52) & 0x7ffL) - 1075;
+        long mantissa = (bits & 0xfffffffffffffL) | (1L << 52); ;
+
+        BigInteger val = new(mantissa);
+        scaleDownCount += exponent;
+
+        //BigInteger val = new BigInteger(initialGuess);  //241
+        Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount));
+        val <<= scaleDownCount;
+        Console.WriteLine(BigIntegerToBinaryString(val));
+
+        int loops = 0;
+        int ballparkSize = 100;
+        int estSize = (xLen / n) + 1;
+        BigInteger lastVal = 0;
+
+        //////////////////////////////////////////////////////////////
+
+        while (val != lastVal) // Repeat until convergence
+        {
+            int reduceBy = Math.Max(0, estSize - ballparkSize);
+            lastVal = val;
+            int valSize = (int)val.GetBitLength();
+            BigInteger pow = PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
+
+            BigInteger numerator = (pow * (val >> (reduceBy * 1))) - (x >> (shifted + (reduceBy * 1)));
+            BigInteger denominator = (n * pow) >> (reduceBy * 0);
+            val = ((val >> reduceBy) - (numerator / denominator)) << reduceBy;
+
+            loops++;
+            ballparkSize *= 2;
+        }
+        Console.WriteLine($"Loops:{loops}  ballparkSize{ballparkSize}/{val.GetBitLength()}");
+
+        return val;
+    }
+
+    public static BigInteger NewtonNthRootV4(ref BigInteger x, int n)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        int xLen = (int)x.GetBitLength();
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 1);
+        BigInteger scaledX = x >> (n * scaleDownCount); // Right-shift x by n bits
+
+        // Calculate initial guess using scaled down x
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+
+        BigInteger val = new(initialGuess);
+
+        val <<= scaleDownCount;
+        Console.WriteLine(BigIntegerToBinaryString(val));
+
+        int loops = 0;
+        int ballparkSize = 50;
+        int estSize = (xLen / n) + 1;
+        BigInteger lastVal = 0;
+        while (val != lastVal) // Repeat until convergence
+        {
+            int reduceBy = Math.Max(0, estSize - ballparkSize);
+            lastVal = val;
+            BigInteger pow = PowMostSignificantBits(val, n - 1, out int shifted);
+
+            BigInteger numerator = ((pow * val) >> reduceBy) - (x >> (shifted + reduceBy));
+            BigInteger denominator = (n * pow) >> reduceBy;
+            val -= numerator / denominator;
+
+            loops++;
+            ballparkSize *= 2;
+        }
+        Console.WriteLine($"Loops:{loops}  ballparkSize{ballparkSize}/{val.GetBitLength()}");
+
+        return val;
+    }
+
+
+    public static BigInteger NewtonNthRootV3_3_27_last(ref BigInteger x, int n)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        int xLen = (int)x.GetBitLength();
+        BigInteger scaledX = x;
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = (xLen - 1024 + n) / n;
+        scaledX >>= n * scaleDownCount; // Right-shift x by n bits
+
+        // Calculate initial guess using scaled down x
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+
+        // Adjust the initial guess by scaling it back up
+        BigInteger val = new(initialGuess);
+
+        val <<= scaleDownCount;
+
+
+        //Console.WriteLine(val.ToString());
+
+        int loops = 0;
+        BigInteger lastVal = 0;
+        while (val != lastVal) // Repeat until convergence
+        {
+            lastVal = val;
+            BigInteger pow = BigInteger.Pow(val, n - 1);
+            BigInteger numerator = (pow * val) - x;
+            BigInteger denominator = n * pow;
+            val -= numerator / denominator;
+
+            loops++;
+        }
+        Console.WriteLine(loops);
+
+        return val;
+    }
+   
+   

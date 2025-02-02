@@ -1,3 +1,6 @@
+   Note: also see "BigIntegerNthRootNotes.txt"
+   
+   
    //////////////  NthRoot Play Area & Examples ////////////// as of 1/6/2024
    private static void NthRoot_DRAFT_Stuff()
    {
@@ -1027,6 +1030,63 @@
 
         return x;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
