@@ -5,9 +5,7 @@
 // Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -823,11 +821,15 @@ public static class BigIntegerTools
         const int BOOST_LARGER_NUMS=   2; //    2
 
         if ((requestedPrecision + xLen) <= SIMPLE_CUTOFF)
-            return (BigInteger.One << (xLen +  requestedPrecision - 1)) / x;
+        {
+            return (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
+        }
 
         bool isPos = x.Sign >= 0;
         if (!isPos)
+        {
             x = -x;
+        }
 
         // The larger the number the more buffer we should start out with we can then reduce the
         // buffer as we go along.
@@ -836,7 +838,7 @@ public static class BigIntegerTools
         int desiredStartSize = requestedPrecision + (EXTRA_START * 2);
         while (desiredStartSize > START_CUTOFF)
         {
-            desiredStartSize = ((desiredStartSize+1) >> 1) + BOOST_LARGER_NUMS;
+            desiredStartSize = ((desiredStartSize + 1) >> 1) + BOOST_LARGER_NUMS;
         }
         int curSize = desiredStartSize;
 
@@ -850,12 +852,12 @@ public static class BigIntegerTools
             int doubleCurSize = curSize << 1;
 
             BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
-            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); 
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1);
             // future: we only need the bottom half of this.
             BigInteger twoMinusXy = scalingFactor - xTimesY;
             result *= twoMinusXy;
 
-            int pendingInaccurateBottomHalfToRemove = (curSize + EXTRA_TO_REMOVE1);
+            int pendingInaccurateBottomHalfToRemove = curSize + EXTRA_TO_REMOVE1;
             curSize = doubleCurSize - EXTRA_TO_REMOVE1;
 
             if (curSize > ((requestedPrecision < NEWTON_CUTOFF * 2) ? requestedPrecision : NEWTON_CUTOFF))
@@ -865,7 +867,7 @@ public static class BigIntegerTools
                     BigInteger tempResult2 = (result) >> (curSize - requestedPrecision + pendingInaccurateBottomHalfToRemove);
                     return isPos ? tempResult2 : -tempResult2;
                 }
-                result = (result ) >> pendingInaccurateBottomHalfToRemove + SKIP_LOWEST;
+                result = (result) >> (pendingInaccurateBottomHalfToRemove + SKIP_LOWEST);
                 break;
             }
 
@@ -908,7 +910,7 @@ public static class BigIntegerTools
             //// back off until we see both a zero and one
             if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision) // maybe remove EXTRA_TO_REMOVE2
             {
-                result = ((result << (2 * curSize - 0)) - ((result >> 0) * (xTimesY & mask))) >> (3 * curSize - 0 - requestedPrecision);
+                result = ((result << ((2 * curSize) - 0)) - ((result >> 0) * (xTimesY & mask))) >> ((3 * curSize) - 0 - requestedPrecision);
 
                 return isPos ? result : -result;
             }
@@ -956,7 +958,10 @@ public static class BigIntegerTools
         }
 
         // BigInteger will automatically round when down-shifting larger negative values.
-        if (val.Sign < 0) val--;
+        if (val.Sign < 0)
+        {
+            val--;
+        }
 
         BigInteger result2 = val >> targetBitsToRemove;
 
@@ -1109,12 +1114,20 @@ public static class BigIntegerTools
     /// <param name="bitLength">The bit length the BigInteger should be.</param>
     public static BigInteger CreateRandomBigInteger(this Random random, int bitLength)
     {
-        if (bitLength < 0) throw new ArgumentOutOfRangeException();
-        if (bitLength == 0) return BigInteger.Zero;
+        if (bitLength < 0)
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+
+        if (bitLength == 0)
+        {
+            return BigInteger.Zero;
+        }
+
         byte[] bytes = new byte[(bitLength + 7) / 8];
         random.NextBytes(bytes);
         // For the top byte, place a leading 1-bit then down-shift to achieve desired length.
-        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - (bitLength - 1) % 8));
+        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - ((bitLength - 1) % 8)));
         return new BigInteger(bytes, true);
     }
 
@@ -1128,13 +1141,21 @@ public static class BigIntegerTools
     /// <paramref name="maxBitLength"/> must be greater than or equal to minValue.</param>
     public static BigInteger CreateRandomBigInteger(this Random random, int minBitLength, int maxBitLength)
     {
-        if (minBitLength < 0) throw new ArgumentOutOfRangeException();
+        if (minBitLength < 0)
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+
         int bits = random.Next(minBitLength, maxBitLength);
-        if (bits == 0) return BigInteger.Zero;
+        if (bits == 0)
+        {
+            return BigInteger.Zero;
+        }
+
         byte[] bytes = new byte[(bits + 7) / 8];
         random.NextBytes(bytes);
         // For the top byte, place a leading 1-bit then down-shift to achieve desired length.
-        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - (bits - 1) % 8));
+        bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - ((bits - 1) % 8)));
         return new BigInteger(bytes, true);
     }
 

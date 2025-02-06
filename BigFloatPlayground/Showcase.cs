@@ -30,7 +30,6 @@ public static class Showcase
         ///////////////////////////////////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
         // NewtonNthRootPerformance(); return;
-        // TurboDivideTesting();
         // InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
         // NthRoot_DRAFT_Stuff(); return;
@@ -191,8 +190,6 @@ public static class Showcase
     }
 
 
-    //////////////  NthRoot Play Area & Examples //////////////
-
 
     //private static void InverseTesting()
     //{
@@ -333,10 +330,11 @@ public static class Showcase
     //}
 
 
+    //////////////  NthRoot Play Area & Examples //////////////
+
     private static void NewtonNthRootPerformance()
     {
         BigInteger valToTest, xInvAns, xInvRes;
-        int valLen;
         // fails on 1-30-2025
         //val: 3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780 n: 18  FAIL: Ans: 106320008476723 != Res:106320008476722
         //val: 8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974 n: 18  FAIL: Ans:76708292649963 != Res:76708292649962
@@ -346,7 +344,9 @@ public static class Showcase
         xInvAns = BigInteger.Parse("106320008476723");
         xInvRes = BigIntegerTools.NewtonNthRoot(ref valToTest, 18);
         if (xInvRes != xInvAns)
+        {
             Console.WriteLine($"Res: {xInvRes} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()})");
+        }
 
         Stopwatch sw = new();
         Stopwatch swBase = new();
@@ -354,7 +354,7 @@ public static class Showcase
         //Parallel.For(0, 1000000, i => 
         for (int i = 0; i < 10000000; i++)
         {
-            long totalTime = 0 , totalTimeBase=0;
+            long totalTime = 0, totalTimeBase = 0;
             //////// Generate a random non-zero BigInteger for the value ////////
             BigInteger val = random.CreateRandomBigInteger(minBitLength: 5, maxBitLength: 1000);
 
@@ -362,8 +362,10 @@ public static class Showcase
             int n = random.Next(3, 400);
 
             int outputBits = (int)(BigInteger.Log(val, 2) / n) + 1;
-            if (outputBits < 1 || outputBits > 85)
+            if (outputBits is < 1 or > 85)
+            {
                 continue;
+            }
 
             //////// Let run our algorithm and benchmark it. ////////
             sw.Restart();
@@ -374,9 +376,9 @@ public static class Showcase
 
 
             // |---------------|----------------|
-            bool isTooSmall = BigInteger.Pow(result, n-1) > val;
+            bool isTooSmall = BigInteger.Pow(result, n - 1) > val;
             bool isTooLarge = val >= BigInteger.Pow(result + 2, n);
-                
+
             if (isTooSmall || isTooLarge)
             {
                 BigInteger answer = NthRootBisection(val, n, out _);
@@ -386,15 +388,17 @@ public static class Showcase
 
             Interlocked.Add(ref totalTime, sw.ElapsedTicks); //totalTime += sw.ElapsedTicks;
             Interlocked.Add(ref totalTimeBase, swBase.ElapsedTicks); //totalTime += sw.ElapsedTicks;
-                        
+
             if (i % 1000 == 0 && totalTime > 0)
+            {
                 Console.WriteLine($"i:{i} TotalTime:{totalTime} Speed-up: {totalTimeBase / totalTime}X");
+            }
         }
         //);
     }
 
     // Verify nthRoot by Bisection
-    // https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, 2014
+    // https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, Cryptonite, 2014
     public static BigInteger NthRootBisection(BigInteger value, int root, out BigInteger remainder)
     {
         //special conditions
@@ -453,7 +457,6 @@ public static class Showcase
 
     private static void NthRoot_DRAFT_Stuff()
     {
-        //                                                                                                                                                                                        7777777777777777777777777777777777777777777777777777777777777777                   
         Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):1340494621.514214278463413501222825825662100997195024832765760458|23859");        //Console.WriteLine($"ANS:  1100111011001010100110000110100100101101000010110010100101000.10001000010110110011101011111111010101010100001110111010010101110001010111001110100001011011110100111101000100010101001000111110110000011001101111110111110110100011011010001101100011100111010110101110000000001010101010101011111001011011110101010111011111001010011100001101000101010000010010001001001110010010001100001110000001110011010010101110100011011001110010011110001000111101101000100011011110100011000110111101001100000|011");
         Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4)}"); Console.WriteLine($"x^(1/4):9391044157537525.19591975149938555692792588485605707185903878278)");
         Console.WriteLine($"result: {BigFloat.NthRoot_INCOMPLETE_DRAFT_10(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7)}"); Console.WriteLine($"x^(1/7):1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740|51982282");
@@ -640,14 +643,17 @@ public static class Showcase
                     timer.Start();
                     BigFloat result2 = NthRoot_INCOMPLETE_DRAFT9(bf, e);
                     timer.Stop();
-                    if (i == 0) Console.WriteLine($"{m}^(1/{e}) = {result2}  correct:{double.Pow((double)bf, 1 / (double)e)}  ticks {timer.ElapsedTicks}");
-                    
+                    if (i == 0)
+                    {
+                        Console.WriteLine($"{m}^(1/{e}) = {result2}  correct:{double.Pow((double)bf, 1 / (double)e)}  ticks {timer.ElapsedTicks}");
+                    }
                 }
             }
         }
 
         Console.WriteLine(NthRoot_INCOMPLETE_DRAFT(100000000000, 5));
     }
+
 
     //////////////  Pow() Play Area & Examples //////////////
     private static void Pow_Stuff()

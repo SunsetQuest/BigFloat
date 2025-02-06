@@ -36,9 +36,9 @@ public class BigFloatTests
     private readonly int TestTargetInMillseconds = 500;
 
 #if DEBUG
-    const int MaxDegreeOfParallelism = 1;
-    const long sqrtBruteForceStoppedAt = 262144;
-    const long inverseBruteForceStoppedAt = 262144;
+    private const int MaxDegreeOfParallelism = 1;
+    private const long sqrtBruteForceStoppedAt = 262144;
+    private const long inverseBruteForceStoppedAt = 262144;
 #else
     int MaxDegreeOfParallelism = Environment.ProcessorCount;
     const long sqrtBruteForceStoppedAt = 524288;
@@ -208,16 +208,15 @@ public class BigFloatTests
         // bigFloat(true ans):23.462879545477391625..
 
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
-        BigFloat BigFloatdiff = bigFloatTotal - (BigFloat)doubleTotal;
         IsTrue(bigFloatTotal == (BigFloat)doubleTotal, "Fail on Verify_BigConstants");
-
+        
+        double BigFloatZero1 = (double)BigFloat.ZeroWithNoPrecision;
+        double BigFloatZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
+        IsTrue(BigFloatZero1 == BigFloatZero2, "Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)");
 
         // following does not pass because of limitations of double. A number that is out-of-precision and Zero cannot be differentiated. 
-        double BigFloatZeroToDoubleZero1 = (double)BigFloat.ZeroWithNoPrecision;
-        double BigFloatZeroToDoubleZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
-
-        double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
-        //IsTrue(doubleDiff0 <= acceptableTolarance, "Fail on Verify_BigConstants");
+        // double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
+        // IsTrue(doubleDiff0 <= acceptableTolarance, "Fail on Verify_BigConstants");
 
         double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
         double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 8;
@@ -690,11 +689,11 @@ public class BigFloatTests
         IsTrue(res == ans);
 
         aaa = new("-1");
-        ans = double.Log2((double)aaa);
+        ans = double.Log2((double)aaa); //todo: need this?
         IsTrue(double.IsNaN(BigFloat.Log2(aaa)));
 
         aaa = new("0");
-        ans = double.Log2((double)aaa);
+        ans = double.Log2((double)aaa);  //todo: need this?
         IsTrue(double.IsNaN(BigFloat.Log2(aaa)));
 
         aaa = new("0b10110.1010000010011110011001100111111100111011110011001001000"); //pattern: 2^59.5
@@ -1549,7 +1548,7 @@ public class BigFloatTests
         ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 ==   1000<<2 or 1001!=1000  (if we do not round up)
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
         ModVerify_False(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
-        
+
         // Below two tests are the same as above two tests.
         // IsFalse(v % w == new BigFloat(0b1000, 2));  //reverse order:  1000<<2 == 1000.1<<2 or 1000!=1001  (if we do not round up)
         // IsFalse(v % w == new BigFloat(0b1001, 2));  //reverse order:  1001<<2 == 1000.1<<2 or 1001=1001  (if we do     round up)
@@ -1562,7 +1561,7 @@ public class BigFloatTests
         ModVerify_False(v, w, new BigFloat(0b100000, 0)); // 1000.1<<2 != 100000<<0
         ModVerify_False(v, w, new BigFloat(0b011111, 0)); // 1000.1<<2 !=  11111<<0
         ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 !=   1000<<2
-         
+
         ModVerify__True(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
         ModVerify__True(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
         ModVerify__True(new BigFloat("-1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
@@ -5423,7 +5422,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         int startAt = BitOperations.Log2(inverseBruteForceStoppedAt) - 1;
 
-        Parallel.For(startAt, 10000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        _ = Parallel.For(startAt, 10000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
         {
             if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
             {
@@ -5573,23 +5572,23 @@ public class BigFloatTests
 
         return success;
 
-    static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
-    {
-        int xLen = (int)x.GetBitLength();
-        if (requestedPrecision == 0)
+        static BigInteger InverseClassic(BigInteger x, int requestedPrecision = 0)
         {
-            requestedPrecision = xLen;
-        }
-        else if (requestedPrecision < 0)
-        {
-            throw new DivideByZeroException("'precisionBits' can not be negative.");
-        }
+            int xLen = (int)x.GetBitLength();
+            if (requestedPrecision == 0)
+            {
+                requestedPrecision = xLen;
+            }
+            else if (requestedPrecision < 0)
+            {
+                throw new DivideByZeroException("'precisionBits' can not be negative.");
+            }
         if (x.IsPowerOfTwo)
         {
             return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
         }
         return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
-    }
+        }
     }
 
 
