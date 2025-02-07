@@ -71,13 +71,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public readonly int SizeWithHiddenBits => _size;
 
-    //TODO: Exponent should have a "-1" added as 1.0 has an exponent of zero.  (this is also the same a log2 so add that in the comment)
     /// <summary>
-    /// The resulting binary point position when counting from the most significant bit. 
-    /// Or where the [.]dataBits x 2^exp. Example: 0.11010 x 2^3 = 110.10 [Scale + Size]
-    /// Examples: 0.11 -> 0; 1.11 -> 1; 10.1 -> 2; .001 = -2
+    /// Returns the base-2 exponent of the number. This is the number of binary placed when counting from the right side of the most significant bit. Another way to think about it when it is positive, is how many bits are on the left side of the point. 
+    /// Example: dataBits:11010 with BinExp:3 -> 1.1010 x 2^3 or 1101.0.
+    /// Example: 0.11 -> -1; 1.11 -> 0; 10.1 -> 1; 0.001 -> -3
     /// </summary>
-    public int Exponent => Scale + _size - ExtraHiddenBits;
+    public int BinaryExponent => Scale + _size - ExtraHiddenBits - 1;
 
     //see BigFloatZeroNotes.txt for notes
     /// <summary>
@@ -687,7 +686,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 + Math.Max(Math.Max(Scale, -(_size - ExtraHiddenBits) - Scale), 0) // total number of out-of-precision zeros in the output.
                 + (DataBits.Sign < 0 ? 1 : 0)   // add one if a leading '-' sign (-0.1)
                 + (Scale < 0 ? 1 : 0)       // add one if it has a point like (1.1)
-                + (Exponent <= 0 ? 1 : 0)];  // add one if <1 for leading Zero (0.1) 
+                + (BinaryExponent < 0 ? 1 : 0)];  // add one if <1 for leading Zero (0.1) 
             int dstIndex = 0;
 
             // Three types
@@ -706,7 +705,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             ReadOnlySpan<byte> srcBytes = DataIntValueWithRound(BigInteger.Abs(DataBits)).ToByteArray();
             int leadingZeroCount = BitOperations.LeadingZeroCount(srcBytes[^1]) - 24;
 
-            if (Exponent <= 0)  // For binary numbers less then one. (e.g. 0.001101)
+            if (BinaryExponent < 0)  // For binary numbers less then one. (e.g. 0.001101)
             {
                 int outputZerosBetweenPointAndNumber = Math.Max(0, -(_size - ExtraHiddenBits) - Scale);
                 dstBytes[dstIndex++] = '0';
@@ -1566,7 +1565,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // At this point, the exponent is equal or off by one because of a rollover.
 
-        int sizeDiff = _size - other._size - Exponent + other.Exponent;
+        int sizeDiff = _size - other._size - BinaryExponent + other.BinaryExponent;
 
         BigInteger diff;
         if (sizeDiff == 0)
@@ -1617,7 +1616,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // At this point, the exponent is equal or off by one because of a rollover.
 
-        int sizeDiff = _size - other._size - Exponent + other.Exponent;
+        int sizeDiff = _size - other._size - BinaryExponent + other.BinaryExponent;
 
         BigInteger diff = sizeDiff switch
         {
@@ -1668,10 +1667,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // Lets see if we can escape early by just looking at the Exponent.
-        int expDifference = Exponent - other.Exponent;
+        int expDifference = BinaryExponent - other.BinaryExponent;
         if (Math.Abs(expDifference) > 1)
         {
-            result = Exponent.CompareTo(other.Exponent) * DataBits.Sign;
+            result = BinaryExponent.CompareTo(other.BinaryExponent) * DataBits.Sign;
             return true;
         }
 
@@ -1830,11 +1829,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (thisSign == 0) { return 0; }
 
         // A fast general size check.
-        int bigIntegerSize = (int)BigInteger.Abs(bigInteger).GetBitLength();
+        int bigIntegerSizeLessOne = (int)BigInteger.Abs(bigInteger).GetBitLength()-1;
 
-        if (Exponent != bigIntegerSize)
+        if (BinaryExponent != bigIntegerSizeLessOne)
         {
-            return Exponent.CompareTo(bigIntegerSize) * thisSign;
+            return BinaryExponent.CompareTo(bigIntegerSizeLessOne) * thisSign;
         }
 
 
@@ -2140,7 +2139,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //   -11110000/100000000 that would have difference b10000 so 0 matching bits
 
         int maxSize = Math.Max(a._size, b._size);
-        int expDiff = a.Exponent - b.Exponent;
+        int expDiff = a.BinaryExponent - b.BinaryExponent;
         if (maxSize == 0 || a.Sign != b.Sign || Math.Abs(expDiff) > 1)
         {
             sign = (expDiff > 0) ? a.Sign : -b.Sign;
@@ -3165,7 +3164,7 @@ Other:                                         |   |         |         |       |
         // was: long mantissa = (long)(value._int >> (value._size - 53)) ^ ((long)1 << 52);
 
         long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.Exponent + 1023 - 1;// + 52 -4;
+        long exp = value.BinaryExponent + 1023;// + 52 -4;
 
         // Check to see if it fits in a normalized double (untested)
         if (exp <= 0)
@@ -3209,7 +3208,7 @@ Other:                                         |   |         |         |       |
         }
 
         int mantissa = (int)(BigInteger.Abs(value.DataBits) >> (value._size - 24)) ^ (1 << 23);
-        int exp = value.Exponent + 127 - 1;
+        int exp = value.BinaryExponent + 127;
 
         // Check to see if it fits in a normalized double (untested)
         if (exp <= 0)
@@ -3258,7 +3257,7 @@ Other:                                         |   |         |         |       |
     {
         // future (possibly): add denormalized support 
         //return (Exponent + 1023 - 1) is not (<= 0 or > 2046);
-        return (Exponent + 1023 - 1) is not (< -52 or > 2046);
+        return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
 
     /////////////////////////////////// COMPARE FUNCTIONS ////////////////////////////////////////////////////////
@@ -3267,15 +3266,15 @@ Other:                                         |   |         |         |       |
     public bool Equals(long other)
     {
         //Todo: what about zero?
-        if (Exponent > 64) // 'this' is too large, not possible to be equal.
+        if (BinaryExponent >= 64) // 'this' is too large, not possible to be equal.
         {
             return false;
         }
-        else if (Exponent < 0)
+        else if (BinaryExponent < -1)
         {
             return other == 0;
         }
-        else if (Exponent == 64)
+        else if (BinaryExponent == 63)
         {
             // if 64 bits then 'other' must be long.MinValue as that is the only 64 bit input
             // any Int of the form "1000"000000000 is also valid if the _scale is set correctly.
@@ -3298,11 +3297,11 @@ Other:                                         |   |         |         |       |
     /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
     public bool Equals(ulong other)
     {
-        if (Exponent > 64)
+        if (BinaryExponent >= 64)
         {
             return false; // too large
         }
-        else if (Exponent < 0)
+        else if (BinaryExponent < -1)
         {
             return other == 0;
         }
@@ -3436,7 +3435,7 @@ Other:                                         |   |         |         |       |
             }
 
             //bool expOverflows = value.Exponent < -1022 || value.Exponent > 1023;
-            int removedExp = value.Exponent - 1;
+            int removedExp = value.BinaryExponent;
 
             // todo: can be improved without using BigFloat  (See Pow(BigInteger,BigInteger) below)
             double valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
@@ -3539,10 +3538,10 @@ Other:                                         |   |         |         |       |
         //long tempX = (long)(value._int >> (value._size - 52 /*- newScale*/ +22));
         ////////////////////////////////////////////////////////////////////////////
         long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.Exponent + 1023 - 1;// + 52 -4;
+        long exp = value.BinaryExponent + 1023;// + 52 -4;
 
         // if exp is oversized for double we need to pull out some exp:
-        if (Math.Abs(value.Exponent) > 1021) // future: using 1021(not 1022) to be safe
+        if (Math.Abs(value.BinaryExponent) > 1020) // future: using 1020(not 1021) to be safe
         {
             // old: (1)Pre: pre=(value<<(preShift*root)) (2)Root: result=pre^(1/root) (3)post: result/(1<<s)
             // new:  (1)Pre: pre=(value>>preShift) (2)Root: result=pre^(1/root) (3)post: result/(2^(-preShift/root)
@@ -3686,10 +3685,10 @@ Other:                                         |   |         |         |       |
         //long tempX = (long)(value._int >> (value._size - 52 /*- newScale*/ +22));
         ////////////////////////////////////////////////////////////////////////////
         long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.Exponent + 1023 - 1;// + 52 -4;
+        long exp = value.BinaryExponent + 1023;// + 52 -4;
 
         // if exp is oversized for double we need to pull out some exp:
-        if (Math.Abs(value.Exponent) > 1021) // future: using 1021(not 1022) to be safe
+        if (Math.Abs(value.BinaryExponent) > 1020) // future: using 1020(not 1021) to be safe
         {
             // old: (1)Pre: pre=(value<<(preShift*root)) (2)Root: result=pre^(1/root) (3)post: result/(1<<s)
             // new: (1)Pre: pre=(value>>preShift)        (2)Root: result=pre^(1/root) (3)post: result/(2^(-preShift/root)
@@ -3828,7 +3827,7 @@ Other:                                         |   |         |         |       |
         long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
         long dubAsLong = (1023L << 52) | long.Abs(mantissa);
         double val = BitConverter.Int64BitsToDouble(dubAsLong);
-        return double.Log2(val) + n.Exponent - 1;
+        return double.Log2(val) + n.BinaryExponent;
     }
 
     //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
@@ -3841,6 +3840,6 @@ Other:                                         |   |         |         |       |
     /// <returns>Returns the Log2 of the value (or exponent) as a Int.</returns>
     public static int Log2Int(BigFloat n)
     {
-        return n.Exponent - 1;
+        return n.BinaryExponent;
     }
 }
