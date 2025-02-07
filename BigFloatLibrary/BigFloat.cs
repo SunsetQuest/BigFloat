@@ -862,7 +862,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Parses a <paramref name="numericString"/> to a BigFloat. 
     /// This function supports: 
     ///  - Positive or negative leading signs or no sign. 
-    ///  - Radix point (aka. decimal point for base 10)
+    ///  - Spaces and commas are ignored.
+    ///  - Supports exponential notation (e.g. 1.23e+4, 123e4)
+    ///  - Supports strings with closing brace,bracket, single and double quotes (e.g. (123), {123e4})
+    ///  - Decimal point (and radix point for non base-10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
@@ -889,12 +892,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
             else if (numericString[locAfterSign] == '0')  //[-,+]0___
             {
-                bool isNeg = numericString[0] == '-';
+                bool isNegHexOrBin = numericString[0] == '-';
                 if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'b' or 'B')  //[-,+]0b___
                 {
                     // remove leading "0x" or "-0x"
 
-                    return TryParseBinary(numericString.AsSpan(isNeg ? 3 : 2), out result, binaryScaler, isNeg ? -1 : 0);
+                    return TryParseBinary(numericString.AsSpan(isNegHexOrBin ? 3 : 2), out result, binaryScaler, isNegHexOrBin ? -1 : 0);
                 }
                 else if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
                 {
@@ -903,73 +906,198 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
             }
         }
-        //else if (numericString[1] > '0' && numericString[1] <= '9') { } // [-,+][1-9]__ - continue(exceptions handled by BigInteger.Parse)
-        //else if (numericString[1] == '.') { }                      // [-,+].___    - continue(exceptions handled by BigInteger.Parse)
 
-        int radixLoc = numericString.IndexOf('.');
+        bool usingCommaAlready = false;
+        bool usingSpaceAlready = false;
+        int decimalLocation = -1;
+        int eLoc = -1;
+        int sign = 0;
+        int expSign = 0;
+        int BraceTypeAndStatus = 0;  // 0=not used, 1={}, 3=(), 4="", 5=''  [neg means it has been closed]
+        int exp = 0; 
 
-        // There is a decimal point, so let's remove it to convert it to a BigInteger.
-        if (radixLoc >= 0)
+        // Go through and remove invalid chars
+        int destLoc = 0;
+
+        Span<char> cleaned = stackalloc char[numericString.Length];
+
+        for (int inputCurser = 0; inputCurser < numericString.Length; inputCurser++)
         {
-            numericString = numericString.Remove(radixLoc, 1);
+            char c = numericString[inputCurser];
+            switch (c)
+            {
+                case (>= '0' and <= '9'):
+                    cleaned[destLoc++] = c;
+                    break;
+                case '.':
+                    if (decimalLocation >= 0 || eLoc > 0)
+                    {   // decimal point already found earlier OR following 'e'
+                        result = 0;
+                        return false;
+                    }
+                    decimalLocation = destLoc;
+                    break;
+                case 'e' or 'E':
+                    if (eLoc >= 0)
+                    {   // 'e' point already found earlier OR position 0
+                        result = 0;
+                        return false;
+                    }
+                    eLoc = destLoc;
+                    break;
+
+                case '-' or '+':
+                    int signVal = c == '-' ? -1 : 1;
+                    if (destLoc == 0)
+                    {  // a '-' is allowed in the leading place
+                        if (sign != 0)
+                        {   // Lets make sure we did not try to add a sign already
+                            result = 0;
+                            return false;
+                        }
+                        sign = signVal;
+                    }
+                    else if (eLoc == destLoc)
+                    {   // a '-' is allowed immediately following 'e'
+
+                        if (expSign != 0)
+                        {   // but not if a sign was already found
+                            result = 0;
+                            return false;
+                        }
+                        expSign = signVal;
+                    }
+                    else
+                    {
+                        result = 0;
+                        return false;
+                    }
+                    break;
+                case ' ':
+                    if (usingCommaAlready)
+                    {   // already using Commas
+                        result = 0;
+                        return false;
+                    }
+                    usingSpaceAlready = true;
+                    break;
+                case ',':
+                    if (usingSpaceAlready)
+                    {   // already using Spaces
+                        result = 0;
+                        return false;
+                    }
+                    usingCommaAlready = true;
+                    break;
+
+                case '{' or '(':
+                    if (BraceTypeAndStatus != 0)
+                    {   // already using Spaces
+                        result = 0;
+                        return false;
+                    }
+                    BraceTypeAndStatus = c;
+                    break;
+                case ')' or '}' or ']':
+                    if ((c == ')' && BraceTypeAndStatus != '(') ||
+                        (c == '}' && BraceTypeAndStatus != '{') ||
+                        (c == ']' && BraceTypeAndStatus != '['))
+                    {
+                        // The closing type should match.
+                        result = 0;
+                        return false;
+                    }
+                    if (!Helper_OnlyWhitespaceRemaining(numericString, ref inputCurser))
+                    {
+                        result = 0;
+                        return false;
+                    }
+                    BraceTypeAndStatus = -c;
+                    break;
+                case '"' or '\'':
+                    if (BraceTypeAndStatus == 0)
+                    { 
+                        BraceTypeAndStatus = c;
+                    }
+                    else if ((c == '"' && BraceTypeAndStatus == '"') ||
+                         (c == '\'' && BraceTypeAndStatus == '\''))
+                    {
+                        if (!Helper_OnlyWhitespaceRemaining(numericString, ref inputCurser))
+                        {
+                            result = 0;
+                            return false;
+                        }
+                        BraceTypeAndStatus = -c;
+                    }
+                    else
+                    {   // Should be either 0 (for not used) or c (for closing)
+                        result = 0;
+                        return false;
+                    }
+                    break;
+                default:
+                    // fail: unexpected char found
+                    result = 0;
+                    return false;
+            }
         }
+
+        // Check to make sure for an opening brace/bracket/param that was not closed.
+        if (BraceTypeAndStatus > 0)
+        {
+            result = new BigFloat(0);
+            return false;
+        }
+
+        // now lets remove trailing null chars off the end of the cleaned Spam
+        cleaned = cleaned.Slice(0, destLoc);
 
         // Check for 'e'  like 123e10 or 123.123e+100
-        int eLoc = numericString.IndexOf('e');
-
-        int exp = 0;
-        if (eLoc > 0)
+        if (eLoc >= 0)
         {
-            int endOfNub = eLoc;
-            int begOfExp = eLoc + 1;
-            int expSign = 1;
-            char sign = numericString[eLoc + 1];
-
-            if (sign == '+')
-            {
-                begOfExp++;
+            Span<char> expString = cleaned.Slice(eLoc);
+            if (!int.TryParse(expString, out exp))
+            {   // unable to parse exp after 'e'
+                result = 0;
+                return false;
             }
-            if (sign == '-')
-            {
-                begOfExp++;
-                expSign = -1;
-            }
-
-            string expString = numericString[begOfExp..];
-            exp = int.Parse(expString) * expSign;
-            numericString = numericString[0..endOfNub];
+            if (expSign < 0) exp = -exp;
+            cleaned = cleaned[0..eLoc];
         }
 
+        // todo below needed???????????????
         // now that we removed the "." and/or "e", let us make sure the length is not zero
-        if (numericString.Length == 0)
+        if (cleaned.Length == 0)
         {
             result = new BigFloat(0);
             return false;
         }
 
-        if (!BigInteger.TryParse(numericString.AsSpan(), out BigInteger asInt))
+        if (!BigInteger.TryParse(cleaned, out BigInteger val))
         {
             result = new BigFloat(0);
             return false;
         }
 
-        // There is no point, so let's use BigInteger to convert.
-        if (radixLoc < 0)
+        if (sign < 0) val = BigInteger.Negate(val);
+
+        // No decimal point found, so place it at the end.
+        if (decimalLocation < 0)
         {
-            radixLoc = numericString.Length;
+            decimalLocation = cleaned.Length;
         }
 
-        if (asInt.IsZero)
+        if (val.IsZero)
         {
-            int scaleAmt = (int)((radixLoc - numericString.Length + exp) * 3.32192809488736235);
+            int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * 3.32192809488736235);
             result = new BigFloat(BigInteger.Zero, scaleAmt, 0);
             return true;
         }
 
         // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
-        if (BigInteger.Abs(asInt).IsOne)
+        if (BigInteger.Abs(val).IsOne)
         {
-            asInt <<= 1;
+            val <<= 1;
             binaryScaler -= 1;
         }
 
@@ -978,10 +1106,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         const int ROUND = 1;
         BigInteger intPart;
 
-        int radixDepth = numericString.Length - radixLoc - exp;
+        int radixDepth = cleaned.Length - decimalLocation - exp;
         if (radixDepth == 0)
         {
-            result = new BigFloat(asInt, binaryScaler);
+            result = new BigFloat(val, binaryScaler);
         }
         else if (radixDepth >= 0) //111.111 OR 0.000111
         {
@@ -990,7 +1118,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND;  // added  "-1" because it was adding one to many digits 
                                                                          // make asInt larger by the size of "a" before we dividing by "a"
-            intPart = (((asInt << shiftAmt) / a) + ROUND) >> ROUND;
+            intPart = (((val << shiftAmt) / a) + ROUND) >> ROUND;
             binaryScaler += -multBitLength + 1 - radixDepth;
             result = new BigFloat(intPart, binaryScaler, true);
         }
@@ -1000,7 +1128,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             int multBitLength = (int)a.GetBitLength();
             int shiftAmt = multBitLength - ExtraHiddenBits - ROUND;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
-            intPart = (((asInt * a) >> shiftAmt) + ROUND) >> ROUND;
+            intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;
             binaryScaler += multBitLength - radixDepth;
             result = new BigFloat(intPart, binaryScaler, true);
         }
@@ -1014,15 +1142,25 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         result.AssertValid();
         return true;
+
+        static bool Helper_OnlyWhitespaceRemaining(string numericString, ref int inputCurser)
+        {
+            // only whitespace is allowed after closing brace/bracket/param 
+            while (inputCurser < numericString.Length && char.IsWhiteSpace(numericString[inputCurser]))
+                inputCurser++;
+
+            return (inputCurser >= numericString.Length);
+        }
     }
 
     // Allowed: 
     //  * ABC.DEF
     //  * abc.abc      both uppercase/lowercases okay
-    //  * -ABC.DEF     leading minus okay
-    //  * 123 456 789  spaces or commas okay
+    //  * -ABC.DEF     leading minus sing is supported
+    //  * -ABC.DEF     leading plus sign is supported
+    //  * 123 456 789  spaces or commas ignored
     //  * {ABC.DEF}    wrapped in {..} or (..) or ".."
-    //  * ABC_____     trailing spaces okay
+    //  * ABC_____     trailing spaces are ignored
     // Not Allowed:
     //  * 0xABC.DEF    leading 0x - use Parse for this)
     //  * {ABC.DEF     must have leading and closing bracket
