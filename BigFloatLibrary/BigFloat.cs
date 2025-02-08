@@ -904,23 +904,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
             //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
         }
-
-        return ParseDecimalCore(numericString, out result, ref binaryScaler);
+        return TryParseDecimal(numericString, out result, ref binaryScaler);
     }
 
-    private static bool ParseDecimalCore(string numericString, out BigFloat result, ref int binaryScaler)
+    public static bool TryParseDecimal(string numericString, out BigFloat result, ref int binaryScaler)
     {
-        bool usingCommaAlready = false;
-        bool usingSpaceAlready = false;
+        bool usedCommaAlready = false;
+        bool usedSpaceAlready = false;
         int decimalLocation = -1;
-        int eLoc = -1;
         int sign = 0;
-        int expSign = 0;
-        int BraceTypeAndStatus = 0;  // 0=not used, 1={}, 3=(), 4="", 5=''  [neg means it has been closed]
+        int BraceTypeAndStatus = 0;  // 0=not used, positive if opening found, negative if closed.
+        int expLocation = -1;
         int exp = 0;
-
-        // Go through and remove invalid chars
-        int destLoc = 0;
+        int expSign = 0;
+        int destinationLocation = 0;
 
         Span<char> cleaned = stackalloc char[numericString.Length];
 
@@ -930,28 +927,28 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             switch (c)
             {
                 case (>= '0' and <= '9'):
-                    cleaned[destLoc++] = c;
+                    cleaned[destinationLocation++] = c;
                     break;
                 case '.':
-                    if (decimalLocation >= 0 || eLoc > 0)
+                    if (decimalLocation >= 0 || expLocation > 0)
                     {   // decimal point already found earlier OR following 'e'
                         result = 0;
                         return false;
                     }
-                    decimalLocation = destLoc;
+                    decimalLocation = destinationLocation;
                     break;
                 case 'e' or 'E':
-                    if (eLoc >= 0)
+                    if (expLocation >= 0)
                     {   // 'e' point already found earlier OR position 0
                         result = 0;
                         return false;
                     }
-                    eLoc = destLoc;
+                    expLocation = destinationLocation;
                     break;
 
                 case '-' or '+':
                     int signVal = c == '-' ? -1 : 1;
-                    if (destLoc == 0)
+                    if (destinationLocation == 0)
                     {  // a '-' is allowed in the leading place
                         if (sign != 0)
                         {   // Lets make sure we did not try to add a sign already
@@ -960,7 +957,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                         }
                         sign = signVal;
                     }
-                    else if (eLoc == destLoc)
+                    else if (expLocation == destinationLocation)
                     {   // a '-' is allowed immediately following 'e'
 
                         if (expSign != 0)
@@ -977,20 +974,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     }
                     break;
                 case ' ':
-                    if (usingCommaAlready)
+                    if (usedCommaAlready)
                     {   // already using Commas
                         result = 0;
                         return false;
                     }
-                    usingSpaceAlready = true;
+                    usedSpaceAlready = true;
                     break;
                 case ',':
-                    if (usingSpaceAlready)
+                    if (usedSpaceAlready)
                     {   // already using Spaces
                         result = 0;
                         return false;
                     }
-                    usingCommaAlready = true;
+                    usedCommaAlready = true;
                     break;
 
                 case '{' or '(':
@@ -1053,19 +1050,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // now lets remove trailing null chars off the end of the cleaned Spam
-        cleaned = cleaned.Slice(0, destLoc);
+        cleaned = cleaned.Slice(0, destinationLocation);
 
         // Check for 'e'  like 123e10 or 123.123e+100
-        if (eLoc >= 0)
+        if (expLocation >= 0)
         {
-            Span<char> expString = cleaned.Slice(eLoc);
+            Span<char> expString = cleaned.Slice(expLocation);
             if (!int.TryParse(expString, out exp))
             {   // unable to parse exp after 'e'
                 result = 0;
                 return false;
             }
             if (expSign < 0) exp = -exp;
-            cleaned = cleaned[0..eLoc];
+            cleaned = cleaned[0..expLocation];
         }
 
         if (!BigInteger.TryParse(cleaned, out BigInteger val))
@@ -1128,13 +1125,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             result = new BigFloat(intPart, binaryScaler, true);
         }
 
-        //Console.WriteLine(
-        //    $"Cur: {orgValue} -> {asInt,5}/{a,7}[{shiftAmt,3}] " +
-        //    $"->{asInt,3}({BigIntegerToBinaryString(asInt),10})[{BigIntegerToBinaryString(asInt).Length}] " +
-        //    $"->{BigInteger.Abs(intPart),3}({BigIntegerToBinaryString(BigInteger.Abs(intPart)),10})[{BigIntegerToBinaryString(BigInteger.Abs(intPart)).Length}] " +
-        //    $"-> AsBF: {result,11} " +
-        //    $"AsDbl: {double.Parse(orgValue),8}({DecimalToBinary(double.Parse(orgValue), 40)})");
-
         result.AssertValid();
         return true;
 
@@ -1148,24 +1138,24 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
     }
 
-    // Allowed: 
-    //  * ABC.DEF
-    //  * abc.abc      both uppercase/lowercases okay
-    //  * -ABC.DEF     leading minus sing is supported
-    //  * -ABC.DEF     leading plus sign is supported
-    //  * 123 456 789  spaces or commas ignored
-    //  * {ABC.DEF}    wrapped in {..} or (..) or ".."
-    //  * ABC_____     trailing spaces are ignored
-    // Not Allowed:
-    //  * 0xABC.DEF    leading 0x - use Parse for this)
-    //  * {ABC.DEF     must have leading and closing bracket
-    //  * {ABC.DEF)    brackets types must match
-    //  * {{ABC.DEF}}  limit of one bracket only
-    //  * 123,456 789  mixing different kinds of separators)
+
 
     /// <summary>
     /// Parses a hex string to a BigFloat. It supports a binaryScaler (base-2 point shifting) and negative numbers. 
     /// It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
+    /// Allowed: 
+    ///  * ABCD/abcd    both uppercase/lowercases okay
+    ///  * -ABC.DEF     leading minus sing is supported
+    ///  * -ABC.DEF     leading plus sign is supported
+    ///  * 123 456 789  spaces or commas ignored
+    ///  * {ABC.DEF}    wrapped in {..} or (..) or ".."
+    ///  * ABC_____     trailing spaces are ignored
+    /// Not Allowed:
+    ///  * 0xABC.DEF    leading 0x - use Parse for this
+    ///  * {ABC.DEF     must have leading and closing bracket
+    ///  * {ABC.DEF)    brackets types must match
+    ///  * {{ABC.DEF}}  limit of one bracket only
+    ///  * 123,456 789  mixing different kinds of separators
     /// </summary>
     /// <param name="input">The value to parse.</param>
     /// <param name="result">(out) The returned result.</param>
@@ -3390,7 +3380,7 @@ Other:                                         |   |         |         |       |
 
             // todo: can be improved without using BigFloat  (See Pow(BigInteger,BigInteger) below)
             double valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
-
+            
             //// if final result's scale would not fit in a double. 
             //int finalSizeWillBe = (int)(power * double.Log2(double.Abs(valAsDouble)));
             //bool finalResultsScaleFitsInDouble = finalSizeWillBe < 1020;  // should be <1023, but using 1020 for safety
@@ -3437,8 +3427,6 @@ Other:                                         |   |         |         |       |
     }
 
 
-
-
     public static BigFloat NthRoot_INCOMPLETE_DRAFT(BigFloat value, int root) // todo:
     {
         bool DEBUG = true;
@@ -3461,7 +3449,7 @@ Other:                                         |   |         |         |       |
         // Check if Value is zero.
         if (value.DataBits.Sign == 0)
         {
-            return BigFloat.ZeroWithSpecifiedLeastPrecision(value.Size);
+            return ZeroWithSpecifiedLeastPrecision(value.Size);
         }
 
         // Check for common roots... 
@@ -3548,7 +3536,7 @@ Other:                                         |   |         |         |       |
         // Check if Value is zero.
         if (value.DataBits.Sign == 0)
         {
-            return BigFloat.ZeroWithSpecifiedLeastPrecision(value.Size);
+            return ZeroWithSpecifiedLeastPrecision(value.Size);
         }
 
         // Check for common roots. 
@@ -3758,7 +3746,6 @@ Other:                                         |   |         |         |       |
         Debug.Assert(val._size == realSize, $"_size({val._size}), expected ({realSize})");
     }
 
-    //todo: untested
     /// <summary>
     /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
     /// Sign is ignored. Zero and negative values is undefined and will return double.NaN.

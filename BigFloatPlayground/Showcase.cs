@@ -32,7 +32,7 @@ public static class Showcase
         // NewtonNthRootPerformance(); return;
         // InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
-        // NthRoot_DRAFT_Stuff(); return;
+        NthRoot_DRAFT_Stuff(); return;
         // BigConstant_Stuff();
         // BigConstant_Stuff2();
         // Pow_Stuff();
@@ -933,10 +933,6 @@ public static class Showcase
 
     private static void ToStringHexScientific_Stuff()
     {
-        //todo: test
-        //  "251134829809281403347287120873437924350329252743484439244628997274301027607406903709343370034928716748655001465051518787153237176334136103968388536906997846967216432222442913720806436056149323637764551144212026757427701748454658614667942436236181162060262417445778332054541324179358384066497007845376000000000, 0x596:82F00000[11+32=43],  << 1014"
-        //  with BigFloat Pow(BigFloat value, 4)
-
         new BigFloat("1.8814224e11").DebugPrint("1.8814224e11"); //18814224____
         new BigFloat("-10000e4").DebugPrint("-10000e4");
         Console.WriteLine(new BigFloat("-32769").ToStringHexScientific(showInTwosComplement: true));
@@ -1196,48 +1192,6 @@ public static class Showcase
         }
 
         Console.WriteLine();
-    }
-
-    private static void IsNotEqual(object v1, object v2, string msg = null)
-    {
-        if (!v1.Equals(v2))
-        {
-            if (msg != null)
-            {
-                Console.WriteLine(msg, v1, v2);
-            }
-
-            if (Debugger.IsAttached)
-            {
-                Debugger.Break();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Takes an inputParam and inputFunc and then checks if the results matches the expectedOutput.
-    /// </summary>
-    /// <param name="inputParam">The input value to apply to the inputFunc.</param>
-    /// <param name="inputFunc">The function that is being tested.</param>
-    /// <param name="expectedOutput">What the output of inputFunc(inputParam) should be like.</param>
-    /// <param name="msg">If they don't match, output this message. Use {0}= input, {1}=results of inputFunc(inputParam) {2}=the value it should be.
-    /// Example: "The input value of {0} with the given function resulted in {1}, however the value of {2} was expected."</param>
-    //[DebuggerHidden]
-    private static void IsNotEqual(string inputParam, Func<string, object> inputFunc, string expectedOutput, string msg = null)
-    {
-        string a = inputFunc(inputParam).ToString();
-        if (!a.Equals(expectedOutput))
-        {
-            if (msg != null)
-            {
-                Console.WriteLine(msg, inputParam, a, expectedOutput);
-            }
-
-            if (Debugger.IsAttached)
-            {
-                Debugger.Break();
-            }
-        }
     }
 
     [DebuggerHidden]
