@@ -914,6 +914,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int decimalLocation = -1;
         int sign = 0;
         int BraceTypeAndStatus = 0;  // 0=not used, positive if opening found, negative if closed.
+        int accuracyDelimiterPosition = -1;
         int expLocation = -1;
         int exp = 0;
         int expSign = 0;
@@ -945,7 +946,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     }
                     expLocation = destinationLocation;
                     break;
-
                 case '-' or '+':
                     int signVal = c == '-' ? -1 : 1;
                     if (destinationLocation == 0)
@@ -972,6 +972,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                         result = 0;
                         return false;
                     }
+                    break;
+                case '|':
+                    if (accuracyDelimiterPosition >= 0 || expLocation > 0)
+                    {   // accuracy delimiter already found earlier OR following 'e'
+                        result = 0;
+                        return false;
+                    }
+                    accuracyDelimiterPosition = destinationLocation;
                     break;
                 case ' ':
                     if (usedCommaAlready)
@@ -1065,10 +1073,32 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             cleaned = cleaned[0..expLocation];
         }
 
+        // Lets extract the actual base-10 number
         if (!BigInteger.TryParse(cleaned, out BigInteger val))
         {
             result = new BigFloat(0);
             return false;
+        }
+
+        // The 'accuracyDelimiterPosition', specified by the '|' char is:
+        // (1) base-10 and it should be base-2
+        // (2) currently it's measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
+        int hiddenBitsSpecified = 0;
+        if (accuracyDelimiterPosition >= 0)
+        {
+            if (accuracyDelimiterPosition == destinationLocation)
+            {
+                hiddenBitsSpecified = 0;
+            }
+            else if (BigInteger.TryParse(cleaned[accuracyDelimiterPosition..], out BigInteger hiddenBits))
+            {
+                hiddenBitsSpecified = (int)hiddenBits.GetBitLength();
+            }
+            else
+            {
+                result = new BigFloat(0);
+                return false;
+            }
         }
 
         if (sign < 0) val = BigInteger.Negate(val);
@@ -1087,7 +1117,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
-        if (BigInteger.Abs(val).IsOne)
+        if (hiddenBitsSpecified==0 && BigInteger.Abs(val).IsOne)
         {
             val <<= 1;
             binaryScaler -= 1;
@@ -1108,20 +1138,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger a = BigInteger.Pow(5, radixDepth);
             int multBitLength = (int)a.GetBitLength();
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
-            int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND;  // added  "-1" because it was adding one to many digits 
+            int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND - hiddenBitsSpecified;  // added  "-1" because it was adding one to many digits 
                                                                          // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((val << shiftAmt) / a) + ROUND) >> ROUND;
-            binaryScaler += -multBitLength + 1 - radixDepth;
+            binaryScaler += -multBitLength + 1 - radixDepth + hiddenBitsSpecified;
             result = new BigFloat(intPart, binaryScaler, true);
         }
         else // 100010XX
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
             int multBitLength = (int)a.GetBitLength();
-            int shiftAmt = multBitLength - ExtraHiddenBits - ROUND;
+            int shiftAmt = multBitLength - ExtraHiddenBits - ROUND + hiddenBitsSpecified;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;
-            binaryScaler += multBitLength - radixDepth;
+            binaryScaler += multBitLength - radixDepth + hiddenBitsSpecified;
             result = new BigFloat(intPart, binaryScaler, true);
         }
 
@@ -3514,218 +3544,6 @@ Other:                                         |   |         |         |       |
             t = Pow(x, root) - value; Console.WriteLine($"f-t:  {t.GetMostSignificantBits(196)}[{t._size}]");
         }
         return x;
-    }
-
-
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT_10(BigFloat value, int n)
-    {
-        bool rootIsNeg = n < 0;
-        if (rootIsNeg)
-        {
-            n = -n;
-        }
-
-        bool resultIsPos = value.DataBits.Sign > 0;
-        if (!resultIsPos)
-        {
-            value = -value;
-        }
-
-        resultIsPos = resultIsPos || ((n & 1) == 0);
-
-        // Check if Value is zero.
-        if (value.DataBits.Sign == 0)
-        {
-            return ZeroWithSpecifiedLeastPrecision(value.Size);
-        }
-
-        // Check for common roots. 
-        switch (n)
-        {
-            case 0:
-                return OneWithAccuracy(value.Size);
-            case 1:
-                return resultIsPos ? value : -value;
-                //case 2:
-                //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
-                //case 4:
-                //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
-        }
-
-        int mod = n - (32 % n);
-        BigInteger valueData = value.DataBits << mod;  //0
-        BigInteger root = NewtonNthRoot(ref valueData, n, 0);
-        double valueBitLengthyness = BigFloat.Log2(value);
-        double resultBitLengthyness = valueBitLengthyness / n;
-        double retLog2 = double.Log2((double)root);
-        double retLog3 = retLog2 - double.Floor(retLog2);
-
-        resultBitLengthyness -= retLog3;
-        int resultBitLength = (int)(resultBitLengthyness + 0.5);
-
-        int rootLen = (int)root.GetBitLength();
-
-        BigFloat ret = new(root, resultBitLength - rootLen + 32 + 1, true);
-
-        //Console.WriteLine($"n:{n}[{int.Log2(n) + 1}] valueSz:{value._size} rootSz:{root.GetBitLength()} diff:{value._size - root.GetBitLength()} i{i} j{j}"); /*ret:\r\n{ret}*/
-        //Console.WriteLine($"result: {ret} i{i} j{j}"); /**/
-        AssertValid(ret);
-        return ret;
-    }
-
-
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT9(BigFloat value, int root)
-    {
-        bool rootIsNeg = root < 0;
-        if (rootIsNeg)
-        {
-            root = -root;
-        }
-
-        bool resultIsPos = value.DataBits.Sign > 0;
-        if (!resultIsPos)
-        {
-            value = -value;
-        }
-
-        resultIsPos = resultIsPos || ((root & 1) == 0);
-
-        // Check if Value is zero.
-        if (value.DataBits.Sign == 0)
-        {
-            return ZeroWithSpecifiedLeastPrecision(value.Size);
-        }
-
-        // Check for common roots... 
-        switch (root)
-        {
-            case 0:
-                return OneWithAccuracy(value.Size);
-            case 1:
-                return resultIsPos ? value : -value;
-                //case 2:
-                //    return resultIsPos ? Sqrt(value) : -Sqrt(value);
-                //case 4:
-                //    return resultIsPos ? Sqrt(Sqrt(value)) : -Sqrt(Sqrt(value));
-        }
-
-        //int xLen = value._size;
-        int rootSize = BitOperations.Log2((uint)root);
-        int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
-
-
-        ////////// Lets remove value's scale (and just leave the last bit so scale is 0 or 1) ////////
-        int removedScale = value.Scale & ~1;
-        int newScale = value.Scale - removedScale;
-
-        ////////// Use double's hardware to get the first 53-bits ////////
-        // todo: what about just casting from BigFloat to double?
-
-        //long tempX = (long)(value.DataBits >> (value._size - 52 /*- newScale*/ +22));
-        ////////////////////////////////////////////////////////////////////////////
-        long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.BinaryExponent + 1023;// + 52 -4;
-
-        // if exp is oversized for double we need to pull out some exp:
-        if (Math.Abs(value.BinaryExponent) > 1020) // future: using 1020(not 1021) to be safe
-        {
-            // old: (1)Pre: pre=(value<<(preShift*root)) (2)Root: result=pre^(1/root) (3)post: result/(1<<s)
-            // new: (1)Pre: pre=(value>>preShift)        (2)Root: result=pre^(1/root) (3)post: result/(2^(-preShift/root)
-
-            //double finalDiv = Math.Pow(2,-value.Exponent/root);
-            exp = 0;
-        }
-        double dubVal = BitConverter.Int64BitsToDouble(mantissa | (exp << 52));
-        ///////////////////////////////////////////////////////////////////////////////////////////////
-
-        double tempRoot = Math.Pow(dubVal, 1.0 / root); // double.RootN(dubVal, root)
-        ulong bits = (ulong)BitConverter.DoubleToInt64Bits(tempRoot);
-        ulong tempVal = (bits & 0x1fffffffffffffL) | (1UL << 52);
-        int tempExp = (int)((bits >> 52) & 0x7ffL) - 1023 - 20;
-        newScale += tempExp;
-
-
-
-        // If 53 bits enough precision, lets use that and return.
-        //if (value._size < 53)
-        //{  //  Shrink result to wanted Precision
-        //    int shrinkAmt = (53 - value._size);
-        //    BigFloat newVal = new BigFloat(tempVal >> shrinkAmt, newScale + shrinkAmt, value._size);
-        //    return newVal;
-        //}
-
-
-        BigInteger x = tempVal;
-        //x_Scale -= 100; //TEMP
-        //xVal <<= 100; //TEMP
-
-        ////////////////// BigFloat Version ////////////////////////////
-        //BigFloat f_x = new((BigInteger)tempVal << 100, newScale - 100, true);
-        //BigFloat rt = new((BigInteger)root << value.Size, -value.Size);  // get a proper sized "root" (only needed for BigFloat version)
-        //BigFloat t = Pow(x, root) - value;
-        //BigFloat b = rt * Pow(x, root - 1); // Init the "b" and "t" for "oldX - (t / b)"
-        //while (t._size > 3) //(!t.OutOfPrecision)
-        //{
-        //    BigFloat oldX = x;
-        //    BigFloat tb = t / b;
-        //    x -= tb;
-        //    if (DEBUG) Console.WriteLine($"{oldX} - ({t} / {b}) = {oldX} - {tb} =\r\n     {x}");
-        //    b = rt * Pow(x, root - 1);
-        //    t = Pow(x, root) - value;
-        //}
-        //BigFloat usingBigFloats = x; //new BigFloat(xVal, x_Scale, true);
-
-        //x <<= 16;
-
-        //===========================================================================================================================
-        //Console.WriteLine($"i-x:  {BigIntegerToBinaryString(x)}[{x.GetBitLength()}]");
-        int size = 53 - (2 * (int.Log2(root) + 1));
-
-        //Console.WriteLine($"===================================================================================");
-
-        BigInteger pow = PowMostSignificantBits(x, root, out _, 53, size * 2);
-        BigInteger t = pow - (value.DataBits >> (int)(value.DataBits.GetBitLength() - pow.GetBitLength())); //Console.WriteLine($"i-t:  {BigIntegerToBinaryString(t)}[{t.GetBitLength()}]");
-
-        BigInteger b = root * PowMostSignificantBits(x, root - 1, out int totalShift, 53, size, false, true);  //Console.WriteLine($"i-b:  {BigIntegerToBinaryString(b)}[{b.GetBitLength()}] totalShift:{totalShift}"); //we only get 50 bits from math.pow() =(
-        int ADJ = 0;//(int)x.GetBitLength() + 1 - size; //0,1,5, //50 - (int)b.GetBitLength();
-        //Console.WriteLine($"x:{x.GetBitLength()} x:{BigIntegerToBinaryString(x)[..1]} root:{int.Log2(root)} root:{root} value:{value._size} value:{BigIntegerToBinaryString(value.DataBits)[..1]} pow{pow.GetBitLength()} t:{t.GetBitLength()} b:{b.GetBitLength()} tb:{((t << (size - ADJ)) / b).GetBitLength()} size:{size} a:{2 * (int.Log2(root) + 1)} exp:{exp}");
-        Console.WriteLine($"{x.GetBitLength()}, {BigIntegerToBinaryString(x)[1]},{BigIntegerToBinaryString(x)[..1]},{BigIntegerToBinaryString(x)[..2]}, {int.Log2(root)}, {root}, {value._size}, {BigIntegerToBinaryString(value.DataBits)[..1]}, {pow.GetBitLength()}, {t.GetBitLength()}, {b.GetBitLength()}, {((t << (size - ADJ)) / b).GetBitLength()}, {size}, {2 * (int.Log2(root) + 1)}, {exp}");
-        Console.WriteLine($"{x.GetBitLength()}, {BigIntegerToBinaryString(x)[1]},{BigIntegerToBinaryString(x)[..1]},{BigIntegerToBinaryString(x)[..2]}, {int.Log2(root)}, {root}, {value._size}, {BigIntegerToBinaryString(value.DataBits)[..1]}, {pow.GetBitLength()}, {t.GetBitLength()}, {b.GetBitLength()}, {((t << (size - ADJ)) / b).GetBitLength()}, {size}, {2 * (int.Log2(root) + 1)}, {exp}");
-        BigInteger tb = (t << (size - ADJ)) / b;                    //Console.WriteLine($"i-tb: {BigIntegerToBinaryString(tb)}[{tb.GetBitLength()}]");  // was 50 (sometimes 49)
-
-        x = (x << 41) - tb;                                           //Console.WriteLine($"x:  {BigIntegerToBinaryString(x)}[{x.GetBitLength()}]");  // was 47
-                                                                      //Console.WriteLine($"res:  10011111110011001010011000111011000001110100011100011000000010100100010111110000001100000101011010010001100100111010011000101101110010101110010111100010011011101011001101001011101101010011110111010111111001111111011100011001100011101001100110011000101001110000111001001010000101011...");
-                                                                      //Console.WriteLine("Exact:123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345");
-                                                                      //Console.WriteLine("Exact:000000000111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999000000000011111111112222222222333333333344444444445555555555666666666677777777778888888888999999999900000000001111111111222222");
-
-
-        while ((x.GetBitLength() * 7 / 8) < value.Size)
-        {
-            //Console.WriteLine($"========================== {((x.GetBitLength() * 7) / 8)} < {value.Size} ============================================="); 
-            size *= 2;
-            pow = PowMostSignificantBits(x, root, out _, (int)x.GetBitLength(), size * 2);  //Console.WriteLine($"pow:{BigIntegerToBinaryString(pow)}[{pow.GetBitLength()}]");
-                                                                                            //Console.WriteLine($"val:{BigIntegerToBinaryString((value.DataBits >> (int)(value.DataBits.GetBitLength() - pow.GetBitLength())))}[{(value.DataBits.GetBitLength() - pow.GetBitLength())}]");
-            t = pow - (value.DataBits >> (value._size - (size * 2)));                       //Console.WriteLine($"t:  {BigIntegerToBinaryString(t)}[{t.GetBitLength()}]");
-            b = root * PowMostSignificantBits(x, root - 1, out _);                        //Console.WriteLine($"b:  {BigIntegerToBinaryString(b)}[{b.GetBitLength()}]");
-            tb = (t << (size - ADJ)) / b;                                                   //Console.WriteLine($"tb: {BigIntegerToBinaryString(tb)}[{tb.GetBitLength()}]");
-            x = (x << size) - tb;
-            //Console.WriteLine($"x:    {BigIntegerToBinaryString(x)}[{x.GetBitLength()}]");
-            //Console.WriteLine($"res:  10011111110011001010011000111011000001110100011100011000000010100100010111110000001100000101011010010001100100111010011000101101110010101110010111100010011011101011001101001011101101010011110111010111111001111111011100011001100011101001100110011000101001110000111001001010000101011...");
-            //Console.WriteLine("Exact:10011111110011001010011000111011000001110100011100011000000010100100010111110000001100000101011010010001100100111010011000101101110010101110010111100010011011101011001101001011101101010011110111010111111001111111011100011001100011101001100110011000101001110000111001001010000101011");
-        }
-
-        int x_size = (int)x.GetBitLength();
-        x = RightShiftWithRound(x, x_size - value._size, ref x_size);
-
-        //Console.WriteLine($"down: {BigIntegerToBinaryString(x)}[{x.GetBitLength()}]");
-
-        //calculate scale
-        int a = (int)-(Math.Log2(dubVal) / root);
-
-        int scale = -x_size + ExtraHiddenBits - a + 1;
-
-        BigFloat ret = new(x, scale, x_size);
-        return ret;
     }
 
     [Conditional("DEBUG")]
