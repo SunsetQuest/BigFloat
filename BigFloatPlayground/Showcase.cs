@@ -412,182 +412,11 @@ public static class Showcase
 
     private static void NthRoot_DRAFT_Stuff()
     {
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7, "1340494621.514214278463413501222825825662100997195024832765760458|23859");        
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4, "9391044157537525.1959197514993855569279258848560570718590387|82766889699549582798593");
-        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7, "1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740|51982282");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 3, "19813073175.87709934055949316958|138");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 7, "25880.89921337705525458987063396|056");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 55, "3.644617186032180086485625982525|169");
-        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777"), 3, "42685972166.249808508213684454449|731");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 2, "8944271909999158.7856366946749251|049");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 3, "43088693800.637674435185871330387|009");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 4, "94574160.900317581330169611988722|");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 5, "2402248.8679628624664841997871983|");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 6, "207578.16311124268746614482713121|");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 7, "36106.407876409947138175505843180|");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 8, "9724.9247246607303150644442684673|");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 2, "1000000000000000.000000000000000|0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 3, "10000000000.00000000000000000000|0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 4, "31622776.60168379331998893544432|7");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 5, "1000000.000000000000000000000000|0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 6, "100000.0000000000000000000000000|0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 7, "19306.97728883250167007074799840|2");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 8, "5623.413251903490803949510397764|8");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 9 , "2154.434690031883721759293566519|4");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 10, "1000.000000000000000000000000000|0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 11, "533.6699231206309658153694194942|9");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 12, "316.2277660168379331998893544432|7");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 13, "203.0917620904735720992124668860|1");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 2, "10000000000000.0000000000000|00000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 3, "464158883.361277889241007635|09194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 4, "3162277.66016837933199889354|44327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 5, "158489.319246111348520210137|33915");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 6, "21544.3469003188372175929356|65194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 7, "5179.47467923121113475517467|79610");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 8, "1778.27941003892280122542119|51927");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 2, "3162277660168.3793319988935|444327");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 3, "215443469.00318837217592935|665194");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 4, "1778279.4100389228012254211|951927");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 5, "100000.00000000000000000000|000000");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 6, "14677.992676220695409205171|148169");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 7, "3727.5937203149401661724906|094730");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 8, "1333.5214321633240256759317|152953");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 2, "1000000000000.000000000000|0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 3, "100000000.0000000000000000|0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 4, "1000000.000000000000000000|0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 5, "63095.73444801932494343601|3662234");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 6, "10000.00000000000000000000|0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 7, "2682.695795279725747698802|6806276");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 2, "316227766016.837933199889|35444327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 3, "46415888.3361277889241007|63509194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 4, "562341.325190349080394951|03977648");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 5, "39810.7170553497250770252|30508775");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 6, "6812.92069057961285497988|17963002");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 7, "1930.69772888325016700707|47998402");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 8, "749.894209332455827302184|27561514");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 2, "100000000000.00000000000|000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 3, "21544346.900318837217592|93566519");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 4, "316227.76601683793319988|935444327");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 5, "25118.864315095801110850|320677993");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 6, "4641.5888336127788924100|763509194");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 3, "10000000.00000000000000|0000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 4, "177827.9410038922801225|4211951927");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 5, "15848.93192461113485202|1013733915");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 6, "3162.277660168379331998|8935444327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 2, "10000000000.0000000000|00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 3, "4641588.83361277889241|00763509194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 4, "100000.000000000000000|00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 5, "10000.0000000000000000|00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 6, "2154.43469003188372175|92935665194");
-        CheckNthRootAccuracy(10000000000000000000, 2, "3162277660.1683793319|988935444327");
-        CheckNthRootAccuracy(10000000000000000000, 3, "2154434.6900318837217|592935665194");
-        CheckNthRootAccuracy(10000000000000000000, 4, "56234.132519035008039|495103977648");
-        CheckNthRootAccuracy(10000000000000000000, 5, "6309.5734448019424943|436013662234");
-        CheckNthRootAccuracy(10000000000000000000, 6, "1467.7992676220795409|205171148169");
-        CheckNthRootAccuracy(1000000000000000000, 2, "1000000000.000000000|0000000000000");
-        CheckNthRootAccuracy(1000000000000000000, 3, "1000000.000000000000|0000000000000");
-        CheckNthRootAccuracy(1000000000000000000, 4, "31622.77660168389331|9988935444327");
-        CheckNthRootAccuracy(1000000000000000000, 5, "3981.071705534972507|7025230508775");
-        CheckNthRootAccuracy(1000000000000000000, 6, "1000.000000000000000|0000000000000");
-        CheckNthRootAccuracy(100000000000000000, 2, "316227766.016838933|19988935444327");
-        CheckNthRootAccuracy(100000000000000000, 3, "464158.883361278889|24100763509194");
-        CheckNthRootAccuracy(100000000000000000, 4, "17782.7941003892280|12254211951927");
-        CheckNthRootAccuracy(100000000000000000, 5, "2511.88643150958011|10850320677993");
-        CheckNthRootAccuracy(100000000000000000, 6, "681.292069057961285|49798817963002");
-        CheckNthRootAccuracy(10000000000000000, 2, "100000000.00000000|000000000000000");
-        CheckNthRootAccuracy(10000000000000000, 3, "215443.46900318937|217592935665194");
-        CheckNthRootAccuracy(10000000000000000, 4, "10000.000000000000|000000000000000");
-        CheckNthRootAccuracy(10000000000000000, 5, "1584.8931924611134|852021013733915");
-        CheckNthRootAccuracy(10000000000000000, 6, "464.15888336127788|924100763509194");
-        CheckNthRootAccuracy(1000000000000000, 2, "31622776.60168379|3319988935444327");
-        CheckNthRootAccuracy(1000000000000000, 3, "100000.0000000000|0000000000000000");
-        CheckNthRootAccuracy(1000000000000000, 4, "5623.413251903490|8039495103977648");
-        CheckNthRootAccuracy(1000000000000000, 5, "1000.000000000000|0000000000000000");
-        CheckNthRootAccuracy(1000000000000000, 6, "316.2277660168379|3319988935444327");
-        CheckNthRootAccuracy(100000000000000, 2, "10000000.0000000|00000000000000000");
-        CheckNthRootAccuracy(100000000000000, 3, "46415.8883361278|88924100763509194");
-        CheckNthRootAccuracy(100000000000000, 4, "3162.27766016837|93319988935444327");
-        CheckNthRootAccuracy(100000000000000, 5, "630.957344480194|24943436013662234");
-        CheckNthRootAccuracy(100000000000000, 6, "215.443469003189|37217592935665194");
-        CheckNthRootAccuracy(10000000000000, 2, "3162277.6601683|8");
-        CheckNthRootAccuracy(10000000000000, 3, "21544.346900318|8");
-        CheckNthRootAccuracy(10000000000000, 4, "1778.2794100389|2");
-        CheckNthRootAccuracy(10000000000000, 5, "398.10717055349|7");
-        CheckNthRootAccuracy(10000000000000, 6, "146.77992676220|7");
-        CheckNthRootAccuracy(1000000000000, 2, "1000000.000000|00");
-        CheckNthRootAccuracy(1000000000000, 3, "100000.0000000|00");
-        CheckNthRootAccuracy(1000000000000, 4, "1000.000000000|00");
-        CheckNthRootAccuracy(1000000000000, 5, "251.1886431509|58");
-        CheckNthRootAccuracy(1000000000000, 6, "100.0000000000|00");
-        CheckNthRootAccuracy(100000000000, 2, "316227.766016|838");
-        CheckNthRootAccuracy(100000000000, 3, "4641.58883361|278");
-        CheckNthRootAccuracy(100000000000, 4, "562.341325190|349");
-        CheckNthRootAccuracy(100000000000, 5, "158.489319246|111");
-        CheckNthRootAccuracy(100000000000, 6, "68.1292069057|961");
-        CheckNthRootAccuracy(10000000000, 2, "100000.00000|0000");
-        CheckNthRootAccuracy(10000000000, 3, "2154.4346900|3188");
-        CheckNthRootAccuracy(10000000000, 4, "316.22776601|6838");
-        CheckNthRootAccuracy(10000000000, 5, "100.00000000|0000");
-        CheckNthRootAccuracy(10000000000, 6, "46.415888336|1278");
-        CheckNthRootAccuracy(1000000000, 2, "31622.7766|016838");
-        CheckNthRootAccuracy(1000000000, 3, "1000.000000|00000");
-        CheckNthRootAccuracy(1000000000, 4, "177.8279410|03892");
-        CheckNthRootAccuracy(1000000000, 5, "63.0957344|480193");
-        CheckNthRootAccuracy(1000000000, 6, "31.6227766|016838");
-        CheckNthRootAccuracy(100000000, 2, "10000.0000|0");
-        CheckNthRootAccuracy(100000000, 3, "464.15888|34");
-        CheckNthRootAccuracy(100000000, 4, "100.000000|0");
-        CheckNthRootAccuracy(100000000, 5, "39.810717|06");
-        CheckNthRootAccuracy(100000000, 6, "21.5443469|0");
-        CheckNthRootAccuracy(10000000, 2, "3162.277|66");
-        CheckNthRootAccuracy(10000000, 3, "215.44346|9");
-        CheckNthRootAccuracy(10000000, 4, "56.23413|252");
-        CheckNthRootAccuracy(10000000, 5, "25.118864|32");
-        CheckNthRootAccuracy(10000000, 6, "14.677992|68");
-        CheckNthRootAccuracy(1000000, 2, "1000.000|00");
-        CheckNthRootAccuracy(1000000, 3, "100.0000|00");
-        CheckNthRootAccuracy(1000000, 4, "31.6227|766");
-        CheckNthRootAccuracy(1000000, 5, "15.848931|92");
-        CheckNthRootAccuracy(1000000, 6, "10.00000|0");
-        CheckNthRootAccuracy(100000, 2, "316.22|7766");
-        CheckNthRootAccuracy(100000, 3, "46.415|88834");
-        CheckNthRootAccuracy(100000, 4, "17.7827|941");
-        CheckNthRootAccuracy(100000, 5, "10.0000|000");
-        CheckNthRootAccuracy(100000, 6, "6.8129|20691");
-        CheckNthRootAccuracy(10000, 2, "100.00|0000");
-        CheckNthRootAccuracy(10000, 3, "21.544|3469");
-        CheckNthRootAccuracy(10000, 4, "10.000|0000");
-        CheckNthRootAccuracy(10000, 5, "6.309|573445");
-        CheckNthRootAccuracy(10000, 6, "4.641|588834");
-        CheckNthRootAccuracy(1000, 2, "31.6|227766");
-        CheckNthRootAccuracy(1000, 3, "10.00|00000");
-        CheckNthRootAccuracy(1000, 4, "5.62|3413252");
-        CheckNthRootAccuracy(1000, 5, "3.98|1071706");
-        CheckNthRootAccuracy(1000, 6, "3.16|227766");
-        CheckNthRootAccuracy(100, 2, "10.0|000000");
-        CheckNthRootAccuracy(100, 3, "4.6|41588834");
-        CheckNthRootAccuracy(100, 4, "3.1|6227766");
-        CheckNthRootAccuracy(100, 5, "2.51|1886432");
-        CheckNthRootAccuracy(100, 6, "2.15|443469");
-        CheckNthRootAccuracy(10, 2, "3.|16227766");
-        CheckNthRootAccuracy(10, 3, "2.1|5443469");
-        CheckNthRootAccuracy(10, 4, "1.7|7827941");
-        CheckNthRootAccuracy(10, 5, "1.5|84893192");
-        CheckNthRootAccuracy(10, 6, "1.4|67799268");
-
-
-        static void CheckNthRootAccuracy(BigFloat input, int inputRoot, string answerString)
-        {
-            BigFloat answer = BigFloat.Parse(answerString.Replace("|", ""));
-            BigFloat result = BigFloat.NthRoot_INCOMPLETE_DRAFT_10(input, inputRoot);
-            IsTrue(answer == result, $"Failed with input({input}) and root({inputRoot}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}\r\n Answer2: {answerString}");
-        }
-
-    Stopwatch timer = Stopwatch.StartNew();
-        BigFloat result = NthRoot_INCOMPLETE_DRAFT9(new BigFloat((ulong)3 << 60, -60), 3);
+        Stopwatch timer = Stopwatch.StartNew();
+        BigFloat result = NthRoot_INCOMPLETE_DRAFT(new BigFloat((ulong)3 << 60, -60), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
-        result = NthRoot_INCOMPLETE_DRAFT9(new BigFloat((BigInteger)3 << 200, -200), 3);
+        result = NthRoot_INCOMPLETE_DRAFT(new BigFloat((BigInteger)3 << 200, -200), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         timer.Stop();
@@ -603,7 +432,7 @@ public static class Showcase
                     //timer = Stopwatch.StartNew();
                     timer.Restart();
                     timer.Start();
-                    BigFloat result2 = NthRoot_INCOMPLETE_DRAFT9(bf, e);
+                    BigFloat result2 = NthRoot_INCOMPLETE_DRAFT(bf, e);
                     timer.Stop();
                     if (i == 0)
                     {
@@ -620,6 +449,8 @@ public static class Showcase
 
 
     //////////////  Pow() Play Area & Examples //////////////
+
+
     private static void Pow_Stuff()
     {
         //// BigFloat.Zero  BigFloat.One
@@ -670,6 +501,132 @@ public static class Showcase
         tbf = new BigFloat(512, 0);
         _ = Pow(tbf, 3);
     }
+
+    private static void Pow_Stuff3()
+    {
+        Stopwatch timer = new();
+        timer.Start();
+
+        int countNotExact = 0, wayLow = 0, minus2 = 0, minus1 = 0, plus1 = 0, plus2 = 0, plus3 = 0, wayHigh = 0, total = 0;
+        //for (BigInteger val = 3; val < 3000; val += 1)
+        //int b = 0;
+        for (int b = 0; b < 99999999; b += 7)
+        {
+            timer.Reset();
+            for (BigInteger val = BigInteger.One << b; val < BigInteger.One << (b + 1); val += BigInteger.Max(BigInteger.One, BigInteger.One << (b - 6 + 1)))
+            //for (int v = b * 1000; v < (b + 1) * 1000; v ++)
+            //Parallel.For(b * 1000, (b + 1) * 1000, v =>
+            {
+                //BigInteger val = (BigInteger)v * (BigInteger)1 + 2;
+                int valSize = (int)val.GetBitLength();
+                uint maxPowSearch = 18000;// (uint)(3502.0 / (valSize - 0)) + 1;
+                //for (BigInteger val = 3; val < (BigInteger)float.MaxValue; val = (BigInteger)((double)val * 2.13 + 1))
+                //for (BigInteger val = (((BigInteger)1) <<b); val < (((BigInteger)1) << (b+1)); val = (BigInteger)((double)val * 1.02 + 1))
+                //for (uint exp = 2; exp < maxPowSearch; exp++)
+                for (uint exp = 1; exp < maxPowSearch; exp = (uint)((exp * 1.3) + 1))
+                {
+                    //if ((valSize * exp) >= 3502)
+                    //    continue;
+                    timer.Start();
+                    //BigInteger res = BigFloat.PowAccurate(val, valSize, /*(int)*/exp, out int shifted);
+                    BigInteger res = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shifted, valSize);
+                    timer.Stop();
+                    //BigInteger ans = 0; int shiftedAns =0;
+                    //BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shiftedAns, valSize);
+                    BigInteger ans = PowAccurate(val, (int)exp, out int shiftedAns, valSize);
+                    //BigInteger exact = BigInteger.Pow(val, (int)exp);
+                    if (res != ans || shifted != shiftedAns)
+                    {
+                        //Console.WriteLine($"{res} != {ans}  {val}^{exp}");
+                        //Console.WriteLine($"Results for {ToBinaryString(val)}[{val.GetBitLength()}]^{exp}....\r\n" +
+                        //    $"  Result: {ToBinaryString(res)}[{res.GetBitLength()}] << {shifted})  OR  {res} \r\n" +
+                        //    $"  Answer: {ToBinaryString(ans)}[{ans.GetBitLength()}] << {shiftedAns}\r\n" +
+                        //    $"  Exact:  {ToBinaryString(exact)}[{exact.GetBitLength()}]");
+                        if ((res >> 1) + 1 == ans)
+                        {
+                            minus1++;
+                            Console.WriteLine("resolved !!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res - 1 == ans)
+                        {
+                            plus1++;
+                            Console.WriteLine($"plus1:{plus1} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res + 1 == ans)
+                        {
+                            minus1++;
+                            Console.WriteLine($"minus1:{minus1} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res - 2 == ans)
+                        {
+                            plus2++;
+                            Console.WriteLine($"plus2:{plus2} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res - 3 == ans)
+                        {
+                            plus3++;
+                            Console.WriteLine($"plus3:{plus3} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res + 2 == ans)
+                        {
+                            minus2++;
+                            Console.WriteLine($"minus2:{minus2} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res > ans)
+                        {
+                            wayHigh++;
+                            Console.WriteLine($"wayHigh:{wayHigh} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else if (res < ans)
+                        {
+                            wayLow++;
+                            Console.WriteLine($"wayLow:{wayLow} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"??????????? shifted({shifted}) != shiftedAns({shiftedAns}) ?????????????? m= val={val} pow={exp}");
+                        }
+                        countNotExact++;
+                    }
+                    total++;
+                    if (total % (1 << 26) == 0)
+                    {
+                        Console.WriteLine($"b={b,3}  val={val} exp={exp}  maxPowSearch={maxPowSearch}");
+                    }
+                }
+            }//);
+            //if (countNotExact > 0)
+            {
+                //UInt128 count =  ((UInt128)1 << b);
+                Console.WriteLine($"bits: {b,3} countNotExact:{countNotExact}  wayLow:{wayLow}  -2:{minus2}  -1:{minus1}  +1:{plus1}  +2:{plus2}  +3:{plus3}  wayHigh:{wayHigh}   total:{total}  ticks: {timer.ElapsedTicks / total}");
+                countNotExact = 0;
+                wayLow = 0;
+                minus2 = 0;
+                minus1 = 0;
+                plus1 = 0;
+                plus2 = 0;
+                plus3 = 0;
+                wayHigh = 0;
+                total = 0;
+            }
+            //if (m % 1024 == 0)
+            //    Console.WriteLine(m);
+        }
+        // For testing only (SLOWWWWWW)
+        static BigInteger PowAccurate(BigInteger value, int exp, out int shifted, int size)
+        {
+            if (size != value.GetBitLength())
+            {
+                throw new Exception("size != value.GetBitLength()");
+            }
+            BigInteger res = BigInteger.Pow(value, exp);
+            shifted = (int)(res.GetBitLength() - value.GetBitLength());
+            if (value == 0) return BigInteger.One;
+            if (exp == 0) return BigInteger.Zero;
+            return BigIntegerTools.RightShiftWithRound(res, shifted);
+        }
+    }
+
 
     private static void PowMostSignificantBits_Stuff()
     {
@@ -803,118 +760,6 @@ public static class Showcase
             Random.Shared.NextBytes(data);
             data[^1] >>= 8 - (maxNumberOfBits % 8);
             return new(data, true);
-        }
-    }
-
-    private static void Pow_Stuff3()
-    {
-        Stopwatch timer = new();
-        timer.Start();
-
-        int countNotExact = 0, wayLow = 0, minus2 = 0, minus1 = 0, plus1 = 0, plus2 = 0, plus3 = 0, wayHigh = 0, total = 0;
-        //for (BigInteger val = 3; val < 3000; val += 1)
-        //int b = 0;
-        for (int b = 0; b < 99999999; b += 7)
-        {
-            timer.Reset();
-            for (BigInteger val = BigInteger.One << b; val < BigInteger.One << (b + 1); val += BigInteger.Max(BigInteger.One, BigInteger.One << (b - 6 + 1)))
-            //for (int v = b * 1000; v < (b + 1) * 1000; v ++)
-            //Parallel.For(b * 1000, (b + 1) * 1000, v =>
-            {
-                //BigInteger val = (BigInteger)v * (BigInteger)1 + 2;
-                int valSize = (int)val.GetBitLength();
-                uint maxPowSearch = 18000;// (uint)(3502.0 / (valSize - 0)) + 1;
-                //for (BigInteger val = 3; val < (BigInteger)float.MaxValue; val = (BigInteger)((double)val * 2.13 + 1))
-                //for (BigInteger val = (((BigInteger)1) <<b); val < (((BigInteger)1) << (b+1)); val = (BigInteger)((double)val * 1.02 + 1))
-                //for (uint exp = 2; exp < maxPowSearch; exp++)
-                for (uint exp = 1; exp < maxPowSearch; exp = (uint)((exp * 1.3) + 1))
-                {
-                    //if ((valSize * exp) >= 3502)
-                    //    continue;
-                    timer.Start();
-                    //BigInteger res = BigFloat.PowAccurate(val, valSize, /*(int)*/exp, out int shifted);
-                    BigInteger res = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shifted, valSize);
-                    timer.Stop();
-                    //BigInteger ans = 0; int shiftedAns =0;
-                    BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shiftedAns, valSize);
-                    //BigInteger ans = BigFloat.PowAccurate(val, valSize, exp, out int shiftedAns);
-                    //BigInteger exact = BigInteger.Pow(val, (int)exp);
-                    if (res != ans || shifted != shiftedAns)
-                    {
-                        //Console.WriteLine($"{res} != {ans}  {val}^{exp}");
-                        //Console.WriteLine($"Results for {ToBinaryString(val)}[{val.GetBitLength()}]^{exp}....\r\n" +
-                        //    $"  Result: {ToBinaryString(res)}[{res.GetBitLength()}] << {shifted})  OR  {res} \r\n" +
-                        //    $"  Answer: {ToBinaryString(ans)}[{ans.GetBitLength()}] << {shiftedAns}\r\n" +
-                        //    $"  Exact:  {ToBinaryString(exact)}[{exact.GetBitLength()}]");
-                        if ((res >> 1) + 1 == ans)
-                        {
-                            minus1++;
-                            Console.WriteLine("resolved !!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res - 1 == ans)
-                        {
-                            plus1++;
-                            Console.WriteLine($"plus1:{plus1} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res + 1 == ans)
-                        {
-                            minus1++;
-                            Console.WriteLine($"minus1:{minus1} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res - 2 == ans)
-                        {
-                            plus2++;
-                            Console.WriteLine($"plus2:{plus2} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res - 3 == ans)
-                        {
-                            plus3++;
-                            Console.WriteLine($"plus3:{plus3} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res + 2 == ans)
-                        {
-                            minus2++;
-                            Console.WriteLine($"minus2:{minus2} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res > ans)
-                        {
-                            wayHigh++;
-                            Console.WriteLine($"wayHigh:{wayHigh} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else if (res < ans)
-                        {
-                            wayLow++;
-                            Console.WriteLine($"wayLow:{wayLow} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"??????????? shifted({shifted}) != shiftedAns({shiftedAns}) ?????????????? m= val={val} pow={exp}");
-                        }
-                        countNotExact++;
-                    }
-                    total++;
-                    if (total % (1 << 26) == 0)
-                    {
-                        Console.WriteLine($"b={b,3}  val={val} exp={exp}  maxPowSearch={maxPowSearch}");
-                    }
-                }
-            }//);
-            //if (countNotExact > 0)
-            {
-                //UInt128 count =  ((UInt128)1 << b);
-                Console.WriteLine($"bits: {b,3} countNotExact:{countNotExact}  wayLow:{wayLow}  -2:{minus2}  -1:{minus1}  +1:{plus1}  +2:{plus2}  +3:{plus3}  wayHigh:{wayHigh}   total:{total}  ticks: {timer.ElapsedTicks / total}");
-                countNotExact = 0;
-                wayLow = 0;
-                minus2 = 0;
-                minus1 = 0;
-                plus1 = 0;
-                plus2 = 0;
-                plus3 = 0;
-                wayHigh = 0;
-                total = 0;
-            }
-            //if (m % 1024 == 0)
-            //    Console.WriteLine(m);
         }
     }
 

@@ -375,10 +375,8 @@ public static class BigIntegerTools
         int downby = (oversidedBy < 64) ? (oversidedBy >> 2) + 1 : (oversidedBy - 32);
         ulong saveDroppedDigits = (ulong)(saveDroppedDigitsBI >> downby);
 
-
         ////////  Shrink result to wanted Precision  ////////
         val >>= oversidedBy;
-
 
         ////////  Detect a round-ups  ////////
         if ((saveDroppedDigits == 0) && (val * val > x))
