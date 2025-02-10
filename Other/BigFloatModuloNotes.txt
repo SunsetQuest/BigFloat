@@ -1,5 +1,37 @@
-Notes on Mod (Dec 2022 to Feb 2023)
 
+
+Before Cleanup on 2/9/2025
+    /// <summary>
+    /// Performs a Modulus operation. 
+    /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
+    /// The remainder is slightly faster.
+    /// </summary>
+    // see BifFloatModuloNotes.txt for additional notes
+    public static BigFloat Remainder(BigFloat dividend, BigFloat divisor)
+    {
+        int scaleDiff = dividend.Scale - divisor.Scale;
+
+        return scaleDiff switch
+        {
+            > 0 => new(((dividend.DataBits << scaleDiff) % divisor.DataBits) >> scaleDiff, dividend.Scale, true),
+            < 0 => new((dividend.DataBits % (divisor.DataBits >> scaleDiff)) << scaleDiff, divisor.Scale, true),
+            0 => new(dividend.DataBits % divisor.DataBits, divisor.Scale, true),
+        };
+
+        // Alternative version - less accurate. 
+        //return scaleDiff switch
+        //{
+        //    > 0 => new(dividend.DataBits % (divisor.DataBits >> scaleDiff), dividend.Scale, true),
+        //    < 0 => new((dividend.DataBits << scaleDiff) % divisor.DataBits, divisor.Scale, true),
+        //    _ => new(dividend.DataBits % divisor.DataBits, divisor.Scale, true),
+        //};
+    }
+
+
+
+
+
+Notes on Mod (Dec 2022 to Feb 2023)
 
         ///////////////////////////// Modulus vs Remainder /////////////////////////////
 
