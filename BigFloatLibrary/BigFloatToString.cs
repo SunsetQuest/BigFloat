@@ -11,6 +11,7 @@ using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
+#nullable enable
 
 [DebuggerDisplay("{DebuggerDisplay}")]
 public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
