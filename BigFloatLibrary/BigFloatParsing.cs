@@ -1,8 +1,17 @@
-﻿using System;
+﻿// Copyright Ryan Scott White. 2020-2025
+// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Starting 2/25, ChatGPT was used in the development of this library.
+
+using System;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 
 namespace BigFloatLibrary;
+
+// see "BigFloatTryParseNotes.txt" for additional notes
 
 public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
 {
@@ -20,13 +29,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         this = Parse(numericString, binaryScaler);
     }
-
-
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////// PARSE  FUNCTIONS  FUNCTIONS ////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////
-
-    // see "BigFloatTryParseNotes.txt" for additional notes
 
     /// <summary>
     /// Parses an input string and returns a BigFloat. If it fails, an exception is thrown.
@@ -62,7 +64,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///  - Decimal point (and radix point for non base-10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
-    ///  - Supports the precision separator, ':'.  For example, '1.01:101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    ///  - Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
     /// <param name="result">The resulting BigFloat. Zero is returned if conversion failed.</param>
@@ -78,7 +80,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // Let us check for invalid short strings, 0x___ , or 0b___
-
         int locAfterSign = (numericString[0] is '-' or '+') ? 1 : 0;
         if (numericString.Length == locAfterSign)    //[-,+][END] - fail  
         {
@@ -103,6 +104,27 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return TryParseDecimal(numericString, out result, ref binaryScaler);
     }
 
+    /// <summary>
+    /// Parses a decimal string to a BigFloat. It supports a binaryScaler and negative numbers. 
+    /// Supports the precision separator, '|'.  For example, '1.23|456' parses '1.23' as in-precision and '456' as out of precision bits stored as hidden bits.
+    /// It will also ignore spaces or commas. But mixing is not allowed.
+    /// It also accepts values wrapped with double quotes, (), {}, or []. But mixing is not allowed.
+    /// Allowed:                                           }
+    ///  * -123.456     leading minus (or plus) signs are supported
+    ///  * 123 456 789  spaces or commas ignored
+    ///  * {123.456}    wrapped in {..} or (..) or ".."
+    ///  * 123.456____  trailing spaces are ignored
+    /// Not Allowed:
+    ///  * 0xABC.DEF    leading 0x or 0b as hex or binary are not supported
+    ///  * {123.456     must have leading and closing bracket
+    ///  * {123.456)    brackets types must match
+    ///  * {{123.456}}  limit of one only
+    ///  * 123,456 789  mismatched separators will fail
+    /// </summary>
+    /// <param name="numericString">The value to parse.</param>
+    /// <param name="result">(out) The returned result.</param>
+    /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
+    /// <returns>Returns true if successful.</returns>
     public static bool TryParseDecimal(string numericString, out BigFloat result, ref int binaryScaler)
     {
         bool usedCommaAlready = false;
@@ -276,26 +298,23 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return false;
         }
 
-        // The 'accuracyDelimiterPosition', specified by the ':' char is:
-        // (1) base-10 and it should be base-2
-        // (2) currently it's measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
-        int hiddenBitsFound = 0;
-        if (accuracyDelimiterPosition >= 0)
-        {
-            if (accuracyDelimiterPosition == destinationLocation)
-            {
-                hiddenBitsFound = 0;
-            }
-            else if (BigInteger.TryParse(cleaned[accuracyDelimiterPosition..], out BigInteger hiddenBits))
-            {
-                hiddenBitsFound = (int)hiddenBits.GetBitLength();
-            }
-            else
-            {
-                result = new BigFloat(0);
-                return false;
-            }
-        }
+        // The 'accuracyDelimiterPosition', specified by '|' (or ':') is:
+        // (1) in base-10 needs to be converted to base-2
+        // (2) currently it's measured from the MSB but should measure from LSB
+        int hiddenBitsFound = (accuracyDelimiterPosition < 0) ? 0
+            : (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
+
+        //// Alternative Method - slower - maybe not as accurate either
+        //int hiddenBitsFound = 0;
+        //if (accuracyDelimiterPosition >= 0)
+        //{
+        //    if (!BigInteger.TryParse(cleaned[..accuracyDelimiterPosition], out BigInteger hiddenBits))
+        //    {
+        //        result = new BigFloat(0);
+        //        return false;
+        //    }
+        //    hiddenBitsFound = int.Max((int)(val.GetBitLength() - hiddenBits.GetBitLength()-1),0);
+        //}
 
         if (sign < 0) val = BigInteger.Negate(val);
 
@@ -365,15 +384,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
 
-
     /// <summary>
     /// Parses a hex string to a BigFloat. It supports a binaryScaler (base-2 point shifting) and negative numbers. 
-    /// Supports the precision separator, ':'.  For example, '1.01:101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
     /// Allowed: 
-    ///  * ABCD/abcd    both uppercase/lowercases okay
-    ///  * -ABC.DEF     leading minus sing is supported
-    ///  * -ABC.DEF     leading plus sign is supported
+    ///  * ABCD/abcd    both uppercase/lowercases are supported
+    ///  * -ABC.DEF     leading minus or plus signs are supported
     ///  * 123 456 789  spaces or commas ignored
     ///  * {ABC.DEF}    wrapped in {..} or (..) or ".."
     ///  * ABC_____     trailing spaces are ignored
@@ -382,15 +399,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///  * {ABC.DEF     must have leading and closing bracket
     ///  * {ABC.DEF)    brackets types must match
     ///  * {{ABC.DEF}}  limit of one bracket only
-    ///  * 123,456 789  mixing different kinds of separators
+    ///  * 123,456 789  mismatched separators will fail
     /// </summary>
-    /// <param name="input">The value to parse.</param>
+    /// <param name="hexInput">The value to parse.</param>
     /// <param name="result">(out) The returned result.</param>
     /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParseHex(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0)
+    public static bool TryParseHex(ReadOnlySpan<char> hexInput, out BigFloat result, int binaryScaler = 0)
     {
-        if (input.IsEmpty)
+        if (hexInput.IsEmpty)
         {
             result = 0;
             return false;
@@ -403,21 +420,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int BraceTypeAndStatus = 0;  // 0=not used, 1=usingCurlBraces, 3=usingRoundBrackets, 4=usingParentheses,  [neg means it has been closed]
         int accuracyDelimiterPosition = -1;
         int expLocation = -1;
-        int exp = 0;
-        int expSign = 0;
         int destinationLocation = 1;
 
         // skip negative or positive sign
-        bool isNeg = input[0] == '-';
-        int inputCurser = (isNeg || input[0] == '+') ? 1 : 0;
+        bool isNeg = hexInput[0] == '-';
+        int inputCurser = (isNeg || hexInput[0] == '+') ? 1 : 0;
 
-        Span<char> cleaned = stackalloc char[input.Length - inputCurser + 1];
+        Span<char> cleaned = stackalloc char[hexInput.Length - inputCurser + 1];
 
         cleaned[0] = '0'; // Ensure we have a positive number
 
-        for (; inputCurser < input.Length; inputCurser++)
+        for (; inputCurser < hexInput.Length; inputCurser++)
         {
-            char c = input[inputCurser];
+            char c = hexInput[inputCurser];
             switch (c)
             {
                 case (>= '0' and <= '9') or (>= 'a' and <= 'f') or (>= 'A' and <= 'F'):
@@ -519,9 +534,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (BraceTypeAndStatus < 0)
             {
                 // should just be whitespace left after closing brace
-                for (; inputCurser < input.Length; inputCurser++)
+                for (; inputCurser < hexInput.Length; inputCurser++)
                 {
-                    if (!char.IsWhiteSpace(input[inputCurser]))
+                    if (!char.IsWhiteSpace(hexInput[inputCurser]))
                     {
                         // only whitespace expected after closing brace
                         result = 0;
@@ -566,29 +581,29 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>
     /// Converts the binary number in a string to a BigFloat. 
     /// Negative values must have a leading '-'.
-    /// Supports the precision separator, ':'.  For example, '1.01:101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// e.g, '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// If it fails, an exception is thrown.
     /// </summary>
-    /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
+    /// <param name="binaryInput">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
     /// <param name="includesHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
-    public static BigFloat ParseBinary(string input, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
+    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
-        ArgumentException.ThrowIfNullOrEmpty(input); // .Net 7 or later
+        ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
 
-        return !TryParseBinary(input.AsSpan(), out BigFloat result, binaryScaler, forceSign, includesHiddenBits)
-            ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", input)
+        return !TryParseBinary(binaryInput.AsSpan(), out BigFloat result, binaryScaler, forceSign, includesHiddenBits)
+            ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", binaryInput)
             : result;
     }
 
     /// <summary>
     /// Converts the binary text in ReadOnlySpan<char> to a BigFloat. 
     /// Negative values must have a leading '-'.
-    /// Supports the precision separator, ':'.  For example, '1.01:101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// e.g. '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// </summary>
     /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
@@ -761,16 +776,4 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         return true; // return true if success
     }
-
-
-    ///////////////////////////////////////////////////////////////////////////////
-    ///////////////////////// [END] Parse FUNCTIONS [END] /////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
 }

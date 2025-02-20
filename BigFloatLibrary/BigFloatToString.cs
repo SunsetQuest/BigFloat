@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Copyright Ryan Scott White. 2020-2025
+// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Starting 2/25, ChatGPT was used in the development of this library.
+
+using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -12,16 +15,11 @@ namespace BigFloatLibrary;
 [DebuggerDisplay("{DebuggerDisplay}")]
 public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
 {
-
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////    TO_STRING  FUNCTIONS     ////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////
     // see "BigFloatToStringNotes.txt" and "BigFloatTryParseNotes.txt" for additional notes
     //   string ToString() - calls ToStringDecimal()
     //   string ToString(string format) - to Hex(e.g. A4B.F2) and Binary(e.g. 1010111.001)
     //   string ToStringDecimal() - To Decimal, e.g. 9999.99
     //   string ToStringHexScientific(bool showHiddenBits = false, bool showSize = false, bool showInTwosComplement = false) - e.g. "12AC<<22"
-
 
     [DebuggerHidden()]
     public override string ToString()
@@ -179,7 +177,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //int size = (int)newInt.GetBitLength();
         //int newScale = Scale;
 
-        if (format[0] == 'X') //hex with radix point
+        if (format.Equals("X", StringComparison.InvariantCultureIgnoreCase)) //hex with radix point
         {
             if (Scale >= 0)
             {
@@ -196,8 +194,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return shiftedBigIntForDisplay.ToString("X").Insert((-Scale / 4) - 1, ".");
         }
 
-        if (format[0] == 'B') // Signals a binary (with radix point)
+        if (format.Equals("B", StringComparison.InvariantCultureIgnoreCase)) // Signals a binary (with radix point)
         {
+            //future: can we use BigIntegerToBinaryString() instead?
+
             // Setup destination and allocate memory
             Span<char> dstBytes = stackalloc char[_size - ExtraHiddenBits
             + Math.Max(Math.Max(Scale, -(_size - ExtraHiddenBits) - Scale), 0) // total number of out-of-precision zeros in the output.
@@ -282,9 +282,61 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
+    /// Provides custom format-string support for BigFloat.
+    /// This is the standard .NET entry point when users call
+    /// <c>bigFloat.ToString("X", someProvider)</c>, etc.
+    /// </summary>
+    /// <param name="format">
+    ///   The .NET format string, e.g. "G", "R", "X", "B", or a custom pattern.
+    /// </param>
+    /// <param name="formatProvider">
+    ///   Culture or number-format info (ignored in this simple example).
+    /// </param>
+    /// <returns>A string representation of this BigFloat.</returns>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        // For the simplest usage, treat a null/empty format as "G".
+        // You might also treat "R" and "G" similarly. .NET double does that.
+        // "R" often implies round-trip decimal format, "G" is general, etc.
+        if (string.IsNullOrEmpty(format))
+            format = "G";
+
+        // You can do a simple switch:
+        switch (format.ToUpperInvariant())
+        {
+            case "G":
+            case "R":
+                // Typically "R" means Round-trip, so you might want
+                // maximum decimal digits. For now, call your existing
+                // decimal version:
+                return ToStringDecimal(this, includeOutOfPrecisionBits: false);
+
+            case "X":
+                // Hex representation, ignoring formatProvider for now:
+                // You already have "ToString(string format)" overload below,
+                // so you could just do:
+                return this.ToString("X");
+
+
+            case "B":
+                // Binary representation:
+                return this.ToString("B");
+                //todo: use something like the below
+                //return BigIntegerToBinaryString()
+
+            // Future: "N", "F", "E"...
+ 
+            default:
+                // For truly custom numeric format strings, you'd parse
+                // `format` here. Or just fallback:
+                return ToStringDecimal(this, includeOutOfPrecisionBits: false);
+        }
+    }
+
+    /// <summary>
     /// Generates the data-bits in hex followed by the amount to shift(in decimal). Example: 12AC<<22 or B1>>3
     /// </summary>
-    /// <param name="showHiddenBits">Includes the extra 32 hidden bits. Example: 12AC:F0F00000<<22</param>
+    /// <param name="showHiddenBits">Includes the extra 32 hidden bits. Example: 12AC|F0F00000<<22</param>
     /// <param name="showSize">Appends a [##] to the number with it's size in bits. Example: 22AC[14]<<22</param>
     /// <param name="showInTwosComplement">When enabled, shows the show result in two's complement form with no leading sign. Example: -5 --> B[3]<<0</param>
     public string ToStringHexScientific(bool showHiddenBits = false, bool showSize = false, bool showInTwosComplement = false)

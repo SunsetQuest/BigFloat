@@ -1,7 +1,12 @@
-﻿using System;
+﻿// Copyright Ryan Scott White. 2020-2025
+// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Starting 2/25, ChatGPT was used in the development of this library.
+
+using System;
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
-
 
 namespace BigFloatLibrary;
 
@@ -212,4 +217,39 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return x;
     }
 
+
+    /// <summary>
+    /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
+    /// Sign is ignored. Zero and negative values is undefined and will return double.NaN.
+    /// </summary>
+    /// <param name="n">The BigFloat input argument.</param>
+    /// <returns>Returns the Log2 of the value (or exponent) as a double. If Zero or less then returns Not-a-Number.</returns>
+    public static double Log2(BigFloat n)
+    {
+        // Special case for zero and negative numbers.
+        if (((n._size >= ExtraHiddenBits - 1) ? n.DataBits.Sign : 0) <= 0)
+        {
+            // if (!n.IsPositive)
+            return double.NaN;
+        }
+
+        //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
+        long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
+        long dubAsLong = (1023L << 52) | long.Abs(mantissa);
+        double val = BitConverter.Int64BitsToDouble(dubAsLong);
+        return double.Log2(val) + n.BinaryExponent;
+    }
+
+    //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
+    /// <summary>
+    /// Returns the Log2 of a BigFloat number as a integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
+    /// Sign is ignored. Negative values will return the same value as there positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
+    /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often use to indicated size in bits so returning 0 with Log2(0) is in-line with this.
+    /// </summary>
+    /// <param name="n">The BigFloat input argument.</param>
+    /// <returns>Returns the Log2 of the value (or exponent) as a Int.</returns>
+    public static int Log2Int(BigFloat n)
+    {
+        return n.BinaryExponent;
+    }
 }

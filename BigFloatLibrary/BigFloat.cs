@@ -1,13 +1,12 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024, 2025
+﻿// Copyright Ryan Scott White. 2020-2025
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
+// Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Numerics;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
@@ -17,7 +16,10 @@ namespace BigFloatLibrary;
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
+public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>, IFormattable
+//#if NET7_0_OR_GREATER
+//        , ISpanFormattable
+//#endif
 {
     /// <summary>
     /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
@@ -83,20 +85,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public bool IsZero => _size == 0 || ((_size + Scale) < ExtraHiddenBits && _size < ExtraHiddenBits);
 
-    // What is considered Zero: any dataInt that is LESS then 0:10000000, and also the shift results in a 0:10000000.
+    // What is considered Zero: any dataInt that is LESS then 0|10000000, and also the shift results in a 0|10000000.
     //   IntData    Scale Size Sz+Sc Precision  Zero
-    // 1:11111111.. << -2   33    31      1       N
-    // 1:00000000.. << -2   33    31      1       N
-    // 1:00000000.. << -1   33    32      1       N
-    // 1:00000000.. <<  0   33    33      1       N
-    // 0:11111111.. << -1   32    31      0       N
-    // 0:10000000.. << -1   32    31      0       N
-    // 0:10000000.. <<  0   32    32      0       N
-    // 0:01111111.. << -1   31    30     -1       Y
-    // 0:01111111.. <<  0   31    31     -1       Y (borderline)
-    // 0:01111111.. <<  1   31    32     -1       N
-    // 0:00111111.. <<  1   31    32     -2       Y (borderline)
-    // 0:00111111.. <<  2   31    33     -2       N
+    // 1|11111111.. << -2   33    31      1       N
+    // 1|00000000.. << -2   33    31      1       N
+    // 1|00000000.. << -1   33    32      1       N
+    // 1|00000000.. <<  0   33    33      1       N
+    // 0|11111111.. << -1   32    31      0       N
+    // 0|10000000.. << -1   32    31      0       N
+    // 0|10000000.. <<  0   32    32      0       N
+    // 0|01111111.. << -1   31    30     -1       Y
+    // 0|01111111.. <<  0   31    31     -1       Y (borderline)
+    // 0|01111111.. <<  1   31    32     -1       N
+    // 0|00111111.. <<  1   31    32     -2       Y (borderline)
+    // 0|00111111.. <<  2   31    33     -2       N
 
     /// <summary>
     /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
@@ -146,7 +148,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             string bottom8HexChars = (BigInteger.Abs(DataBits) & ((BigInteger.One << ExtraHiddenBits) - 1)).ToString("X8").PadLeft(8)[^8..];
             StringBuilder sb = new(32);
             _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
-            _ = sb.Append($"{(DataBits.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(DataBits) >> ExtraHiddenBits:X}:{bottom8HexChars}"); // hex part
+            _ = sb.Append($"{(DataBits.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(DataBits) >> ExtraHiddenBits:X}|{bottom8HexChars}"); // hex part
             _ = sb.Append($"[{Size}+{ExtraHiddenBits}={_size}], {((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}");
 
             return sb.ToString();
@@ -556,9 +558,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// A more accurate version of CompareTo() however it is not compatible with IEquatable. Compares the two numbers by subtracting them and if they are less then 0:1000 (i.e. Zero) then they are considered equal.
-    /// e.g. Using 10:01111111 AND 10:10000000, CompareTo() returns not equal, but CompareInPrecisionBitsTo() returns Equal
+    /// e.g. Using 10|01111111 AND 10|10000000, CompareTo() returns not equal, but CompareInPrecisionBitsTo() returns Equal
     ///   Returns negative => this instance is less than other
-    ///   Returns Zero     => this instance is equal to other. (or the difference is less then 0:1000 )
+    ///   Returns Zero     => this instance is equal to other. (or the difference is less then 0|1000 )
     ///     i.e. Sub-Precision bits rounded and removed. 
     ///     e.g. 1.11 == 1.1,  1.00 == 1.0,  1.11 != 1.10
     ///   Returns Positive => this instance is greater than other
@@ -587,7 +589,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return (bytes > 4) ? diff.Sign : 0;
         }
 
-        // Since we are subtracting, we can run into an issue where a 0:100000 should be considered a match.  e.g. 11:000 == 10:100
+        // Since we are subtracting, we can run into an issue where a 0|100000 should be considered a match.  e.g. 11|000 == 10|100
         diff -= diff.Sign; // decrements towards 0
 
         // Future: need to benchmark A, B or C
@@ -741,7 +743,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         };
 
 
-        // since we are subtracting, we can run into an issue where a 0:100000 should be considered a match.  e.g. 11:000 == 10:100
+        // since we are subtracting, we can run into an issue where a 0|100000 should be considered a match.  e.g. 11|000 == 10|100
         temp -= temp.Sign; //decrements towards 0
 
         // Future: need to benchmark A, B or C
@@ -1421,14 +1423,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public static BigFloat operator ++(BigFloat r)
     {
         // hidden bits = 4
-        // A)  1111:1111__.  => 1111:1111<< 6   +1  =>  1111:1111__.
-        // B)  1111:1111_.   => 1111:1111<< 5   +1  =>  10000:0000#.
-        // C)  1111:1111.    => 1111:1111<< 4   +1  =>  10000:0000.
-        // D)  1111:1.111    => 1111:1111<< 1   +1  =>  10000:0.111
-        // E)  1111.:1111    => 1111:1111<< 0   +1  =>  10000.:1111
-        // F)  111.1:1111    => 1111:1111<< -1  +1  =>  1000.1:1111
-        // G)  .1111:1111    => 1111:1111<< -4  +1  =>  1.1111:1111
-        // H) .01111:1111    => 1111:1111<< -5  +1  =>  1.01111:1111
+        // A)  1111|1111__.  => 1111|1111<< 6   +1  =>  1111|1111__.
+        // B)  1111|1111_.   => 1111|1111<< 5   +1  =>  10000|0000#.
+        // C)  1111|1111.    => 1111|1111<< 4   +1  =>  10000|0000.
+        // D)  1111|1.111    => 1111|1111<< 1   +1  =>  10000|0.111
+        // E)  1111.|1111    => 1111|1111<< 0   +1  =>  10000.|1111
+        // F)  111.1|1111    => 1111|1111<< -1  +1  =>  1000.1|1111
+        // G)  .1111|1111    => 1111|1111<< -4  +1  =>  1.1111|1111
+        // H) .01111|1111    => 1111|1111<< -5  +1  =>  1.01111|1111
 
         int onesPlace = ExtraHiddenBits - r.Scale;
 
@@ -2251,40 +2253,5 @@ Other:                                         |   |         |         |       |
 
         // Make sure size is set correctly. Zero is allowed to be any size.
         Debug.Assert(val._size == realSize, $"_size({val._size}), expected ({realSize})");
-    }
-
-    /// <summary>
-    /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Zero and negative values is undefined and will return double.NaN.
-    /// </summary>
-    /// <param name="n">The BigFloat input argument.</param>
-    /// <returns>Returns the Log2 of the value (or exponent) as a double. If Zero or less then returns Not-a-Number.</returns>
-    public static double Log2(BigFloat n)
-    {
-        // Special case for zero and negative numbers.
-        if (((n._size >= ExtraHiddenBits - 1) ? n.DataBits.Sign : 0) <= 0)
-        {
-            // if (!n.IsPositive)
-            return double.NaN;
-        }
-
-        //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
-        long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
-        long dubAsLong = (1023L << 52) | long.Abs(mantissa);
-        double val = BitConverter.Int64BitsToDouble(dubAsLong);
-        return double.Log2(val) + n.BinaryExponent;
-    }
-
-    //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
-    /// <summary>
-    /// Returns the Log2 of a BigFloat number as a integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Negative values will return the same value as there positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
-    /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often use to indicated size in bits so returning 0 with Log2(0) is in-line with this.
-    /// </summary>
-    /// <param name="n">The BigFloat input argument.</param>
-    /// <returns>Returns the Log2 of the value (or exponent) as a Int.</returns>
-    public static int Log2Int(BigFloat n)
-    {
-        return n.BinaryExponent;
     }
 }

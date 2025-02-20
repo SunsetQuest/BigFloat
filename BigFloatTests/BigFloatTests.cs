@@ -1,8 +1,8 @@
-﻿// Copyright Ryan Scott White. 2020, 2021, 2022, 2023, 2024, 2025
+﻿// Copyright Ryan Scott White. 2020-2025
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Written by human hand - unless noted. This may change in the future. Code written by Ryan Scott White unless otherwise noted.
+// Starting 2/25, ChatGPT was used in the development of this library.
 
 using BigFloatLibrary;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -33,7 +33,7 @@ public class BigFloatTests
     /// <summary>
     /// Target time for each test. Time based on release mode on 16 core x64 CPU.
     /// </summary>
-    private readonly int TestTargetInMillseconds = 500;
+    private readonly int TestTargetInMillseconds = 100;
 
 #if DEBUG
     private const int MaxDegreeOfParallelism = 1;
@@ -89,14 +89,14 @@ public class BigFloatTests
         //1154037866912041841546539185052621408946880512 or  33bfb47ba4446e000000000000000000000000
         // 14566005701624942 << 96  or 33bfb47ba4446e << 96
         //is -268695379354069438191721957422006272 but only 16 precision digits so -2686953793540694e+20, 
-        //Correct: -2686953793540694e+20, -0x33BFB4:7BA4446E[22+32=54], << 96
-        IsTrue(bf.DebuggerDisplay == "-2686953793540694e+20, -0x33BFB4:7BA4446E[22+32=54], << 96");
+        //Correct: -2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96
+        IsTrue(bf.DebuggerDisplay == "-2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96");
 
         bf = new BigFloat(BigInteger.Parse("0CC404B845BBB924A88E39E", NumberStyles.AllowHexSpecifier), 96, true);
         // 246924491699516410027369374 x 18446744073709551616(for 64 up-shift) = 4554952903911797705753984222769658845550608384
         //is -4554952903911797705753984222769658845550608384 but only first ____ precision digits
-        //Correct: 45549529039117977057539842e+20,  0x0CC404B845BBB92:4A88E39E[56+32=88], << 96
-        IsTrue(bf.DebuggerDisplay == "45549529039117977057539842e+20,  0x0CC404B845BBB92:4A88E39E[56+32=88], << 96");
+        //Correct: 45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96
+        IsTrue(bf.DebuggerDisplay == "45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96");
     }
 
     [TestMethod]
@@ -246,168 +246,168 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_NthRoot_DRAFT()
     {
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7, "1340494621.514214278463413501222825825662100997195024832765760458:23859");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4, "9391044157537525.1959197514993855569279258848560570718590387:82766889699549582798593");
-        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7, "1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740:51982282");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 3, "19813073175.87709934055949316958:138");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 7, "25880.89921337705525458987063396:056");
-        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 55, "3.644617186032180086485625982525:169");
-        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777"), 3, "42685972166.249808508213684454449:731");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 2, "8944271909999158.7856366946749251:049");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 3, "43088693800.637674435185871330387:009");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 4, "94574160.900317581330169611988721:5"); //note: 800..>945.. so need more precision
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 5, "2402248.8679628624664841997871983:");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 6, "207578.16311124268746614482713121:");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 7, "36106.407876409947138175505843180:");
-        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 8, "9724.9247246607303150644442684673:4"); //note: 800..>972.. so need more precision
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 2, "1000000000000000.000000000000000:0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 3, "10000000000.00000000000000000000:0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 4, "31622776.60168379331998893544432:7");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 5, "1000000.000000000000000000000000:0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 6, "100000.0000000000000000000000000:0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 7, "19306.97728883250167007074799840:2");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 8, "5623.413251903490803949510397764:8");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 9, "2154.434690031883721759293566519:4");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 10, "1000.000000000000000000000000000:0");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 11, "533.6699231206309658153694194942:9");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 12, "316.2277660168379331998893544432:7");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 13, "203.0917620904735720992124668860:1");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 2, "10000000000000.0000000000000:00000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 3, "464158883.361277889241007635:09194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 4, "3162277.66016837933199889354:44327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 5, "158489.319246111348520210137:33915");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 6, "21544.3469003188372175929356:65194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 7, "5179.47467923121113475517467:79610");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 8, "1778.27941003892280122542119:51927");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 2, "3162277660168.3793319988935:444327");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 3, "215443469.00318837217592935:665194");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 4, "1778279.4100389228012254211:951927");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 5, "100000.00000000000000000000:000000");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 6, "14677.992676220695409205171:148169");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 7, "3727.5937203149401661724906:094730");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 8, "1333.5214321633240256759317:152953");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 2, "1000000000000.000000000000:0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 3, "100000000.0000000000000000:0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 4, "1000000.000000000000000000:0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 5, "63095.73444801932494343601:3662234");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 6, "10000.00000000000000000000:0000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 7, "2682.695795279725747698802:6806276");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 2, "316227766016.837933199889:35444327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 3, "46415888.3361277889241007:63509194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 4, "562341.325190349080394951:03977648");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 5, "39810.7170553497250770252:30508775");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 6, "6812.92069057961285497988:17963002");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 7, "1930.69772888325016700707:47998402");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 8, "749.894209332455827302184:27561514");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 2, "100000000000.00000000000:000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 3, "21544346.900318837217592:93566519");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 4, "316227.76601683793319988:935444327");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 5, "25118.864315095801110850:320677993");
-        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 6, "4641.5888336127788924100:763509194");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 3, "10000000.00000000000000:0000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 4, "177827.9410038922801225:4211951927");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 5, "15848.93192461113485202:1013733915");
-        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 6, "3162.277660168379331998:8935444327");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 2, "10000000000.0000000000:00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 3, "4641588.83361277889241:00763509194");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 4, "100000.000000000000000:00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 5, "10000.0000000000000000:00000000000");
-        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 6, "2154.43469003188372175:92935665194");
-        CheckNthRootAccuracy(10000000000000000000, 2, "3162277660.1683793319:988935444327");
-        CheckNthRootAccuracy(10000000000000000000, 3, "2154434.6900318837217:592935665194");
-        CheckNthRootAccuracy(10000000000000000000, 4, "56234.132519034908039:4951039776481");
-        CheckNthRootAccuracy(10000000000000000000, 5, "6309.5734448019324943:4360136622343");
-        CheckNthRootAccuracy(10000000000000000000, 6, "1467.7992676220695409:2051711481686");
-        CheckNthRootAccuracy(1000000000000000000, 2, "1000000000.000000000:0000000000000");
-        CheckNthRootAccuracy(1000000000000000000, 3, "1000000.000000000000:0000000000000");
-        CheckNthRootAccuracy(1000000000000000000, 4, "31622.77660168379331:9988935444327");
-        CheckNthRootAccuracy(1000000000000000000, 5, "3981.071705534972507:7025230508775");
-        CheckNthRootAccuracy(1000000000000000000, 6, "1000.000000000000000:0000000000000");
-        CheckNthRootAccuracy(100000000000000000, 2, "316227766.016837933:19988935444327");
-        CheckNthRootAccuracy(100000000000000000, 3, "464158.883361277889:24100763509194");
-        CheckNthRootAccuracy(100000000000000000, 4, "17782.7941003892280:12254211951927");
-        CheckNthRootAccuracy(100000000000000000, 5, "2511.88643150958011:10850320677993");
-        CheckNthRootAccuracy(100000000000000000, 6, "681.292069057961285:49798817963002");
-        CheckNthRootAccuracy(10000000000000000, 2, "100000000.00000000:000000000000000");
-        CheckNthRootAccuracy(10000000000000000, 3, "215443.46900318837:217592935665193");
-        CheckNthRootAccuracy(10000000000000000, 4, "10000.000000000000:000000000000000");
-        CheckNthRootAccuracy(10000000000000000, 5, "1584.8931924611134:852021013733915");
-        CheckNthRootAccuracy(10000000000000000, 6, "464.15888336127788:924100763509194");
-        CheckNthRootAccuracy(1000000000000000, 2, "31622776.60168379:3319988935444327");
-        CheckNthRootAccuracy(1000000000000000, 3, "100000.0000000000:0000000000000000");
-        CheckNthRootAccuracy(1000000000000000, 4, "5623.413251903490:8039495103977648");
-        CheckNthRootAccuracy(1000000000000000, 5, "1000.000000000000:0000000000000000");
-        CheckNthRootAccuracy(1000000000000000, 6, "316.2277660168379:3319988935444327");
-        CheckNthRootAccuracy(100000000000000, 2, "10000000.0000000:00000000000000000");
-        CheckNthRootAccuracy(100000000000000, 3, "46415.8883361278:88924100763509194");
-        CheckNthRootAccuracy(100000000000000, 4, "3162.27766016837:93319988935444327");
-        CheckNthRootAccuracy(100000000000000, 5, "630.957344480193:24943436013662234");
-        CheckNthRootAccuracy(100000000000000, 6, "215.443469003188:37217592935665193");
-        CheckNthRootAccuracy(10000000000000, 2, "3162277.6601683:8");
-        CheckNthRootAccuracy(10000000000000, 3, "21544.346900318:8");
-        CheckNthRootAccuracy(10000000000000, 4, "1778.2794100389:2");
-        CheckNthRootAccuracy(10000000000000, 5, "398.10717055349:7");
-        CheckNthRootAccuracy(10000000000000, 6, "146.77992676220:7");
-        CheckNthRootAccuracy(1000000000000, 2, "1000000.000000:00");
-        CheckNthRootAccuracy(1000000000000, 3, "10000.00000000:00");
-        CheckNthRootAccuracy(1000000000000, 4, "1000.000000000:00");
-        CheckNthRootAccuracy(1000000000000, 5, "251.1886431509:58");
-        CheckNthRootAccuracy(1000000000000, 6, "100.0000000000:00");
-        CheckNthRootAccuracy(100000000000, 2, "316227.766016:838");
-        CheckNthRootAccuracy(100000000000, 3, "4641.58883361:278");
-        CheckNthRootAccuracy(100000000000, 4, "562.341325190:349");
-        CheckNthRootAccuracy(100000000000, 5, "158.489319246:111");
-        CheckNthRootAccuracy(100000000000, 6, "68.1292069057:961");
-        CheckNthRootAccuracy(10000000000, 2, "100000.00000:0000");
-        CheckNthRootAccuracy(10000000000, 3, "2154.4346900:3188");
-        CheckNthRootAccuracy(10000000000, 4, "316.22776601:6838");
-        CheckNthRootAccuracy(10000000000, 5, "100.00000000:0000");
-        CheckNthRootAccuracy(10000000000, 6, "46.415888336:1278");
-        CheckNthRootAccuracy(1000000000, 2, "31622.7766:016838");
-        CheckNthRootAccuracy(1000000000, 3, "1000.000000:00000");
-        CheckNthRootAccuracy(1000000000, 4, "177.8279410:03892");
-        CheckNthRootAccuracy(1000000000, 5, "63.0957344:480193");
-        CheckNthRootAccuracy(1000000000, 6, "31.6227766:016838");
-        CheckNthRootAccuracy(100000000, 2, "10000.0000:0");
-        CheckNthRootAccuracy(100000000, 3, "464.15888:34");
-        CheckNthRootAccuracy(100000000, 4, "100.000000:0");
-        CheckNthRootAccuracy(100000000, 5, "39.810717:06");
-        CheckNthRootAccuracy(100000000, 6, "21.5443469:0");
-        CheckNthRootAccuracy(10000000, 2, "3162.277:66");
-        CheckNthRootAccuracy(10000000, 3, "215.44346:9");
-        CheckNthRootAccuracy(10000000, 4, "56.23413:252");
-        CheckNthRootAccuracy(10000000, 5, "25.118864:32");
-        CheckNthRootAccuracy(10000000, 6, "14.677992:68");
-        CheckNthRootAccuracy(1000000, 2, "1000.000:00");
-        CheckNthRootAccuracy(1000000, 3, "100.0000:00");
-        CheckNthRootAccuracy(1000000, 4, "31.6227:766");
-        CheckNthRootAccuracy(1000000, 5, "15.848931:92");
-        CheckNthRootAccuracy(1000000, 6, "10.00000:0");
-        CheckNthRootAccuracy(100000, 2, "316.22:7766");
-        CheckNthRootAccuracy(100000, 3, "46.415:88834");
-        CheckNthRootAccuracy(100000, 4, "17.7827:941");
-        CheckNthRootAccuracy(100000, 5, "10.0000:000");
-        CheckNthRootAccuracy(100000, 6, "6.8129:20691");
-        CheckNthRootAccuracy(10000, 2, "100.00:0000");
-        CheckNthRootAccuracy(10000, 3, "21.544:3469");
-        CheckNthRootAccuracy(10000, 4, "10.000:0000");
-        CheckNthRootAccuracy(10000, 5, "6.309:573445");
-        CheckNthRootAccuracy(10000, 6, "4.641:588834");
-        CheckNthRootAccuracy(1000, 2, "31.6:227766");
-        CheckNthRootAccuracy(1000, 3, "10.00:00000");
-        CheckNthRootAccuracy(1000, 4, "5.62:3413252");
-        CheckNthRootAccuracy(1000, 5, "3.98:1071706");
-        CheckNthRootAccuracy(1000, 6, "3.16:227766");
-        CheckNthRootAccuracy(100, 2, "10.0:000000");
-        CheckNthRootAccuracy(100, 3, "4.6:41588834");
-        CheckNthRootAccuracy(100, 4, "3.1:6227766");
-        CheckNthRootAccuracy(100, 5, "2.51:1886432");
-        CheckNthRootAccuracy(100, 6, "2.15:443469");
-        CheckNthRootAccuracy(10, 2, "3.:16227766");
-        CheckNthRootAccuracy(10, 3, "2.1:5443469");
-        CheckNthRootAccuracy(10, 4, "1.7:7827941");
-        CheckNthRootAccuracy(10, 5, "1.5:84893192");
-        CheckNthRootAccuracy(10, 6, "1.4:67799268");
+        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7, "1340494621.514214278463413501222825825662100997195024832765760458|23859");
+        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4, "9391044157537525.1959197514993855569279258848560570718590387|82766889699549582798593");
+        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7, "1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740|51982282");
+        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 3, "19813073175.87709934055949316958|138");
+        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 7, "25880.89921337705525458987063396|056");
+        CheckNthRootAccuracy(BigFloat.Parse("7777777777777777777777777777777"), 55, "3.644617186032180086485625982525|169");
+        CheckNthRootAccuracy(BigFloat.Parse("77777777777777777777777777777777"), 3, "42685972166.249808508213684454449|731");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 2, "8944271909999158.7856366946749251|049");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 3, "43088693800.637674435185871330387|009");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 4, "94574160.900317581330169611988721|5"); //note: 800..>945.. so need more precision
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 5, "2402248.8679628624664841997871983|");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 6, "207578.16311124268746614482713121|");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 7, "36106.407876409947138175505843180|");
+        CheckNthRootAccuracy(BigFloat.Parse("80000000000000000000000000000000"), 8, "9724.9247246607303150644442684673|4"); //note: 800..>972.. so need more precision
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 2, "1000000000000000.000000000000000|0");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 3, "10000000000.00000000000000000000|0");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 4, "31622776.60168379331998893544432|7");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 5, "1000000.000000000000000000000000|0");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 6, "100000.0000000000000000000000000|0");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 7, "19306.97728883250167007074799840|2");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 8, "5623.413251903490803949510397764|8");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 9, "2154.434690031883721759293566519|4");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 10, "1000.000000000000000000000000000|0");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 11, "533.6699231206309658153694194942|9");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 12, "316.2277660168379331998893544432|7");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000000000"), 13, "203.0917620904735720992124668860|1");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 2, "10000000000000.0000000000000|00000");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 3, "464158883.361277889241007635|09194");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 4, "3162277.66016837933199889354|44327");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 5, "158489.319246111348520210137|33915");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 6, "21544.3469003188372175929356|65194");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 7, "5179.47467923121113475517467|79610");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000000"), 8, "1778.27941003892280122542119|51927");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 2, "3162277660168.3793319988935|444327");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 3, "215443469.00318837217592935|665194");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 4, "1778279.4100389228012254211|951927");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 5, "100000.00000000000000000000|000000");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 6, "14677.992676220695409205171|148169");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 7, "3727.5937203149401661724906|094730");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000000"), 8, "1333.5214321633240256759317|152953");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 2, "1000000000000.000000000000|0000000");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 3, "100000000.0000000000000000|0000000");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 4, "1000000.000000000000000000|0000000");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 5, "63095.73444801932494343601|3662234");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 6, "10000.00000000000000000000|0000000");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000000"), 7, "2682.695795279725747698802|6806276");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 2, "316227766016.837933199889|35444327");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 3, "46415888.3361277889241007|63509194");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 4, "562341.325190349080394951|03977648");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 5, "39810.7170553497250770252|30508775");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 6, "6812.92069057961285497988|17963002");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 7, "1930.69772888325016700707|47998402");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000000"), 8, "749.894209332455827302184|27561514");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 2, "100000000000.00000000000|000000000");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 3, "21544346.900318837217592|93566519");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 4, "316227.76601683793319988|935444327");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 5, "25118.864315095801110850|320677993");
+        CheckNthRootAccuracy(BigFloat.Parse("10000000000000000000000"), 6, "4641.5888336127788924100|763509194");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 3, "10000000.00000000000000|0000000000");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 4, "177827.9410038922801225|4211951927");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 5, "15848.93192461113485202|1013733915");
+        CheckNthRootAccuracy(BigFloat.Parse("1000000000000000000000"), 6, "3162.277660168379331998|8935444327");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 2, "10000000000.0000000000|00000000000");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 3, "4641588.83361277889241|00763509194");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 4, "100000.000000000000000|00000000000");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 5, "10000.0000000000000000|00000000000");
+        CheckNthRootAccuracy(BigFloat.Parse("100000000000000000000"), 6, "2154.43469003188372175|92935665194");
+        CheckNthRootAccuracy(10000000000000000000, 2, "3162277660.1683793319|988935444327");
+        CheckNthRootAccuracy(10000000000000000000, 3, "2154434.6900318837217|592935665194");
+        CheckNthRootAccuracy(10000000000000000000, 4, "56234.132519034908039|4951039776481");
+        CheckNthRootAccuracy(10000000000000000000, 5, "6309.5734448019324943|4360136622343");
+        CheckNthRootAccuracy(10000000000000000000, 6, "1467.7992676220695409|2051711481686");
+        CheckNthRootAccuracy(1000000000000000000, 2, "1000000000.000000000|0000000000000");
+        CheckNthRootAccuracy(1000000000000000000, 3, "1000000.000000000000|0000000000000");
+        CheckNthRootAccuracy(1000000000000000000, 4, "31622.77660168379331|9988935444327");
+        CheckNthRootAccuracy(1000000000000000000, 5, "3981.071705534972507|7025230508775");
+        CheckNthRootAccuracy(1000000000000000000, 6, "1000.000000000000000|0000000000000");
+        CheckNthRootAccuracy(100000000000000000, 2, "316227766.016837933|19988935444327");
+        CheckNthRootAccuracy(100000000000000000, 3, "464158.883361277889|24100763509194");
+        CheckNthRootAccuracy(100000000000000000, 4, "17782.7941003892280|12254211951927");
+        CheckNthRootAccuracy(100000000000000000, 5, "2511.88643150958011|10850320677993");
+        CheckNthRootAccuracy(100000000000000000, 6, "681.292069057961285|49798817963002");
+        CheckNthRootAccuracy(10000000000000000, 2, "100000000.00000000|000000000000000");
+        CheckNthRootAccuracy(10000000000000000, 3, "215443.46900318837|217592935665193");
+        CheckNthRootAccuracy(10000000000000000, 4, "10000.000000000000|000000000000000");
+        CheckNthRootAccuracy(10000000000000000, 5, "1584.8931924611134|852021013733915");
+        CheckNthRootAccuracy(10000000000000000, 6, "464.15888336127788|924100763509194");
+        CheckNthRootAccuracy(1000000000000000, 2, "31622776.60168379|3319988935444327");
+        CheckNthRootAccuracy(1000000000000000, 3, "100000.0000000000|0000000000000000");
+        CheckNthRootAccuracy(1000000000000000, 4, "5623.413251903490|8039495103977648");
+        CheckNthRootAccuracy(1000000000000000, 5, "1000.000000000000|0000000000000000");
+        CheckNthRootAccuracy(1000000000000000, 6, "316.2277660168379|3319988935444327");
+        CheckNthRootAccuracy(100000000000000, 2, "10000000.0000000|00000000000000000");
+        CheckNthRootAccuracy(100000000000000, 3, "46415.8883361278|88924100763509194");
+        CheckNthRootAccuracy(100000000000000, 4, "3162.27766016837|93319988935444327");
+        CheckNthRootAccuracy(100000000000000, 5, "630.957344480193|24943436013662234");
+        CheckNthRootAccuracy(100000000000000, 6, "215.443469003188|37217592935665193");
+        CheckNthRootAccuracy(10000000000000, 2, "3162277.6601683|8");
+        CheckNthRootAccuracy(10000000000000, 3, "21544.346900318|8");
+        CheckNthRootAccuracy(10000000000000, 4, "1778.2794100389|2");
+        CheckNthRootAccuracy(10000000000000, 5, "398.10717055349|7");
+        CheckNthRootAccuracy(10000000000000, 6, "146.77992676220|7");
+        CheckNthRootAccuracy(1000000000000, 2, "1000000.000000|00");
+        CheckNthRootAccuracy(1000000000000, 3, "10000.00000000|00");
+        CheckNthRootAccuracy(1000000000000, 4, "1000.000000000|00");
+        CheckNthRootAccuracy(1000000000000, 5, "251.1886431509|58");
+        CheckNthRootAccuracy(1000000000000, 6, "100.0000000000|00");
+        CheckNthRootAccuracy(100000000000, 2, "316227.766016|838");
+        CheckNthRootAccuracy(100000000000, 3, "4641.58883361|278");
+        CheckNthRootAccuracy(100000000000, 4, "562.341325190|349");
+        CheckNthRootAccuracy(100000000000, 5, "158.489319246|111");
+        CheckNthRootAccuracy(100000000000, 6, "68.1292069057|961");
+        CheckNthRootAccuracy(10000000000, 2, "100000.00000|0000");
+        CheckNthRootAccuracy(10000000000, 3, "2154.4346900|3188");
+        CheckNthRootAccuracy(10000000000, 4, "316.22776601|6838");
+        CheckNthRootAccuracy(10000000000, 5, "100.00000000|0000");
+        CheckNthRootAccuracy(10000000000, 6, "46.415888336|1278");
+        CheckNthRootAccuracy(1000000000, 2, "31622.7766|016838");
+        CheckNthRootAccuracy(1000000000, 3, "1000.000000|00000");
+        CheckNthRootAccuracy(1000000000, 4, "177.8279410|03892");
+        CheckNthRootAccuracy(1000000000, 5, "63.0957344|480193");
+        CheckNthRootAccuracy(1000000000, 6, "31.6227766|016838");
+        CheckNthRootAccuracy(100000000, 2, "10000.0000|0");
+        CheckNthRootAccuracy(100000000, 3, "464.15888|34");
+        CheckNthRootAccuracy(100000000, 4, "100.000000|0");
+        CheckNthRootAccuracy(100000000, 5, "39.810717|06");
+        CheckNthRootAccuracy(100000000, 6, "21.5443469|0");
+        CheckNthRootAccuracy(10000000, 2, "3162.277|66");
+        CheckNthRootAccuracy(10000000, 3, "215.44346|9");
+        CheckNthRootAccuracy(10000000, 4, "56.23413|252");
+        CheckNthRootAccuracy(10000000, 5, "25.118864|32");
+        CheckNthRootAccuracy(10000000, 6, "14.677992|68");
+        CheckNthRootAccuracy(1000000, 2, "1000.000|00");
+        CheckNthRootAccuracy(1000000, 3, "100.0000|00");
+        CheckNthRootAccuracy(1000000, 4, "31.6227|766");
+        CheckNthRootAccuracy(1000000, 5, "15.848931|92");
+        CheckNthRootAccuracy(1000000, 6, "10.00000|0");
+        CheckNthRootAccuracy(100000, 2, "316.22|7766");
+        CheckNthRootAccuracy(100000, 3, "46.415|88834");
+        CheckNthRootAccuracy(100000, 4, "17.7827|941");
+        CheckNthRootAccuracy(100000, 5, "10.0000|000");
+        CheckNthRootAccuracy(100000, 6, "6.8129|20691");
+        CheckNthRootAccuracy(10000, 2, "100.00|0000");
+        CheckNthRootAccuracy(10000, 3, "21.544|3469");
+        CheckNthRootAccuracy(10000, 4, "10.000|0000");
+        CheckNthRootAccuracy(10000, 5, "6.309|573445");
+        CheckNthRootAccuracy(10000, 6, "4.641|588834");
+        CheckNthRootAccuracy(1000, 2, "31.6|227766");
+        CheckNthRootAccuracy(1000, 3, "10.00|00000");
+        CheckNthRootAccuracy(1000, 4, "5.62|3413252");
+        CheckNthRootAccuracy(1000, 5, "3.98|1071706");
+        CheckNthRootAccuracy(1000, 6, "3.16|227766");
+        CheckNthRootAccuracy(100, 2, "10.0|000000");
+        CheckNthRootAccuracy(100, 3, "4.6|41588834");
+        CheckNthRootAccuracy(100, 4, "3.1|6227766");
+        CheckNthRootAccuracy(100, 5, "2.51|1886432");
+        CheckNthRootAccuracy(100, 6, "2.15|443469");
+        CheckNthRootAccuracy(10, 2, "3.|16227766");
+        CheckNthRootAccuracy(10, 3, "2.1|5443469");
+        CheckNthRootAccuracy(10, 4, "1.7|7827941");
+        CheckNthRootAccuracy(10, 5, "1.5|84893192");
+        CheckNthRootAccuracy(10, 6, "1.4|67799268");
 
         static void CheckNthRootAccuracy(BigFloat input, int inputRoot, string answerString)
         {
@@ -432,43 +432,43 @@ public class BigFloatTests
         b = BigFloat.ParseBinary("100.000");
         IsFalse((a - b).IsZero);
 
-        IsFalse(BigFloat.ParseBinary("1:111111111", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
-        IsFalse(BigFloat.ParseBinary("0:111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:111111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) 
-        IsTrue(BigFloat.ParseBinary("0:011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
-        IsTrue(BigFloat.ParseBinary("0:011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0:011111111", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsTrue(BigFloat.ParseBinary("0:001111111", 1, 0).IsZero); //                                               (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:001111111", 2, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsTrue(BigFloat.ParseBinary("0:000111111", 2, 0).IsZero); //
-        IsFalse(BigFloat.ParseBinary("0:000111111", 3, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1:000000000", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
-        IsFalse(BigFloat.ParseBinary("1:000000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1:000000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:100000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0:100000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0:100000000", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|111111111", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
+        IsFalse(BigFloat.ParseBinary("0|111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|111111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) 
+        IsTrue(BigFloat.ParseBinary("0|011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
+        IsTrue(BigFloat.ParseBinary("0|011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
+        IsFalse(BigFloat.ParseBinary("0|011111111", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0|001111111", 1, 0).IsZero); //                                               (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|001111111", 2, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0|000111111", 2, 0).IsZero); //
+        IsFalse(BigFloat.ParseBinary("0|000111111", 3, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|000000000", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
+        IsFalse(BigFloat.ParseBinary("1|000000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|000000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|100000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)
+        IsFalse(BigFloat.ParseBinary("0|100000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|100000000", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
 
 
         //  IntData    Scale  Precision  Zero
-        //1:111111111 << -2       1       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1:111111111 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) 
-        //0:111111111 << -1       0       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0:111111111 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) 
-        //0:011111111 << -1      -1       Y -2                                             
-        //0:011111111 <<  0      -1       Y -1 (borderline)
-        //0:011111111 <<  1      -1       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0:001111111 <<  1      -2       Y -1 (borderline)
-        //0:001111111 <<  2      -2       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0:000111111 <<  2      -3       Y -1 (borderline)
-        //0:000111111 <<  3      -3       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1:000000000 << -2       1       N -1 (no because _size >= ExtraHiddenBits-1) 
-        //1:000000000 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1:000000000 <<  0       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0:100000000 << -1       0       N -1 (no because _size >= ExtraHiddenBits-1)
-        //0:100000000 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0:100000000 <<  1       0       N  1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //1|111111111 << -2       1       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //1|111111111 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) 
+        //0|111111111 << -1       0       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|111111111 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) 
+        //0|011111111 << -1      -1       Y -2                                             
+        //0|011111111 <<  0      -1       Y -1 (borderline)
+        //0|011111111 <<  1      -1       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|001111111 <<  1      -2       Y -1 (borderline)
+        //0|001111111 <<  2      -2       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|000111111 <<  2      -3       Y -1 (borderline)
+        //0|000111111 <<  3      -3       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //1|000000000 << -2       1       N -1 (no because _size >= ExtraHiddenBits-1) 
+        //1|000000000 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //1|000000000 <<  0       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|100000000 << -1       0       N -1 (no because _size >= ExtraHiddenBits-1)
+        //0|100000000 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|100000000 <<  1       0       N  1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
 
         IsFalse(BigFloat.ParseBinary("100.01").IsZero);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000001").IsZero);
@@ -964,9 +964,9 @@ public class BigFloatTests
 
             BigFloat bf = new(bi, 16, true);
 
-            // 31:   00:01111111111111111111111111111111  00111111111111111111111111111111|00000000000000000000000000000001 
-            // 32:   00:11111111111111111111111111111111 
-            // 33:   01:11111111111111111111111111111111 
+            // 31:   00|01111111111111111111111111111111  00111111111111111111111111111111|00000000000000000000000000000001 
+            // 32:   00|11111111111111111111111111111111 
+            // 33:   01|11111111111111111111111111111111 
 
             BigFloat resPos = BigFloat.PowerOf2(bf);
             BigFloat resNeg = BigFloat.PowerOf2(-bf);
@@ -982,7 +982,7 @@ public class BigFloatTests
         {
             BigFloat bf = new(0x7FFFFFFF, 32, true);
             BigFloat bfSq = BigFloat.PowerOf2(bf);
-            IsFalse(bfSq == (BigFloat)0x3FFFFFFF00000001);  // false because 0:7FFFFFFE it out of precision.
+            IsFalse(bfSq == (BigFloat)0x3FFFFFFF00000001);  // false because 0|7FFFFFFE it out of precision.
 
             bf = new BigFloat(0xFFFFFFFF, 32, true);
             bfSq = BigFloat.PowerOf2(bf);
@@ -1445,43 +1445,90 @@ public class BigFloatTests
                         {
                             continue;
                         }
-
+                        bool roundDown = false;
                         // Answer Setup using accurate version of PowMostSignificantBits
-                        //BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns, valSize, wantedBits, true);
-                        BigInteger ans = PowAccurate                  (val, exp, out int shiftedAns, valSize);
+                        BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns, valSize, wantedBits, roundDown);
+                        BigInteger ans2= PowAccurate                           (val, exp, out int shiftedAns5, wantedBits, roundDown);
                         
                         // Result Setup
-                        BigInteger res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
+                        BigInteger res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, roundDown);
 
-                        if (shiftedAns < 0)
+                        if (val.IsZero)
                         {
-                            Fail("Fail - depending on the mode, a negative shiftedAns is not supported.");
+                            IsTrue(ans == 0, "When input value is zero the result is always zero.");
+                            continue;
                         }
-                        else if (shiftedAns - shiftedRes == 1)  // ans rounded up to larger size - this is allowed but only by one
+
+                        //if (val.IsOne)
+                        //{
+                        //    IsTrue(ans == 1, "When input value is one the result is always one.");
+                        //    continue;
+                        //}
+                        //if (exp == 0)
+                        //{
+                        //    IsTrue(ans == 0, "When the exponent is 0 the result is always 1.");
+                        //    continue;
+                        //}
+
+                        if (ans.GetBitLength() != Math.Min(wantedBits, val.GetBitLength()) )
                         {
+                            if (exp == 0 && res.GetBitLength() != 1)
+                            {
+                                res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes6, valSize, wantedBits, roundDown);
+                                ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
+                                Fail("Fail - depending on the mode, a negative shiftedAns is not supported.");
+                            }
+                        }
+
+                        if (ans2.GetBitLength() != Math.Min(wantedBits, val.GetBitLength()))
+                        {
+                            if (exp == 0 && ans2.GetBitLength() != 1)
+                            {
+                                ans2 = PowAccurate(val, exp, out shiftedAns5, wantedBits, false);
+                                ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
+                                Fail("Fail - depending on the mode, a negative shiftedAns is not supported.");
+                            }
+                        }
+
+                        int allowedMiss = 0;
+                        if (shiftedAns - shiftedRes == 1)  // ans rounded up to larger size - this is allowed but only by one
+                        {
+                            ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
                             ans <<= 1;
+                            allowedMiss = 1;
                         }
                         else if (shiftedAns - shiftedRes == -1)  // ans rounded down
                         {
-                            // should not happen 
+                            ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
+                            res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes2, valSize, wantedBits, roundDown);
                             Fail("Specification does not allow rounding down, so size can never be smaller then answers's size.");
                             res <<= 1;
                         }
                         else if (shiftedRes != shiftedAns)
                         {
+                            ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
+                            res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes3, valSize, wantedBits, roundDown);
                             Fail("'Shifted' should not be greater then 1.");
                         }
+                        //10|10100010111000101101
 
                         BigInteger miss = ans - res;
                         // a miss of 0 or 1(a round-up)
-                        if (miss > 1)
+                        if (miss > allowedMiss)
                         {
+                            ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
+                            res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes2, valSize, wantedBits, roundDown);
                             Fail("Specification allows for round ups.");
                         }
                         else if (miss < 0)
                         {
+                            ans = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, roundDown);
                             Fail("Specification does not allow rounding down so it should be less then actual.");
                         }
+
+
+
+     
                     }
                 }
             }
@@ -1489,115 +1536,52 @@ public class BigFloatTests
         //); // Parallel.For
 
         // For testing only (SLOWWWWWW)
-        static BigInteger PowAccurate(BigInteger value, int exp, out int shifted, int size)
+        static BigInteger PowAccurate(BigInteger value, int exp, out int shifted, int wantedBits, bool roundDown = false)
         {
-            if (size != value.GetBitLength())
+            // Handle simple edge-cases first
+            if (value == 0)
             {
-                throw new Exception("size != value.GetBitLength()");
+                shifted = 0;
+                return BigInteger.Zero;
             }
+            if (exp == 0)
+            {
+                shifted = 0;
+                return BigInteger.One;
+            }
+
+            // Compute the power
             BigInteger res = BigInteger.Pow(value, exp);
-            shifted = (int)(res.GetBitLength() - value.GetBitLength());
-            if (value == 0) return BigInteger.Zero;
-            if (exp == 0) return BigInteger.One;
-            return BigIntegerTools.RightShiftWithRound(res, shifted);
-        }
-    }
 
-    [TestMethod]
-    public void Verify_PowMostSignificantBitsUsingFullCalculation()
-    {
-        (int maxBitSize, int maxTries, int maxExpSize) = TestTargetInMillseconds switch
-        {
-            > 269291 => (1026, 1, 10),
-            > 101587 => (768, 1, 10),
-            > 27232 => (768, 1, 9),
-            > 19366 => (514, 1, 10),
-            > 8901 => (768, 1, 8),
-            > 6963 => (514, 1, 9),
-            > 1662 => (514, 1, 8),
-            > 736 => (386, 1, 8),
-            > 367 => (258, 1, 8),
-            > 30 => (194, 1, 7),
-            > 5 => (150, 1, 6),
-            > 4 => (140, 1, 6),
-            > 3 => (120, 1, 6),
-            > 2 => (98, 1, 6),
-            > 1 => (70, 1, 6),
-            > 0 => (70, 1, 5),
-            _ => (66, 1, 5),         // up to 65 value bit size, 1 try on average for each size, up to 4 bits.
-        };
+            // Determine how many bits will be kept vs. shifted out
+            int bitLen = (int)res.GetBitLength();
+            shifted = bitLen - wantedBits;
 
-        //_ = Parallel.For(2, maxBitSize, bitSize =>
-        for (int bitSize = 2; bitSize < maxBitSize; bitSize ++)
-        {
-            for (int valTries = 0; valTries < maxTries; valTries++)
+            // If result fits entirely in wantedBits or is smaller, no shift needed
+            if (shifted <= 0)
             {
-                for (int expSize = 2; expSize < maxExpSize; expSize++) // e.g. 8 = 511 max
-                {
-                    BigInteger val = GenerateRandomBigInteger(bitSize);
-                    int valSize = (int)val.GetBitLength();
-                    int wantedBits;
-                    //int wantedBits = valSize;  
-                    for (wantedBits = 1; wantedBits < (valSize + 2); wantedBits++)
-                    {
-                        int exp = (int)GenerateRandomBigInteger(expSize);
+                shifted = 0;
+                return res;
+            }
 
-                        if ((long)exp * Math.Min(wantedBits, valSize) >= int.MaxValue)
-                        {
-                            continue;
-                        }
+            // RightShiftWithRound needs the full number to decide on rounding
+            // so do not shift 'res' first. Let the rounding function handle it.
 
-                        // Answer Setup using Pow (this is slow for large numbers)
-                        BigInteger p = BigInteger.Pow(val, exp);
-                        int shiftedAns = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits, valSize)));
-                        bool overflowed = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out BigInteger ans, p, shiftedAns);
-                        if (overflowed)
-                        {
-                            shiftedAns++;
-                        }
-
-                        if (val.IsZero)
-                        {
-                            shiftedAns = 0;
-                        }
-
-                        // Result Setup
-                        BigInteger res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
-
-                        if (shiftedAns < 0)
-                        {
-                            Fail("Fail - depending on the mode, a negative shiftedAns is not supported.");
-                        }
-                        else if (shiftedAns - shiftedRes == 1)  // ans rounded up to larger size - this is allowed but only by one
-                        {
-                            ans <<= 1;
-                        }
-                        else if (shiftedAns - shiftedRes == -1)  // ans rounded down
-                        {
-                            Fail("Specification does not allow rounding down, so size can never be smaller then answers's size.");
-                            res <<= 1;
-                        }
-                        else if (shiftedRes != shiftedAns)
-                        {
-                            Fail("'Shifted' should not be greater then 1.");
-                        }
-
-                        BigInteger miss = ans - res;
-                        // a miss of 0 or 1(a round-up)
-                        if (miss > 1)
-                        {
-                            Fail("Specification allows for round ups.");
-                        }
-                        else if (miss < 0)
-                        {
-                            Fail("Specification does not allow rounding down so it should be less then actual.");
-                        }
-                    }
-                }
+            if (roundDown)
+            {
+                return res >> shifted;
+            }
+            else
+            {
+                //return BigIntegerTools.RightShiftWithRound(res, shifted);
+                bool carried1 = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(
+                    out BigInteger result, res, shifted);
+                if (carried1) shifted++;
+                return result;
             }
         }
-        //);
     }
+
 
     private static BigInteger GenerateRandomBigInteger(int maxNumberOfBits)
     {
@@ -3053,10 +3037,40 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_TryParse_Precision()
     {
-        IsTrue(BigFloat.Parse("123.123|1") == BigFloat.Parse("123.123"));
-        IsTrue(BigFloat.Parse("123.123|2") == BigFloat.Parse("123.123"));
-        IsFalse(BigFloat.Parse("123.123|9") == BigFloat.Parse("123.123"));
-        IsTrue(BigFloat.Parse("123.123|9") == BigFloat.Parse("123.124"));
+        BigFloat BF123123 = BigFloat.Parse("123.123");
+        BigFloat BF123124 = BigFloat.Parse("123.124");
+        BigFloat BF123123_9 = BigFloat.Parse("123.123|9");
+        BigFloat BF123123_5 = BigFloat.Parse("123.123|5");
+        BigFloat BF123123_1 = BigFloat.Parse("123.123|1");
+        BigFloat BF123123_2 = BigFloat.Parse("123.123|2");
+        BigFloat BF123123_6 = BigFloat.Parse("123.123|6");
+
+        IsTrue(BF123123_1 == BF123123);
+        IsTrue(BF123123_2 == BF123123);
+        IsTrue(BF123123_6 == BF123124);
+
+
+        //  123.123 has 17.91 binary accuracy, so 17 bits. 
+        //  123.123|9: 1111011.0001111110|1101111110...  111101100011111101101111110
+        //  123.123:   1111011.0001111101|1111001110... -111101100011111011111001110
+        //                         Diff: |1110110000                      1110110000
+        IsFalse(BF123123_9 == BF123123);
+
+        IsTrue(BF123123_9 == BF123124);
+
+        // The below fail is acceptable - so excluding, however, "123.123" == "123.123|5" a miss by 0|10000 so it should fail however decimal to binary conversion is not perfect. 
+        //  123.123 has 17.91 binary accuracy, so 17 bits. 
+        //  123.123|5: 1111011.0001111110|01110...     1111011000111111001110
+        //  123.123:   1111011.0001111101|11110...    -1111011000111110111110
+        //                         Diff: |10000                         10000
+        IsFalse(BF123123_5 == BF123123);
+
+        // The below fail is acceptable - so excluding, however, "123.124" == "123.123|5" a miss by 0|10000 so it should fail however decimal to binary conversion is not perfect. 
+        //  123.124 has 17.91 binary accuracy, so 17 bits. 
+        //  123.124:   1111011.0001111110|11111...   
+        //  123.123|5: 1111011.0001111110|01110...   
+        //                         Diff: |10001      
+        IsFalse(BF123123_5 == BF123124); 
     }
 
     /// <summary>
@@ -4006,7 +4020,7 @@ public class BigFloatTests
                                                       // miss     10.001100000 to 10.010111111   and  10.000100000 to 10.001011110
                                                       // (10.001, 10.01) => (10.01, 10.01) => 0
                                                       // The following two tests are extreme edge cases that can go either way. Since the compare function only checks in-precision bits.
-                                                      // 10.001 rounds to 10.01, which equals 10.01.However, if we subtract them, we get 0:1, which would round to 1:0, letting us know the difference when rounded, is 1 and not equal.
+                                                      // 10.001 rounds to 10.01, which equals 10.01.However, if we subtract them, we get 0|1, which would round to 1|0, letting us know the difference when rounded, is 1 and not equal.
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) == 0, $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) == 0, $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 1) == 0, $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
@@ -5997,7 +6011,7 @@ public class BigFloatTests
 
     private static void Verify_TruncateAndRoundHelper(BigFloat inputVal, BigFloat output, BigFloat preciseAnswer)
     {
-        //int expectedOutputSize = inputVal.Size - ((inputVal < output)?1:0); This version is more correct because it will shrink the out of precision area.
+        //int expectedOutputSize = inputVal.Size - ((inputVal < output)?1|0); This version is more correct because it will shrink the out of precision area.
         int expectedOutputSize = inputVal.Size;
         BigFloat expectedBF = BigFloat.SetPrecisionWithRound(preciseAnswer, expectedOutputSize);
 
