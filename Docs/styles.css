@@ -1,0 +1,94 @@
+/* Reset some default browser styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* Header styling */
+header {
+  background: #005f99;
+  color: #fff;
+  padding: 20px 0;
+  text-align: center;
+}
+
+header .logo {
+  max-width: 100px;
+  margin-bottom: 10px;
+}
+
+/* Navigation styling */
+nav {
+  background: #333;
+}
+
+nav ul {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+}
+
+nav ul li {
+  margin: 0 15px;
+}
+
+nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 15px 0;
+  display: block;
+}
+
+nav ul li a:hover {
+  color: #005f99;
+}
+
+/* Main content styling */
+main {
+  background: #fff;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 5px;
+}
+
+/* Section headings */
+main h2 {
+  margin-bottom: 10px;
+  color: #005f99;
+}
+
+main p {
+  margin-bottom: 15px;
+}
+
+/* Code block styling */
+pre {
+  background: #eee;
+  padding: 10px;
+  overflow-x: auto;
+  border-radius: 3px;
+}
+
+/* Footer styling */
+footer {
+  background: #333;
+  color: #fff;
+  text-align: center;
+  padding: 10px 0;
+  margin-top: 20px;
+}
