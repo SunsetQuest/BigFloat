@@ -1080,10 +1080,10 @@ public static class BigIntegerTools
         const int EXTRA_START =        4; //    4
         const int START_CUTOFF =     400; //  400
         const int NEWTON_CUTOFF =    800; //  800
-        const int EXTRA_TO_REMOVE1 =   2; //    2
+        const int EXTRA_TO_REMOVE1 =   2; //    2 - fails under 2
         const int SKIP_LOWEST =        0; //    0
-        const int EXTRA_TO_REMOVE2 =   1; //    1
-        const int BOOST_LARGER_NUMS=   2; //    2
+        const int EXTRA_TO_REMOVE2 =   1; //    1 - fails on large numbers
+        int BOOST_LARGER_NUMS= requestedPrecision < 3072 ? 2 : 3; //    2
 
         if ((requestedPrecision + xLen) <= SIMPLE_CUTOFF)
         {
@@ -1096,8 +1096,7 @@ public static class BigIntegerTools
             x = -x;
         }
 
-        // The larger the number the more buffer we should start out with we can then reduce the
-        // buffer as we go along.
+        // The larger the number the more buffer we should start out with. We can then reduce the buffer as we go along.
 
         ////////  Get Starting Size  ////////
         int desiredStartSize = requestedPrecision + (EXTRA_START * 2);
@@ -1111,7 +1110,7 @@ public static class BigIntegerTools
         BigInteger result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA_START));
         curSize += EXTRA_START;
 
-        ////////////////////// Newton version  //////////////////////
+        ////////////////////// Classic Newton version  //////////////////////
         while (true)
         {
             int doubleCurSize = curSize << 1;
@@ -1142,7 +1141,8 @@ public static class BigIntegerTools
         // future: can we merge the "result >>= SKIP_LOWEST;" into the result shift above?
 
         // Lets make sure we are 100% accurate at this point - back off until we see both a 0 and 1
-        int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        //int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        int reduceBy2 = BitOperations.TrailingZeroCount((ulong)(((result & 1UL) == 0 ? result : ~result) & ulong.MaxValue)) + 1;
         if (reduceBy2 < 32) // 32 is flexible
         {
             result >>= reduceBy2;
@@ -1156,39 +1156,41 @@ public static class BigIntegerTools
             return isPos ? res : -res;
         }
 
-        ////////////////////// NewtonPlus version  ////////////////////// Let's shift into high gear...
+        ////////////////////// SunsetQuest's NewtonPlus Inverse  //////////////////////
         if (curSize > requestedPrecision)
         {
             BigInteger tempResult2 = result >> (curSize - requestedPrecision);
             return isPos ? tempResult2 : (-tempResult2);
         }
-
+        result++;
         while (true)
         {
             int doubleCurSize = curSize << 1;
 
             // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
-            result++; // we could just do a add a "(1 << doublecurSize)"
+             // we could just do a add a "(1 << doublecurSize)"
             BigInteger mask = (BigInteger.One << (curSize + 1)) - 1;
             BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
 
             //// back off until we see both a zero and one
-            if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision) // maybe remove EXTRA_TO_REMOVE2
+            if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision)
             {
-                result = ((result << ((2 * curSize) - 0)) - ((result >> 0) * (xTimesY & mask))) >> ((3 * curSize) - 0 - requestedPrecision);
+                if ((int)(doubleCurSize*0.95) > requestedPrecision) Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
 
+                result =   ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (doubleCurSize + curSize - requestedPrecision);
+                //result = ((result << curSize) - ((result * (xTimesY & mask)) >> curSize)) >> (doubleCurSize - requestedPrecision - 1);
                 return isPos ? result : -result;
             }
-            result = ((result << (doubleCurSize)) - (result * (xTimesY & mask))) >> (curSize + EXTRA_TO_REMOVE2);
+            result = ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (curSize + EXTRA_TO_REMOVE2);
 
             curSize = doubleCurSize - EXTRA_TO_REMOVE2;
 
-            int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
-            if (reduceBy < 100)
-            {
-                result >>= reduceBy;
-                curSize -= reduceBy;
-            }
+            int reduceBy = BitOperations.TrailingZeroCount((ulong)(((result & 1UL) == 0 ? result : ~result) & ulong.MaxValue)) + 1;
+            //int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
+            //if (reduceBy < 100)
+            result >>= reduceBy;
+            curSize -= reduceBy;
+            result++;
         }
     }
 
