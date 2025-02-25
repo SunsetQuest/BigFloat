@@ -5,10 +5,13 @@
 // Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
+using System.Data.SqlTypes;
 using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace BigFloatLibrary;
 #nullable enable
@@ -79,18 +82,16 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
     }
 
-/// <summary>
-/// Converts this BigFloat to a binary string.
-/// </summary>
-private string ToBinaryString()
-{
-    // Allocate exactly as much space as needed.
-    Span<char> buffer = stackalloc char[CalculateBinaryStringLength()];
-    WriteBinaryToSpan(buffer, out int charsWritten);
-    return new string(buffer.Slice(0, charsWritten));
-}
-
-
+    /// <summary>
+    /// Converts this BigFloat to a binary string.
+    /// </summary>
+    private string ToBinaryString()
+    {
+        // Allocate exactly as much space as needed.
+        Span<char> buffer = stackalloc char[CalculateBinaryStringLength()];
+        WriteBinaryToSpan(buffer, out int charsWritten);
+        return new string(buffer.Slice(0, charsWritten));
+    }
 
     /// <summary>
     /// Implements ISpanFormattable-style formatting for BigFloat.
@@ -151,30 +152,11 @@ private string ToBinaryString()
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    private int CalculateBinaryStringLength()
-    {
-        int signLength = DataBits.Sign < 0 ? 1 : 0;
-        int intBits = _size - ExtraHiddenBits; // bits in the integer part
-                                               // For numbers less than one, we include a "0." prefix.
-        int prefixLength = BinaryExponent < 0 ? 2 : 0;
-        // When Scale is non-negative, we append trailing zeros.
-        int trailingZeros = Scale >= 0 ? Math.Max(Scale, 0) : 0;
-        // For numbers with a fractional part (Scale negative but integer part exists), we include the radix point.
-        int pointLength = (Scale < 0 && BinaryExponent >= 0) ? 1 : 0;
-
-        // For numbers less than one the main bit count is the full precision.
-        int mainBits = BinaryExponent < 0 ? Size : Size;
-        // Additionally, for numbers with a fractional part (with integer and fractional bits),
-        // the total bit count equals the bits before the point plus the bits after.
-        if (BinaryExponent >= 0 && Scale < 0)
-        {
-            int bitsBeforePoint = intBits + Scale; // Scale is negative here
-            int bitsAfterPoint = -Scale;
-            mainBits = bitsBeforePoint + bitsAfterPoint;
-        }
-
-        return signLength + prefixLength + mainBits + trailingZeros + pointLength;
-    }
+    private int CalculateBinaryStringLength() => _size - ExtraHiddenBits
+            + Math.Max(Math.Max(Scale, -(_size - ExtraHiddenBits) - Scale), 0) // out-of-precision zeros in the output.
+            + (DataBits.Sign < 0 ? 1 : 0)       // add one if a leading '-' sign (-0.1)
+            + (Scale < 0 ? 1 : 0)               // add one if it has a point like (1.1)
+            + (BinaryExponent <= 0 ? 1 : 0);    // add one if <1 for leading Zero (0.1) 
 
     /// <summary>
     /// Writes the binary representation into the provided span.
@@ -195,6 +177,11 @@ private string ToBinaryString()
         ReadOnlySpan<byte> bytes = DataIntValueWithRound(BigInteger.Abs(DataBits)).ToByteArray();
         // Compute the number of leading zeros in the most significant byte.
         int msbLeadingZeros = BitOperations.LeadingZeroCount(bytes[^1]) - 24;
+
+        // Three types
+        //   Type '0.123' - all numbers are to the right of the radix point. (has leading 0.or - 0.)
+        //   Type '12300' - if all bits are to the left of the radix point(no radix point required)
+        //   Type '12.30' - has numbers below AND above the point. (e.g. 11.01)
 
         if (BinaryExponent < 0)
         {
@@ -257,102 +244,6 @@ private string ToBinaryString()
         }
         return written;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    //public void ToBinarySpan(Span<char> dstBytes)
-    //{
-    //    int dstIndex = 0;
-
-    //    // Three types
-    //    //   Type '12300' - if all bits are to the left of the radix point(no radix point required)
-    //    //   Type '12.30' - has numbers below AND above the point. (e.g. 11.01)
-    //    //   Type '0.123' - all numbers are to the right of the radix point. (has leading 0.or - 0.)
-
-    //    // Pre-append the leading sign.
-    //    if (DataBits.Sign < 0)
-    //    {
-    //        dstBytes[dstIndex] = '-';
-    //        dstIndex++;
-    //    }
-
-    //    // Setup source bits to read.
-    //    ReadOnlySpan<byte> srcBytes = DataIntValueWithRound(BigInteger.Abs(DataBits)).ToByteArray();
-    //    int leadingZeroCount = BitOperations.LeadingZeroCount(srcBytes[^1]) - 24;
-
-    //    if (BinaryExponent < 0)  // For binary numbers less then one. (e.g. 0.001101)
-    //    {
-    //        int outputZerosBetweenPointAndNumber = Math.Max(0, -(_size - ExtraHiddenBits) - Scale);
-    //        dstBytes[dstIndex++] = '0';
-    //        dstBytes[dstIndex++] = '.';
-
-    //        // Add the leading zeros
-    //        for (int i = 0; i < outputZerosBetweenPointAndNumber; i++)
-    //        {
-    //            dstBytes[dstIndex++] = '0';
-    //        }
-
-    //        WriteValueBits(srcBytes, leadingZeroCount, Size, dstBytes[dstIndex..]);
-    //    }
-    //    else if (Scale >= 0)   // For binary numbers with no radix point. (e.g. 1101)
-    //    {
-    //        int outputZerosBetweenNumberAndPoint = Math.Max(0, Scale);
-    //        dstBytes[^outputZerosBetweenNumberAndPoint..].Fill('0');
-    //        WriteValueBits(srcBytes, leadingZeroCount, Size, dstBytes[dstIndex..]);
-    //    }
-    //    else // For numbers with a radix point in the middle (e.g. 101.1 or 10.01, or 1.00)
-    //    {
-    //        int outputBitsBeforePoint = _size - ExtraHiddenBits + Scale;
-    //        int outputBitsAfterPoint = Math.Max(0, -Scale);
-
-    //        WriteValueBits(srcBytes, leadingZeroCount, outputBitsBeforePoint, dstBytes[dstIndex..]);
-
-    //        dstIndex += outputBitsBeforePoint;
-
-    //        //Write the point
-    //        dstBytes[dstIndex++] = '.';
-    //        WriteValueBits(srcBytes, leadingZeroCount + outputBitsBeforePoint, outputBitsAfterPoint, dstBytes[dstIndex..]);
-    //    }
-    //    static void WriteValueBits(ReadOnlySpan<byte> srcBytes, int bitStart, int bitCount, Span<char> dstBytes)
-    //    {
-    //        int srcLoc = srcBytes.Length - 1;
-    //        int dstByte = 0;
-    //        int cur = bitStart;
-
-    //        while (cur < bitStart + bitCount)
-    //        {
-    //            int curSrcByte = srcLoc - (cur >> 3);
-    //            int curSrcBit = 7 - (cur & 0x7);
-
-    //            byte b2 = srcBytes[curSrcByte];
-
-    //            dstBytes[dstByte++] = (char)('0' + ((b2 >> curSrcBit) & 1));
-    //            cur++;
-    //        }
-    //    }
-    //}
 
     /// <summary>
     /// Provides custom format-string support for BigFloat.
@@ -593,5 +484,4 @@ private string ToBinaryString()
     {
         return BigIntegerToBinaryString(UnscaledValue);
     }
-    /////////////////////////// [END] TO_STRING FUNCTIONS [END] ////////////////////////////////
 }

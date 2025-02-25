@@ -73,9 +73,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public readonly int SizeWithHiddenBits => _size;
 
     /// <summary>
-    /// Returns the base-2 exponent of the number. This is the number of binary placed when counting from the right side of the most significant bit. Another way to think about it when it is positive, is how many bits are on the left side of the point. 
-    /// Example: dataBits:11010 with BinExp:3 -> 1.1010 x 2^3 or 1101.0.
-    /// Example: 0.11 -> -1; 1.11 -> 0; 10.1 -> 1; 0.001 -> -3
+    /// Returns the base-2 exponent of the number. This is the amount shift a simple 1 bit to the leading bit location.
+    /// Examples: dataBits:11010 with BinExp: 3 -> 1101.0 -> 1.1010 x 2^ 3  
+    ///           dataBits:11    with BinExp:-1 -> 0.11   -> 1.1    x 2^-1 
     /// </summary>
     public int BinaryExponent => Scale + _size - ExtraHiddenBits - 1;
 
