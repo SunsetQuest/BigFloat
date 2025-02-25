@@ -1907,22 +1907,42 @@ Other:                                         |   |         |         |       |
         return DataIntValueWithRound(DataBits).GetHashCode() ^ Scale;
     }
 
+    /// <summary>
+    /// Checks whether this BigFloat struct holds a valid internal state.
+    /// Returns true if valid; otherwise false.
+    /// </summary>
+    public bool Validate()
+    {
+        // Calculate the bit length (absolute value for sign-agnostic size).
+        int realSize = (int)BigInteger.Abs(DataBits).GetBitLength();
 
+        bool valid = _size == realSize;
+
+        // Optional: in Debug builds, assert if something is off:
+        Debug.Assert(valid,
+            $"Invalid BigFloat: _size({_size}) does not match actual bit length ({realSize}).");
+
+        return valid;
+    }
+
+    /// <summary>
+    /// Debug-only method to assert validity on an instance.
+    /// </summary>
     [Conditional("DEBUG")]
     private void AssertValid()
     {
-        int realSize = (int)BigInteger.Abs(DataBits).GetBitLength();
-
-        // Make sure size is set correctly. Zero is allowed to be any size.
-        Debug.Assert(_size == realSize, $"_size({_size}), expected ({realSize})");
+        // Just call Validate() and assert if invalid. Or rely on the internal Debug.Assert inside Validate().
+        _ = Validate();
     }
 
+    /// <summary>
+    /// Debug-only static method to assert validity on a given instance.
+    /// </summary>
+    /// <param name="val">BigFloat instance to validate.</param>
     [Conditional("DEBUG")]
     private static void AssertValid(BigFloat val)
     {
-        int realSize = (int)BigInteger.Abs(val.DataBits).GetBitLength();
-
-        // Make sure size is set correctly. Zero is allowed to be any size.
-        Debug.Assert(val._size == realSize, $"_size({val._size}), expected ({realSize})");
+        val.AssertValid();
     }
+
 }
