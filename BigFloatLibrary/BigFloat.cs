@@ -16,10 +16,7 @@ namespace BigFloatLibrary;
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>, IFormattable
-//#if NET7_0_OR_GREATER
-//        , ISpanFormattable
-//#endif
+public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>, IFormattable, ISpanFormattable
 {
     /// <summary>
     /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
