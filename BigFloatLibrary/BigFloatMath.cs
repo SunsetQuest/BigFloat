@@ -172,8 +172,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         //int xLen = value._size;
-        int rootSize = BitOperations.Log2((uint)root);
-        int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
+        //int rootSize = BitOperations.Log2((uint)root);
+        //int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
 
         ////////// Lets remove value's scale (and just leave the last bit so scale is 0 or 1) ////////
         int removedScale = value.Scale & ~1;
@@ -208,7 +208,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         BigFloat b = rt * Pow(x, root - 1); // Init the "b" and "t" for "oldX - (t / b)"
         while (t._size > 3) //(!t.OutOfPrecision)
         {
-            BigFloat oldX = x;
             BigFloat tb = t / b;
             x -= tb;
             b = rt * Pow(x, root - 1);

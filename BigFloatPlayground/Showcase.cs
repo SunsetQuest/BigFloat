@@ -454,33 +454,33 @@ public static class Showcase
     private static void Pow_Stuff()
     {
         //// BigFloat.Zero  BigFloat.One
-        //IsTrue(BigFloat.Pow(BigFloat.Zero, 0) == 1, $"Failed on: 0^0");
-        //IsTrue(BigFloat.Pow(BigFloat.One, 0) == 1, $"Failed on: 1^0");
-        //IsTrue(BigFloat.Pow(0, 0) == 1, $"Failed on: 0^0");
-        //IsTrue(BigFloat.Pow(1, 0) == 1, $"Failed on: 1^0");
-        //IsTrue(BigFloat.Pow(2, 0) == 1, $"Failed on: 2^0");
-        //IsTrue(BigFloat.Pow(3, 0) == 1, $"Failed on: 3^0");
+        //AreEqual(BigFloat.Pow(BigFloat.Zero, 0), 1, $"Failed on: 0^0");
+        //AreEqual(BigFloat.Pow(BigFloat.One, 0), 1, $"Failed on: 1^0");
+        //AreEqual(BigFloat.Pow(0, 0), 1, $"Failed on: 0^0");
+        //AreEqual(BigFloat.Pow(1, 0), 1, $"Failed on: 1^0");
+        //AreEqual(BigFloat.Pow(2, 0), 1, $"Failed on: 2^0");
+        //AreEqual(BigFloat.Pow(3, 0), 1, $"Failed on: 3^0");
 
-        //IsTrue(BigFloat.Pow(BigFloat.Zero, 1) == 0, $"Failed on: 0^1");
-        //IsTrue(BigFloat.Pow(BigFloat.One, 1) == 1, $"Failed on: 1^1");
-        //IsTrue(BigFloat.Pow(0, 1) == 0, $"Failed on: 0^1");
-        //IsTrue(BigFloat.Pow(1, 1) == 1, $"Failed on: 1^1");
-        //IsTrue(BigFloat.Pow(2, 1) == 2, $"Failed on: 2^1");
-        //IsTrue(BigFloat.Pow(3, 1) == 3, $"Failed on: 3^1");
+        //AreEqual(BigFloat.Pow(BigFloat.Zero, 1), 0, $"Failed on: 0^1");
+        //AreEqual(BigFloat.Pow(BigFloat.One, 1), 1, $"Failed on: 1^1");
+        //AreEqual(BigFloat.Pow(0, 1), 0, $"Failed on: 0^1");
+        //AreEqual(BigFloat.Pow(1, 1), 1, $"Failed on: 1^1");
+        //AreEqual(BigFloat.Pow(2, 1), 2, $"Failed on: 2^1");
+        //AreEqual(BigFloat.Pow(3, 1), 3, $"Failed on: 3^1");
 
-        //IsTrue(BigFloat.Pow(BigFloat.Zero, 2) == 0, $"Failed on: 0^2");
-        //IsTrue(BigFloat.Pow(BigFloat.One, 2) == 1, $"Failed on: 1^2");
-        IsTrue(Pow(0, 2) == 0, $"Failed on: 0^2");
-        IsTrue(Pow(1, 2) == 1, $"Failed on: 1^2");
-        IsTrue(Pow(2, 2) == 4, $"Failed on: 2^2");
-        IsTrue(Pow(3, 2) == 9, $"Failed on: 3^2");
+        //AreEqual(BigFloat.Pow(BigFloat.Zero, 2), 0, $"Failed on: 0^2");
+        //AreEqual(BigFloat.Pow(BigFloat.One, 2), 1, $"Failed on: 1^2");
+        AreEqual(Pow(0, 2), 0, $"Failed on: 0^2");
+        AreEqual(Pow(1, 2), 1, $"Failed on: 1^2");
+        AreEqual(Pow(2, 2), 4, $"Failed on: 2^2");
+        AreEqual(Pow(3, 2), 9, $"Failed on: 3^2");
 
-        //IsTrue(BigFloat.Pow(BigFloat.Zero, 3) == 0, $"Failed on: 0^3");
-        //IsTrue(BigFloat.Pow(BigFloat.One, 3) == 1, $"Failed on: 1^3");
-        IsTrue(Pow(0, 3) == 0, $"Failed on: 0^3");
-        IsTrue(Pow(1, 3) == 1, $"Failed on: 1^3");
-        IsTrue(Pow(2, 3) == 8, $"Failed on: 2^3");
-        IsTrue(Pow(3, 3) == 27, $"Failed on: 3^3");
+        //AreEqual(BigFloat.Pow(BigFloat.Zero, 3), 0, $"Failed on: 0^3");
+        //AreEqual(BigFloat.Pow(BigFloat.One, 3), 1, $"Failed on: 1^3");
+        AreEqual(Pow(0, 3), 0, $"Failed on: 0^3");
+        AreEqual(Pow(1, 3), 1, $"Failed on: 1^3");
+        AreEqual(Pow(2, 3), 8, $"Failed on: 2^3");
+        AreEqual(Pow(3, 3), 27, $"Failed on: 3^3");
 
         for (int k = 3; k < 20; k++)
         {
@@ -488,7 +488,7 @@ public static class Showcase
             {
                 BigFloat exp2 = (BigFloat)double.Pow(i, k);
                 BigFloat res2 = Pow((BigFloat)i, k);
-                IsTrue(res2 == exp2, $"Failed on: {i}^{k}, result:{res2} exp:{exp2}");
+                AreEqual(res2, exp2, $"Failed on: {i}^{k}, result:{res2} exp:{exp2}");
             }
         }
 
@@ -812,16 +812,16 @@ public static class Showcase
 
     private static void Compare_Stuff()
     {
-        IsTrue(new BigFloat("1.0e-1") == new BigFloat("0.10"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("0.10e2") == new BigFloat("10."), $"Failed on: 3^0");
-        IsTrue(new BigFloat("0.0010e2") == new BigFloat("0.10"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("1.00e0") == new BigFloat("1.00"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("10.0e-1") == new BigFloat("1.00"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("100.0e-2") == new BigFloat("1.000"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("300.0e-2") == new BigFloat("3.000"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("300.0e-2") == new BigFloat("0.03000e+2"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("1.0000000e+8") == new BigFloat("10000000e1"), $"Failed on: 3^0");
-        IsTrue(new BigFloat("10000e4").ToStringHexScientific() == "17D7 << 14");
+        AreEqual(new BigFloat("1.0e-1"), new BigFloat("0.10"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("0.10e2"), new BigFloat("10."), $"Failed on: 3^0");
+        AreEqual(new BigFloat("0.0010e2"), new BigFloat("0.10"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("1.00e0"), new BigFloat("1.00"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("10.0e-1"), new BigFloat("1.00"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("100.0e-2"), new BigFloat("1.000"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("300.0e-2"), new BigFloat("3.000"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("300.0e-2"), new BigFloat("0.03000e+2"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("1.0000000e+8"), new BigFloat("10000000e1"), $"Failed on: 3^0");
+        AreEqual(new BigFloat("10000e4").ToStringHexScientific(), "17D7 << 14");
     }
 
     private static void GeneratePi_Stuff()
@@ -896,12 +896,12 @@ public static class Showcase
         // Answer of 0.00390625 % 1 is:
         //   0.00390625 or 0.0039063 or 0.003906 or 0.00391 or 0.0039 or 0.004 or 0.00 or or 0.0 or or 0
 
-        IsTrue(res == new BigFloat("0.004"), "0.004");
-        IsTrue(res == new BigFloat("0.0039"), "0.0039");
-        IsTrue(res == new BigFloat("0.00391"), "0.00391");
-        IsTrue(res == new BigFloat("0.003906"), "0.003906");
-        IsTrue(res == new BigFloat("0.0039063"), "0.0039063");
-        IsTrue(res == new BigFloat("0.00390625"), "0.00390625");
+        AreEqual(res, new BigFloat("0.004"), "0.004");
+        AreEqual(res, new BigFloat("0.0039"), "0.0039");
+        AreEqual(res, new BigFloat("0.00391"), "0.00391");
+        AreEqual(res, new BigFloat("0.003906"), "0.003906");
+        AreEqual(res, new BigFloat("0.0039063"), "0.0039063");
+        AreEqual(res, new BigFloat("0.00390625"), "0.00390625");
 
         IsFalse(res == 0, "(Int)0");
         IsFalse(res == new BigFloat("0"), "0");
@@ -1054,6 +1054,16 @@ public static class Showcase
             Fail(msg);
         }
     }
+
+    [DebuggerHidden]
+    private static void AreEqual<T>(T val1, T val2, string msg = null) where T : IEquatable<T>
+    {
+        if (!val1.Equals(val2))
+        {
+            Fail(msg);
+        }
+    }
+
 
     [DebuggerHidden]
     private static void Fail(string msg)
