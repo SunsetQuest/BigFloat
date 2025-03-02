@@ -36,7 +36,7 @@ public static class Showcase
         // BigConstant_Stuff();
         // BigConstant_Stuff2();
         // Pow_Stuff();
-        // PowMostSignificantBits_Stuff();
+         PowMostSignificantBits_Stuff();
         // Pow_Stuff3();
         // Pow_Stuff4();
         // ToStringHexScientific_Stuff();
@@ -633,8 +633,8 @@ public static class Showcase
         Stopwatch timer = Stopwatch.StartNew();
         long errorTotal = 0; // too high or low by 2 or more
 
-        _ = Parallel.For(2, 8192, bitSize =>
-        //for (int bitSize = 2; bitSize < 1026; bitSize += 1)
+        //_ = Parallel.For(2, 8192, bitSize =>
+        for (int bitSize = 2; bitSize < 1026; bitSize += 1)
         {
 
             int exp = 0;
@@ -751,7 +751,8 @@ public static class Showcase
 
             //if (errorTotal > 0 || oneTooLo > 0 || oneTooHi > 0)
             //    Console.WriteLine($"errorTotal:{errorTotal} oneTooLo:{oneTooLo} oneTooHi:{oneTooHi}");
-        });
+        }
+        //);
 
 
         static BigInteger GenerateRandomBigInteger(int maxNumberOfBits)

@@ -602,6 +602,251 @@ public static class BigIntegerTools
         {
             if (val.IsZero)
             {
+                return BigInteger.Zero; // technically more of a "NA".
+            }
+
+            valSize = (int)val.GetBitLength();
+        }
+        else
+        {
+#if DEBUG
+            // Make sure the supplied valSize size is set correctly.
+            Debug.Assert(BigInteger.Abs(val).GetBitLength() == valSize, $"The supplied {nameof(valSize)} is not correct.");
+#endif
+        }
+
+        // Lets make sure the number of wanted bits is valid.
+        if (wantedBits <= 0)
+        {
+            wantedBits = valSize;
+        }
+        //else if (wantedBits > valSize)
+        //{
+        //    // Future: we grow by val here however it can be adjusted at the tail. (we might want to grow by a "valSize % exp" only.
+
+        //    // wantedBits
+        //    int growBy = wantedBits - valSize;
+        //    val <<= growBy;
+        //    valSize += growBy;
+        //    totalShift = -growBy * exp;
+        //}
+        else if (wantedBits < valSize - 32)
+        {
+            // Future: if wantedBits is much smaller, we can shrink val's size to something like 'wantedBits+32'. Then, at the end do rounding, we would need to check for all 1's in the removed bits as it could be off. In that case we will need to fall back and do the whole operation again. Note: we don't need to check for all zeros the result would always be correct or to high.
+        }
+
+        if (((long)exp * valSize) >= int.MaxValue)
+        {
+            throw new OverflowException("Overflow: The output 'totalShift' would be too large to fit in an 'int'. (exp * size > int.maxSize");
+        }
+
+        if (exp < 3)
+        {
+            switch (exp)
+            {
+                case 0:
+                    totalShift = wantedBits - 1;
+                    return BigInteger.One << (wantedBits - 1);
+                case 1:
+                    totalShift = valSize - wantedBits;
+                    if (roundDown)
+                    {
+                        return val >> totalShift;
+                    }
+                    if (RightShiftWithRoundWithCarryDownsize(out BigInteger result, val, totalShift, valSize))
+                    {
+                        totalShift++;
+                    }
+                    return result;
+                case 2:
+                    BigInteger sqr = val * val;
+                    int sqrSize = (2 * valSize) - ((sqr >> ((2 * valSize) - 1) > 0) ? 0 : 1);
+                    totalShift = sqrSize - wantedBits;
+                    if (roundDown)
+                    {
+                        return sqr >> totalShift;
+                    }
+                    if (RightShiftWithRoundWithCarryDownsize(out result, sqr, totalShift, sqrSize))
+                    {
+                        totalShift++;
+                    }
+                    return result;
+
+                default: // negative exp would be less then 1 (unless 1)
+                    return val != 1 ? BigInteger.Zero : val.Sign;
+            }
+        }
+
+        // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
+        if ((wantedBits > 2) && (wantedBits < 53) && (valSize * exp) < 3807)
+        {
+            // 1) create a double with the bits. 
+            // Aline input to the top 53 bits then pre-append a "1" bit.
+            long inMantissa = (long)(BigInteger.Abs(val) << (53 - valSize));
+            long dubAsLong = inMantissa | ((long)1023 << 52);
+            double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
+
+            // 2) perform a power
+            double normPow = double.Pow(normInput, exp);
+            if (normPow == double.PositiveInfinity)
+            {
+                throw new OverflowException($"Internal Error: PositiveInfinity valSize:{valSize} exp:{exp} val:{val} wantedBits:{wantedBits}");
+            }
+
+            // 3) extract "bottom 52 bits" and that is our answer.
+            long bits = BitConverter.DoubleToInt64Bits(normPow);
+            long outMantissa = (bits & 0xfffffffffffffL) | 0x10000000000000L;
+
+            int bitsToDrop = 53 - wantedBits;  // wantedBits OR size????
+            long mask1 = ((long)1 << bitsToDrop) - 1;  // OR ((long)1 << (53 - size)) - 1  ?????
+
+            // no known issues if val < 13511613  OR removed bits are not all 1's
+            if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
+            {
+                int outExp = (int)(bits >> 52) - 1023;
+                totalShift += ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;
+
+                // outMantissa is 53 in size at this point
+                // we need to Right Shift With Round but if it rounds up to a larger number (e.g. 1111->10000) then we must increment totalShift.
+                bool roundsUp = ((outMantissa >> (bitsToDrop - 1)) & 0x1) > 0;
+                if (!roundsUp)
+                {
+                    return outMantissa >> bitsToDrop;
+                }
+
+                long withRoundUp = (outMantissa >> bitsToDrop) + 1;
+
+                // if carried to the 54th place then it rolled over and we must shrink by one.
+                if ((withRoundUp >> (53 - bitsToDrop)) > 0)
+                {
+                    withRoundUp >>= 1;
+                    totalShift++;
+                }
+
+                return withRoundUp;
+            }
+        }
+
+        int workingSize;
+        int expSz = BitOperations.Log2((uint)exp) + 1;
+
+        if (extraAccurate)
+        {
+            // This version is more accurate but slower. There is just one known incident when it does not round up like it should.
+            // JUST ONE KNOWN ROUND ERROR between 16 to 20 is 51^17938 (no known rounding error when extraPrecisionBits is above 20)
+            //   searches @16: (1-2000)^(2-39,999), (1-126,000)^(2-3999), (1-134,654,818)^(1-1500)
+            workingSize = (2 * wantedBits) + expSz + 22/*extraPrecisionBits(adjustable)*/;
+        }
+        else
+        {
+            // Odds of an incorrect round-up(ex: 7.50001 not rounding up to 8) ~= 18.12/(2^ExtraBits)
+            //   0=18.1%; 1=9.1%; 2=4.5%; 3=2.3%; 4=1.1%; 5=0.6%; 8=1/4096
+            workingSize = wantedBits + expSz + 8/*extraPrecisionBits(adjustable)*/;
+        }
+
+        // First Loop
+        BigInteger product = ((exp & 1) > 0) ? val : 1;
+        BigInteger powerPostShift = val;
+        int shiftSum = 0;
+        int shift = 0;
+
+        // Second Loop
+        BigInteger pwrPreShift = powerPostShift * powerPostShift;
+        int prdSize = (valSize * 2) - (((pwrPreShift >> ((valSize * 2) - 1)) > 0) ? 0 : 1);
+        int H = valSize + prdSize;  //OR  size + shift
+        int J = ((exp & 0x1) == 1) ? 0 : valSize;
+        int I = 0;
+
+        powerPostShift = pwrPreShift;
+        if ((exp & 0x2) > 0)
+        {
+            I = H - workingSize;
+            int shrinkSize = I - J;
+            J = 0;
+            product = (product * powerPostShift) >> shrinkSize;
+            totalShift += shrinkSize;
+        }
+        else
+        {
+            J += prdSize;
+        }
+
+        // for each bit in the exponent, we need to multiply in 2^position
+        for (int i = 2; i < expSz; i++)
+        {
+            pwrPreShift = powerPostShift * powerPostShift;
+
+            // checks if a leading bit resulted from the multiply and if so adds it.
+            int tmp = ((prdSize - shift) * 2) - 1;
+            prdSize = tmp + (int)(pwrPreShift >> tmp);
+
+            shift = Math.Max(prdSize - workingSize, 0);
+            H += prdSize - shift - I;
+
+            //powerPostShift = RightShiftWithRound(pwrPreShift, shift);  ///better precision by 1.7 bits but 25% slower
+            powerPostShift = pwrPreShift >> shift; // 25% faster; 5 times more round errors; always one direction(good thing)
+            //powerPostShift = ((pwrPreShift >> (shift-1))+1)>>1; // ????
+
+            shiftSum = (shiftSum * 2) + shift;
+            bool bit = ((exp >> i) & 1) == 1;
+            if (bit)
+            {
+                I = H - workingSize;
+                int shrinkSize = I - J;
+                J = 0;
+                product = (product * powerPostShift) >> (shrinkSize+0);
+                totalShift += shrinkSize + shiftSum;
+            }
+            else
+            {
+                I = 0;
+                J += prdSize - shift;  //OR  shift OR prdSize - shift
+            }
+        }
+
+        int productSize = (int)product.GetBitLength();
+        int bitsToRemove = productSize - wantedBits;
+
+        totalShift += bitsToRemove;
+
+        BigInteger res0 = product >> bitsToRemove;
+
+        bool carry = RightShiftWithRoundWithCarryDownsize(out BigInteger res, product, bitsToRemove, productSize);
+        if (carry)
+        {
+            totalShift++;
+        }
+        return res;
+    }
+
+
+    /// <summary>
+    /// Returns the top n bits for a BigInteger raised to a power. 
+    /// If <paramref name="wantedBits"/> is not specified, the output precision will match <paramref name="valSize"/>. 
+    /// The number of removed bits are returned in in totalShift. 
+    /// The returned result left shifted by <paramref name="totalShift"/>, would return the actual result. 
+    /// The result is rounded using the topmost removed bit.  
+    /// When the result is rounded in some borderline cases (e.g. 100|011111), the result can occasionally 
+    /// round-up. When it rounds-up, it will be in the upward direction only. This is less likely 
+    /// if <paramref name="extraAccurate"/> is true. There are no known rounding errors at this time with <paramref name="extraAccurate"/> enabled.
+    /// </summary>
+    /// <param name="val">The input value.</param>
+    /// <param name="valSize">The input values size. This can be left at zero if unknown.</param>
+    /// <param name="exp">The exponent to raise the value by.</param>
+    /// <param name="totalShift">(out) The number of bits that were removed from the result.</param>
+    /// <param name="wantedBits">The number of bits to return. A unspecified value or a value less then 0 will default 
+    /// to the inputs size. A value too large will be limited to <paramref name="valSize"/>. </param>
+    /// <param name="extraAccurate">When false, about 1-in-4096 will round up when it shouldn't. When true, accuracy 
+    /// is much better but performance is slower.</param>
+    /// <returns>The top bits val raised to the power of exp.</returns>
+    public static BigInteger PowMostSignificantBits0(BigInteger val, int exp, out int totalShift, int valSize = -1, int wantedBits = 0, bool extraAccurate = false, bool roundDown = false)
+    {
+        totalShift = 0;
+
+        if (valSize <= 0)
+        {
+            if (val.IsZero)
+            {
                 return BigInteger.Zero;
             }
 
@@ -642,53 +887,39 @@ public static class BigIntegerTools
 
         if (exp < 3)
         {
-            BigInteger result;
             switch (exp)
             {
                 case 0:
-                    result = BigInteger.One << (wantedBits-1);
                     totalShift = wantedBits - 1;
-                    break;
+                    return BigInteger.One << (wantedBits - 1);
                 case 1:
                     totalShift = valSize - wantedBits;
                     if (roundDown)
                     {
-                        result = RightShiftWithRound(val, totalShift);
+                        return val >> totalShift;
                     }
-                    else
+                    if (RightShiftWithRoundWithCarryDownsize(out BigInteger result, val, totalShift, valSize))
                     {
-                        bool carried1 = RightShiftWithRoundWithCarryDownsize(out result, val, totalShift, valSize);
-                        if (carried1)
-                        {
-                            totalShift++;
-                        }
+                        totalShift++;
                     }
-                    break;
+                    return result;
                 case 2:
                     BigInteger sqr = val * val;
                     int sqrSize = (2 * valSize) - ((sqr >> ((2 * valSize) - 1) > 0) ? 0 : 1);
                     totalShift = sqrSize - wantedBits;
                     if (roundDown)
                     {
-                        result = RightShiftWithRound(sqr, totalShift);
+                        return sqr >> totalShift;
                     }
-                    else
+                    if (RightShiftWithRoundWithCarryDownsize(out result, sqr, totalShift, sqrSize))
                     {
-                        bool carried1 = RightShiftWithRoundWithCarryDownsize(out result, sqr, totalShift, sqrSize);
-                        if (carried1)
-                        {
-                            totalShift++;
-                        }
+                        totalShift++;
                     }
-                    break;
+                    return result;
 
                 default: // negative exp would be less then 1 (unless 1)
-                    result = val != 1 ? BigInteger.Zero : val.Sign;
-                    break;
-
+                    return val != 1 ? BigInteger.Zero : val.Sign;
             }
-            return result;
-
         }
 
         // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
@@ -752,7 +983,7 @@ public static class BigIntegerTools
 
         if (extraAccurate)
         {
-            // This version is more accurate but is slower. There is just one known incident when it does not round up like it should.
+            // This version is more accurate but slower. There is just one known incident when it does not round up like it should.
             // JUST ONE KNOWN ROUND ERROR between 16 to 20 is 51^17938 (no known rounding error when extraPrecisionBits is above 20)
             //   searches @16: (1-2000)^(2-39,999), (1-126,000)^(2-3999), (1-134,654,818)^(1-1500)
             workingSize = (2 * wantedBits) + expSz + 22/*extraPrecisionBits(adjustable)*/;
@@ -763,7 +994,6 @@ public static class BigIntegerTools
             //   0=18.1%; 1=9.1%; 2=4.5%; 3=2.3%; 4=1.1%; 5=0.6%; 8=1/4096
             workingSize = wantedBits + expSz + 8/*extraPrecisionBits(adjustable)*/;
         }
-
 
         // First Loop
         BigInteger product = ((exp & 1) > 0) ? val : 1;
@@ -838,427 +1068,153 @@ public static class BigIntegerTools
     }
 
 
-
-
-    //    /// <summary>
-    //    /// Returns the top n bits for a BigInteger raised to a power.
-    //    /// If <paramref name="wantedBits"/> is not specified, the output precision will match <paramref name="valSize"/>.
-    //    /// The number of removed bits are returned in <paramref name="totalShift"/>.
-    //    /// The returned result, left-shifted by <paramref name="totalShift"/>, would return the actual result.
-    //    /// The result is rounded using the topmost removed bit. In borderline cases (e.g., very close to requiring an
-    //    /// additional round-up), the result can occasionally round up. When <paramref name="exact"/> is <c>true</c>,
-    //    /// we retry with higher precision if the first pass looks borderline, improving accuracy.
-    //    /// </summary>
-    //    /// <param name="val">The input value.</param>
-    //    /// <param name="valSize">The input value's bit-length. Can be zero if unknown.</param>
-    //    /// <param name="exp">The exponent to raise the value by.</param>
-    //    /// <param name="totalShift">(out) The number of bits that were removed from the result.</param>
-    //    /// <param name="wantedBits">The number of bits to return. A value &lt;= 0 will default to the input's size.</param>
-    //    /// <param name="exact">When <c>false</c>, uses a faster but slightly less accurate path. When <c>true</c>,
-    //    /// uses a more precise approach and, if needed, retries if borderline.</param>
-    //    /// <param name="roundDown">If <c>true</c>, it uses a simpler "round down" approach.</param>
-    //    /// <returns>The top bits of <c>val^exp</c>, truncated or rounded to <paramref name="wantedBits"/> bits.</returns>
-    //    public static BigInteger PowMostSignificantBits(
-    //        BigInteger val,
-    //        int exp,
-    //        out int totalShift,
-    //        int valSize = -1,
-    //        int wantedBits = 0,
-    //        bool exact = false,
-    //        bool roundDown = false)
-    //    {
-    //        totalShift = 0;
-
-    //        // Compute valSize if not given
-    //        if (valSize <= 0)
-    //        {
-    //            if (val.IsZero)
-    //            {
-    //                return BigInteger.Zero;
-    //            }
-    //            valSize = (int)val.GetBitLength();
-    //        }
-    //        else
-    //        {
-    //#if DEBUG
-    //            // Make sure the supplied valSize size is set correctly.
-    //            Debug.Assert(BigInteger.Abs(val).GetBitLength() == valSize,
-    //                         $"The supplied {nameof(valSize)} is not correct.");
-    //#endif
-    //        }
-
-    //        // Validate wantedBits
-    //        if (wantedBits <= 0)
-    //        {
-    //            wantedBits = valSize;
-    //        }
-
-    //        // Check for extremely large shifts
-    //        if (((long)exp * valSize) >= int.MaxValue)
-    //        {
-    //            throw new OverflowException(
-    //                "Overflow: The output 'totalShift' would be too large to fit in an 'int' (exp * size > int.MaxValue).");
-    //        }
-
-    //        // Handle small exponents quickly
-    //        if (exp < 3)
-    //        {
-    //            return HandleSmallExponents(val, exp, valSize, wantedBits, roundDown, out totalShift);
-    //        }
-
-    //        // If the result easily fits into double precision, do a quick double-based approach
-    //        if (/*(wantedBits > 2) && */(wantedBits < 53) && (valSize * exp) < 3807)
-    //        {
-    //            BigInteger dblAttempt = TryDoublePath(val, exp, valSize, wantedBits, roundDown, ref totalShift);
-    //            if (dblAttempt != BigInteger.MinusOne)
-    //            {
-    //                return dblAttempt; // Successful double-based approximation
-    //            }
-    //        }
-
-    //        // Decide initial workingSize based on 'exact'
-    //        int expSz = BitOperations.Log2((uint)exp) + 1;
-    //        int workingSize = exact
-    //            ? (2 * wantedBits) + expSz + 22 // more precise path
-    //            : wantedBits + expSz + 8;       // faster path
-
-    //        // Core power routine (single pass)
-    //        BigInteger result = ComputePowerMostSignificant(
-    //            val, exp, valSize, wantedBits, workingSize, out totalShift, roundDown
-    //        );
-
-    //        // If exact == true, check borderline. If borderline, retry with bigger workingSize.
-    //        if (exact && IsBorderlineCase(val, exp, valSize, wantedBits, result, totalShift))
-    //        {
-    //            // Retry with extra bits
-    //            // (Adjust as you prefer: +10 or +20, etc.)
-    //            int retryWorkingSize = workingSize + 16;
-    //            totalShift = 0; // reset, will be recomputed
-    //            result = ComputePowerMostSignificant(
-    //                val, exp, valSize, wantedBits, retryWorkingSize, out totalShift, roundDown
-    //            );
-    //        }
-
-    //        return result;
-    //    }
-
-    //    /// <summary>
-    //    /// Handle small exponents (exp=0,1,2) inline for speed/clarity.
-    //    /// </summary>
-    //    private static BigInteger HandleSmallExponents(
-    //        BigInteger val,
-    //        int exp,
-    //        int valSize,
-    //        int wantedBits,
-    //        bool roundDown,
-    //        out int totalShift)
-    //    {
-    //        totalShift = 0;
-
-    //        switch (exp)
-    //        {
-    //            case 0:
-    //                // val^0 = 1. But we shift it so that effectively we keep wantedBits bits.
-    //                // That means we’re returning 1 << (wantedBits-1)
-    //                totalShift = wantedBits - 1;
-    //                return BigInteger.One << (wantedBits - 1);
-
-    //            case 1:
-    //                {
-    //                    // val^1 = val. Just trim to wantedBits
-    //                    int bitsToRemove = valSize - wantedBits;
-    //                    totalShift = bitsToRemove;
-    //                    //if (bitsToRemove <= 0)
-    //                    //{
-    //                    //    return val;
-    //                    //}
-    //                    // todo: when roundDown=true, then it should be just a "return val>>bitsToRemove;"
-    //                    if (roundDown)
-    //                    {
-    //                        return RightShiftWithRound(val, bitsToRemove);
-    //                    }
-    //                    else
-    //                    {
-    //                        bool carried1 = RightShiftWithRoundWithCarryDownsize(
-    //                            out BigInteger result, val, bitsToRemove, valSize);
-    //                        if (carried1) totalShift++;
-    //                        return result;
-    //                    }
-    //                }
-    //            case 2:
-    //                {
-    //                    // val^2
-    //                    BigInteger sqr = val * val;
-    //                    // approximate size of val^2
-    //                    int sqrSize = (2 * valSize)
-    //                                  - ((sqr >> ((2 * valSize) - 1)) > 0 ? 0 : 1);
-
-    //                    int bitsToRemove = sqrSize - wantedBits;
-    //                    totalShift = bitsToRemove;
-    //                    if (bitsToRemove <= 0)
-    //                    {
-    //                        return sqr;
-    //                    }
-
-    //                    // todo: when roundDown=true, then it should be just a "return val>>bitsToRemove;"
-    //                    if (roundDown)
-    //                    {
-    //                        return RightShiftWithRound(sqr, bitsToRemove);
-    //                    }
-    //                    else
-    //                    {
-    //                        bool carried1 = RightShiftWithRoundWithCarryDownsize(
-    //                            out BigInteger result, sqr, bitsToRemove, sqrSize);
-    //                        if (carried1) totalShift++;
-    //                        return result;
-    //                    }
-    //                }
-    //            default:
-    //                // negative or something else unexpected in "small exponent"
-    //                totalShift = 0;
-    //                return (val != 1) ? BigInteger.Zero : val.Sign;
-    //        }
-    //    }
-
-    //    /// <summary>
-    //    /// Tries a double-based approach if small enough. Returns BigInteger.MinusOne if we can't use it.
-    //    /// </summary>
-    //    private static BigInteger TryDoublePath(
-    //        BigInteger val,
-    //        int exp,
-    //        int valSize,
-    //        int wantedBits,
-    //        bool roundDown,
-    //        ref int totalShift)
-    //    {
-    //        if (valSize == 0 || val.IsZero)
-    //            return 0;
-
-    //        // Align val so that it fits into a double’s 53 bits of precision
-    //        // Shift up to 53 bits:
-    //        int shiftUp = 53 - valSize;
-    //        // Construct a 64-bit pattern that is turned into a double
-    //        // (We do absolute since negative powers etc. are not in scope here.)
-    //        long inMantissa = (long)(BigInteger.Abs(val) << shiftUp);
-
-    //        // Insert an exponent = 1023 (double’s bias) into bits [62..52]
-    //        //   sign bit = 0 for positive
-    //        long dubAsLong = inMantissa | ((long)1023 << 52);
-    //        double normInput = BitConverter.Int64BitsToDouble(dubAsLong);
-
-    //        // Perform power in double
-    //        double normPow = Math.Pow(normInput, exp);
-    //        if (double.IsInfinity(normPow))
-    //        {
-    //            // fallback – we can’t do it in double
-    //            return BigInteger.MinusOne;
-    //        }
-
-    //        // Re-extract bits
-    //        long bits = BitConverter.DoubleToInt64Bits(normPow);
-    //        long outMantissa = (bits & 0xFFFFFFFFFFFFF) | 0x10000000000000;
-
-    //        int outExp = (int)((bits >> 52) & 0x7FF) - 1023;
-
-    //        int bitsToDrop = 53 - wantedBits;
-    //        if (bitsToDrop < 0) bitsToDrop = 0; // in case wantedBits > 53
-
-    //        totalShift += ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits);
-
-    //        // Round
-    //        if (roundDown)
-    //        {
-    //            // simple round-down
-    //            return outMantissa >> bitsToDrop;
-    //        }
-    //        else
-    //        {
-
-    //            bool carried1 = RightShiftWithRoundWithCarryDownsize(out BigInteger result,  outMantissa, in bitsToDrop, 53);
-    //            if (carried1) totalShift++;
-    //            return result;
-    //            //// round half up
-    //            //bool roundsUp = ((outMantissa >> (bitsToDrop - 1)) & 1) == 1;
-    //            //long truncated = outMantissa >> bitsToDrop;
-    //            //if (!roundsUp) return truncated; 
-
-    //            //long withRoundUp = truncated + 1;
-    //            //// if we carried out beyond 53 bits, shift
-    //            //if ((withRoundUp >> (53 - bitsToDrop)) > 0)
-    //            //{
-    //            //    withRoundUp >>= 1;
-    //            //    totalShift++;
-    //            //}
-    //            //return withRoundUp;
-    //        }
-    //    }
-
-    //    /// <summary>
-    //    /// The main routine for exponentiation with "workingSize" of intermediate results.
-    //    /// This is basically the loop from the original code.
-    //    /// </summary>
-    //    private static BigInteger ComputePowerMostSignificant(
-    //        BigInteger val,
-    //        int exp,
-    //        int valSize,
-    //        int wantedBits,
-    //        int workingSize,
-    //        out int totalShift,
-    //        bool roundDown)
-    //    {
-    //        totalShift = 0;
-    //        BigInteger product = ((exp & 1) != 0) ? val : BigInteger.One;
-    //        BigInteger powerPostShift = val;
-    //        int shiftSum = 0, shift = 0;
-
-    //        // Precompute pwrPreShift for the second loop
-    //        BigInteger pwrPreShift = powerPostShift * powerPostShift;
-    //        int prdSize = (valSize * 2) - (((pwrPreShift >> ((valSize * 2) - 1)) > 0) ? 0 : 1);
-
-    //        int H = valSize + prdSize;  // or size+shift
-    //        int J = ((exp & 0x2) != 0) ? 0 : valSize;
-    //        int I = 0;
-
-    //        powerPostShift = pwrPreShift;
-
-    //        // If the second exponent bit is set, multiply it in
-    //        if ((exp & 0x2) != 0)
-    //        {
-    //            I = H - workingSize;
-    //            int shrinkSize = I - J;
-    //            J = 0;
-
-    //            // shrink product
-    //            product = (product * powerPostShift) >> shrinkSize;
-    //            totalShift += shrinkSize;
-    //        }
-    //        else
-    //        {
-    //            // skip
-    //            J += prdSize;
-    //        }
-
-    //        // For each remaining exponent bit
-    //        int expSz = BitOperations.Log2((uint)exp) + 1;
-    //        for (int i = 2; i < expSz; i++)
-    //        {
-    //            // square the previous
-    //            pwrPreShift = powerPostShift * powerPostShift;
-
-    //            // updated prdSize
-    //            int tmp = ((prdSize - shift) * 2) - 1;
-    //            prdSize = tmp + (int)(pwrPreShift >> tmp);
-
-    //            shift = Math.Max(prdSize - workingSize, 0);
-    //            H += prdSize - shift - I;
-
-    //            // shift the squared value
-    //            powerPostShift = pwrPreShift >> shift;
-    //            shiftSum = (shiftSum * 2) + shift;
-
-    //            bool bit = ((exp >> i) & 1) == 1;
-    //            if (bit)
-    //            {
-    //                I = H - workingSize;
-    //                int shrinkSize = I - J;
-    //                J = 0;
-
-    //                // multiply
-    //                product = (product * powerPostShift) >> shrinkSize;
-    //                totalShift += shrinkSize + shiftSum;
-    //            }
-    //            else
-    //            {
-    //                I = 0;
-    //                J += prdSize - shift;
-    //            }
-    //        }
-
-    //        // At this point, product has the final bits. We now need to remove extra bits down to wantedBits.
-    //        int productSize = (int)product.GetBitLength();
-    //        int bitsToRemove = productSize - wantedBits;
-    //        if (bitsToRemove <= 0)
-    //        {
-    //            return product;
-    //        }
-
-    //        totalShift += bitsToRemove;
-
-    //        if (roundDown)
-    //        {
-    //            return RightShiftWithRound(product, bitsToRemove);
-    //        }
-    //        else
-    //        {
-    //            bool carry = RightShiftWithRoundWithCarryDownsize(out BigInteger result, product, in bitsToRemove, productSize);
-    //            if (carry)
-    //            {
-    //                totalShift++;
-    //            }
-    //            return result;
-    //        }
-    //    }
-
-    /// <summary>
-    /// Returns whether the just-produced result might be borderline due to nearly all bits 
-    /// being 0 or 1 in the portion that was removed. If borderline, we retry with more bits.
-    /// </summary>
-    private static bool IsBorderlineCase(
-        BigInteger val,
-        int exp,
-        int valSize,
-        int wantedBits,
-        BigInteger finalResult,
-        int totalShift)
+    public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
     {
-        // If we didn't remove any bits, it's not borderline
-        if (totalShift <= 0) return false;
+        int xLen = (int)x.GetBitLength();
+        if (x.IsZero)
+        {
+            throw new DivideByZeroException("'x' can not be 0.");
+        }
+        if (requestedPrecision <= 0)
+        {
+            if (requestedPrecision < 0)
+            {
+                throw new ArgumentException("'precisionBits' can not be negative.");
+            }
+            requestedPrecision = xLen;
+        }
 
-        // We'll check the bits that got shifted out. For large shifts, just check the top portion.
-        // For instance, look at the top (totalShift - 2) bits, ignoring the lowest 2 bits. 
-        int borderlineCheck = totalShift - 2;
-        if (borderlineCheck <= 0) return false; // no meaningful check if we only removed 1-2 bits
+        // future: can we pre-shrink x to requestedPrecision OR just keep 32 bits past the
+        // precision? This can cause an inaccurate result (a round up for results like 122.999999
+        // to 123 on the result) however might offer better performance in some cases.
 
-        // We'll create a mask for that many bits. If borderlineCheck is big, we only mask up to some limit.
-        int maxCheck = Math.Min(64, borderlineCheck);
-        // Use 64 bits or borderlineCheck, whichever is smaller.
+        // Trailing Zeros never matter
+        int trailingZeros = (int)BigInteger.TrailingZeroCount(x);
+        if (trailingZeros + 1 == xLen)
+        {
+            return (BigInteger.One * x.Sign) << trailingZeros;
+        }
+        x >>= trailingZeros;
+        xLen -= trailingZeros;
 
-        // Create mask for those bits
-        // e.g. if maxCheck = 10, then mask = (1 << 10) - 1 = 0x3FF
-        ulong mask = (1UL << maxCheck) - 1;
+        // Tuning constants     error at:                             
+        const int SIMPLE_CUTOFF = 1024; // 1024
+        const int EXTRA_START = 4; //    4
+        const int START_CUTOFF = 400; //  400
+        const int NEWTON_CUTOFF = 800; //  800
+        const int EXTRA_TO_REMOVE1 = 2; //    2 - fails under 2
+        const int SKIP_LOWEST = 0; //    0
+        const int EXTRA_TO_REMOVE2 = 1; //    1 - fails on large numbers
+        int BOOST_LARGER_NUMS = requestedPrecision < 3072 ? 2 : 3; //    2
 
-        // We can get those "removed" bits from a shift of the original finalResult << wantedBits, but that
-        // is not trivially available. Another approach: reconstruct an approximate of what was removed 
-        // from val^exp. However, we do not have that large intermediate directly. 
-        //
-        // Instead, a simpler approach: re-check finalResult's lower bits, or do a quick test of "finalResult * 2^(totalShift)"
-        // to see if it’s close to a boundary. But that can be large too.
-        //
-        // For demonstration, let's do a quick approach: consider the few bits *inside* finalResult
-        // that are near the boundary. We’ll shift up by (wantedBits - maxCheck) to isolate them.
+        if ((requestedPrecision + xLen) <= SIMPLE_CUTOFF)
+        {
+            return (BigInteger.One << (xLen + requestedPrecision - 1)) / x;
+        }
 
-        int shiftUp = wantedBits - maxCheck;
-        if (shiftUp < 0) shiftUp = 0;
+        bool isPos = x.Sign >= 0;
+        if (!isPos)
+        {
+            x = -x;
+        }
 
-        // SHIFT finalResult left to check
-        BigInteger checkValue = finalResult << shiftUp;
-        ulong lower = (ulong)(checkValue & mask);
+        // The larger the number the more buffer we should start out with. We can then reduce the buffer as we go along.
 
-        bool allZero = (lower == 0UL);
-        bool allOne = (lower == mask);
+        ////////  Get Starting Size  ////////
+        int desiredStartSize = requestedPrecision + (EXTRA_START * 2);
+        while (desiredStartSize > START_CUTOFF)
+        {
+            desiredStartSize = ((desiredStartSize + 1) >> 1) + BOOST_LARGER_NUMS;
+        }
+        int curSize = desiredStartSize;
 
-        return (allZero || allOne);
+        BigInteger scaledOne2 = BigInteger.One << ((curSize << 1) + (EXTRA_START * 2));
+        BigInteger result = scaledOne2 / (x >> (xLen - curSize - 1 - EXTRA_START));
+        curSize += EXTRA_START;
+
+        ////////////////////// Classic Newton version  //////////////////////
+        while (true)
+        {
+            int doubleCurSize = curSize << 1;
+
+            BigInteger scalingFactor = BigInteger.One << (doubleCurSize + 1);
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1);
+            // future: we only need the bottom half of this.
+            BigInteger twoMinusXy = scalingFactor - xTimesY;
+            result *= twoMinusXy;
+
+            int pendingInaccurateBottomHalfToRemove = curSize + EXTRA_TO_REMOVE1;
+            curSize = doubleCurSize - EXTRA_TO_REMOVE1;
+
+            if (curSize > ((requestedPrecision < NEWTON_CUTOFF * 2) ? requestedPrecision : NEWTON_CUTOFF))
+            {
+                if (curSize > requestedPrecision)
+                {
+                    BigInteger tempResult2 = (result) >> (curSize - requestedPrecision + pendingInaccurateBottomHalfToRemove);
+                    return isPos ? tempResult2 : -tempResult2;
+                }
+                result = (result) >> (pendingInaccurateBottomHalfToRemove + SKIP_LOWEST);
+                break;
+            }
+
+            result >>= pendingInaccurateBottomHalfToRemove;
+        }
+
+        // future: can we merge the "result >>= SKIP_LOWEST;" into the result shift above?
+
+        // Lets make sure we are 100% accurate at this point - back off until we see both a 0 and 1
+        //int reduceBy2 = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : (~result)) + 1;
+        int reduceBy2 = BitOperations.TrailingZeroCount((ulong)(((result & 1UL) == 0 ? result : ~result) & ulong.MaxValue)) + 1;
+        if (reduceBy2 < 32) // 32 is flexible
+        {
+            result >>= reduceBy2;
+            curSize -= reduceBy2 + SKIP_LOWEST;
+        }
+        else
+        {
+            // if we have something with lots of trailing zeros or ones, lets just use the classic
+            // method to ensure correctness.
+            BigInteger res = (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+            return isPos ? res : -res;
+        }
+
+        ////////////////////// SunsetQuest's NewtonPlus Inverse  //////////////////////
+        if (curSize > requestedPrecision)
+        {
+            BigInteger tempResult2 = result >> (curSize - requestedPrecision);
+            return isPos ? tempResult2 : (-tempResult2);
+        }
+        result++;
+        while (true)
+        {
+            int doubleCurSize = curSize << 1;
+
+            // We need insert our "1" in the middle, we do this by incrementing the upper half with a 1
+            // we could just do a add a "(1 << doublecurSize)"
+            BigInteger mask = (BigInteger.One << (curSize + 1)) - 1;
+            BigInteger xTimesY = ((x >> (xLen - doubleCurSize)) * result) >> (curSize - 1); // future: we only need the bottom half of this.
+
+            //// back off until we see both a zero and one
+            if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision)
+            {
+                if ((int)(doubleCurSize * 0.95) > requestedPrecision) Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
+
+                result = ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (doubleCurSize + curSize - requestedPrecision);
+                //result = ((result << curSize) - ((result * (xTimesY & mask)) >> curSize)) >> (doubleCurSize - requestedPrecision - 1);
+                return isPos ? result : -result;
+            }
+            result = ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (curSize + EXTRA_TO_REMOVE2);
+
+            curSize = doubleCurSize - EXTRA_TO_REMOVE2;
+
+            int reduceBy = BitOperations.TrailingZeroCount((ulong)(((result & 1UL) == 0 ? result : ~result) & ulong.MaxValue)) + 1;
+            //int reduceBy = (int)BigInteger.TrailingZeroCount(result.IsEven ? result : ~result) + 1;
+            //if (reduceBy < 100)
+            result >>= reduceBy;
+            curSize -= reduceBy;
+            result++;
+        }
     }
-
-    /// <summary>
-    /// Simple "round down" right shift.
-    /// </summary>
-    private static BigInteger RightShiftWithRound(BigInteger val, int shiftBits)
-    {
-        if (shiftBits <= 0) return val;
-        return val >> shiftBits;
-    }
-
 
 
     /// <summary>
@@ -1272,7 +1228,7 @@ public static class BigIntegerTools
     /// <returns>Returns the inverse bits as they would appear after the radix point.</returns>
     /// <exception cref="DivideByZeroException">if x is zero, then the inverse is undefined or infinity.</exception>
     /// <exception cref="ArgumentException">A negative requested Precision is not allowed.</exception>
-    public static BigInteger Inverse(BigInteger x, int requestedPrecision = 0)
+    public static BigInteger Inverse0(BigInteger x, int requestedPrecision = 0)
     {
         int xLen = (int)x.GetBitLength();
         if (x.IsZero)
@@ -1514,6 +1470,7 @@ public static class BigIntegerTools
         return result2;
     }
 
+
     /// <summary>
     /// Removes x number of bits of precision.
     /// If the most significant bit of the removed bits is set, then the least significant bit will increment away from zero. 
@@ -1574,41 +1531,6 @@ public static class BigIntegerTools
             }
         }
 
-        return false;
-    }
-
-    /// <summary>
-    /// Right shift with carry-based rounding ("round half up").
-    /// If it rounds up into a new bit, the "carryOut" will be true.
-    /// </summary>
-    private static bool RightShiftWithRoundWithCarryDownsize1(out BigInteger result, BigInteger val, int shiftBits, int originalSize)
-    {
-        result = val;
-        // We want the bit that determines rounding
-        // If that bit is set, we might add 1 (round up).
-        // Then check if that +1 causes an overflow into a new bit => carryOut = true.
-        BigInteger extraMask = (BigInteger.One << shiftBits) - 1;
-        BigInteger removed = val & extraMask;
-
-        // The "round bit" is the highest removed bit
-        // which is bit (shiftBits - 1).
-        int roundBitPos = shiftBits - 1;
-        bool roundUp = roundBitPos >= 0 && removed >> roundBitPos > 0;
-
-        // Perform the shift
-        result >>= shiftBits;
-
-        if (roundUp)
-        {
-            BigInteger plusOne = result + 1;
-            // If plusOne is bigger in bit-length, that means we carried out
-            if (plusOne.GetBitLength() > result.GetBitLength())
-            {
-                result = plusOne;
-                return true; // we carried out
-            }
-            result = plusOne;
-        }
         return false;
     }
 

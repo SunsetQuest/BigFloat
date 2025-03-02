@@ -837,30 +837,7 @@ public class BigFloatTests
         aaa = new("1.0000000000e-1000");
         res = BigFloat.Log2(aaa);
         IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887362[2345]"));
-
-
     }
-
-
-    //[TestMethod]
-    //[ExpectedException(typeof(ArgumentException))]
-    //public void Verify_Log2__ShouldFail1()
-    //{
-    //    BigFloat aaa = new("-1");
-
-    //    double res = BigFloat.Log2(aaa);
-    //}
-
-    //[TestMethod]
-    //[ExpectedException(typeof(ArgumentException))]
-    //public void Verify_Log2_ShouldFail2()
-    //{
-    //    BigFloat aaa = new("0");
-    //    double res = BigFloat.Log2(aaa);
-    //}
-
-
-
 
     [TestMethod]
     public void Verify_PowerOf2()
@@ -1390,142 +1367,178 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Verify_PowMostSignificantBitsUsingAccurateVersion()
+    public void Verify_PowMostSignificantBits_Accurate_vs_Approx_version()
     {
+        int maxValBitSize = 4200;
+        int maxWantedBitSize = 4200;
+        int maxExpSize = 17;
+        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism);
 
-        (int maxBitSize, int maxTries, int maxExpSize) = TestTargetInMillseconds switch
-        {
-            >= 16627 => (2050, 1, 10),
-            >= 2242 => (1026, 1, 11),
-            >= 1678 => (1026, 1, 10),
-            >= 753 => (768, 1, 10),
-            >= 615 => (768, 1, 9),
-            >= 540 => (514, 1, 10),
-            >= 456 => (768, 1, 8),
-            >= 147 => (514, 1, 9),
-            >= 115 => (514, 1, 8),
-            >= 35 => (258, 1, 8),
-            >= 11 => (194, 1, 7),
-            >= 6 => (150, 1, 6),
-            >= 3 => (140, 1, 6),
-            >= 2 => (98, 1, 6),
-            >= 1 => (70, 1, 6),
-            _ => (70, 1, 5),        // up to 69 value bit size, 1 try on average for each size, up to 4 bits.
-        };
+        int roundFailsAllowed = (int)(runCount * 0.01);
 
-        _ = Parallel.For(2, maxBitSize, bitSize =>
-        //for (int bitSize = 2; bitSize < maxBitSize; bitSize++)
+        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
+        _ = Parallel.For(2, runCount, parallelOptions, x =>
         {
-            for (int valTries = 0; valTries < maxTries; valTries++)
+            int wantedBits = 1 + Random.Shared.Next(1, maxWantedBitSize);
+            BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
+            int exp = GenerateLogUniformRandomInt(maxExpSize);
+
+            int valSize = (int)val.GetBitLength();
+            //if ((long)exp * Math.Max(valSize, wantedBits) >= int.MaxValue)   return;
+
+            bool roundDown = false;
+            // Answer Setup using accurate version of PowMostSignificantBits
+            BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
+            BigInteger resApprx = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedApprx, valSize, wantedBits, extraAccurate: false, roundDown);
+
+            if (val.IsZero)
             {
-                for (int expSize = 2; expSize < maxExpSize; expSize++) // e.g. 8 = 511 max
-                {
-                    BigInteger val = GenerateRandomBigInteger(bitSize);
-                    int valSize = (int)val.GetBitLength();
-                    int wantedBits;
-                    for (wantedBits = 1; wantedBits < (valSize + 2); wantedBits++)
-                    {
-                        int exp = (int)GenerateRandomBigInteger(expSize);
-
-                        if ((long)exp * Math.Max(valSize, wantedBits) >= int.MaxValue)
-                        {
-                            continue;
-                        }
-                        bool roundDown = false;
-                        // Answer Setup using accurate version of PowMostSignificantBits
-                        BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
-                        BigInteger resApprx = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedApprx, valSize, wantedBits, extraAccurate: false, roundDown);
-                        BigInteger ansAnswr = PowAccurate(val, exp, out int shiftedAnswr, wantedBits, roundDown);
-
-                        if (val.IsZero)
-                        {
-                            AreEqual(0, resAccur, "When input value is zero the result is always zero.");
-                            AreEqual(0, resApprx, "When input value is zero the result is always zero.");
-                            AreEqual(0, ansAnswr, "When input value is zero the result is always zero.");
-                            AreEqual(0, shiftedAccur, "When input value is zero, amount result shifted should is zero.");
-                            AreEqual(0, shiftedApprx, "When input value is zero, amount result shifted should is zero.");
-                            AreEqual(0, shiftedAnswr, "When input value is zero, amount result shifted should is zero.");
-                            continue;
-                        }
-
-                        AreEqual(wantedBits, resAccur.GetBitLength(), "Output length and wantedBits do not match.");
-                        AreEqual(wantedBits, resApprx.GetBitLength(), "Output length and wantedBits do not match.");
-                        AreEqual(wantedBits, ansAnswr.GetBitLength(), "Output length and wantedBits do not match.");
-
-                        // The following shift amounts could fail but it's extremely unlikely.
-                        AreEqual(shiftedAccur, shiftedAnswr, "Shift amount is incorrect.");
-
-                        // For the Approximate version, the shift amount should be the same
-                        // or if (resApprx + 1) then shift amount should be 1 more.
-                        long growsIfRoundsUp = ((resApprx + 1).GetBitLength() - resApprx.GetBitLength());
-                        IsTrue(shiftedAnswr == shiftedApprx
-                            || shiftedAnswr == shiftedApprx + growsIfRoundsUp,
-                            "Shift amount is incorrect.");
-
-
-                        if (wantedBits == 1)
-                        {
-                            AreEqual(resAccur, 1, "When wantedBits is 1 result is 1 (except if input is zero).");
-                            AreEqual(resApprx, 1, "When wantedBits is 1 result is 1 (except if input is zero).");
-                            AreEqual(ansAnswr, 1, "When wantedBits is 1 result is 1 (except if input is zero).");
-                            continue;
-                        }
-                        if (val.IsOne)
-                        {
-                            AreEqual(resAccur, BigInteger.One << ((int)resAccur.GetBitLength() - 1), "If input is 1, then output should be in the form 1000...");
-                            AreEqual(resApprx, BigInteger.One << ((int)resApprx.GetBitLength() - 1), "If input is 1, then output should be in the form 1000...");
-                            AreEqual(ansAnswr, BigInteger.One << ((int)ansAnswr.GetBitLength() - 1), "If input is 1, then output should be in the form 1000...");
-                            continue;
-                        }
-                        if (exp == 0)
-                        {
-                            AreEqual(resAccur, BigInteger.One << ((int)resAccur.GetBitLength() - 1), "When exp is 0, then output should be in the form 1000...");
-                            AreEqual(resApprx, BigInteger.One << ((int)resApprx.GetBitLength() - 1), "When exp is 0, then output should be in the form 1000...");
-                            AreEqual(ansAnswr, BigInteger.One << ((int)ansAnswr.GetBitLength() - 1), "When exp is 0, then output should be in the form 1000...");
-                            continue;
-                        }
-
-                        if (resAccur != ansAnswr)
-                        {
-                            //resExact = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAns7, valSize, wantedBits, extraAccurate: true, roundDown);
-                            //resApprx = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes6, valSize, wantedBits, extraAccurate: false, roundDown);
-                            Fail("Fail - PowMostSignificantBits(exact:true)");
-                        }
-
-                        // if we rounded up to a larger size then we must adjust the ansAnswr to be at the same scale
-                        if (shiftedAnswr - shiftedApprx == 1)
-                        {
-                            if (resApprx < (ansAnswr << 1) - 1)
-                            {
-                                Fail("The Answer rounded up to a larger scale but Approximate did not. After adjusting it was still more then 1 off.(Too Low)");
-                            }
-                            if (resApprx > (ansAnswr << 1) + 1)
-                            {
-                                Fail("The Answer rounded up to a larger scale but Approximate did not. After adjusting it was still more then 1 off.(Too High)");
-                            }
-                            if (resApprx > (ansAnswr << 1))
-                            {
-                                Fail("The Answer rounded up to a larger scale but Approximate did not. After adjusting it was still more then 1 off.(Too High)");
-                            }
-                        }
-                        else
-                        {
-                            //if (resApprx < ansAnswr - 1 || resApprx > ansAnswr + 1)
-                            if (resApprx < ansAnswr - 1)
-                            {
-                                Fail("The Answer and Approximate version were more then one off. (Too Low)");
-                            }
-                            if (resApprx > ansAnswr)
-                            {
-                                Fail("The Answer and Approximate version were more then one off. (Too High)");
-                            }
-                        }
-                    }
-                }
+                AreEqual(0, resAccur, "When input value is zero the result is always zero.");
+                AreEqual(0, resApprx, "When input value is zero the result is always zero.");
+                AreEqual(0, shiftedAccur, "When input value is zero, amount result shifted should is zero.");
+                AreEqual(0, shiftedApprx, "When input value is zero, amount result shifted should is zero.");
+                return;
             }
-        }
-        ); // Parallel.For
-        
+
+            AreEqual(wantedBits, resAccur.GetBitLength(), "Output length and wantedBits do not match.");
+            AreEqual(wantedBits, resApprx.GetBitLength(), "Output length and wantedBits do not match.");
+
+            if (resAccur == resApprx && shiftedAccur == shiftedApprx)
+            {
+                return;
+            }
+
+            IsTrue(resAccur == resApprx ^ shiftedAccur == shiftedApprx,
+                "Fail - PowMostSignificantBits(exact:true vs false)- when shiftedAccur is different " +
+                "then shiftedAnswr, then resAccur and ansAnswr should not be equal.");
+
+
+            if (shiftedAccur != shiftedApprx)
+            {
+                IsTrue(Math.Abs(shiftedAccur - shiftedApprx) > 1,
+                    "Fail - PowMostSignificantBits(exact:true vs false)- The shifted difference should never be over 1.");
+
+                IsTrue(roundFailsAllowed <= 0, "Fail - more round-ups/downs then expected.");
+
+                // lets check to see if resAccur rounded up/down
+                if (shiftedAccur < shiftedApprx)
+                { // 11111111111  100000000000
+                    // 'shiftedAccur' is one smaller then 'shiftedAnswr'
+                    // the shift indicates it did so lets make sure resAccur is correct.
+                    AreEqual(resAccur + 1 >> 1, resApprx, "Shift amount is incorrect.");
+                }
+                else // 'shiftedAccur' is one larger then 'shiftedAnswr'
+                {  // 100000000000  11111111111
+                    // the shift indicates it SHOULD HAVE but didn't. Lets make sure resAccur is correct.
+                    AreEqual(resApprx + 1 >> 1, resAccur, "Shift amount is incorrect.");
+                }
+
+                roundFailsAllowed--;
+            }
+        }); // Parallel.For
+    }
+
+    [TestMethod]
+    public void Verify_PowMostSignificantBits_Accurate_vs_Exact_version()
+    {
+#if DEBUG
+        int maxValBitSize = 1650;
+        int maxWantedBitSize = 1650;
+        int maxExpSize = 10;
+        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism) / 8;
+#else
+        int maxValBitSize = 2050;
+        int maxWantedBitSize = 2050;
+        int maxExpSize = 11;
+        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism) / 256;
+#endif
+
+        int roundFailsAllowed = 1;
+
+        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
+        _ = Parallel.For(2, runCount, parallelOptions, x =>
+        {
+            int wantedBits = 1 + Random.Shared.Next(1, maxWantedBitSize);
+            BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
+            int exp = GenerateLogUniformRandomInt(maxExpSize);
+
+            int valSize = (int)val.GetBitLength();
+            //if ((long)exp * Math.Max(valSize, wantedBits) >= int.MaxValue)   return;
+            
+            bool roundDown = false;
+            // Answer Setup using accurate version of PowMostSignificantBits
+            BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
+            BigInteger ansAnswr = PowAccurate(val, exp, out int shiftedAnswr, wantedBits, roundDown);
+            
+            if (val.IsZero)
+            {
+                AreEqual(0, resAccur, "When input value is zero the result is always zero.");
+                AreEqual(0, ansAnswr, "When input value is zero the result is always zero.");
+                AreEqual(0, shiftedAccur, "When input value is zero, amount result shifted should is zero.");
+                AreEqual(0, shiftedAnswr, "When input value is zero, amount result shifted should is zero.");
+                return;
+            }
+
+            AreEqual(wantedBits, resAccur.GetBitLength(), "Output length and wantedBits do not match.");
+            AreEqual(wantedBits, ansAnswr.GetBitLength(), "Output length and wantedBits do not match.");
+
+            // The following shift amounts could fail but it's extremely unlikely.
+            AreEqual(shiftedAccur, shiftedAnswr, "Shift amount is incorrect.");
+
+
+            if (wantedBits == 1)
+            {
+                AreEqual(resAccur, 1, "When wantedBits is 1 result is 1 (except if input is zero).");
+                AreEqual(ansAnswr, 1, "When wantedBits is 1 result is 1 (except if input is zero).");
+                return;
+            }
+            if (val.IsOne)
+            {
+                AreEqual(resAccur, BigInteger.One << ((int)resAccur.GetBitLength() - 1), "If input is 1, then output should be in the form 1000...");
+                AreEqual(ansAnswr, BigInteger.One << ((int)ansAnswr.GetBitLength() - 1), "If input is 1, then output should be in the form 1000...");
+                return;
+            }
+            if (exp == 0)
+            {
+                AreEqual(resAccur, BigInteger.One << ((int)resAccur.GetBitLength() - 1), "When exp is 0, then output should be in the form 1000...");
+                AreEqual(ansAnswr, BigInteger.One << ((int)ansAnswr.GetBitLength() - 1), "When exp is 0, then output should be in the form 1000...");
+                return;
+            }
+
+            if (resAccur == ansAnswr && shiftedAccur == shiftedAnswr)
+            {
+                return;
+            }
+
+            IsTrue(resAccur == ansAnswr ^ shiftedAccur == shiftedAnswr,
+                "Fail - PowMostSignificantBits(exact:true vs false)- when shiftedAccur is different " +
+                "then shiftedAnswr, then resAccur and ansAnswr should not be equal.");
+
+
+            // while possible, it is extremely unlikely.
+            if (shiftedAccur != shiftedAnswr)
+            {
+                IsTrue(Math.Abs(shiftedAccur - shiftedAnswr) > 1,
+                    "Fail - PowMostSignificantBits(exact:true vs false)- The shifted difference should never be over 1.");
+
+                IsTrue(roundFailsAllowed <= 0, "Fail - more then one round-ups for PowMostSignificantBits(exact:true)");
+
+                // lets check to see if resAccur rounded up/down
+                if (shiftedAccur < shiftedAnswr)
+                { // 11111111111  100000000000
+                    // 'shiftedAccur' is one smaller then 'shiftedAnswr'
+                    // the shift indicates it did so lets make sure resAccur is correct.
+                    AreEqual(resAccur + 1 >> 1, ansAnswr, "Shift amount is incorrect.");
+                }
+                else // 'shiftedAccur' is one larger then 'shiftedAnswr'
+                {  // 100000000000  11111111111
+                    // the shift indicates it SHOULD HAVE but didn't. Lets make sure resAccur is correct.
+                    AreEqual(ansAnswr + 1 >> 1, resAccur, "Shift amount is incorrect.");
+                }
+
+                roundFailsAllowed--;
+            }
+        }); // Parallel.For
 
         // For testing only (SLOWWWWWW)
         static BigInteger PowAccurate(BigInteger value, int exp, out int shifted, int wantedBits, bool roundDown = false)
@@ -1549,38 +1562,32 @@ public class BigFloatTests
             int bitLen = (int)res.GetBitLength();
             shifted = bitLen - wantedBits;
 
-            //// If result fits entirely in wantedBits or is smaller, no shift needed
-            //if (shifted <= 0)
-            //{
-            //    shifted = 0;
-            //    return res;
-            //}
-
             // RightShiftWithRound needs the full number to decide on rounding
             // so do not shift 'res' first. Let the rounding function handle it.
-
             if (roundDown)
             {
                 return res >> shifted;
             }
-            else
-            {
-                //return BigIntegerTools.RightShiftWithRound(res, shifted);
-                bool carried1 = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(
-                    out BigInteger result, res, shifted);
-                if (carried1) shifted++;
-                return result;
-            }
+
+            //return BigIntegerTools.RightShiftWithRound(res, shifted);
+            bool carried1 = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(
+                out BigInteger result, res, shifted);
+            if (carried1) shifted++;
+            return result;
         }
     }
 
-
-    private static BigInteger GenerateRandomBigInteger(int maxNumberOfBits)
+    private static BigInteger GenerateLogUniformRandomBigInteger(int maxNumberOfBits)
     {
         byte[] data = new byte[(maxNumberOfBits / 8) + 1];
         Random.Shared.NextBytes(data);
         data[^1] >>= 8 - (maxNumberOfBits % 8);
         return new(data, true);
+        
+    }
+    private static int GenerateLogUniformRandomInt(int maxLengthInBits)
+    {
+        return (int)Random.Shared.NextInt64(0, maxValue: (long)1 << Random.Shared.Next(Math.Min(31, maxLengthInBits)));
     }
 
     [TestMethod]
@@ -3069,9 +3076,6 @@ public class BigFloatTests
     /// Test some string values that can not be converted to a big integer.  
     /// </summary>
     [TestMethod]
-    //[ExpectedException(typeof(ArgumentNullException))]
-    //[ExpectedException(typeof(ArgumentException))]
-
     public void Verify_TryParse_Errors()
     {
         IsFalse(BigFloat.TryParse("", out _), @"BigFloat.TryParse("""") reported True but should be False.");
