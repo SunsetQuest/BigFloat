@@ -6586,7 +6586,7 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary(expect, out expVal));
         size = (int)inpVal.GetBitLength();
         carry = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out resVal, inpVal, 1, size);
-        IsTrue(carry, $"RightShiftWithRoundWithCarryDownsize({inpVal}) should have returned a carry of false");
+        IsFalse(carry, $"RightShiftWithRoundWithCarryDownsize({inpVal}) should have returned a carry of false");
         AreEqual(resVal, expVal, $"RightShiftWithRoundWithCarryDownsize({inpVal}) was {resVal} but expected {expect}");
 
         // test 'RightShiftWithRound' (with overflow)
