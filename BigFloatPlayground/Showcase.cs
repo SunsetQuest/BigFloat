@@ -4,16 +4,14 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT was used in the development of this library.
 
-using BigFloatLibrary;
 using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
-using System.Threading.Tasks;
+using BigFloatLibrary;
 using static BigFloatLibrary.BigFloat;
-
 
 #pragma warning disable IDE0051  // Ignore unused private members
 //#pragma warning disable CS0162 // Ignore unreachable code
@@ -36,7 +34,7 @@ public static class Showcase
         // BigConstant_Stuff();
         // BigConstant_Stuff2();
         // Pow_Stuff();
-         PowMostSignificantBits_Stuff();
+        // PowMostSignificantBits_Stuff();
         // Pow_Stuff3();
         // Pow_Stuff4();
         // ToStringHexScientific_Stuff();
@@ -193,14 +191,13 @@ public static class Showcase
 
     private static void InverseTesting()
     {
-        BigInteger valToTest = 0, xInvTst = 0, xInvRes = 0;
         Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
         Thread.CurrentThread.Priority = ThreadPriority.Highest;
         //Process.GetCurrentProcess().ProcessorAffinity = (IntPtr)19; // Binary 0001
 
         Console.WriteLine();
 
-        valToTest = BigInteger.Parse("170000");
+        BigInteger valToTest = BigInteger.Parse("170000");
 
         if (true)
         {
@@ -229,7 +226,7 @@ public static class Showcase
         static void DisplayStatus(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, ref double totalSpeedup, ref int totalCount, long divideBy)
         {
             double thisTotal = (double)perfTimerClassic.ElapsedTicks / perfTimerNew.ElapsedTicks;
-            totalSpeedup = totalSpeedup + thisTotal;
+            totalSpeedup += thisTotal;
             totalCount++;
             Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} -> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) (Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
         }
@@ -243,9 +240,9 @@ public static class Showcase
         GC.Collect();
         if (k % 2 == 0)
         {
-            //perfTimerClassic.Start();
+            perfTimerClassic.Start();
             //xInvTst = BigIntegerTools.InverseOther(valToTest, valLen);
-            //perfTimerClassic.Stop();
+            perfTimerClassic.Stop();
 
             perfTimerNew.Start();
             xInvRes = BigIntegerTools.Inverse(valToTest, valLen);
@@ -257,9 +254,9 @@ public static class Showcase
             xInvRes = BigIntegerTools.Inverse(-valToTest, valLen);
             perfTimerNew.Stop();
 
-            //perfTimerClassic.Start();
+            perfTimerClassic.Start();
             //xInvTst = BigIntegerTools.InverseOther(-valToTest, valLen);
-            //perfTimerClassic.Stop();
+            perfTimerClassic.Stop();
         }
 
         if (xInvRes != xInvTst)
@@ -645,7 +642,6 @@ public static class Showcase
             long counter = 0;
             long oneTooHi = 0; // too high by 1
             long oneTooLo = 0; // too low  by 1
-            Random random = new(bitSize + 1);
             for (int valTries = 0; valTries < 10; valTries++)
             {
                 BigInteger val = GenerateRandomBigInteger(bitSize);
@@ -831,7 +827,7 @@ public static class Showcase
             Stopwatch timer = Stopwatch.StartNew();
             BigFloat res2 = BigConstants.GeneratePi(i);
             timer.Stop();
-            Console.WriteLine($"{i,4} {res2.ToString("")} {timer.ElapsedTicks}");
+            Console.WriteLine($"{i,4} {res2} {timer.ElapsedTicks}");
         }
         Console.WriteLine($"perfect: 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229");
     }

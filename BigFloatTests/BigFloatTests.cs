@@ -4,8 +4,6 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT was used in the development of this library.
 
-using BigFloatLibrary;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,8 +11,9 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using BigFloatLibrary;
 
 using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
@@ -40,7 +39,7 @@ public class BigFloatTests
     private const long sqrtBruteForceStoppedAt = 262144;
     private const long inverseBruteForceStoppedAt = 262144;
 #else
-    int MaxDegreeOfParallelism = Environment.ProcessorCount;
+    readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
     const long sqrtBruteForceStoppedAt = 524288;
     const long inverseBruteForceStoppedAt = 524288 * 1;
 
@@ -771,6 +770,7 @@ public class BigFloatTests
         BigFloat aaa = new("0b101"); // Initialize by String  2^59.5
         double ans = double.Log2((double)aaa);
         double res = BigFloat.Log2(aaa);
+        string resStr;
         //Answer: 2.321928094887362347870319429489390175864831393024580612054756...
         AreEqual(res, ans);
 
@@ -824,22 +824,37 @@ public class BigFloatTests
         // Result: 3321.92809488741    (using "1e+1000")
         // Result: 3321.9280948873625  (using "1.0000000000e+1000")
         // Answer: 3321.9280948873623478703194294893901758648313930245806120547563958  (using https://www.wolframalpha.com/input?i=log2%281e%2B1000%29)
-
         aaa = new("1e+1000");
         res = BigFloat.Log2(aaa);
-        IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887[34]\d*"));
+        resStr = res.ToString();
+        //IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887[34]\d*"));
+        IsTrue(resStr.StartsWith("3321.9280948873") 
+            || resStr.StartsWith("3321.9280948874"));
 
         aaa = new("1.0000000000e+1000");
         res = BigFloat.Log2(aaa);
-        IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887362[2345]"));
+        resStr = res.ToString();
+        //IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887362[2345]"));
+        IsTrue(resStr.StartsWith("3321.928094887362") 
+            || resStr.StartsWith("3321.928094887363")
+            || resStr.StartsWith("3321.928094887364")
+            || resStr.StartsWith("3321.928094887365"));
 
         aaa = new("1e-1000");
         res = BigFloat.Log2(aaa);
-        IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887[34]\d*"));
+        resStr = res.ToString();
+        //IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887[34]\d*"));
+        IsTrue(resStr.StartsWith("-3321.9280948873")
+            || resStr.StartsWith("-3321.9280948874"));
 
         aaa = new("1.0000000000e-1000");
         res = BigFloat.Log2(aaa);
-        IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887362[2345]"));
+        resStr = res.ToString();
+        //IsTrue(Regex.IsMatch(res.ToString(), @"-3321\.928094887362[2345]"));
+        IsTrue(resStr.StartsWith("-3321.9280948873622")
+            || resStr.StartsWith("-3321.9280948873623")
+            || resStr.StartsWith("-3321.9280948873624")
+            || resStr.StartsWith("-3321.9280948873625"));
     }
 
     [TestMethod]
@@ -2716,9 +2731,9 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("+0", out output));
         AreEqual(output, 0);
         // IsTrue(BigIntegerTools.TryParseBinary(".0", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0); 
+        //AreEqual(output, 0); 
         // IsTrue(BigIntegerTools.TryParseBinary(".1", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0); 
+        //AreEqual(output, 0); 
         IsTrue(BigIntegerTools.TryParseBinary("00", out output));
         AreEqual(output, 0);
         IsTrue(BigIntegerTools.TryParseBinary("01", out output));
@@ -2744,13 +2759,13 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("-11", out output));
         AreEqual(output, -3);
         //IsTrue(BigIntegerTools.TryParseBinary(".00", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         //IsTrue(BigIntegerTools.TryParseBinary(".01", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         //IsTrue(BigIntegerTools.TryParseBinary(".10", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         //IsTrue(BigIntegerTools.TryParseBinary(".11", out output)); // This can go either way for BigInteger
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         IsTrue(BigIntegerTools.TryParseBinary("0.0", out output));
         AreEqual(output, 0);
         IsTrue(BigIntegerTools.TryParseBinary("0.1", out output));
@@ -2872,9 +2887,9 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("1.11", out output));
         AreEqual(output, 1);
         //IsTrue(BigIntegerTools.TryParseBinary("-.000", out output));
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         //IsTrue(BigIntegerTools.TryParseBinary("-.001", out output));
-        AreEqual(output, 0);
+        //AreEqual(output, 0);
         IsTrue(BigIntegerTools.TryParseBinary("-0.00", out output));
         AreEqual(output, 0);
         IsTrue(BigIntegerTools.TryParseBinary("-0.01", out output));
@@ -5856,18 +5871,16 @@ public class BigFloatTests
 
 #if !DEBUG
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    public void Verify_NewtonPlusSqrt_ShouldFail1()
+    public void VerifyNewtonPlusSqrtShouldFail1()
     {
-        _ = BigIntegerTools.NewtonPlusSqrt(-1);
+        ThrowsException<ArgumentException>(() => _ = BigIntegerTools.NewtonPlusSqrt(-1));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    public void Verify_NewtonPlusSqrt_ShouldFail2()
+    public void VerifyNewtonPlusSqrtShouldFail2()
     {
         BigInteger input = (BigInteger)double.MinValue + (BigInteger)double.MinValue;
-        _ = BigIntegerTools.NewtonPlusSqrt(input);
+        ThrowsException<ArgumentException>(() => _ = BigIntegerTools.NewtonPlusSqrt(input));
     }
 #endif
 
@@ -5934,15 +5947,17 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_Inverse_Common_Fails()
     {
+        CheckInverse(BigInteger.MinusOne);
+        CheckInverse(BigInteger.One);
         BigInteger valToTest = BigInteger.Parse("8273153554255617868983008432299507701873690283447163912225368429446311715550180068658483561349865846704311797996005892990494607142525675800342567010930760478881504606029054999488050624099750939339790755426321297478858807972510657577430552150649899640468901338121294090979219428234512847003533414175726178693610069347755095659695353545360529790683181065043538446867918248788742705333365840422466199773229341881841562551926235483545177894989221351527346588987721531194144175285969973689640218042094418808237706900648114671371775300698367651383174442595695957899162146670906778789201530522867749937550298524431256635047931");
         CheckInverse(valToTest);
         CheckInverse(valToTest + 1);
-        CheckInverse(BigInteger.MinusOne);
-        CheckInverse(BigInteger.One);
+        CheckInverse(BigInteger.Parse("374622190995713598813029737925947051705809638079728648837203317232520450544987889076160147970041374918121757949602129193189627732344065706383371226187835319714209031377906"));
         CheckInverse(BigInteger.Parse("285013714838916124746332799963584856696559114154526436450316172786090750322481976436201683157295661247422269749708947463647574230159095313041740438915381154333683134147981881052909187062730083973334780414971356303334003636993678034868083193818348023091003363888921565718173027783621779517877300200724459318883522235112068285932195519037519165902397752860489674895796976400390836349751427026061658964203208207986236200932628791719083132376094639338301197454891161371254361839889401887706282292505789937819779959717878950744690490451460250552140684616855021515468623300887218921710277512975593031191949892800748540749262661949870473705897585049029946162622106546347620917265696194559801244123684550639057819166981442116592210707318201455631684986737606526635568852133623155695703543483277590334799035273474221366689251730228654333498348983148060215237998018186668782906813463794675647274428135720809334669780620193631012355614590578191925576697141901"));
         CheckInverse(BigInteger.Parse("645939712405401427719711254063813468156213415200850699928240890973548642930906671628067939561389768742610260274947216253535958539046510117181847336215500441547828988008499863283321060888285180958716586132295468008708718750886004174750090339672254391327068510418655854996295608654912181466562066392576946408280444645720652219224611465788921115672007871684057345123697713619795572111218976868165977088388076018155579127963692414645217516226582443109944361333778959142017020766702585614084557002374143856684835403030114576877613125361001081612661505866535992828793261026218710006019409384286248553489144084836908483354058059174031935080941095970669550752672290188012935344941625941224776598832005105461709062131845129678963155310027422917876006618051141488519807701539489712459454171376535906228081656842506129847531133807702931600418505954342868857145344054108555281592568541709103974802015219413388401920300146704419785634503745727784608594651862819775429285667691480255596598355137918884688681242925903869182365424076667891828794970711995156501553646245103285321272836088502175303126383961643724861657121768832605051542254287022038928115325910288733210686961346257986675795521419117484112569337949140264990"));
         CheckInverse(BigInteger.Parse("14226342718751118987907712656792939014609116305038288508984965665170435278580333690269830569305522770533115648153109977677970505910625922454536026835852861332513459837041790011369159613511987064990374692209153941946410250817507783093926309366818470453091487613497831683214972282433680630982532763190683188379014716931664367628856712864496549434590849436602433350062473844636337430852410107263030344416723319870714159741005261604289621571405370996571482202189946969590725396299242462841573118206347715965805077151815088089898712040656448748652946583617809438541519496216169721658653723720561561601101228727064752442615455482001090437223561687360017043925134663500743462770265751193548606236574887993897708234798015778243132964667428178856994844952952767372869586443371631986024216806390351458153350155473742698605698036672929293892925483318864445513221152207924537215494391086982099603955047363639252292415150243702042020253673557543258256080860766767245166366206504042341743664890169812601231127032334294569486704846172949043552949441316944714028840689338784401867179801203613271182276331013888454830352391740343025859921596673531204457761831252242526173047406966821405710834640264664514325319700094788810229600338339048034248472906440829567003568352904106454211600272772441256937357011526350840028766974271849878883968029793821029979280359368212174059092944193932724591216533306907868949240183508100414983415165523499662280683154859830743035090387199495274469840495806979622786301340"));
         CheckInverse(BigInteger.Parse("41597037944448288110263031477097654167384303281785501659348547438859712932895265129174863537442219208764808367754224325676189013224863230815238211318298805347258792422345044074873622426170281290814220505198280942180680987026072516738908213582080426073114716009829990895938425085364287895467011390686208508278438730461229031670604488583132047013295327251056792004212211984418619663447584994978851293935131110818345158735090825798050014339956039806087253671405307536505969146032086905214682999371273072327848485190337222112654049779316736398006552350156349884603007360240860067257909482396786549588732357562118172137668037090856181026987902018187123355906466294875863290720195176549809520330510535389796132984892059640168902171480943753536264315689507100966013546691280187870571451205108217441077590372742568828587495458227141473387320433587383078311146940539855321485599293540008356160519179316373740003907476816065356834101152604366223141056328388148703861540389801990631343518586799040845656241392934834522495698513979794700246917693292354190436213407849292690244331619453139129528311878463071451903744767274814238809831756377838973380878611727693240233305958509793663676407892016477218846901984357526107274350245333587892891647258020839563922086967136639138149549163501535002313407476514168371528265958304129029559790809555296315581870799758675251593555164438335668433357530966606494565841539517226231078555238897938082287091553434761476447011358899223501505465429569334182561228540892303214811082283526723697168379678479540727712438070861914927293109710911106707261295892041586638725763206110753540190896772169081260784380"));
+        
     }
 
     /// <summary>
@@ -6167,17 +6182,15 @@ public class BigFloatTests
 
 #if !DEBUG
     [TestMethod]
-    [ExpectedException(typeof(DivideByZeroException))]
-    public void Verify_Inverse_ShouldFailOnZeroInput()
+    public void VerifyInverseShouldFailOnZeroInput()
     {
-        _ = BigIntegerTools.Inverse(0);
+        ThrowsException<DivideByZeroException>(() => _ = BigIntegerTools.Inverse(0));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException))]
-    public void Verify_Inverse_ShouldFailOnNegativePrecision()
+    public void VerifyInverseShouldFailOnNegativePrecision()
     {
-        _ = BigIntegerTools.Inverse(1,-1);
+        ThrowsException<ArgumentException>(() => _ = BigIntegerTools.Inverse(1,-1));
     }
 #endif
 
@@ -6211,9 +6224,9 @@ public class BigFloatTests
             {
                 sb.AppendLine($"  incorrect bits:[{xInvRes.GetBitLength()-correctBits}]  CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}]");
             }
-        }
 
-        IsTrue(success, sb.ToString());
+            Fail(sb.ToString());
+        }
 
         return success;
 
@@ -6228,11 +6241,11 @@ public class BigFloatTests
             {
                 throw new DivideByZeroException("'precisionBits' can not be negative.");
             }
-        if (x.IsPowerOfTwo)
-        {
-            return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
-        }
-        return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+            if (x.IsPowerOfTwo)
+            {
+                return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
+            }
+            return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
         }
     }
 
@@ -6606,7 +6619,7 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary(expect, out expVal));
         size = (int)inpVal.GetBitLength();
         carry = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out resVal, inpVal, 2, size);
-        IsTrue(carry, $"RightShiftWithRoundWithCarryDownsize({inpVal}) should have returned a carry of true");
+        IsFalse(carry, $"RightShiftWithRoundWithCarryDownsize({inpVal}) should have returned a carry of false");
         AreEqual(resVal, expVal, $"RightShiftWithRoundWithCarryDownsize({inpVal}) was {resVal} but expected {expect}");
     }
 

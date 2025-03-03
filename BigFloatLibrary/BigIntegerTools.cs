@@ -137,7 +137,7 @@ public static class BigIntegerTools
             int shift = padLeadingZeros - digitCount;
             // Move the existing digits to the right
             Span<char> digitsSpan = buffer.Slice(signOffset, digitCount);
-            digitsSpan.CopyTo(buffer.Slice(signOffset + shift));
+            digitsSpan.CopyTo(buffer[(signOffset + shift)..]);
             // Fill the gap with '0'
             buffer.Slice(signOffset, shift).Fill('0');
             // Update how many digits we now have
@@ -148,7 +148,7 @@ public static class BigIntegerTools
         int finalLength = signOffset + digitCount;
 
         // Create the string from that slice
-        return new string(buffer.Slice(0, finalLength));
+        return new string(buffer[..finalLength]);
     }
 
 
@@ -1099,7 +1099,7 @@ public static class BigIntegerTools
 
         // Tuning constants     error at:                             
         const int SIMPLE_CUTOFF = 1024; // 1024
-        const int EXTRA_START = 4; //    4
+        const int EXTRA_START = 5; // fails under 5
         const int START_CUTOFF = 400; //  400
         const int NEWTON_CUTOFF = 800; //  800
         const int EXTRA_TO_REMOVE1 = 2; //    2 - fails under 2
@@ -1564,10 +1564,7 @@ public static class BigIntegerTools
     /// <param name="bitLength">The bit length the BigInteger should be.</param>
     public static BigInteger CreateRandomBigInteger(this Random random, int bitLength)
     {
-        if (bitLength < 0)
-        {
-            throw new ArgumentOutOfRangeException();
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(bitLength);
 
         if (bitLength == 0)
         {
@@ -1591,10 +1588,7 @@ public static class BigIntegerTools
     /// <paramref name="maxBitLength"/> must be greater than or equal to minValue.</param>
     public static BigInteger CreateRandomBigInteger(this Random random, int minBitLength, int maxBitLength)
     {
-        if (minBitLength < 0)
-        {
-            throw new ArgumentOutOfRangeException();
-        }
+        ArgumentOutOfRangeException.ThrowIfNegative(minBitLength);
 
         int bits = random.Next(minBitLength, maxBitLength);
         if (bits == 0)

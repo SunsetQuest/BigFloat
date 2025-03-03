@@ -7,7 +7,6 @@
 using System;
 using System.Globalization;
 using System.Numerics;
-using System.Reflection;
 
 namespace BigFloatLibrary;
 
@@ -276,12 +275,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // now lets remove trailing null chars off the end of the cleaned Spam
-        cleaned = cleaned.Slice(0, destinationLocation);
+        cleaned = cleaned[..destinationLocation];
 
         // Check for 'e'  like 123e10 or 123.123e+100
         if (expLocation >= 0)
         {
-            Span<char> expString = cleaned.Slice(expLocation);
+            Span<char> expString = cleaned[expLocation..];
             if (!int.TryParse(expString, out exp))
             {   // unable to parse exp after 'e'
                 result = 0;
@@ -728,19 +727,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             overrideHiddenBits = 0;
         }
 
-        // The 'accuracyDelimiterPosition', specified by the ':' char is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
-        int hiddenBitsFound = 0;
-        if (accuracyDelimiterPosition >= 0)
-        {
-            if (accuracyDelimiterPosition == destinationLocation)
-            {
-                hiddenBitsFound = 0;
-            }
-            else
-            {
-                hiddenBitsFound = destinationLocation - accuracyDelimiterPosition;
-            }
-        }
+        //// The 'accuracyDelimiterPosition', specified by the ':' char is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
+        //int hiddenBitsFound;
+        //if (accuracyDelimiterPosition >= 0)
+        //{
+        //    if (accuracyDelimiterPosition == destinationLocation)
+        //    {
+        //        hiddenBitsFound = 0;
+        //    }
+        //    else
+        //    {
+        //        hiddenBitsFound = destinationLocation - accuracyDelimiterPosition;
+        //    }
+        //}
 
         // If the number is negative, let's perform Two's complement: (1) negate the bits (2) add 1 to the bottom byte
         //111111110111111111111111111111111111111111111111111111110001010110100001
