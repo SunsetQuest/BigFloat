@@ -90,7 +90,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Allocate exactly as much space as needed.
         Span<char> buffer = stackalloc char[CalculateBinaryStringLength()];
         WriteBinaryToSpan(buffer, out int charsWritten);
-        return new string(buffer.Slice(0, charsWritten));
+        return new string(buffer[..charsWritten]);
     }
 
     /// <summary>
@@ -174,46 +174,52 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
 
         // Get the absolute value as a byte array (after rounding off hidden bits).
-        ReadOnlySpan<byte> bytes = DataIntValueWithRound(BigInteger.Abs(DataBits)).ToByteArray();
+        int size = _size;
+        ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(DataBits), 32, ref size).ToByteArray();
+
         // Compute the number of leading zeros in the most significant byte.
         int msbLeadingZeros = BitOperations.LeadingZeroCount(bytes[^1]) - 24;
 
-        // Three types
-        //   Type '0.123' - all numbers are to the right of the radix point. (has leading 0.or - 0.)
+        int binaryExponent = Scale + size - 1;
+
+        // Three cases
+        //   Type '0.123' - all numbers are to the right of the radix point. (has leading '0.' or '-0.')
         //   Type '12300' - if all bits are to the left of the radix point(no radix point required)
         //   Type '12.30' - has numbers below AND above the point. (e.g. 11.01)
 
-        if (BinaryExponent < 0)
+        // Special cases: '0.999' - like 0.123 above, however because of rounding, has leading '1.' or '-1.'
+
+        if (binaryExponent < 0)
         {
             // For numbers less than one, prepend "0." and any extra zeros.
             destination[pos++] = '0';
             destination[pos++] = '.';
 
-            int zerosCount = Math.Max(0, -(_size - ExtraHiddenBits) - Scale);
+            int zerosCount = Math.Max(0, -size - Scale);
             for (int i = 0; i < zerosCount; i++)
             {
                 destination[pos++] = '0';
             }
-            pos += WriteBits(bytes, msbLeadingZeros, Size, destination[pos..]);
+            pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
         }
-        else if (Scale >= 0)
+        else if (Scale >= 0) // Type '12300'
         {
             // For integer numbers (no radix point) write the bits...
-            pos += WriteBits(bytes, msbLeadingZeros, Size, destination[pos..]);
+            pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
             // ...and then append any trailing zeros.
             int trailingZeros = Math.Max(0, Scale);
             destination.Slice(destination.Length - trailingZeros, trailingZeros).Fill('0');
             pos += trailingZeros;
         }
-        else
+        else // Type '12.30'
         {
             // For numbers with a fractional part, split the bits before and after the radix point.
-            int bitsBeforePoint = _size - ExtraHiddenBits + Scale; // Scale is negative
+            int bitsBeforePoint = size + Scale; // Scale is negative
             int bitsAfterPoint = Math.Max(0, -Scale);
 
             pos += WriteBits(bytes, msbLeadingZeros, bitsBeforePoint, destination[pos..]);
             destination[pos++] = '.';
-            pos += WriteBits(bytes, msbLeadingZeros + bitsBeforePoint, bitsAfterPoint, destination.Slice(pos));
+            pos += WriteBits(bytes, msbLeadingZeros + bitsBeforePoint, bitsAfterPoint, destination[pos..]);
         }
 
         charsWritten = pos;
@@ -266,37 +272,23 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             format = "G";
 
         // You can do a simple switch:
-        switch (format.ToUpperInvariant())
+        return format.ToUpperInvariant() switch
         {
-            case "G":
-            case "R":
-                // Typically "R" means Round-trip, so you might want
-                // maximum decimal digits. For now, call your existing
-                // decimal version:
-                return ToStringDecimal(this, includeOutOfPrecisionBits: false);
+            // Typically "R" means Round-trip, so you might want
+            // maximum decimal digits. For now, call your existing
+            // decimal version:
+            "G" or "R" => ToStringDecimal(this, includeOutOfPrecisionBits: false),
 
-            case "X":
-                // Hex representation, ignoring formatProvider for now:
-                // You already have "ToString(string format)" overload below,
-                // so you could just do:
-                return this.ToString("X");
+            "X" => ToHexString(),
 
-
-            case "B":
-                // Binary representation:
-                return this.ToString("B");
-                //todo: use something like the below
-                //return BigIntegerToBinaryString()
+            "B" => ToBinaryString(),
 
             // Future: "N", "F", "E"...
- 
-            default:
-                // For truly custom numeric format strings, you'd parse
-                // `format` here. Or just fallback:
-                return ToStringDecimal(this, includeOutOfPrecisionBits: false);
-        }
-    }
 
+            // Future: For truly custom numeric format strings, you'd parse `format`.
+            _ => ToStringDecimal(this, includeOutOfPrecisionBits: false),
+        };
+    }
 
     /// <summary>
     /// Format the value of the current instance to a decimal number.

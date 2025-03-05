@@ -559,7 +559,7 @@ public static class BigIntegerTools
             int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
             lastVal = val;
             int valSize = (int)val.GetBitLength();
-            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out int shifted, valSize, valSize - reduceBy);
+            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out _ /*int shifted*/, valSize, valSize - reduceBy);
             BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
             //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
             val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2

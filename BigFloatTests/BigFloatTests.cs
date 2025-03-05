@@ -3598,7 +3598,7 @@ public class BigFloatTests
         bi = new(-0.123);
         str = bi.ToString("B");
         AreEqual("-0.00011111011111001110110110010001011010000111001010110000", str, "Verify_ToStringFormat on -3.5");
-        //     answer: -0.00011001110010111000001100100000101100010101000001101111100001000001110001011...
+        //     answer: -0.00011111011111001110110110010001011010000111001010110000001000...
         //                   12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: -0.00011111011111001110110110010001011010000111001010110000
 
@@ -6626,34 +6626,34 @@ public class BigFloatTests
     [TestMethod]
     public void SetPrecision()
     {
-        //BigFloat inputVal, res;
-        //string output, expect;
-        //inputVal = new BigFloat("0.9876543210987654321098765432109876");
-        //string exact = "0.11111100110101101110100111100000110111110100110111000011010010...";
+        BigFloat inputVal, res;
+        string output, expect;
+        inputVal = new BigFloat("0.9876543210987654321098765432109876");
+        string exact = "0.11111100110101101110100111100000110111110100110111000011010010...";
 
-        //for (int i = 1; i < 6; i++)
-        //{
-        //    res = BigFloat.SetPrecision(inputVal, i);
-        //    output = res.ToString("B");
-        //    int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-        //    int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
-        //    expect = Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, ".");
-        //    AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
-        //}
-        //for (int i = 6; i < 20; i++)
-        //{
-        //    res = BigFloat.SetPrecision(inputVal, i);
-        //    output = res.ToString("B");
-        //    int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-        //    int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
-        //    expect = "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2);
-        //    AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
-        //}
+        for (int i = 1; i < 6; i++)
+        {
+            res = BigFloat.SetPrecision(inputVal, i);
+            output = res.ToString("B");
+            int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
+            int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
+            expect = Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, ".");
+            AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
+        }
+        for (int i = 6; i < 20; i++)
+        {
+            res = BigFloat.SetPrecision(inputVal, i);
+            output = res.ToString("B");
+            int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
+            int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
+            expect = "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2);
+            AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
+        }
 
-        //res = BigFloat.SetPrecision(inputVal, 11);
-        //output = res.ToString("B");
-        //expect = "0.11111100111";
-        //AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
+        res = BigFloat.SetPrecision(inputVal, 11);
+        output = res.ToString("B");
+        expect = "0.11111100111";
+        AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
     }
 
     [TestMethod]
