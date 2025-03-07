@@ -41,18 +41,11 @@ public readonly partial struct BigFloat
     /// <param name="requestedAccuracyInBits">The target number of bits that should be loaded into memory.</param>
     /// <param name="cutOnTrailingZero">If true, the result will stop on or after <paramref name="requestedAccuracyInBits"/> the first bit that has a zero bit following it. If false, the returned length will be a stop at exactly <paramref name="requestedAccuracyInBits"/>.></param>
     /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <paramref name="requestedAccuracyInBits"/>,</param>
-    public class BigConstants
+    public class BigConstants(int requestedAccuracyInBits = 2000, bool cutOnTrailingZero = true, bool onInsufficientBitsThenSetToZero = true)
     {
-        private readonly int requestedAccuracyInBits;
-        private readonly bool cutOnTrailingZero;
-        private readonly bool onInsufficientBitsThenSetToZero = true;
-
-        public BigConstants(int requestedAccuracyInBits = 2000, bool cutOnTrailingZero = true, bool onInsufficientBitsThenSetToZero = true)
-        {
-            this.requestedAccuracyInBits = requestedAccuracyInBits;
-            this.cutOnTrailingZero = cutOnTrailingZero;
-            this.onInsufficientBitsThenSetToZero = onInsufficientBitsThenSetToZero;
-        }
+        private readonly int requestedAccuracyInBits = requestedAccuracyInBits;
+        private readonly bool cutOnTrailingZero = cutOnTrailingZero;
+        private readonly bool onInsufficientBitsThenSetToZero = onInsufficientBitsThenSetToZero;
 
         public BigFloat PrimeConstant => _0_414682509851 ??= BuildNumber(BigConstantBuilder.Const_0_414682509851);
         private BigFloat? _0_414682509851;

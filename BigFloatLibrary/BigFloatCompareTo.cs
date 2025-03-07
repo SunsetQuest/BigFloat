@@ -32,56 +32,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    ///  Compares the in-precision bits between two values. Only the most significant bit in the HiddenBits is considered.
-    ///   Returns negative => this instance is less than other
-    ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
-    ///     i.e. Sub-Precision bits rounded and removed. 
-    ///     e.g. 1.11==1.1,  1.00==1.0,  1.11!=1.10)
-    ///   Returns Positive => this instance is greater than other
-    /// </summary>
-    public int CompareTo(BigFloat other)
-    {
-        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
-
-        // At this point, the exponent is equal or off by one because of a rollover.
-
-        int sizeDiff = _size - other._size - BinaryExponent + other.BinaryExponent;
-
-        BigInteger diff;
-        if (sizeDiff == 0)
-        {
-            diff = other.DataBits - DataBits;
-        }
-        else if (sizeDiff > 0)
-        {
-            diff = other.DataBits - (DataBits >> sizeDiff);
-        }
-        else
-        {
-            diff = (other.DataBits << sizeDiff) - DataBits;
-        }
-
-        if (diff.Sign >= 0)
-        {
-            return -(diff >> (ExtraHiddenBits - 1)).Sign;
-        }
-        else
-        {
-            return (-diff >> (ExtraHiddenBits - 1)).Sign;
-        }
-        // Alternative Method - this method rounds off the ExtraHiddenBits and then compares the numbers. 
-        // The drawback to this method are...
-        //   - the two numbers can be one tick apart in the hidden bits but considered not equal.
-        //   - the two numbers can be very near 1 apart but considered not equal..
-        // The advantage to this method are...
-        //   - we don't get odd results like 2+3=4.  1:1000000 + 10:1000000 = 100:0000000
-        //   - may have slightly better performance.
-        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
-        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
-        // return a.CompareTo(b);
-    }
-
-    /// <summary>
     /// A more accurate version of CompareTo() however it is not compatible with IEquatable. Compares the two numbers by subtracting them and if they are less then 0:1000 (i.e. Zero) then they are considered equal.
     /// e.g. Using 10|01111111 AND 10|10000000, CompareTo() returns not equal, but CompareInPrecisionBitsTo() returns Equal
     ///   Returns negative => this instance is less than other

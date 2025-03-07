@@ -476,4 +476,47 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         return BigIntegerToBinaryString(UnscaledValue);
     }
+
+    public string DebuggerDisplay
+    {
+        get
+        {
+            string bottom8HexChars = (BigInteger.Abs(DataBits) & ((BigInteger.One << ExtraHiddenBits) - 1)).ToString("X8").PadLeft(8)[^8..];
+            StringBuilder sb = new(32);
+            _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
+            _ = sb.Append($"{(DataBits.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(DataBits) >> ExtraHiddenBits:X}|{bottom8HexChars}"); // hex part
+            _ = sb.Append($"[{Size}+{ExtraHiddenBits}={_size}], {((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}");
+
+            return sb.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Prints debug information for the BigFloat to the console.  
+    /// </summary>
+    /// <param name="varName">Prints an optional name of the variable.</param>
+    public void DebugPrint(string? varName = null)
+    {
+        string shift = $"{((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}";
+        if (!string.IsNullOrEmpty(varName))
+        {
+            Console.WriteLine($"{varName + ":"}");
+        }
+
+        Console.WriteLine($"   Debug : {DebuggerDisplay}");
+        Console.WriteLine($"  String : {ToString()}");
+        //Console.WriteLine($"  Int|hex: {DataBits >> ExtraHiddenBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
+        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRoundUp() ? "up" : "down")})");
+        Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
+        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}{((double)(DataBits & (((ulong)1 << ExtraHiddenBits) - 1)) / ((ulong)1 << ExtraHiddenBits)).ToString()[1..]} {shift}");
+        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}:{DataBits & (((ulong)1 << ExtraHiddenBits) - 1)} {shift}");  // decimal part (e.g. .75)
+        if (DataBits < 0)
+        {
+            Console.WriteLine($"   or -{-DataBits >> ExtraHiddenBits:X4}:{(-DataBits & (((ulong)1 << ExtraHiddenBits) - 1)).ToString("X8")[^8..]}");
+        }
+
+        Console.WriteLine($"    |Bits: {DataBits}");
+        Console.WriteLine($"   Scale : {Scale}");
+        Console.WriteLine();
+    }
 }

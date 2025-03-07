@@ -8,7 +8,6 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -137,49 +136,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Gets the integer part of the BigFloat. No scaling is applied. ExtraHiddenBits are rounded and removed.
     /// </summary>
     public readonly BigInteger UnscaledValue => DataIntValueWithRound(DataBits);
-
-    public string DebuggerDisplay
-    {
-        get
-        {
-            string bottom8HexChars = (BigInteger.Abs(DataBits) & ((BigInteger.One << ExtraHiddenBits) - 1)).ToString("X8").PadLeft(8)[^8..];
-            StringBuilder sb = new(32);
-            _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
-            _ = sb.Append($"{(DataBits.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(DataBits) >> ExtraHiddenBits:X}|{bottom8HexChars}"); // hex part
-            _ = sb.Append($"[{Size}+{ExtraHiddenBits}={_size}], {((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}");
-
-            return sb.ToString();
-        }
-    }
-
-    /// <summary>
-    /// Prints debug information for the BigFloat to the console.  
-    /// </summary>
-    /// <param name="varName">Prints an optional name of the variable.</param>
-    public void DebugPrint(string varName = null)
-    {
-        string shift = $"{((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}";
-        if (!string.IsNullOrEmpty(varName))
-        {
-            Console.WriteLine($"{varName + ":"}");
-        }
-
-        Console.WriteLine($"   Debug : {DebuggerDisplay}");
-        Console.WriteLine($"  String : {ToString()}");
-        //Console.WriteLine($"  Int|hex: {DataBits >> ExtraHiddenBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
-        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRoundUp() ? "up" : "down")})");
-        Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
-        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}{((double)(DataBits & (((ulong)1 << ExtraHiddenBits) - 1)) / ((ulong)1 << ExtraHiddenBits)).ToString()[1..]} {shift}");
-        Console.WriteLine($"    |Dec : {DataBits >> ExtraHiddenBits}:{DataBits & (((ulong)1 << ExtraHiddenBits) - 1)} {shift}");  // decimal part (e.g. .75)
-        if (DataBits < 0)
-        {
-            Console.WriteLine($"   or -{-DataBits >> ExtraHiddenBits:X4}:{(-DataBits & (((ulong)1 << ExtraHiddenBits) - 1)).ToString("X8")[^8..]}");
-        }
-
-        Console.WriteLine($"    |Bits: {DataBits}");
-        Console.WriteLine($"   Scale : {Scale}");
-        Console.WriteLine();
-    }
 
     /// <summary>
     /// Returns a Zero with no size/precision.
@@ -638,6 +594,47 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 return new BigFloat(DataBits >> bitsToClear);
             }
         }
+    }
+
+    /// <summary>
+    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the HiddenBits, 
+    /// then they are considered not equal. 
+    ///   Returns negative => this instance is less than other
+    ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
+    ///     i.e. Sub-Precision bits rounded and removed. 
+    ///     e.g. 1.11==1.1,  1.00==1.0,  1.11!=1.10)
+    ///   Returns Positive => this instance is greater than other
+    /// </summary>
+    public int CompareTo(BigFloat other)
+    {
+        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
+
+        // At this point, the exponent is equal or off by one because of a rollover.
+
+        int sizeDiff = _size - other._size - BinaryExponent + other.BinaryExponent;
+
+        BigInteger diff = ((sizeDiff < 0) ? (other.DataBits << sizeDiff) : other.DataBits)
+            - ((sizeDiff > 0) ? (DataBits >> sizeDiff) : DataBits);
+
+
+        if (diff.Sign >= 0)
+        {
+            return -(diff >> (ExtraHiddenBits - 1)).Sign;
+        }
+        else
+        {
+            return (-diff >> (ExtraHiddenBits - 1)).Sign;
+        }
+        // Alternative Method - this method rounds off the ExtraHiddenBits and then compares the numbers. 
+        // The drawback to this method are...
+        //   - the two numbers can be one tick apart in the hidden bits but considered not equal.
+        //   - the two numbers can be very near 1 apart but considered not equal..
+        // The advantage to this method are...
+        //   - we don't get odd results like 2+3=4.  1:1000000 + 10:1000000 = 100:0000000
+        //   - may have slightly better performance.
+        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
+        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
+        // return a.CompareTo(b);
     }
 
     /// <summary>
@@ -1619,64 +1616,55 @@ Other:                                         |   |         |         |       |
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned byte.</summary>
     public static explicit operator byte(BigFloat value)
     {
-        //return (byte)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (byte)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
-
+        return (byte)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
     public static explicit operator sbyte(BigFloat value)
     {
-        //return (sbyte)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (sbyte)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (sbyte)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator ushort(BigFloat value)
     {
-        //return (ushort)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (ushort)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (ushort)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator short(BigFloat value)
     {
-        //return (short)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (short)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (short)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator ulong(BigFloat value)
     {
-        //return (ulong)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (ulong)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
-
+        return (ulong)DataIntValueWithRound(value.DataBits << value.Scale);
     }
+
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator long(BigFloat value)
     {
-        //return (long)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (long)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (long)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator UInt128(BigFloat value)
     {
-        //return (UInt128)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (UInt128)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (UInt128)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed 128-bit integer. 
     /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
     public static explicit operator Int128(BigFloat value)
     {
-        //return (Int128)(value.DataBits << (value.Scale - ExtraHiddenBits));
-        return (Int128)BigFloat.DataIntValueWithRound(value.DataBits << value.Scale);
+        return (Int128)DataIntValueWithRound(value.DataBits << value.Scale);
     }
 
     /// <summary>
@@ -1739,6 +1727,9 @@ Other:                                         |   |         |         |       |
     public static explicit operator BigInteger(BigFloat value)
     {
         return value.DataBits << (value.Scale - ExtraHiddenBits);
+        //return DataIntValueWithRound(value.DataBits << value.Scale);
+        // todo: do we need to round here?
+        //return RightShiftWithRound(value.DataBits << value.Scale, ExtraHiddenBits + value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
