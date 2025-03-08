@@ -1726,10 +1726,11 @@ Other:                                         |   |         |         |       |
     /// <param name="value">The BigFloat to cast as a BigInteger.</param>
     public static explicit operator BigInteger(BigFloat value)
     {
-        return value.DataBits << (value.Scale - ExtraHiddenBits);
-        //return DataIntValueWithRound(value.DataBits << value.Scale);
-        // todo: do we need to round here?
-        //return RightShiftWithRound(value.DataBits << value.Scale, ExtraHiddenBits + value.Scale);
+        int shift = value.Scale - ExtraHiddenBits;
+        if (shift >= ExtraHiddenBits)
+            return value.DataBits << shift;
+
+        return RightShiftWithRound(value.DataBits, -shift);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
