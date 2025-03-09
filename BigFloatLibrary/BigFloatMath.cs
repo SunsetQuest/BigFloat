@@ -70,7 +70,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             return exponent switch
             {
-                0 => BigFloat.One, //new BigFloat(BigInteger.One >> value.Scale, value.Scale),
+                0 => One,  
                 1 => value,
                 -1 => Inverse(value),
                 2 => value * value,
@@ -159,7 +159,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Check if Value is zero.
         if (value.DataBits.Sign == 0)
         {
-            return ZeroWithSpecifiedLeastPrecision(value.Size);
+            // return Zero with a precision of value.Size
+            return new(BigInteger.Zero, value.Size, 0);
         }
 
         // Check for common roots... 

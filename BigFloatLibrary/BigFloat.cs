@@ -64,11 +64,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public readonly int Size => Math.Max(0, _size - ExtraHiddenBits);
 
     /// <summary>
-    /// The number of data bits. ExtraHiddenBits are included.  
-    /// </summary>
-    public readonly int SizeWithHiddenBits => _size;
-
-    /// <summary>
     /// Returns the base-2 exponent of the number. This is the amount shift a simple 1 bit to the leading bit location.
     /// Examples: dataBits:11010 with BinExp: 3 -> 1101.0 -> 1.1010 x 2^ 3  
     ///           dataBits:11    with BinExp:-1 -> 0.11   -> 1.1    x 2^-1 
@@ -96,26 +91,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     // 0|00111111.. <<  1   31    32     -2       Y (borderline)
     // 0|00111111.. <<  2   31    33     -2       N
 
-    /// <summary>
-    /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
-    /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
-    /// </summary>
-    public bool IsStrictZero => DataBits.IsZero;
 
     /// <summary>
     /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
     /// </summary>
     public bool IsOutOfPrecision => _size < ExtraHiddenBits;
 
-    /// <summary>
-    /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits(HiddenBits) that are deemed precise. 
-    /// </summary>
-    public int Precision => _size - ExtraHiddenBits;
-
-    /// <summary>
-    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places(in binary) to the right of the radix point.
-    /// </summary>
-    public int Accuracy => -Scale;
 
     /// <summary>
     /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in ExtraHiddenBits is counted.
@@ -133,7 +114,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public int Sign => (_size >= ExtraHiddenBits - 1) ? DataBits.Sign : 0;
 
     /// <summary>
-    /// Gets the integer part of the BigFloat. No scaling is applied. ExtraHiddenBits are rounded and removed.
+    /// Gets the integer part of the BigFloat with no scaling is applied. ExtraHiddenBits are rounded and removed.
     /// </summary>
     public readonly BigInteger UnscaledValue => DataIntValueWithRound(DataBits);
 
@@ -143,59 +124,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public static BigFloat ZeroWithNoPrecision => new(0, 0, 0);
 
     /// <summary>
-    /// Returns a Zero with a given lower bound of precision. Example: -4 would result of 0.0000(in binary). ExtraHiddenBits will be added.
-    /// </summary>
-    /// <param name="pointOfLeastPrecision">The precision can be positive or negative.</param>
-    public static BigFloat ZeroWithSpecifiedLeastPrecision(int pointOfLeastPrecision)
-    {
-        return new(BigInteger.Zero, pointOfLeastPrecision, 0);
-    }
-
-    /// <summary>
     /// Returns a '1' with only 1 bit of precision. (1 << ExtraHiddenBits)
     /// </summary>
     public static BigFloat One => new(BigInteger.One << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
 
     /// <summary>
-    /// Returns a "1" with additional Accuracy. This is beyond the ExtraHiddenBits.
+    /// Returns a "1" with a specific accuracy. 
     /// </summary>
-    /// <param name="precisionInBits">The precision between -32(ExtraHiddenBits) to Int.MaxValue.</param>
-    public static BigFloat OneWithAccuracy(int precisionInBits)
+    /// <param name="accuracy">The wanted accuracy between -32(ExtraHiddenBits) to Int.MaxValue.</param>
+    public static BigFloat OneWithAccuracy(int accuracy)
     {
-        // if the precision is shrunk to a size of zero it cannot contain any data bits
-        return precisionInBits <= -ExtraHiddenBits
-            ? ZeroWithNoPrecision
-            : new(BigInteger.One << (ExtraHiddenBits + precisionInBits), -precisionInBits, ExtraHiddenBits + 1 + precisionInBits);
-        // alternative: throw new ArgumentException("The requested precision would leave not leave any bits.");
+        return new(BigInteger.One << (ExtraHiddenBits + accuracy), -accuracy, ExtraHiddenBits + 1 + accuracy); 
     }
 
-    /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the ExtraHiddenBits.
-    /// </summary>
-    /// <param name="precisionInBits">The precision between (-ExtraHiddenBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(BigInteger intVal, int precisionInBits)
-    {
-        int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
-        // if the precision is shrunk to a size of zero it cannot contain any data bits
-        return precisionInBits < -(ExtraHiddenBits + intSize)
-            ? ZeroWithNoPrecision
-            : new(intVal << (ExtraHiddenBits + precisionInBits), -precisionInBits, ExtraHiddenBits + intSize + precisionInBits);
-        // alternative: throw new ArgumentException("The requested precision would leave not leave any bits.");
-    }
-
-    /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the ExtraHiddenBits.
-    /// </summary>
-    /// <param name="precisionInBits">The precision between (-ExtraHiddenBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(int intVal, int precisionInBits)
-    {
-        int size = int.Log2(int.Abs(intVal)) + 1 + ExtraHiddenBits;
-        return precisionInBits < -size
-            ? ZeroWithNoPrecision
-            : new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
-    }
-
-    public static BigFloat NegativeOne => new(BigInteger.MinusOne << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
 
     /////////////////////////    INIT / CONVERSION  FUNCTIONS     /////////////////////////
 

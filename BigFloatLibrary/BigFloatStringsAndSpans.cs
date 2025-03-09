@@ -469,7 +469,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary>
-    /// Returns the value's bits as a string. 
+    /// Returns the value's data bits as a string. ExtraHiddenBits are not included and result is rounded.
     /// Negative values will have a leading '-' sign.
     /// </summary>
     public string GetBitsAsString()
