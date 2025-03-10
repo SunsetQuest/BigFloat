@@ -5,19 +5,16 @@
 // Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
-using System.Data.SqlTypes;
 using System.Diagnostics;
-using System.Drawing;
 using System.Numerics;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace BigFloatLibrary;
 #nullable enable
 
 [DebuggerDisplay("{DebuggerDisplay}")]
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
+public readonly partial struct BigFloat
 {
     // see "BigFloatToStringNotes.txt" and "BigFloatTryParseNotes.txt" for additional notes
     //   string ToString() - calls ToStringDecimal()

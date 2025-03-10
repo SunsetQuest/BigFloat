@@ -209,7 +209,7 @@ public class BigFloatTests
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
         AreEqual(bigFloatTotal, (BigFloat)doubleTotal, "Fail on Verify_BigConstants");
         
-        double BigFloatZero1 = (double)BigFloat.ZeroWithNoPrecision;
+        double BigFloatZero1 = (double)BigFloat.Zero;
         double BigFloatZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
         AreEqual(BigFloatZero2, BigFloatZero1, "Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)");
 
@@ -1213,21 +1213,21 @@ public class BigFloatTests
 
         BigFloat val, res, ans;
 
-        AreEqual(BigFloat.Pow(BigFloat.ZeroWithNoPrecision, 0), 1, $"Failed on: 0^0");
+        AreEqual(BigFloat.Pow(BigFloat.Zero, 0), 1, $"Failed on: 0^0");
         AreEqual(BigFloat.Pow(BigFloat.One, 0), 1, $"Failed on: 1^0");
         AreEqual(BigFloat.Pow(0, 0), 1, $"Failed on: 0^0");
         AreEqual(BigFloat.Pow(1, 0), 1, $"Failed on: 1^0");
         AreEqual(BigFloat.Pow(2, 0), 1, $"Failed on: 2^0");
         AreEqual(BigFloat.Pow(3, 0), 1, $"Failed on: 3^0");
 
-        AreEqual(BigFloat.Pow(BigFloat.ZeroWithNoPrecision, 1), 0, $"Failed on: 0^1");
+        AreEqual(BigFloat.Pow(BigFloat.Zero, 1), 0, $"Failed on: 0^1");
         AreEqual(BigFloat.Pow(BigFloat.One, 1), 1, $"Failed on: 1^1");
         AreEqual(BigFloat.Pow(0, 1), 0, $"Failed on: 0^1");
         AreEqual(BigFloat.Pow(1, 1), 1, $"Failed on: 1^1");
         AreEqual(BigFloat.Pow(2, 1), 2, $"Failed on: 2^1");
         AreEqual(BigFloat.Pow(3, 1), 3, $"Failed on: 3^1");
 
-        AreEqual(BigFloat.Pow(BigFloat.ZeroWithNoPrecision, 2), 0, $"Failed on: 0^2");
+        AreEqual(BigFloat.Pow(BigFloat.Zero, 2), 0, $"Failed on: 0^2");
         AreEqual(BigFloat.Pow(BigFloat.One, 2), 1, $"Failed on: 1^2");
         AreEqual(BigFloat.Pow(0, 2), 0, $"Failed on: 0^2");
         AreEqual(BigFloat.Pow(1, 2), 1, $"Failed on: 1^2");
@@ -1610,11 +1610,11 @@ public class BigFloatTests
     public void Verify_BigFloatConstants()
     {
         // BigFloat.Zero  BigFloat.One
-        AreEqual(BigFloat.ZeroWithNoPrecision, 0, $"Failed on: BigFloat.ZeroWithNoPrecision == 0");
+        AreEqual(BigFloat.Zero, 0, $"Failed on: BigFloat.ZeroWithNoPrecision == 0");
         AreEqual(BigFloat.One, 1, $"Failed on: BigFloat.One == 1");
-        AreEqual(BigFloat.ZeroWithNoPrecision, BigFloat.One - BigFloat.One, $"Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.One - BigFloat.One");
-        AreEqual(BigFloat.ZeroWithNoPrecision, BigFloat.ZeroWithNoPrecision, $"Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision");
-        AreEqual(BigFloat.One - BigFloat.ZeroWithNoPrecision, BigFloat.ZeroWithNoPrecision + BigFloat.One, $"Failed on: BigFloat.ZeroWithNoPrecision - BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision + BigFloat.One");
+        AreEqual(BigFloat.Zero, BigFloat.One - BigFloat.One, $"Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.One - BigFloat.One");
+        AreEqual(BigFloat.Zero, BigFloat.Zero, $"Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision");
+        AreEqual(BigFloat.One - BigFloat.Zero, BigFloat.Zero + BigFloat.One, $"Failed on: BigFloat.ZeroWithNoPrecision - BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision + BigFloat.One");
     }
 
     [TestMethod]
@@ -4186,7 +4186,7 @@ public class BigFloatTests
     public void Verify_EqualsWithObject()
     {
         IsTrue((new BigFloat(1)).Equals((object)BigFloat.One));
-        IsTrue((new BigFloat(0)).Equals((object)BigFloat.ZeroWithNoPrecision));
+        IsTrue((new BigFloat(0)).Equals((object)BigFloat.Zero));
         IsFalse((new BigFloat(1)).Equals(null));
         IsFalse((new BigFloat(1)).Equals((object)1));
     }

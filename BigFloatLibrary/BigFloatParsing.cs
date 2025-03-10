@@ -12,7 +12,7 @@ namespace BigFloatLibrary;
 
 // see "BigFloatTryParseNotes.txt" for additional notes
 
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
+public readonly partial struct BigFloat
 {
     /// <summary>
     /// Parses an input string and returns a BigFloat. If it fails, an exception is thrown.

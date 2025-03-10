@@ -5,13 +5,9 @@
 // Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
-
 
 public readonly partial struct BigFloat
 {
@@ -58,7 +54,7 @@ public readonly partial struct BigFloat
         int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
         // if the precision is shrunk to a size of zero it cannot contain any data bits
         return precisionInBits < -(ExtraHiddenBits + intSize)
-            ? ZeroWithNoPrecision
+            ? Zero
             : new(intVal << (ExtraHiddenBits + precisionInBits), -precisionInBits, ExtraHiddenBits + intSize + precisionInBits);
         // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
     }
@@ -71,9 +67,139 @@ public readonly partial struct BigFloat
     {
         int size = int.Log2(int.Abs(intVal)) + 1 + ExtraHiddenBits;
         return precisionInBits < -size
-            ? ZeroWithNoPrecision
+            ? Zero
             : new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
     }
 
     public static BigFloat NegativeOne => new(BigInteger.MinusOne << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
+
+
+    /////////////////////////    CONVERSION  FUNCTIONS     /////////////////////////
+
+    public BigFloat(uint value, int scale = 0)
+    {
+        DataBits = (BigInteger)value << ExtraHiddenBits;
+        Scale = scale;
+        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
+        AssertValid();
+    }
+
+    public BigFloat(char integerPart, int binaryScaler = 0)
+    {
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Scale = binaryScaler;
+
+        // Special handing required for int.MinValue
+        _size = integerPart >= 0
+            ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits
+            : integerPart != char.MinValue
+                ? integerPart == 0 ? 0 : BitOperations.Log2((byte)-integerPart) + 1 + ExtraHiddenBits
+                : 7 + ExtraHiddenBits;
+
+        AssertValid();
+    }
+
+    public BigFloat(byte integerPart, int binaryScaler = 0)
+    {
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Scale = binaryScaler;
+        _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits;
+        AssertValid();
+    }
+
+    public BigFloat(Int128 integerPart, int binaryScaler = 0)
+    {
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Scale = binaryScaler;
+
+        _size = integerPart > Int128.Zero
+            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
+            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
+
+        AssertValid();
+    }
+
+    public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesHiddenBits)
+    {
+        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Scale = binaryScaler;
+
+        _size = integerPart > Int128.Zero
+            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
+            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
+
+        AssertValid();
+
+        int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
+        // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
+        _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
+        DataBits = integerPart << applyHiddenBits;
+        Scale = binaryScaler; // DataBits of zero can have scale
+        AssertValid();
+    }
+
+    /////////////////////////// Implicit CASTS ///////////////////////////
+
+    /// <summary>Defines an implicit conversion of a 8-bit signed integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(sbyte value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a 16-bit unsigned integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(ushort value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a signed 16-bit integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(short value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a 32-bit unsigned integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(uint value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a 64-bit unsigned integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(ulong value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(long value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(Int128 value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(UInt128 value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>Defines an implicit conversion of a signed 32-bit integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(int value)
+    {
+        return new BigFloat(value);
+    }
+
+    /////////////////////////// Explicit CASTS ///////////////////////////
+
+    /// <summary>Defines an explicit conversion of a System.Single to a BigFloat.</summary>
+    public static explicit operator BigFloat(float value)
+    {
+        return new BigFloat(value);
+    }
+
 }

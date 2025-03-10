@@ -10,12 +10,10 @@ using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
 
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>
+public readonly partial struct BigFloat
 {
-    ////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////// MATH FUNCTIONS ////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////
-
+    
     /// <summary>
     /// Calculates the square root of a big floating point number.
     /// </summary>
@@ -91,7 +89,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // Lets first make sure we would have some precision remaining after our exponent operation.
             if (expectedFinalPrecision <= 0)
             {
-                return ZeroWithNoPrecision; // technically more of a "NA".
+                return Zero; // technically more of a "NA".
             }
 
             //bool expOverflows = value.Exponent < -1022 || value.Exponent > 1023;

@@ -12,10 +12,22 @@ using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
 
+// BigFloat.cs (this file) - contains the main BigFloat struct and its core properties and methods.
+// BigIntegerTools.cs - contains helper methods for working with BigIntegers.
+// optional: (contains additional methods that are not part of the core)
+//   BigFloatExtended.cs 
+//   BigFloatCompareTo.cs
+//   BigFloatMath.cs
+//   BigFloatParsing.cs
+//   BigFloatStringsAndSpans.cs
+//   BigConstants.cs
+//   Int128Tools.cs
+
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>
-public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IEquatable<BigFloat>, IFormattable, ISpanFormattable
+public readonly partial struct BigFloat : IFormattable, ISpanFormattable
+/*IComparable, IComparable<BigFloat>, IEquatable<BigFloat> - see BigFloatCompareTo.cs */
 {
     /// <summary>
     /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
@@ -119,9 +131,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     public readonly BigInteger UnscaledValue => DataIntValueWithRound(DataBits);
 
     /// <summary>
-    /// Returns a Zero with no size/precision.
+    /// Returns the default zero with with a zero size, precision, scale, and accuracy.
     /// </summary>
-    public static BigFloat ZeroWithNoPrecision => new(0, 0, 0);
+    public static BigFloat Zero => new(0, 0, 0);
 
     /// <summary>
     /// Returns a '1' with only 1 bit of precision. (1 << ExtraHiddenBits)
@@ -138,14 +150,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
 
-    /////////////////////////    INIT / CONVERSION  FUNCTIONS     /////////////////////////
+    /////////////////////////    CONVERSION  FUNCTIONS     /////////////////////////
 
     /// <summary>
     /// Constructs a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="rawValueSize"/> with respect to the ExtraHiddenBits.
     /// </summary>
     /// <param name="rawValue">The raw integerPart. It should INCLUDE the ExtraHiddenBits.</param>
     /// <param name="rawValueSize">The size of rawValue. </param>
-    /// 
     private BigFloat(BigInteger rawValue, int binaryScaler, int rawValueSize)
     {
         DataBits = rawValue;
@@ -172,38 +183,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         AssertValid();
     }
 
-    public BigFloat(char integerPart, int binaryScaler = 0)
-    {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = binaryScaler;
-
-        // Special handing required for int.MinValue
-        _size = integerPart >= 0
-            ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits
-            : integerPart != char.MinValue
-                ? integerPart == 0 ? 0 : BitOperations.Log2((byte)-integerPart) + 1 + ExtraHiddenBits
-                : 7 + ExtraHiddenBits;
-
-        AssertValid();
-    }
-
-    public BigFloat(byte integerPart, int binaryScaler = 0)
-    {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = binaryScaler;
-        _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits;
-        AssertValid();
-    }
-
     public BigFloat(int integerPart, int binaryScaler = 0) : this((long)integerPart, binaryScaler) { }
-
-    public BigFloat(uint value, int scale = 0)
-    {
-        DataBits = (BigInteger)value << ExtraHiddenBits;
-        Scale = scale;
-        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
-        AssertValid();
-    }
 
     public BigFloat(long value, int binaryScaler = 0)
     {
@@ -223,37 +203,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         DataBits = (BigInteger)value << ExtraHiddenBits;
         Scale = binaryScaler;
         _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
-        AssertValid();
-    }
-
-    public BigFloat(Int128 integerPart, int binaryScaler = 0)
-    {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = binaryScaler;
-
-        _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
-
-        AssertValid();
-    }
-
-    public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesHiddenBits)
-    {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
-        Scale = binaryScaler;
-
-        _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
-
-        AssertValid();
-
-        int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
-        // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
-        _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
-        DataBits = integerPart << applyHiddenBits;
-        Scale = binaryScaler; // DataBits of zero can have scale
         AssertValid();
     }
 
@@ -969,10 +918,12 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
     /// The remainder is slightly faster.
     /// </summary>
-    // see BifFloatModuloNotes.txt for additional notes
+    // see BigFloatModuloNotes.txt for additional notes
     public static BigFloat Mod(BigFloat dividend, BigFloat divisor)
     {
-        return Remainder(dividend, divisor) + ((dividend < 0) ^ (divisor > 0) ? 0 : divisor);
+        return Remainder(dividend, divisor) + ((dividend < 0) ^ (divisor > 0) ?
+            Zero :
+            divisor);
     }
 
     /// <summary>
@@ -1489,68 +1440,9 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////// implicit CASTS ///////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>Defines an implicit conversion of a 8-bit signed integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(sbyte value)
-    {
-        return new BigFloat(value);
-    }
+    /////////////////////////// Explicit CASTS ///////////////////////////
 
-    /// <summary>Defines an implicit conversion of a 16-bit unsigned integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(ushort value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a signed 16-bit integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(short value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a 32-bit unsigned integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(uint value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a signed 32-bit integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(int value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a 64-bit unsigned integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(ulong value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(long value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(UInt128 value)
-    {
-        return new BigFloat(value);
-    }
-
-    /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
-    public static implicit operator BigFloat(Int128 value)
-    {
-        return new BigFloat(value);
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////// explicit CASTS ///////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    ///
     /// <summary>Defines an explicit conversion of a System.Decimal object to a BigFloat. </summary>
     //public static explicit operator BigFloat(decimal input) => new BigFloat(input);
 
@@ -1559,7 +1451,7 @@ Other:                                         |   |         |         |       |
     {
         return (byte)DataIntValueWithRound(value.DataBits << value.Scale);
     }
-
+              
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
     public static explicit operator sbyte(BigFloat value)
     {
@@ -1710,11 +1602,6 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
-    /// <summary>Defines an explicit conversion of a System.Single to a BigFloat.</summary>
-    public static explicit operator BigFloat(float value)
-    {
-        return new BigFloat(value);
-    }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     public static explicit operator int(BigFloat value)
@@ -1874,5 +1761,4 @@ Other:                                         |   |         |         |       |
     {
         val.AssertValid();
     }
-
 }

@@ -23,9 +23,7 @@ public static class Showcase
     //////////////  BigConstants Play Area & Examples //////////////
     public static void Main()
     {
-        ///////////////////////////////////////////////////
         //////////////////// TEST AREA ////////////////////
-        ///////////////////////////////////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
         // NewtonNthRootPerformance(); return;
         // InverseTesting();
@@ -444,9 +442,7 @@ public static class Showcase
 
 
 
-
     //////////////  Pow() Play Area & Examples //////////////
-
 
     private static void Pow_Stuff()
     {
