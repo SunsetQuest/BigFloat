@@ -31,8 +31,8 @@ public readonly partial struct BigFloat
 // IComparable, IComparable<BigFloat>, IEquatable<BigFloat> - see BigFloatCompareTo.cs
 {
     /// <summary>
-    /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
-    /// These bits helps guard against some nuisances such as "7" * "9" being 60. 
+    /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-significant sub-precise bits.
+    /// These bits help guard against some nuisances such as "7" * "9" being 60. 
     /// </summary>
     public const int ExtraHiddenBits = 32;  // 0-62, must be even (for sqrt)
 
@@ -71,7 +71,7 @@ public readonly partial struct BigFloat
     public readonly int Scale { get; init; }
 
     /// <summary>
-    /// The Size is the precision. It in number of bits required to hold the number. 
+    /// The Size is the precision. It is the number of bits required to hold the number. 
     /// ExtraHiddenBits are subtracted out. Use SizeWithHiddenBits to include ExtraHiddenBits.
     /// </summary>
     public readonly int Size => Math.Max(0, _size - ExtraHiddenBits);
@@ -106,7 +106,7 @@ public readonly partial struct BigFloat
 
 
     /// <summary>
-    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
+    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
     /// </summary>
     public bool IsOutOfPrecision => _size < ExtraHiddenBits;
 
@@ -933,9 +933,9 @@ public readonly partial struct BigFloat
     //public static BigFloat operator ^(BigFloat left, BigInteger right);
 
     /// <summary>
-    /// Left shift - Increases the size by adding least-signification zero bits. 
+    /// Left shift - Increases the size by adding least-significant zero bits. 
     /// i.e. The precision is enhanced. 
-    /// No rounding is preformed.
+    /// No rounding is performed.
     /// </summary>
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift left.</param>
@@ -946,9 +946,9 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Right shift - Decreases the size by removing the least-signification bits. 
+    /// Right shift - Decreases the size by removing the least-significant bits. 
     /// i.e. The precision is reduced. 
-    /// No rounding is preformed. Scale is unaffected. 
+    /// No rounding is performed. Scale is unaffected. 
     /// </summary>
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift right.</param>
