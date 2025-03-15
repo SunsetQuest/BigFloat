@@ -102,14 +102,14 @@ public class BigFloatTests
     public void Verify_BitwiseComplementOperator()
     {
         BigFloat a = BigFloat.ParseBinary("10.111");
-        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includesHiddenBits: 32);
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", BigFloat.ExtraHiddenBits);
         AreEqual(expectedAns, ~a);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
-        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, overrideHiddenBits: 32);
+        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, BigFloat.ExtraHiddenBits);
         AreEqual(expectedAns, ~a);
 
-        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, overrideHiddenBits: 32);
+        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, BigFloat.ExtraHiddenBits);
         _ = BigFloat.TryParseBinary("  110110110", out expectedAns);
         AreEqual(expectedAns, ~a);
 
@@ -477,14 +477,14 @@ public class BigFloatTests
         IsFalse(BigFloat.ParseBinary("100.01").IsZero);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000001").IsZero);
         IsFalse(BigFloat.ParseBinary("-0.00000000000000000000001").IsZero);
-        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).IsZero);
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).IsZero);
-        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
+        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, BigFloat.ExtraHiddenBits).IsZero);
     }
 
     [TestMethod]
@@ -498,11 +498,11 @@ public class BigFloatTests
         IsTrue(result.IsStrictZero);
         IsTrue(result.IsZero);
 
-        result = BigFloat.ParseBinary("1", 0, 0, 32);
+        result = BigFloat.ParseBinary("1", 0, 0, BigFloat.ExtraHiddenBits);
         IsFalse(result.IsStrictZero);
         IsTrue(result.IsZero);
 
-        result = BigFloat.ParseBinary("-1", 0, 0, 32);
+        result = BigFloat.ParseBinary("-1", 0, 0, BigFloat.ExtraHiddenBits);
         IsFalse(result.IsStrictZero);
         IsTrue(result.IsZero);
     }
@@ -510,69 +510,73 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_GetPrecision()
     {
+        int hiddenBits = BigFloat.ExtraHiddenBits;
         AreEqual(5, BigFloat.ParseBinary("100.01").Precision);
         AreEqual(1, BigFloat.ParseBinary("-0.00000000000000000000001").Precision);
-        AreEqual(1 - 32, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).Precision);
-        AreEqual(1 - 32, BigFloat.ParseBinary("0.00001", 0, 0, 32).Precision);
-        AreEqual(4 - 32, BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).Precision);
-        AreEqual(9 - 32, BigFloat.ParseBinary("100000000", 0, 0, 32).Precision);
-        AreEqual(17 - 32, BigFloat.ParseBinary("10000000000000000", 0, 0, 32).Precision);
-        AreEqual(25 - 32, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).Precision);
-        AreEqual(33 - 32, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).Precision);
+        AreEqual(1 - hiddenBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hiddenBits).Precision);
+        AreEqual(1 - hiddenBits, BigFloat.ParseBinary("0.00001", 0, 0, hiddenBits).Precision);
+        AreEqual(4 - hiddenBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hiddenBits).Precision);
+        AreEqual(9 - hiddenBits, BigFloat.ParseBinary("100000000", 0, 0, hiddenBits).Precision);
+        AreEqual(17 - hiddenBits, BigFloat.ParseBinary("10000000000000000", 0, 0, hiddenBits).Precision);
+        AreEqual(25 - hiddenBits, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hiddenBits).Precision);
+        AreEqual(33 - hiddenBits, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hiddenBits).Precision);
     }
 
     [TestMethod]
     public void Verify_GetAccuracy()
     {
+        int hb = BigFloat.ExtraHiddenBits;
         AreEqual(2, BigFloat.ParseBinary("100.01").Accuracy);
         AreEqual(23, BigFloat.ParseBinary("-0.00000000000000000000001").Accuracy);
-        AreEqual(23 - 32, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).Accuracy);
-        AreEqual(5 - 32, BigFloat.ParseBinary("0.00001", 0, 0, 32).Accuracy);
-        AreEqual(18 - 32, BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).Accuracy);     // 0|00000000000000.00000000000000000000001" (accuracy is -14)
-        AreEqual(32 - 32, BigFloat.ParseBinary("100000000", 0, 0, 32).Accuracy);                // 0.|00000000000000000000000100000000        (accuracy is 0)
-        AreEqual(32 - 32, BigFloat.ParseBinary("10000000000000000", 0, 0, 32).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
-        AreEqual(32 - 32, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).Accuracy);// 0.|00000001000000000000000000000000        (accuracy is 0)
-        AreEqual(32 - 32, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).Accuracy);//1.|00000000000000000000000000000000(accuracy is 0)
+        AreEqual(23 - hb, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).Accuracy);
+        AreEqual(5 -  hb, BigFloat.ParseBinary("0.00001", 0, 0, hb).Accuracy);
+        AreEqual(18 - hb, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).Accuracy);     // 0|00000000000000.00000000000000000000001" (accuracy is -14)
+        AreEqual(hb - hb, BigFloat.ParseBinary("100000000", 0, 0, hb).Accuracy);                // 0.|00000000000000000000000100000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("10000000000000000", 0, 0, hb).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).Accuracy);// 0.|00000001000000000000000000000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).Accuracy);//1.|00000000000000000000000000000000(accuracy is 0)
     }
 
     [TestMethod]
     public void Verify_IsPositive()
     {
+        int hb = BigFloat.ExtraHiddenBits;
         //public bool IsPositive => Sign > 0;
         IsTrue(BigFloat.ParseBinary("100.01").IsPositive);
-        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).IsPositive);
-        IsTrue(BigFloat.ParseBinary("10000000000000000000000000000000", 0, 0, 32).IsPositive);
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000000000", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000", 0, 0, 32).IsPositive);
+        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("10000000000000000000000000000000", 0, 0, hb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000000000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000", 0, 0, hb).IsPositive);
         IsFalse(BigFloat.ParseBinary("-100.01").IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).IsPositive);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000000").IsPositive);
         IsFalse(BigFloat.ParseBinary("-0.00000000000000000000001").IsPositive);
-        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, 32).IsPositive);
+        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, hb).IsPositive);
     }
 
     [TestMethod]
     public void Verify_IsNegative()
     {
+        int hb = BigFloat.ExtraHiddenBits;
         //public bool IsNegative => Sign < 0;
         IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").IsNegative);
-        IsTrue(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, 32).IsNegative);
-        IsTrue(BigFloat.ParseBinary("-10000000000000000000000000000000", 0, 0, 32).IsNegative);
-        IsTrue(BigFloat.ParseBinary("-1000000000000000000000000000000", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000", 0, 0, 32).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, hb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-10000000000000000000000000000000", 0, 0, hb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-1000000000000000000000000000000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000", 0, 0, hb).IsNegative);
         IsFalse(BigFloat.ParseBinary("100.01").IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, 32).IsNegative);
-        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, 32).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).IsNegative);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000000").IsNegative);
     }
 
@@ -746,20 +750,21 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_IntWithAddedPrecision()
     {
+        int hb = BigFloat.ExtraHiddenBits;
         AreEqual(0, BigFloat.OneWithAccuracy(10).CompareToExact(BigFloat.One));
         AreEqual(0, BigFloat.IntWithAccuracy(1, 10).CompareToExact(BigFloat.One));
         AreEqual(0, BigFloat.IntWithAccuracy(2, 10).CompareToExact(new BigFloat(2)));
 
         BigFloat a = BigFloat.IntWithAccuracy(2, 10);
-        AreEqual(a.DataBits, (BigInteger)2 << (32 + 10));
+        AreEqual(a.DataBits, (BigInteger)2 << (hb + 10));
         AreEqual(-10, a.Scale);
 
         a = BigFloat.IntWithAccuracy(-32, 100);
-        AreEqual(a.DataBits, -(BigInteger)32 << (32 + 100));
+        AreEqual(a.DataBits, -(BigInteger)32 << (hb + 100));
         AreEqual(-100, a.Scale);
 
         a = BigFloat.IntWithAccuracy(27, -15);
-        AreEqual(a.DataBits, (BigInteger)27 << (32 - 15));
+        AreEqual(a.DataBits, (BigInteger)27 << (hb - 15));
         AreEqual(15, a.Scale);
     }
 
@@ -894,7 +899,7 @@ public class BigFloatTests
             BigInteger bi = BigInteger.One << i;
             BigInteger sq = bi * bi;
 
-            BigFloat bf = new(bi, 32, true);
+            BigFloat bf = new(bi, BigFloat.ExtraHiddenBits, true);
 
             BigFloat resPos = BigFloat.PowerOf2(bf);
             BigFloat resNeg = BigFloat.PowerOf2(-bf);
@@ -915,7 +920,7 @@ public class BigFloatTests
             BigInteger bi = BigInteger.One << i;
             BigInteger sq = bi * bi;
 
-            BigFloat bf = new(bi, 32, true);
+            BigFloat bf = new(bi, BigFloat.ExtraHiddenBits, true);
 
             BigFloat resPos = BigFloat.PowerOf2(bf);
             BigFloat resNeg = BigFloat.PowerOf2(-bf);
@@ -952,7 +957,7 @@ public class BigFloatTests
         // what about 31???
 
         // 1, 11, 111, 1111... testing  (In Precision)
-        for (int i = 32; i < MAX_INT3; i++)
+        for (int i = BigFloat.ExtraHiddenBits; i < MAX_INT3; i++)
         {
             BigInteger bi = (BigInteger.One << i) - 1;
             BigInteger sq = bi * bi;
@@ -966,8 +971,8 @@ public class BigFloatTests
             BigFloat resPos = BigFloat.PowerOf2(bf);
             BigFloat resNeg = BigFloat.PowerOf2(-bf);
 
-            AreEqual(resPos, (BigFloat)(sq >> 32));
-            AreEqual(resNeg, (BigFloat)(sq >> 32));
+            AreEqual(resPos, (BigFloat)(sq >> BigFloat.ExtraHiddenBits));
+            AreEqual(resNeg, (BigFloat)(sq >> BigFloat.ExtraHiddenBits));
 
             int resSize = (int)bi.GetBitLength();
             AreEqual(resPos.Size, Math.Max(0, resSize - BigFloat.ExtraHiddenBits));
@@ -975,11 +980,11 @@ public class BigFloatTests
         }
 
         {
-            BigFloat bf = new(0x7FFFFFFF, 32, true);
+            BigFloat bf = new(0x7FFFFFFF, BigFloat.ExtraHiddenBits, true);
             BigFloat bfSq = BigFloat.PowerOf2(bf);
             IsFalse(bfSq == (BigFloat)0x3FFFFFFF00000001);  // false because 0|7FFFFFFE it out of precision.
 
-            bf = new BigFloat(0xFFFFFFFF, 32, true);
+            bf = new BigFloat(0xFFFFFFFF, BigFloat.ExtraHiddenBits, true);
             bfSq = BigFloat.PowerOf2(bf);
             AreEqual(bfSq, (BigFloat)0xFFFFFFFE00000001);
         }
@@ -2672,30 +2677,30 @@ public class BigFloatTests
             IsTrue(BigFloat.TryParseBinary(strVal, out output));
             AreEqual(output, (BigFloat)(-i));
         }
-
+        
         IsTrue(BigFloat.TryParseBinary("1000000000000000.|", out output));
-        AreEqual(output, new BigFloat((ulong)32768 << 32, 0, true));
+        AreEqual(output, new BigFloat((ulong)32768 << BigFloat.ExtraHiddenBits, 0, true));
 
         IsTrue(BigFloat.TryParseBinary("1000000000000000|.", out output));
-        AreEqual(output, new BigFloat((ulong)32768 << 32, 0, true));
+        AreEqual(output, new BigFloat((ulong)32768 << BigFloat.ExtraHiddenBits, 0, true));
 
         IsTrue(BigFloat.TryParseBinary("100000000000000|0.", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << 31, 1, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
 
         IsTrue(BigFloat.TryParseBinary("100000000000000|0.0", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << 31, 1, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
 
         IsTrue(BigFloat.TryParseBinary("10000000000.0000|00", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << 31, -4, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), -4, true)));
 
         IsTrue(BigFloat.TryParseBinary("1|000000000000000.", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << 32, 15, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 15, true)));
 
         IsTrue(BigFloat.TryParseBinary("1.|000000000000000", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << 32, 0, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
 
         IsTrue(BigFloat.TryParseBinary("1|.000000000000000", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << 32, 0, true)));
+        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
     }
 
     [TestMethod]
@@ -4610,7 +4615,7 @@ public class BigFloatTests
         f = (BigFloat)(float)-0.000325520833333333333333333;
         AreEqual(f, d);
 
-        a = BigFloat.ParseBinary("-0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, 32);
+        a = BigFloat.ParseBinary("-0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, BigFloat.ExtraHiddenBits);
         d = (BigFloat)(double)-0.999999999999999999999999999;
         AreEqual(a, d);
         f = (BigFloat)(float)-0.999999999999999999999999999;
@@ -4622,7 +4627,7 @@ public class BigFloatTests
         f = (BigFloat)(float)-0.000325520833333333333333333;
         AreEqual(f, d);
 
-        a = BigFloat.ParseBinary("0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, 32);
+        a = BigFloat.ParseBinary("0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, BigFloat.ExtraHiddenBits);
         d = (BigFloat)(double)0.999999999999999999999999999;
         AreEqual(a, d);
         f = (BigFloat)(float)0.999999999999999999999999999;

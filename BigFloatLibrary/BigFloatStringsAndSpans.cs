@@ -172,7 +172,7 @@ public readonly partial struct BigFloat
 
         // Get the absolute value as a byte array (after rounding off hidden bits).
         int size = _size;
-        ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(DataBits), 32, ref size).ToByteArray();
+        ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(DataBits), ExtraHiddenBits, ref size).ToByteArray();
 
         // Compute the number of leading zeros in the most significant byte.
         int msbLeadingZeros = BitOperations.LeadingZeroCount(bytes[^1]) - 24;

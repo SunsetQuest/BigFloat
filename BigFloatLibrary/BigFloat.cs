@@ -304,14 +304,14 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             {
                 DataBits = 0;
                 Scale = binaryScaler;
-                _size = 0; //24 + ExtraHiddenBits;
+                _size = 0;
             }
             else
             {
                 BigInteger mant = new(value >= 0 ? mantissa : -mantissa);
                 DataBits = mant << ExtraHiddenBits;
                 Scale = -126 - 23 + binaryScaler; //hack: 23 is a guess
-                _size = 32 - BitOperations.LeadingZeroCount((uint)mantissa) + ExtraHiddenBits;
+                _size = ExtraHiddenBits - BitOperations.LeadingZeroCount((uint)mantissa) + ExtraHiddenBits;
             }
         }
 

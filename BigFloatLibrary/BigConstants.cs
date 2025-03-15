@@ -616,7 +616,7 @@ public readonly partial struct BigFloat
             }
 
             // okay, we search to the end but did not find any zeros, lets search going forward instead.
-            for (int i = overAccurateBy + 1; i < 32; i++)
+            for (int i = overAccurateBy + 1; i < ExtraHiddenBits; i++)
             {
                 if ((value.DataBits >> i).IsEven)
                 {
