@@ -18,12 +18,12 @@ public readonly partial struct BigFloat
     /// Parses an input string and returns a BigFloat. If it fails, an exception is thrown.
     /// This function supports: 
     ///  - Positive or negative leading signs or no sign. 
-    ///  - Radix point (aka. decimal point for base 10)
+    ///  - Radix point (aka decimal point for base 10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
-    /// <param name="binaryScaler">Optional apply positive or negative base-2 scaling.(default is zero)</param>
+    /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     public BigFloat(string numericString, int binaryScaler = 0)
     {
         this = Parse(numericString, binaryScaler);
@@ -33,12 +33,12 @@ public readonly partial struct BigFloat
     /// Parses an input string and returns a BigFloat. If it fails, an exception is thrown.
     /// This function supports: 
     ///  - Positive or negative leading signs or no sign. 
-    ///  - Radix point (aka. decimal point for base 10)
+    ///  - Radix point (aka decimal point for base 10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
-    /// <param name="binaryScaler">Optional apply positive or negative base-2 scaling.(default is zero)</param>
+    /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     public static BigFloat Parse(string numericString, int binaryScaler = 0)
     {
         bool success = TryParse(numericString, out BigFloat biRes, binaryScaler);
@@ -58,16 +58,16 @@ public readonly partial struct BigFloat
     /// This function supports: 
     ///  - Positive or negative leading signs or no sign. 
     ///  - Spaces and commas are ignored.
-    ///  - Supports exponential notation (e.g. 1.23e+4, 123e4)
-    ///  - Supports strings with closing brace,bracket, single and double quotes (e.g. (123), {123e4})
+    ///  - Exponential notation (e.g. 1.23e+4, 123e4)
+    ///  - Strings with closing braces, brackets, single and double quotes (e.g. (123), {123e4})
     ///  - Decimal point (and radix point for non base-10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
-    ///  - Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    ///  - The precision separator, '|'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
     /// <param name="result">The resulting BigFloat. Zero is returned if conversion failed.</param>
-    /// <param name="binaryScaler">Optional, apply positive or negative base-2 scaling.(default is zero)</param>
+    /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     /// <returns>Returns true if successful.</returns>
     public static bool TryParse(string numericString, out BigFloat result, int binaryScaler = 0)
     {

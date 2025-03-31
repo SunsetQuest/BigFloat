@@ -26,12 +26,13 @@ namespace BigFloatLibrary;
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>
-public readonly partial struct BigFloat : IFormattable, ISpanFormattable
-/*IComparable, IComparable<BigFloat>, IEquatable<BigFloat> - see BigFloatCompareTo.cs */
+public readonly partial struct BigFloat
+// IFormattable, ISpanFormattable - see BigFloatCompareTo.cs
+// IComparable, IComparable<BigFloat>, IEquatable<BigFloat> - see BigFloatCompareTo.cs
 {
     /// <summary>
-    /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-signification sub-precise bits.
-    /// These bits helps guard against some nuisances such as "7" * "9" being 60. 
+    /// ExtraHiddenBits helps with precision by keeping an extra 32 bits. ExtraHiddenBits are a fixed amount of least-significant sub-precise bits.
+    /// These bits help guard against some nuisances such as "7" * "9" being 60. 
     /// </summary>
     public const int ExtraHiddenBits = 32;  // 0-62, must be even (for sqrt)
 
@@ -70,7 +71,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     public readonly int Scale { get; init; }
 
     /// <summary>
-    /// The Size is the precision. It in number of bits required to hold the number. 
+    /// The Size is the precision. It is the number of bits required to hold the number. 
     /// ExtraHiddenBits are subtracted out. Use SizeWithHiddenBits to include ExtraHiddenBits.
     /// </summary>
     public readonly int Size => Math.Max(0, _size - ExtraHiddenBits);
@@ -105,7 +106,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
 
     /// <summary>
-    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number are precise. 
+    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
     /// </summary>
     public bool IsOutOfPrecision => _size < ExtraHiddenBits;
 
@@ -213,19 +214,15 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         int exp = (int)((bits >> 52) & 0x7ffL);
 
         if (exp == 2047)  // 2047 represents inf or NAN
-        {
-            //if (double.IsNaN(value))
-            //{
-            //    DataBits = 0;
-            //    Scale = scale;
-            //    _size = 0;
-            //    return;
-            //}
-            //if (double.IsInfinity(value))
-            //{
-            //    ThrowInitializeException();
-            //}
-            ThrowInitializeException(); // mantissa==0 is Inf else NAN
+        { //special values
+            if (double.IsNaN(value))
+            {
+                ThrowInvalidInitializationException("Value is infinity or NaN");
+            }
+            else if (double.IsInfinity(value))
+            {
+                ThrowInvalidInitializationException("Value is infinity or NaN");
+            }
         }
         else if (exp != 0)
         {
@@ -275,18 +272,14 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         {
             if (exp == 255)
             { //special values
-              //if (float.IsNaN(value))
-              //{
-              //    DataBits = 0;
-              //    Scale = scale;
-              //    _size = 0;
-              //    return;
-              //}
-              //if (float.IsInfinity(value))
-              //{
-              //    ThrowInitializeException();
-              //}
-                ThrowInitializeException(); // mantissa==0 is Inf else NAN
+                if (float.IsNaN(value))
+                {
+                    ThrowInvalidInitializationException("Value is infinity or NaN");
+                }
+                else if (float.IsInfinity(value))
+                {
+                    ThrowInvalidInitializationException("Value is infinity or NaN");
+                }
             }
             // Add leading 1 bit
             mantissa |= 0x800000;
@@ -319,9 +312,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     [DoesNotReturn]
-    private static void ThrowInitializeException()
+    private static void ThrowInvalidInitializationException(string reason)
     {
-        throw new OverflowException("Value was too large for a BigFloat.");
+        throw new OverflowException($"Invalid BigFloat initialization: {reason}");
     }
     ///////////////////////// [END] INIT / CONVERSION  FUNCTIONS [END] /////////////////////////
 
@@ -695,11 +688,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return newSize - (int)BigInteger.Log2(BigInteger.Abs(temp)) - 1;
     }
 
-    //////////////////////////////////////////////////////////////////
-    /////////////////////// Operator Overloads ///////////////////////
-    //////////////////////////////////////////////////////////////////
 
-    /////////// Operator Overloads: BigFloat <--> BigFloat ///////////
+    ///////////////////////// Operator Overloads: BigFloat <--> BigFloat /////////////////////////
+
 
     /// <summary>Returns true if the left side BigFloat is equal to the right side BigFloat.</summary>
     public static bool operator ==(BigFloat left, BigFloat right)
@@ -730,7 +721,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return left.CompareTo(right) >= 0;
     }
 
-    /////////// Operator Overloads: BigFloat <--> BigInteger ///////////
+    ///////////////////////// Operator Overloads: BigFloat <--> BigInteger /////////////////////////
 
     /// <summary>Returns true if the left side BigFloat is equal to the right side BigInteger.  If the BigFloat is not an integer then always returns false.</summary>
     public static bool operator ==(BigFloat left, BigInteger right)
@@ -756,7 +747,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return !(left == right);
     }
 
-    /////////// Operator Overloads: BigFloat <--> ulong/long ///////////
+    ///////////////////////// Operator Overloads: BigFloat <--> ulong/long /////////////////////////
 
     /// <summary>Returns true if the left side BigFloat is equal to the right side unsigned long.</summary>
     public static bool operator ==(BigFloat left, ulong right)
@@ -942,9 +933,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     //public static BigFloat operator ^(BigFloat left, BigInteger right);
 
     /// <summary>
-    /// Left shift - Increases the size by adding least-signification zero bits. 
+    /// Left shift - Increases the size by adding least-significant zero bits. 
     /// i.e. The precision is enhanced. 
-    /// No rounding is preformed.
+    /// No rounding is performed.
     /// </summary>
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift left.</param>
@@ -955,9 +946,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     /// <summary>
-    /// Right shift - Decreases the size by removing the least-signification bits. 
+    /// Right shift - Decreases the size by removing the least-significant bits. 
     /// i.e. The precision is reduced. 
-    /// No rounding is preformed. Scale is unaffected. 
+    /// No rounding is performed. Scale is unaffected. 
     /// </summary>
     /// <param name="x">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift right.</param>
@@ -1082,9 +1073,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////// Rounding, Shifting, Truncate ////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
+    
     /*                                         : BI | RoundTo| Scales  |Can Round  | Shift     |
      *                                         | or | nearest| or Sets | up to     | or        |
     Public                                     | BF | int    | Size    |larger Size| Size by   |             notes
@@ -1441,7 +1432,7 @@ Other:                                         |   |         |         |       |
     }
 
 
-    /////////////////////////// Explicit CASTS ///////////////////////////
+    ///////////////////////// Explicit CASTS /////////////////////////
 
     /// <summary>Defines an explicit conversion of a System.Decimal object to a BigFloat. </summary>
     //public static explicit operator BigFloat(decimal input) => new BigFloat(input);
@@ -1602,7 +1593,6 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
-
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     public static explicit operator int(BigFloat value)
     {
@@ -1624,7 +1614,7 @@ Other:                                         |   |         |         |       |
         return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
 
-    /////////////////////////////////// COMPARE FUNCTIONS ////////////////////////////////////////////////////////
+    ///////////////////////// COMPARE FUNCTIONS /////////////////////////
 
     /// <summary>Returns an input that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)

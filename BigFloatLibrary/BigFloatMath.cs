@@ -18,11 +18,11 @@ public readonly partial struct BigFloat
     /// Calculates the square root of a big floating point number.
     /// </summary>
     /// <param name="x">The input.</param>
-    /// <param name="wantedPrecision">(Optional)The number of in-precision bits to return.</param>
-    /// <returns>Returns the Sqrt of x as a BigFloat.</returns>
+    /// <param name="wantedPrecision">(Optional) The number of in-precision bits to return.</param>
+    /// <returns>Returns the square root of x as a BigFloat.</returns>
     public static BigFloat Sqrt(BigFloat x0, int wantedPrecision = 0)
     {
-        BigFloat x = x0;// new BigFloat(x0.Int*8, x0._scale-3);
+        BigFloat x = x0; // new BigFloat(x0.Int*8, x0._scale-3);
         if (wantedPrecision == 0)
         {
             wantedPrecision = x._size - ExtraHiddenBits;
@@ -55,9 +55,9 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Calculates the a BigFloat as the base and an integer as the exponent. The integer part is treated as exact.
+    /// Calculates a BigFloat as the base and an integer as the exponent. The integer part is treated as exact.
     /// </summary>
-    /// <param name="value">The base of the exponent. </param>
+    /// <param name="value">The base of the exponent.</param>
     /// <param name="exponent">The number of times value should be multiplied.</param>
     /// <param name="outPrecisionMatchesInput">When true, output precision is matched to input precision. When false, precision uses exponent rules based on "value^exp ± exp*error^(n-1)".</param>
     public static BigFloat Pow(BigFloat value, int exponent, bool outPrecisionMatchesInput = false)
@@ -76,7 +76,7 @@ public readonly partial struct BigFloat
             };
         }
 
-        // Used a Genetic Algorithm in Excel to figure out the formula's below (2 options)
+        // Used a Genetic Algorithm in Excel to figure out the formulas below (2 options)
         int expectedFinalPrecision = value._size;
         if (outPrecisionMatchesInput)
         {
@@ -86,7 +86,7 @@ public readonly partial struct BigFloat
         // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
         if (expectedFinalPrecision < 53)
         {
-            // Lets first make sure we would have some precision remaining after our exponent operation.
+            // Let's first make sure we would have some precision remaining after our exponent operation.
             if (expectedFinalPrecision <= 0)
             {
                 return Zero; // technically more of a "NA".
@@ -104,7 +104,7 @@ public readonly partial struct BigFloat
             //if (!finalResultsScaleFitsInDouble)
             //    valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
 
-            // perform opp  
+            // perform operation  
             double res = double.Pow(valAsDouble, exponent);
             BigFloat tmp = (BigFloat)res;
             value = SetPrecision(tmp, expectedFinalPrecision - ExtraHiddenBits);
@@ -174,7 +174,7 @@ public readonly partial struct BigFloat
         //int rootSize = BitOperations.Log2((uint)root);
         //int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
 
-        ////////// Lets remove value's scale (and just leave the last bit so scale is 0 or 1) ////////
+        ////////// Let's remove value's scale (and just leave the last bit so scale is 0 or 1) ////////
         int removedScale = value.Scale & ~1;
         int newScale = value.Scale - removedScale;
 
@@ -218,7 +218,7 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Zero and negative values is undefined and will return double.NaN.
+    /// Sign is ignored. Zero and negative values are undefined and will return double.NaN.
     /// </summary>
     /// <param name="n">The BigFloat input argument.</param>
     /// <returns>Returns the Log2 of the value (or exponent) as a double. If Zero or less then returns Not-a-Number.</returns>
@@ -240,12 +240,12 @@ public readonly partial struct BigFloat
 
     //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
     /// <summary>
-    /// Returns the Log2 of a BigFloat number as a integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Negative values will return the same value as there positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
-    /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often use to indicated size in bits so returning 0 with Log2(0) is in-line with this.
+    /// Returns the Log2 of a BigFloat number as an integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
+    /// Sign is ignored. Negative values will return the same value as their positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
+    /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often used to indicate size in bits so returning 0 with Log2(0) is in-line with this.
     /// </summary>
     /// <param name="n">The BigFloat input argument.</param>
-    /// <returns>Returns the Log2 of the value (or exponent) as a Int.</returns>
+    /// <returns>Returns the Log2 of the value (or exponent) as an integer.</returns>
     public static int Log2Int(BigFloat n)
     {
         return n.BinaryExponent;

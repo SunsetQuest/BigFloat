@@ -15,14 +15,14 @@ namespace BigFloatLibrary;
 
 /*
 How to use:
-  int maxLenSupported = BigConstants.GetMaxLen(name:"Pi");
-  bool success = BigConstants.Get(name:"Pi", bitSize:maxLenSupported, out BigFloat myPi);
+  int maxLenSupported = BigConstants.GetMaxLen(name: "Pi");
+  bool success = BigConstants.Get(name: "Pi", bitSize: maxLenSupported, out BigFloat myPi);
     ~ or ~
   int maxLenSupported = BigConstants.GetMaxLen(BigConstantsEnum.Pi);
-  bool success = BigConstants.Get(BigConstantsEnum.Pi, bitSize:maxLenSupported, out BigFloat myPi);
+  bool success = BigConstants.Get(BigConstantsEnum.Pi, bitSize: maxLenSupported, out BigFloat myPi);
     ~ or ~
   int maxLenSupported = BigConstants.GetMaxLen(1000);
-  bool success = BigConstants.Get(id:1000, bitSize:maxLenSupported, out BigFloat myPi);  // where "1000" would always be "Pi" 
+  bool success = BigConstants.Get(id: 1000, bitSize: maxLenSupported, out BigFloat myPi);  // where "1000" would always be "Pi" 
 
 Popular Constants skipped:
     Excluded 0.61803 since 1.61803 is off by just one bit.
@@ -30,7 +30,7 @@ Popular Constants skipped:
     Excluded 1.5707963267948966 and 2.0707963267948966 since 3.14159 is off by just two bits and a shift.
 
 Future:
-    maybe use base-64 strings since they result in smaller source code i.e. 6.4x smaller. Also, no base10 to base2 conversion needed.
+    Maybe use base-64 strings since they result in smaller source code, i.e., 6.4x smaller. Also, no base10 to base2 conversion needed.
 */
 
 public readonly partial struct BigFloat
@@ -39,8 +39,8 @@ public readonly partial struct BigFloat
     /// Popular math constants.
     /// </summary>
     /// <param name="requestedAccuracyInBits">The target number of bits that should be loaded into memory.</param>
-    /// <param name="cutOnTrailingZero">If true, the result will stop on or after <paramref name="requestedAccuracyInBits"/> the first bit that has a zero bit following it. If false, the returned length will be a stop at exactly <paramref name="requestedAccuracyInBits"/>.></param>
-    /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <paramref name="requestedAccuracyInBits"/>,</param>
+    /// <param name="cutOnTrailingZero">If true, the result will stop on or after <paramref name="requestedAccuracyInBits"/> the first bit that has a zero bit following it. If false, the returned length will stop at exactly <paramref name="requestedAccuracyInBits"/>.</param>
+    /// <param name="onInsufficientBitsThenSetToZero">If true, it will return zero for numbers that don't have enough bits available. If false, it will return as many bits that are available even if it does not meet <paramref name="requestedAccuracyInBits"/>.</param>
     public class BigConstants(int requestedAccuracyInBits = 2000, bool cutOnTrailingZero = true, bool onInsufficientBitsThenSetToZero = true)
     {
         private readonly int requestedAccuracyInBits = requestedAccuracyInBits;

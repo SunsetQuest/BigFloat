@@ -12,32 +12,28 @@ namespace BigFloatLibrary;
 public readonly partial struct BigFloat
 {
     /// <summary>
-    /// The number of data bits. ExtraHiddenBits are included.  
+    /// The number of data bits. ExtraHiddenBits are included.
     /// </summary>
     public readonly int SizeWithHiddenBits => _size;
 
-
     /// <summary>
-    /// Returns true if the value is beyond exactly zero. A data bits and ExtraHiddenBits are zero.
+    /// Returns true if the value is exactly zero. All data bits and ExtraHiddenBits are zero.
     /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
     /// </summary>
     public bool IsStrictZero => DataBits.IsZero;
 
-
     /// <summary>
-    /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits(HiddenBits) that are deemed precise. 
+    /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits (HiddenBits) that are deemed precise.
     /// </summary>
     public int Precision => _size - ExtraHiddenBits;
 
-
     /// <summary>
-    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places(in binary) to the right of the radix point.
+    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places (in binary) to the right of the radix point.
     /// </summary>
     public int Accuracy => -Scale;
 
-
     /// <summary>
-    /// Returns a Zero with a given lower bound of precision. Example: -4 would result of 0.0000(in binary). ExtraHiddenBits will be added.
+    /// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). ExtraHiddenBits will be added.
     /// </summary>
     /// <param name="pointOfLeastPrecision">The precision can be positive or negative.</param>
     public static BigFloat ZeroWithSpecifiedLeastPrecision(int pointOfLeastPrecision)
@@ -73,8 +69,7 @@ public readonly partial struct BigFloat
 
     public static BigFloat NegativeOne => new(BigInteger.MinusOne << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
 
-
-    /////////////////////////    CONVERSION  FUNCTIONS     /////////////////////////
+    /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
     public BigFloat(uint value, int scale = 0)
     {
@@ -89,7 +84,7 @@ public readonly partial struct BigFloat
         DataBits = (BigInteger)integerPart << ExtraHiddenBits;
         Scale = binaryScaler;
 
-        // Special handing required for int.MinValue
+        // Special handling required for int.MinValue
         _size = integerPart >= 0
             ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits
             : integerPart != char.MinValue
@@ -131,7 +126,7 @@ public readonly partial struct BigFloat
         AssertValid();
 
         int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
-        // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
+        // we need Abs() so items that are a negative power of 2 have the same size as the positive version.
         _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
         DataBits = integerPart << applyHiddenBits;
         Scale = binaryScaler; // DataBits of zero can have scale
@@ -140,7 +135,7 @@ public readonly partial struct BigFloat
 
     /////////////////////////// Implicit CASTS ///////////////////////////
 
-    /// <summary>Defines an implicit conversion of a 8-bit signed integer to a BigFloat.</summary>
+    /// <summary>Defines an implicit conversion of an 8-bit signed integer to a BigFloat.</summary>
     public static implicit operator BigFloat(sbyte value)
     {
         return new BigFloat(value);
@@ -201,5 +196,4 @@ public readonly partial struct BigFloat
     {
         return new BigFloat(value);
     }
-
 }

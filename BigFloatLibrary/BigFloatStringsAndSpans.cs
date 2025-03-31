@@ -14,7 +14,7 @@ namespace BigFloatLibrary;
 #nullable enable
 
 [DebuggerDisplay("{DebuggerDisplay}")]
-public readonly partial struct BigFloat
+public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 {
     // see "BigFloatToStringNotes.txt" and "BigFloatTryParseNotes.txt" for additional notes
     //   string ToString() - calls ToStringDecimal()
