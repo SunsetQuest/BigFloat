@@ -587,7 +587,7 @@ public readonly partial struct BigFloat
     /// <param name="binaryInput">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <param name="includesHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits.</param>
+    /// <param name="includesHiddenBits">(optional)The number of sub-precision hidden bits that are included.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
     public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
@@ -609,9 +609,9 @@ public readonly partial struct BigFloat
     /// <param name="result">(out) The BigFloat result.</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <param name="overrideHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits. If the precision separator '|' is also used, this takes precedence.</param>
+    /// <param name="includesHiddenBits">(optional)The number of sub-precision hidden bits that are included. However, if the precision separator '|' is also used, this takes precedence.</param>
     /// <returns>Returns false if it fails or is given an empty or null string.</returns>
-    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int overrideHiddenBits = -1)
+    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
     {
         int inputLen = input.Length;
 
@@ -695,10 +695,10 @@ public readonly partial struct BigFloat
         if (accuracyDelimiterPosition >= 0)
         {
             // includedHiddenBits is specified?  if so, they must match!
-            if (overrideHiddenBits >= 0)
+            if (includesHiddenBits >= 0)
             {
                 // make sure they match and fail if they do not.
-                if (accuracyDelimiterPosition != overrideHiddenBits)
+                if (accuracyDelimiterPosition != includesHiddenBits)
                 {
                     result = new BigFloat(0);
                     return false;
@@ -706,16 +706,16 @@ public readonly partial struct BigFloat
             }
             else // includedHiddenBits NOT specified 
             {
-                overrideHiddenBits = accuracyDelimiterPosition;
+                includesHiddenBits = accuracyDelimiterPosition;
             }
         }
         //else if (includedHiddenBits >= 0) { } // if no precision spacer (| or :) AND but includedHiddenBits was specified
         //else { } //nether specified.
 
         // Lets add the missing zero hidden bits
-        if (overrideHiddenBits >= 0)
+        if (includesHiddenBits >= 0)
         {
-            int zerosNeededStill = ExtraHiddenBits - overrideHiddenBits;
+            int zerosNeededStill = ExtraHiddenBits - includesHiddenBits;
             //outputBitPosition += zerosNeededStill;
             if (!radixPointFound)
             {
@@ -724,7 +724,7 @@ public readonly partial struct BigFloat
         }
         else
         {
-            overrideHiddenBits = 0;
+            includesHiddenBits = 0;
         }
 
         //// The 'accuracyDelimiterPosition', specified by '|', is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
@@ -769,7 +769,7 @@ public readonly partial struct BigFloat
 
         BigInteger bi = new(bytes, !isNeg);
 
-        result = new BigFloat(bi << (ExtraHiddenBits - overrideHiddenBits), radixPointFound ? binaryScaler + overrideHiddenBits : orgScale, true);
+        result = new BigFloat(bi << (ExtraHiddenBits - includesHiddenBits), radixPointFound ? binaryScaler + includesHiddenBits : orgScale, true);
 
         result.AssertValid();
 

@@ -102,14 +102,14 @@ public class BigFloatTests
     public void Verify_BitwiseComplementOperator()
     {
         BigFloat a = BigFloat.ParseBinary("10.111");
-        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", BigFloat.ExtraHiddenBits);
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includesHiddenBits:BigFloat.ExtraHiddenBits);
         AreEqual(expectedAns, ~a);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
-        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, BigFloat.ExtraHiddenBits);
+        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, includesHiddenBits: BigFloat.ExtraHiddenBits);
         AreEqual(expectedAns, ~a);
 
-        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, BigFloat.ExtraHiddenBits);
+        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, includesHiddenBits: BigFloat.ExtraHiddenBits);
         _ = BigFloat.TryParseBinary("  110110110", out expectedAns);
         AreEqual(expectedAns, ~a);
 
