@@ -190,7 +190,7 @@ public readonly partial struct BigFloat
                         return false;
                     }
                     break;
-                case ':' or '|':
+                case '|':
                     if (accuracyDelimiterPosition >= 0 || expLocation > 0)
                     {   // accuracy delimiter already found earlier OR following 'e'
                         result = 0;
@@ -297,7 +297,7 @@ public readonly partial struct BigFloat
             return false;
         }
 
-        // The 'accuracyDelimiterPosition', specified by '|' (or ':') is:
+        // The 'accuracyDelimiterPosition', specified by '|' is:
         // (1) in base-10 needs to be converted to base-2
         // (2) currently it's measured from the MSB but should measure from LSB
         int hiddenBitsFound = (accuracyDelimiterPosition < 0) ? 0
@@ -385,7 +385,7 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Parses a hex string to a BigFloat. It supports a binaryScaler (base-2 point shifting) and negative numbers. 
-    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, '|'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
     /// Allowed: 
     ///  * ABCD/abcd    both uppercase/lowercases are supported
@@ -446,7 +446,7 @@ public readonly partial struct BigFloat
                     }
                     radixLocation = destinationLocation;
                     break;
-                case ':' or '|':
+                case '|':
                     if (accuracyDelimiterPosition >= 0 || expLocation > 0)
                     {   // accuracy delimiter already found earlier OR following 'e'
                         result = 0;
@@ -580,7 +580,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Converts the binary number in a string to a BigFloat. 
     /// Negative values must have a leading '-'.
-    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, '|'. For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// e.g, '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// If it fails, an exception is thrown.
     /// </summary>
@@ -602,14 +602,14 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Converts the binary text in ReadOnlySpan<char> to a BigFloat. 
     /// Negative values must have a leading '-'.
-    /// Supports the precision separator, ':'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
+    /// Supports the precision separator, '|'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in hidden bits.
     /// e.g. '-11111100.101' would set the BigFloat to that rawValue, -252.625.
     /// </summary>
     /// <param name="input">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="result">(out) The BigFloat result.</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <param name="overrideHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits. If the precision separator ':' is also used, this takes precedence.</param>
+    /// <param name="overrideHiddenBits">(optional)The number of bits that should be included in the sub-precision hidden-bits. If the precision separator '|' is also used, this takes precedence.</param>
     /// <returns>Returns false if it fails or is given an empty or null string.</returns>
     public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int overrideHiddenBits = -1)
     {
@@ -670,7 +670,7 @@ public readonly partial struct BigFloat
                     break;
                 case ',' or '_' or ' ': // allow commas, underscores, and spaces (e.g.  1111_1111_0000) (optional - remove for better performance)
                     break;
-                case ':' or '|':
+                case '|':
                     if (accuracyDelimiterPosition >= 0)
                     {
                         // multiple precision spacers found (| or :)
@@ -691,7 +691,7 @@ public readonly partial struct BigFloat
             return false; // Function was not successful - duplicate '.'
         }
 
-        // if the user specified a precision spacer ':' (or '|') 
+        // if the user specified a precision spacer '|'
         if (accuracyDelimiterPosition >= 0)
         {
             // includedHiddenBits is specified?  if so, they must match!
@@ -727,7 +727,7 @@ public readonly partial struct BigFloat
             overrideHiddenBits = 0;
         }
 
-        //// The 'accuracyDelimiterPosition', specified by the ':' char is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
+        //// The 'accuracyDelimiterPosition', specified by '|', is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
         //int hiddenBitsFound;
         //if (accuracyDelimiterPosition >= 0)
         //{

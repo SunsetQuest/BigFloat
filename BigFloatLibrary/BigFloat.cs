@@ -237,7 +237,7 @@ public readonly partial struct BigFloat
         }
         else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
         {
-            // 0:00000000000:00...0001 -> smallest value (Epsilon)  Int:1, Scale: Size:1
+            // 0.00000000000|00...0001 -> smallest value (Epsilon)  Int:1, Scale: Size:1
             // ...
 
             if (mantissa == 0)
@@ -513,7 +513,7 @@ public readonly partial struct BigFloat
         //   - the two numbers can be one tick apart in the hidden bits but considered not equal.
         //   - the two numbers can be very near 1 apart but considered not equal..
         // The advantage to this method are...
-        //   - we don't get odd results like 2+3=4.  1:1000000 + 10:1000000 = 100:0000000
+        //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
         //   - may have slightly better performance.
         // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
         // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);

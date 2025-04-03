@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="images\" />
   </ItemGroup>
 
 </Project>
