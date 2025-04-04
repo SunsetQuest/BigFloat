@@ -412,7 +412,6 @@ public readonly partial struct BigFloat
             return false;
         }
 
-
         bool usedCommaAlready = false;
         bool usedSpaceAlready = false;
         int radixLocation = 0;
@@ -472,7 +471,6 @@ public readonly partial struct BigFloat
                     }
                     usedCommaAlready = true;
                     break;
-
                 case '{':
                     if (BraceTypeAndStatus != 0)
                     {
@@ -482,7 +480,6 @@ public readonly partial struct BigFloat
                     }
                     BraceTypeAndStatus = 1;
                     break;
-
                 case '}':
                     if (BraceTypeAndStatus != 1)
                     {
@@ -501,7 +498,6 @@ public readonly partial struct BigFloat
                     }
                     BraceTypeAndStatus = 3;
                     break;
-
                 case ')':
                     if (BraceTypeAndStatus != 3)
                     {
@@ -552,6 +548,11 @@ public readonly partial struct BigFloat
             result = 0;
             return false;
         }
+
+        // Remove trailing '\0' 
+        int spanEnd = cleaned.Length - 1;
+        for (; cleaned[spanEnd] == '\0'; spanEnd--);
+        cleaned = cleaned.Slice(0, spanEnd+1);
 
         // radixLocation is the distance from the MSB, it should be from the LSB. (or leave at 0 if radix point not found)
         if (radixLocation > 0)
