@@ -1,18 +1,17 @@
 # A BigFloat Library in C#
 
-BigFloat is a C# struct/class library for large Floating-Point numbers
-Ryan Scott White - Updated: 27 Feb 2024 - [MIT](http://www.opensource.org/licenses/mit-license.php "The MIT License") License 
+**BigFloat is a C# struct/class library for large Floating-Point numbers**  
+Ryan Scott White / [MIT](http://www.opensource.org/licenses/mit-license.php "The MIT License") License  
+Updated: April 4th 2025 
 
-Originally posted on CodeProject
-![](https://www.codeproject.com/App_Themes/CodeProject/Img/views32.png) 12.3K views - ![](https://www.codeproject.com/App_Themes/CodeProject/Img/download32.png) 183  downloads
+**Originally posted on CodeProject**:  
+![](https://github.com/user-attachments/assets/7a294b14-e2ba-4811-8ec0-055b6c019975) 12.3K views, 
+![](https://github.com/user-attachments/assets/51e51263-3f36-4f11-9b52-b1633ebe2653) 183  downloads
 
-BigFloat is a C# struct/class library for large Floating-Point numbers
-
+**Quick Summary**: 
 BigFloat is both a C# struct data type along with a library of functions. It offers an innovative solution for handling large floating-point numbers, that extend beyond the precision limitations of standard the standard IEEE floating-point. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for high-precision applications. Available here on GitHub, BigFloat easily integrates into C# projects, providing a tool for developers needing advanced numerical computation capabilities.
 
--   [Download BigFloatProjectFiles](https://www.codeproject.com/KB/Articles/5375327/BigFloat_Project_Files_2024_02_24.zip)
--   [GitHub Repo](https://github.com/SunsetQuest/BigFloat)
--   [Just Show Me the Code](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs)
+**Links to Code**:  [GitHub Repo](https://github.com/SunsetQuest/BigFloat), [Just Show Me the Code](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs)
 
 ***Note**: This article was co-created with ChatGPT and Grammarly - details [here](https://www.codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp#ArticleCreationProcess).*
 
@@ -36,7 +35,7 @@ BigFloat, while similar to IEEE standards in structure, introduces notable diffe
 -   **Scale** *(of type `int`)*: Scale dictates the position of the radix point, allowing for scalable precision. A positive value would move the radix point right, increasing the number size; a negative value would move the radix point left, creating a fractional part. A zero value would essentially represent an integer.
 -   **Size** *(of type `int`)*: A cached value representing the size of `DataBit`s. It is added for optimizing frequent access. '`_size`' is equivalent to the function '`int _size = > ABS(dataBits).GetBitSize();`'
 
-![Image 2](https://www.codeproject.com/KB/Articles/5375327/BigFloatParts.png)
+![BigFloatParts](https://github.com/user-attachments/assets/e4ff65f2-5d0b-49ee-8fa5-7f1c48737f01)
 
 ## Using the Code
 
