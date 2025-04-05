@@ -2,11 +2,12 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
 	<metadata>
 		<id>BigFloatLibrary</id>
-		<version>1.0.0</version>
+		<version>1.0.1</version>
 		<authors>Ryan Scott White</authors>
 		<owners>Ryan Scott White</owners>
 		<license type="expression">MIT</license>
 		<projectUrl>https://github.com/SunsetQuest/BigFloat</projectUrl>
+		<repository type="git" url="https://github.com/SunsetQuest/BigFloat.git" />
 		<icon>images/icon.png</icon>
 		<readme>README.md</readme>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -15,11 +16,14 @@
 		<tags>bigfloat mathematics numeric arbitrary-precision floating-point</tags>
 		<dependencies>
 			<group targetFramework="net9.0" />
+			<group targetFramework="net8.0" />
 		</dependencies>
 	</metadata>
 	<files>
 		<file src="bin\Release\net9.0\publish\BigFloatLibrary.dll" target="lib\net9.0" />
 		<file src="bin\Release\net9.0\publish\BigFloatLibrary.pdb" target="lib\net9.0" />
+		<file src="bin\Release\net8.0\publish\BigFloatLibrary.dll" target="lib\net8.0" />
+		<file src="bin\Release\net8.0\publish\BigFloatLibrary.pdb" target="lib\net8.0" />
 		<file src="..\README.md" target="" />
 		<file src="images\icon.png" target="images\" />
 	</files>
