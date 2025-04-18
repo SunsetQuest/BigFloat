@@ -2,7 +2,7 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT was used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
 using System;
 using System.Globalization;
@@ -552,7 +552,7 @@ public readonly partial struct BigFloat
         // Remove trailing '\0' 
         int spanEnd = cleaned.Length - 1;
         for (; cleaned[spanEnd] == '\0'; spanEnd--);
-        cleaned = cleaned.Slice(0, spanEnd+1);
+        cleaned = cleaned[..(spanEnd + 1)];
 
         // radixLocation is the distance from the MSB, it should be from the LSB. (or leave at 0 if radix point not found)
         if (radixLocation > 0)
@@ -588,14 +588,14 @@ public readonly partial struct BigFloat
     /// <param name="binaryInput">The binary string input. It should be only [0,1,-,.]</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <param name="includesHiddenBits">(optional)The number of sub-precision hidden bits that are included.</param>
+    /// <param name="includedHiddenBits">(optional)The number of sub-precision hidden bits that are included.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
-    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
+    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedHiddenBits = -1)
     {
         ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
 
-        return !TryParseBinary(binaryInput.AsSpan(), out BigFloat result, binaryScaler, forceSign, includesHiddenBits)
+        return !TryParseBinary(binaryInput.AsSpan(), out BigFloat result, binaryScaler, forceSign, includedHiddenBits)
             ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", binaryInput)
             : result;
     }

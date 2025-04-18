@@ -2,9 +2,10 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT was used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
 
@@ -130,12 +131,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary> 
-    /// Compares two values(including the hidden precision bits) and returns: 
-    ///   Returns -1 when this instance is less than <paramref name="other"/>
-    ///   Returns  0 when this instance is equal to <paramref name="other"/>
-    ///   Returns +1 when this instance is greater than <paramref name="other"/>
-    /// An Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
-    /// This Function is faster then the CompareTo() as no rounding needs to take place.
+    /// Compares two values, including the out-of-precision hidden bits, and returns:
+    ///   -1 when this instance is less than <paramref name="other"/>
+    ///    0 when this instance is equal to <paramref name="other"/>
+    ///   +1 when this instance is greater than <paramref name="other"/>
+    /// Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
+    /// CompareTo() is more often used as it is used to compare the in-precision digits.
+    /// This Function is faster then the CompareTo() as no rounding takes place.
     /// </summary>
     public int CompareToExact(BigFloat other)
     {
@@ -158,7 +160,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (thisPos == 0 /*&& otherPos == 0*/) { return 0; }
 
         //Note: CompareTo would be the opposite for negative numbers
-
+        
         // A fast general size check. (aka. Exponent vs Exponent)
         if ((Scale + _size) != (other.Scale + other._size))
         {
