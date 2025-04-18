@@ -2,7 +2,7 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT was used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
 using System;
 using System.Diagnostics;
@@ -20,17 +20,34 @@ namespace PlaygroundAndShowCase;
 
 public static class Showcase
 {
-    //////////////  BigConstants Play Area & Examples //////////////
+    //////////////  Big Constants Play Area & Examples //////////////
     public static void Main()
     {
         //////////////////// TEST AREA ////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
+
+        //BigFloat pi = Constants.test;
+        // Default constants with standard precision
+
+        //var Pi = BigFloat.Constants.Fundamental.Pi;
+
+        //// Constants with custom precision
+        //var customPi = BigFloat.Constants.WithConfig(precisionInBits: 4096).Pi;
+
+        //// Direct access by name
+        //var omega = BigFloat.Constants.Get("Omega");
+
+        //// Get all constants at once with configured precision
+        //var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 1000).GetAll();
+
+
+
         // NewtonNthRootPerformance(); return;
         // InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
         // NthRoot_DRAFT_Stuff(); return;
-        // BigConstant_Stuff();
-        // BigConstant_Stuff2();
+        // Constant_Stuff();
+        // Constant_Stuff2();
         // Pow_Stuff();
         // PowMostSignificantBits_Stuff();
         // Pow_Stuff3();
@@ -73,13 +90,10 @@ public static class Showcase
 
 
         //////////////////// Working with Mathematical Constants: ////////////////////
-        // Access constants like Pi or E from BigConstants
-        BigConstants bigConstants = new(
-            requestedAccuracyInBits: 1000,
-            onInsufficientBitsThenSetToZero: true,
-            cutOnTrailingZero: true);
-        BigFloat pi = bigConstants.Pi;
-        BigFloat e = bigConstants.E;
+        // Access constants like Pi or E from Constants
+        var bigConstants = Constants.WithConfig(precisionInBits: 1000).GetAll();
+        BigFloat pi = bigConstants["Pi"];
+        BigFloat e = bigConstants["E"];
 
         Console.WriteLine($"e to 1000 binary digits: {e.ToString()}");
         // Output:
@@ -821,7 +835,7 @@ public static class Showcase
         for (int i = 400000; i <= 400000; i += 4)
         {
             Stopwatch timer = Stopwatch.StartNew();
-            BigFloat res2 = BigConstants.GeneratePi(i);
+            BigFloat res2 = Constants.GeneratePi(i);
             timer.Stop();
             Console.WriteLine($"{i,4} {res2} {timer.ElapsedTicks}");
         }

@@ -2,7 +2,7 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT was used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
 using System;
 using System.Collections.Generic;
@@ -102,7 +102,7 @@ public class BigFloatTests
     public void Verify_BitwiseComplementOperator()
     {
         BigFloat a = BigFloat.ParseBinary("10.111");
-        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includesHiddenBits:BigFloat.ExtraHiddenBits);
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includedHiddenBits:BigFloat.ExtraHiddenBits);
         AreEqual(expectedAns, ~a);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
@@ -119,7 +119,7 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Verify_BigConstants_Pi()
+    public void Verify_Constants_Pi()
     {
         _ = TestTargetInMillseconds switch
         {
@@ -129,24 +129,24 @@ public class BigFloatTests
             _ => 2000,
         };
         int MAX_INT = 2000;
-        BigFloat.BigConstants bigConstants = new(MAX_INT);
-        BigFloat pi200ref = bigConstants.Pi;
-        BigFloat pi200gen = BigFloat.BigConstants.GeneratePi(MAX_INT);
+        var bigConstants = BigFloat.Constants.WithConfig(precisionInBits: MAX_INT).GetAll();
+        BigFloat pi200ref = bigConstants["Pi"];
+        BigFloat pi200gen = BigFloat.Constants.GeneratePi(MAX_INT);
         AreEqual(pi200ref, pi200gen, $"We got some Pi in our face. The generated pi does not match the literal constant Pi.");
-        AreEqual(pi200ref, BigFloat.BigConstants.GeneratePi(0), $"Issue with BigConstants.GeneratePi(0)   ");
-        AreEqual(pi200ref, BigFloat.BigConstants.GeneratePi(1), $"Issue with BigConstants.GeneratePi(1)   ");
-        AreEqual(pi200ref, BigFloat.BigConstants.GeneratePi(2), $"Issue with BigConstants.GeneratePi(2)   ");
+        AreEqual(pi200ref, BigFloat.Constants.GeneratePi(0), $"Issue with Constants.GeneratePi(0)   ");
+        AreEqual(pi200ref, BigFloat.Constants.GeneratePi(1), $"Issue with Constants.GeneratePi(1)   ");
+        AreEqual(pi200ref, BigFloat.Constants.GeneratePi(2), $"Issue with Constants.GeneratePi(2)   ");
         for (int i = 3; i < MAX_INT; i *= 3)
         {
-            AreEqual(pi200ref, BigFloat.BigConstants.GeneratePi(i), $"Issue with BigConstants.GeneratePi({i})   ");
+            AreEqual(pi200ref, BigFloat.Constants.GeneratePi(i), $"Issue with Constants.GeneratePi({i})   ");
         }
     }
 
     [TestMethod]
-    public void Verify_BigConstants_GenerateArrayOfCommonConstants()
+    public void Verify_Constants_GenerateArrayOfCommonConstants()
     {
-        BigFloat[] bigFloats1000 = BigFloat.BigConstantBuilder.GenerateArrayOfCommonConstants();
-        BigFloat[] bigFloats2000 = BigFloat.BigConstantBuilder.GenerateArrayOfCommonConstants();
+        BigFloat[] bigFloats1000 = BigFloat.ConstantBuilder.GenerateArrayOfCommonConstants();
+        BigFloat[] bigFloats2000 = BigFloat.ConstantBuilder.GenerateArrayOfCommonConstants();
         for (int i = 0; i < bigFloats1000.Length; i++)
         {
             BigFloat bf1000 = bigFloats1000[i];
@@ -156,34 +156,32 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Verify_BigConstants()
+    public void Verify_Constants()
     {
-        BigFloat.BigConstants bigConstants = new(200);
         BigFloat bigFloatTotal =
-            bigConstants.PrimeConstant +
-            bigConstants.NaturalLogarithm +
-            bigConstants.OmegaConstant +
-            bigConstants.EulerMascheroniConstant +
-            bigConstants.LemniscateConstant +
-            bigConstants.TwinPrimeConstant +
-            bigConstants.CatalanConstant +
-            bigConstants.PlasticNumber +
-            bigConstants.PisotsConstant +
-            bigConstants.Sqrt2 +
-            bigConstants.FineStructureConstant +
-            bigConstants.GoldenRatio +
-            bigConstants.TheodorusConstant_Sqrt3 +
-            bigConstants.Sqrt_Pi +
-            bigConstants.KhintchinesConstant +
-            bigConstants.E +
-            bigConstants.Pi;
+            BigFloat.Constants.NumberTheory.Prime +
+            BigFloat.Constants.Derived.NaturalLogOfPhi +
+            BigFloat.Constants.Analysis.Omega +
+            BigFloat.Constants.Fundamental.EulerMascheroni +
+            BigFloat.Constants.NumberTheory.TwinPrime +
+            BigFloat.Constants.Analysis.Catalan +
+            BigFloat.Constants.Misc.Plastic +
+            BigFloat.Constants.Misc.Pisot +
+            BigFloat.Constants.Fundamental.Sqrt2 +
+            BigFloat.Constants.Physics.FineStructure +
+            BigFloat.Constants.Fundamental.GoldenRatio +
+            BigFloat.Constants.Fundamental.Sqrt3 +
+            BigFloat.Constants.Fundamental.SqrtPi +
+            BigFloat.Constants.Analysis.Khintchine +
+            BigFloat.Constants.Fundamental.E +
+            BigFloat.Constants.Fundamental.Pi;
+
 
         double doubleTotal =
             0.414682509851111660248 +
             0.481211825059603447497 +
             0.567143290409783872999 +
             0.577215664901532860606 +
-            0.599070117367796103719 +
             .6601618158468695739278 +
             0.915965594177219015054 +
             1.324717957244746025960 +
@@ -197,9 +195,9 @@ public class BigFloatTests
             Math.E +
             Math.PI;
 
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 2), "Fail on Verify_BigConstants");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 1), "Fail on Verify_BigConstants");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 0), "Fail on Verify_BigConstants");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 2), "Fail on Verify_Constants");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 1), "Fail on Verify_Constants");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(bigFloatTotal, (BigFloat)doubleTotal, 0), "Fail on Verify_Constants");
 
         // double:            23.462879545477389
         // (BigFloat)double:  23.46287954547739, 
@@ -207,7 +205,7 @@ public class BigFloatTests
         // bigFloat(true ans):23.462879545477391625..
 
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
-        AreEqual(bigFloatTotal, (BigFloat)doubleTotal, "Fail on Verify_BigConstants");
+        AreEqual(bigFloatTotal, (BigFloat)doubleTotal, "Fail on Verify_Constants");
         
         double BigFloatZero1 = (double)BigFloat.Zero;
         double BigFloatZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
@@ -215,36 +213,39 @@ public class BigFloatTests
 
         // following does not pass because of limitations of double. A number that is out-of-precision and Zero cannot be differentiated. 
         // double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
-        // IsTrue(doubleDiff0 <= acceptableTolarance, "Fail on Verify_BigConstants");
+        // IsTrue(doubleDiff0 <= acceptableTolarance, "Fail on Verify_Constants");
 
         double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
         double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 8;
 
         // Since we are doing repetitive addition, it is expected that doubleTotal is off by a few bits.
-        IsTrue(doubleDiff1 <= acceptableTolarance, "Fail on Verify_BigConstants");
+        IsTrue(doubleDiff1 <= acceptableTolarance, "Fail on Verify_Constants");
 
-        AreEqual(bigConstants.RamanujanSoldnerConstant, (BigFloat)262537412640768743.99999999999925, "Fail on Verify_BigConstants");
-        AreEqual(262537412640768743.99999999999925, (double)bigConstants.RamanujanSoldnerConstant, "Fail on Verify_BigConstants");
+        AreEqual(BigFloat.Constants.NumberTheory.RamanujanSoldner, (BigFloat)262537412640768743.99999999999925, "Fail on Verify_Constants");
+        AreEqual(262537412640768743.99999999999925, (double)BigFloat.Constants.NumberTheory.RamanujanSoldner, "Fail on Verify_Constants");
 
-        bool success = BigFloat.BigConstantBuilder.Const_0_0307.TryGetAsBigFloat(out BigFloat bf, 100);
+        bool success = BigFloat.ConstantBuilder.Const_0_0307.TryGetAsBigFloat(out BigFloat bf, 100);
+
+        BigFloat ans = BigFloat.ParseBinary("0.0000011111011101100111101100000010101011110101000101011101101100000100100001101000100011010011110010000010011000011101001101011001111101100111100001001110101010011000111100110011100110110111000", includedHiddenBits: 32);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("0.00000111110111011001111011000000101010111101010001010111011011000001001000011010001000110100111100100000100110000111010011010100111111")));
-
-        success = BigFloat.BigConstantBuilder.Const_0_4146.TryGetAsBigFloat(out bf, 200);
+            AreEqual(0, bf.CompareToExact(ans));
+        
+        success = BigFloat.ConstantBuilder.Const_0_4146.TryGetAsBigFloat(out bf, 200);
+        ans = BigFloat.ParseBinary("0.011010100010100010100010000010100000100010100010000010000010100000100010100000100010000010000000100010100010100010000000000000100010000010100000000010100000100000100010000010000010100000000010100010100000000000100000000000100010100010000010", includedHiddenBits: 32);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("0.0110101000101000101000100000101000001000101000100000100000101000001000101000001000100000100000001000101000101000100000000000001000100000101000000000101000001000001000100000100000101000000000101000101000000000001000000000001000100001111")));
+            AreEqual(0, bf.CompareToExact(ans));
 
-        success = BigFloat.BigConstantBuilder.Const_0_5671.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.ConstantBuilder.Const_0_5671.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("0.1001000100110000010011010111110001110100101100101011101001011110101011111101110110101010011000101000011011011100001010001110000101101110100001101110110011101000010101110001101010001000000011001001001111110111000000110101001001100110")));
+            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedHiddenBits: 32)));
 
-        success = BigFloat.BigConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.ConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101011110101")));
+            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedHiddenBits: 32)));
 
-        success = BigFloat.BigConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 200);
+        success = BigFloat.ConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 300);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("10.1010111101111001110010000100011110001101101000011010111011110010111111011111001111100011100101000110011001111111100111000011001110010010111000000010000111100110000110000010100111011101111110100100110110000111000001100011101011111100")));
+            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedHiddenBits: 32)));
     }
 
     [TestMethod]
