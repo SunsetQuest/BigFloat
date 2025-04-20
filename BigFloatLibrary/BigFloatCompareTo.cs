@@ -130,6 +130,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return false;
     }
 
+    //Future: rename CompareToExact to CompareToStrict (then create a CompareToExact that compares the three components exactly)
     /// <summary> 
     /// Compares two values, including the out-of-precision hidden bits, and returns:
     ///   -1 when this instance is less than <paramref name="other"/>

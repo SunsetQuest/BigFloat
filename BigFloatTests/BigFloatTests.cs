@@ -630,6 +630,54 @@ public class BigFloatTests
     }
 
     [TestMethod]
+    public void Verify_LeftShiftMantissa()
+    {
+        BigFloat a = BigFloat.ParseBinary("10000.0");
+        BigFloat expectedAnswer = BigFloat.ParseBinary("100000.0");
+        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("-10000.0");
+        expectedAnswer = BigFloat.ParseBinary("-100000.0");
+        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("100000");
+        expectedAnswer = BigFloat.ParseBinary("1000000");
+        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("0.0000100000");
+        expectedAnswer = BigFloat.ParseBinary("0.000100000");
+        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("-0.0000100000");
+        expectedAnswer = BigFloat.ParseBinary("-0.000100000");
+        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+    }
+
+    [TestMethod]
+    public void Verify_RightShiftMantissa()
+    {
+        BigFloat a = BigFloat.ParseBinary("10000.0");
+        BigFloat expectedAnswer = BigFloat.ParseBinary("1000.0");
+        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("-10000.0");
+        expectedAnswer = BigFloat.ParseBinary("-1000.0");
+        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("100000");
+        expectedAnswer = BigFloat.ParseBinary("10000");
+        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("0.0000100000");
+        expectedAnswer = BigFloat.ParseBinary("0.00000100000");
+        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+
+        a = BigFloat.ParseBinary("-0.0000100000");
+        expectedAnswer = BigFloat.ParseBinary("-0.00000100000");
+        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+    }
+
+    [TestMethod]
     public void Verify_IsOneBitFollowedByZeroBits()
     {
         _ = BigFloat.TryParseBinary("10000.0", out BigFloat result);

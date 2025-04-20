@@ -156,7 +156,8 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Constructs a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="rawValueSize"/> with respect to the ExtraHiddenBits.
     /// </summary>
-    /// <param name="rawValue">The raw integerPart. It should INCLUDE the ExtraHiddenBits.</param>
+    /// <param name="rawValue">The raw mantissa value as a BigInteger. It should INCLUDE the ExtraHiddenBits.</param>
+    /// <param name="binaryScaler">How much should the <paramref name="rawValue"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="rawValueSize">The size of rawValue. </param>
     private BigFloat(BigInteger rawValue, int binaryScaler, int rawValueSize)
     {
@@ -310,6 +311,15 @@ public readonly partial struct BigFloat
 
         AssertValid();
     }
+
+    /// <summary>
+    /// Constructs a BigFloat using the raw elemental components. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="mantissaSize"/> with respect to the ExtraHiddenBits.
+    /// </summary>
+    /// <param name="mantissa">The raw integer part that includes the ExtraHiddenBits.</param>
+    /// <param name="binaryScaler">How much should the <paramref name="mantissa"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
+    /// <param name="mantissaSize">The size of the <paramref name="mantissa"/>.</param>
+    public static BigFloat CreateFromRawComponents(BigInteger mantissa, int binaryScaler, int mantissaSize)
+    => new(mantissa, binaryScaler, mantissaSize);
 
     [DoesNotReturn]
     private static void ThrowInvalidInitializationException(string reason)
@@ -927,35 +937,28 @@ public readonly partial struct BigFloat
         return new(temp, value.Scale, true);
     }
 
-    //future: add logic operations
-    //public static BigFloat operator &(BigFloat left, BigInteger right);
-    //public static BigFloat operator |(BigFloat left, BigInteger right);
-    //public static BigFloat operator ^(BigFloat left, BigInteger right);
-
     /// <summary>
-    /// Left shift - Increases the size by adding least-significant zero bits. 
-    /// i.e. The precision is enhanced. 
-    /// No rounding is performed.
+    /// Left shift - Increases the scale by the amount left shift amount. 
+    /// The precision is unchanged.
     /// </summary>
-    /// <param name="x">The value the shift should be applied to.</param>
+    /// <param name="value">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift left.</param>
     /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
-    public static BigFloat operator <<(BigFloat x, int shift)
+    public static BigFloat operator <<(BigFloat value, int shift)
     {
-        return new(x.DataBits << shift, x.Scale, x._size + shift);
+        return new(value.DataBits, value.Scale + shift, value._size);
     }
 
     /// <summary>
-    /// Right shift - Decreases the size by removing the least-significant bits. 
-    /// i.e. The precision is reduced. 
-    /// No rounding is performed. Scale is unaffected. 
+    /// Right shift - Decreases the scale by the amount right shift amount. 
+    /// The precision is unchanged.
     /// </summary>
-    /// <param name="x">The value the shift should be applied to.</param>
+    /// <param name="value">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift right.</param>
     /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
-    public static BigFloat operator >>(BigFloat x, int shift)
+    public static BigFloat operator >>(BigFloat value, int shift)
     {
-        return new(x.DataBits >> shift, x.Scale, x._size - shift);
+        return new(value.DataBits, value.Scale - shift, value._size);
     }
 
     public static BigFloat operator +(BigFloat r)
@@ -1401,6 +1404,7 @@ Other:                                         |   |         |         |       |
 
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
+        //future: add powerOf2 on dividend to see if we can do a fast shift divide
         // find the size of the smaller input to determine output size
         int outputSize = Math.Min(divisor.Size, dividend.Size);
 
