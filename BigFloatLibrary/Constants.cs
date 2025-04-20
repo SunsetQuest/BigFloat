@@ -730,7 +730,7 @@ public readonly partial struct BigFloat
         /// <param name="cutOnTrailingZero">Whether to cut precision at trailing zeros.</param>
         /// <param name="useExternalFiles">Whether to load from external files.</param>
         /// <returns>The constant with the specified precision.</returns>
-        private static BigFloat GetConstant(
+        public static BigFloat GetConstant(
             string constantId,
             int precisionInBits = DefaultPrecisionBits,
             bool cutOnTrailingZero = DefaultCutOnTrailingZero,

@@ -39,11 +39,11 @@ BigFloat, while similar to IEEE standards in structure, introduces notable diffe
 
 ## Using the Code
 
-Incorporating BigFloat into your project is straightforward. The primary file, '*BigFloat.cs*', contains all necessary functions, while an optional '*BigConstants.cs*' file offers access to extended mathematical constants. Adding these files to your project and optional references is all that's required.
+Incorporating BigFloat into your project is straightforward. The primary file, '*BigFloat.cs*', contains all necessary functions, while an optional '*Constants.cs*' file offers access to extended mathematical constants. Adding these files to your project and optional references is all that's required.
 
 Also, because of some language features that are used, C# 11 / .NET 7 is required.
 
-*BigConstants.cs* provides up to 5000 decimal digits, but some optionally included text files in the *values* folder extend this to 1,000,000 digits.
+*Constants.cs* provides up to 5000 decimal digits, but some optionally included text files in the *values* folder extend this to 1,000,000 digits.
 
 ### Initializing and Basic Arithmetic Examples
 
@@ -76,8 +76,8 @@ Console.WriteLine($"Quotient: {quotient}");
 ### Working with Mathematical Constants
 
 ```cs
-// Access constants like Pi or E from BigConstants
-BigFloat.BigConstants bigConstants = new(
+// Access constants like Pi or E from Constants
+BigFloat.Constants bigConstants = new(
    requestedAccuracyInBits: 1000,
    onInsufficientBitsThenSetToZero: true,
    cutOnTrailingZero: true);
