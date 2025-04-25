@@ -76,7 +76,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return c;
     }
 
-    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
+    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result) //todo: move to BigFloat.cs since CompareTo() uses it
     {
         if (IsOutOfPrecision)
         {
@@ -130,7 +130,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return false;
     }
 
-    //Future: rename CompareToExact to CompareToStrict (then create a CompareToExact that compares the three components exactly)
     /// <summary> 
     /// Compares two values, including the out-of-precision hidden bits, and returns:
     ///   -1 when this instance is less than <paramref name="other"/>
@@ -140,7 +139,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// CompareTo() is more often used as it is used to compare the in-precision digits.
     /// This Function is faster then the CompareTo() as no rounding takes place.
     /// </summary>
-    public int CompareToExact(BigFloat other)
+    public int StrictCompareTo(BigFloat other)
     {
         int thisPos = DataBits.Sign;
         int otherPos = other.DataBits.Sign;
@@ -176,14 +175,87 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         if (_size > other._size)
         {
+            // We must shrink the larger - in this case THIS
+            BigInteger adjustedVal = DataBits >> (_size - other._size);
+            return adjustedVal.CompareTo(other.DataBits) * thisPos;
+        }
+
+        // We must shrink the larger - in this case other
+        BigInteger adjustedOther = other.DataBits >> (other._size - _size);
+        return DataBits.CompareTo(adjustedOther) * thisPos;
+    }
+
+    /// <summary> 
+    /// Compares two BigFloat's to make sure they are essentially the same value. Different precisions are allowed.
+    /// The lower precision number is up-shifted with zero bits to match the higher precision number.
+    /// Returns the following:
+    ///   -1 when this instance is less than <paramref name="other"/>
+    ///    0 when mantissa and scale are both equal.
+    ///   +1 when this instance is greater than <paramref name="other"/>
+    /// Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
+    /// CompareTo() is more often used as it is used to compare the in-precision digits.
+    /// This Function is faster then the CompareTo() as no rounding takes place.
+    /// </summary>
+    public int FullPrecisionCompareTo(BigFloat other)
+    {
+        int thisPos = DataBits.Sign;
+        int otherPos = other.DataBits.Sign;
+
+        // Let's first make sure the signs are the same, if not, the positive input is greater.
+        if (thisPos != otherPos)
+        {
+            //  OTHER-> -1  0  1
+            //       -1| X -1 -1
+            //  THIS: 0| 1  X -1  <-Return
+            //        1| 1  1  X
+            return thisPos == 0 ? -otherPos : thisPos;
+        }
+
+        // At this point the signs are the same. 
+
+        // if both are zero then they are equal
+        if (thisPos == 0 /*&& otherPos == 0*/) { return 0; }
+
+        //Note: CompareTo would be the opposite for negative numbers
+
+        // A fast general size check. (aka. Exponent vs Exponent)
+        if ((Scale + _size) != (other.Scale + other._size))
+        {
+            return (Scale + _size).CompareTo(other.Scale + other._size) * thisPos;
+        }
+
+        // If we made it here we know that both items have the same exponent 
+        if (_size == other._size)
+        {
+            return DataBits.CompareTo(other.DataBits);
+        }
+
+        if (_size < other._size)
+        {
             // We must grow the smaller - in this case THIS
             BigInteger adjustedVal = DataBits << (other._size - _size);
             return adjustedVal.CompareTo(other.DataBits) * thisPos;
         }
 
-        // at this point _size < other._size - we must grow the smaller - in this case OTHER
+        // We must grow the smaller - in this case OTHER
         BigInteger adjustedOther = other.DataBits << (_size - other._size);
         return DataBits.CompareTo(adjustedOther) * thisPos;
+    }
+
+    /// <summary> 
+    /// Returns true if the mantissa and scale are exactly the same.
+    /// The lower precision number is up-shifted with zero bits to match the higher precision number.
+    /// Returns the following:
+    ///   -1 when this instance is less than <paramref name="other"/>
+    ///    0 when mantissa and scale are both equal.
+    ///   +1 when this instance is greater than <paramref name="other"/>
+    /// Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
+    /// CompareTo() is more often used as it is used to compare the in-precision digits.
+    /// This Function is faster then the CompareTo() as no rounding takes place.
+    /// </summary>
+    public bool IsExactMatchOf(BigFloat other)
+    {
+        return (other.DataBits == DataBits && other.Scale == Scale);
     }
 
     /// <summary>  

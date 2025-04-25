@@ -228,24 +228,24 @@ public class BigFloatTests
 
         BigFloat ans = BigFloat.ParseBinary("0.0000011111011101100111101100000010101011110101000101011101101100000100100001101000100011010011110010000010011000011101001101011001111101100111100001001110101010011000111100110011100110110111000", includedHiddenBits: 32);
         if (success)
-            AreEqual(0, bf.CompareToExact(ans));
+            AreEqual(0, bf.StrictCompareTo(ans));
         
         success = BigFloat.ConstantBuilder.Const_0_4146.TryGetAsBigFloat(out bf, 200);
         ans = BigFloat.ParseBinary("0.011010100010100010100010000010100000100010100010000010000010100000100010100000100010000010000000100010100010100010000000000000100010000010100000000010100000100000100010000010000010100000000010100010100000000000100000000000100010100010000010", includedHiddenBits: 32);
         if (success)
-            AreEqual(0, bf.CompareToExact(ans));
+            AreEqual(0, bf.StrictCompareTo(ans));
 
         success = BigFloat.ConstantBuilder.Const_0_5671.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedHiddenBits: 32)));
 
         success = BigFloat.ConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedHiddenBits: 32)));
 
         success = BigFloat.ConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 300);
         if (success)
-            AreEqual(0, bf.CompareToExact(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedHiddenBits: 32)));
     }
 
     [TestMethod]
@@ -585,48 +585,48 @@ public class BigFloatTests
     public void Verify_LeftShift()
     {
         BigFloat a = BigFloat.ParseBinary("10000.0");
-        BigFloat expectedAnswer = BigFloat.ParseBinary("100000.0");
-        AreEqual(0, (a << 1).CompareToExact(expectedAnswer));
+        BigFloat expectedAnswer = BigFloat.ParseBinary("100000.");
+        IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-10000.0");
-        expectedAnswer = BigFloat.ParseBinary("-100000.0");
-        AreEqual(0, (a << 1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("-100000.");
+        IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("100000");
-        expectedAnswer = BigFloat.ParseBinary("1000000");
-        AreEqual(0, (a << 1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("100000",1);
+        IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
-        a = BigFloat.ParseBinary("0.0000100000");
+        a =              BigFloat.ParseBinary("0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("0.000100000");
-        AreEqual(0, (a << 1).CompareToExact(expectedAnswer));
+        IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
-        a = BigFloat.ParseBinary("-0.0000100000");
+        a =              BigFloat.ParseBinary("-0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("-0.000100000");
-        AreEqual(0, (a << 1).CompareToExact(expectedAnswer));
+        IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
     }
 
     [TestMethod]
     public void Verify_RightShift()
     {
         BigFloat a = BigFloat.ParseBinary("10000.0");
-        BigFloat expectedAnswer = BigFloat.ParseBinary("1000.0");
-        AreEqual(0, (a >> 1).CompareToExact(expectedAnswer));
+        BigFloat expectedAnswer = BigFloat.ParseBinary("1000.00");
+        IsTrue((a >> 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-10000.0");
-        expectedAnswer = BigFloat.ParseBinary("-1000.0");
-        AreEqual(0, (a >> 1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("-1000.00");
+        IsTrue((a >> 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("100000");
-        expectedAnswer = BigFloat.ParseBinary("10000");
-        AreEqual(0, (a >> 1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("10000.0");
+        IsTrue((a >> 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("0.00000100000");
-        AreEqual(0, (a >> 1).CompareToExact(expectedAnswer));
+        IsTrue((a >> 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("-0.00000100000");
-        AreEqual(0, (a >> 1).CompareToExact(expectedAnswer));
+        IsTrue((a >> 1).IsExactMatchOf(expectedAnswer));
     }
 
     [TestMethod]
@@ -634,23 +634,23 @@ public class BigFloatTests
     {
         BigFloat a = BigFloat.ParseBinary("10000.0");
         BigFloat expectedAnswer = BigFloat.ParseBinary("100000.0");
-        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-10000.0");
         expectedAnswer = BigFloat.ParseBinary("-100000.0");
-        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("100000");
         expectedAnswer = BigFloat.ParseBinary("1000000");
-        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("0.000100000");
-        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("0.0001000000");
+        IsTrue(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("-0.000100000");
-        AreEqual(0, a.LeftShiftMantissa(1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("-0.0001000000");
+        IsTrue(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
     }
 
     [TestMethod]
@@ -658,23 +658,23 @@ public class BigFloatTests
     {
         BigFloat a = BigFloat.ParseBinary("10000.0");
         BigFloat expectedAnswer = BigFloat.ParseBinary("1000.0");
-        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-10000.0");
         expectedAnswer = BigFloat.ParseBinary("-1000.0");
-        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("100000");
         expectedAnswer = BigFloat.ParseBinary("10000");
-        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+        IsTrue(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("0.00000100000");
-        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("0.0000010000");
+        IsTrue(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("-0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("-0.00000100000");
-        AreEqual(0, a.RightShiftMantissa(1).CompareToExact(expectedAnswer));
+        expectedAnswer = BigFloat.ParseBinary("-0.0000010000");
+        IsTrue(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
     }
 
     [TestMethod]
@@ -800,9 +800,9 @@ public class BigFloatTests
     public void Verify_IntWithAddedPrecision()
     {
         int hb = BigFloat.ExtraHiddenBits;
-        AreEqual(0, BigFloat.OneWithAccuracy(10).CompareToExact(BigFloat.One));
-        AreEqual(0, BigFloat.IntWithAccuracy(1, 10).CompareToExact(BigFloat.One));
-        AreEqual(0, BigFloat.IntWithAccuracy(2, 10).CompareToExact(new BigFloat(2)));
+        AreEqual(0, BigFloat.OneWithAccuracy(10).StrictCompareTo(BigFloat.One));
+        AreEqual(0, BigFloat.IntWithAccuracy(1, 10).StrictCompareTo(BigFloat.One));
+        AreEqual(0, BigFloat.IntWithAccuracy(2, 10).StrictCompareTo(new BigFloat(2)));
 
         BigFloat a = BigFloat.IntWithAccuracy(2, 10);
         AreEqual(a.DataBits, (BigInteger)2 << (hb + 10));
@@ -1916,7 +1916,7 @@ public class BigFloatTests
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.111 / 22.111 = 1 -> Is Integer
-        bf = new BigFloat("22.111") / new BigFloat(22.111);
+        bf = new BigFloat("22.111") / new BigFloat(22.111); 
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.000 / 22.111 -> Is Not Integer
@@ -1935,7 +1935,8 @@ public class BigFloatTests
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.501 * 2 -> Is Integer
-        bf = new BigFloat("22.501") * new BigFloat(2); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
+        bf = new BigFloat("22.501") * new BigFloat(2); 
+        IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
     }
 
     [TestMethod]
@@ -2734,22 +2735,22 @@ public class BigFloatTests
         AreEqual(output, new BigFloat((ulong)32768 << BigFloat.ExtraHiddenBits, 0, true));
 
         IsTrue(BigFloat.TryParseBinary("100000000000000|0.", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
 
         IsTrue(BigFloat.TryParseBinary("100000000000000|0.0", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), 1, true)));
 
         IsTrue(BigFloat.TryParseBinary("10000000000.0000|00", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), -4, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)32768 << (BigFloat.ExtraHiddenBits - 1), -4, true)));
 
         IsTrue(BigFloat.TryParseBinary("1|000000000000000.", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 15, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 15, true)));
 
         IsTrue(BigFloat.TryParseBinary("1.|000000000000000", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
 
         IsTrue(BigFloat.TryParseBinary("1|.000000000000000", out output));
-        AreEqual(0, output.CompareToExact(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
+        AreEqual(0, output.FullPrecisionCompareTo(new BigFloat((ulong)1 << BigFloat.ExtraHiddenBits, 0, true)));
     }
 
     [TestMethod]
@@ -4253,55 +4254,55 @@ public class BigFloatTests
         // Integers
         a = new BigFloat((float)-1);
         b = new BigFloat((float)0);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-10a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-10a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)0);
         b = new BigFloat((float)1);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-20a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-20a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)1);
         b = new BigFloat((float)2);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-30a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-30a on Verify_CompareToExact_On_Single");
 
         // Floats of same size (should be same as VerifyCompareTo)
         a = new BigFloat((float)-0.0000123);
         b = new BigFloat((float)0.0000123);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-40a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-40a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)-0.0000000444);
         b = new BigFloat((float)-0.0000000445);
-        IsTrue(a.CompareToExact(b) > 0, $"Fail-50a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) > 0, $"Fail-50a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)0.0000123);
         b = new BigFloat((float)0.0000122);
-        IsTrue(a.CompareToExact(b) > 0, $"Fail-60a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) > 0, $"Fail-60a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat(float.Parse("0.0000123"));
         b = new BigFloat(float.Parse("0.0000122"));
-        IsTrue(a.CompareToExact(b) > 0, $"Fail-65 on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) > 0, $"Fail-65 on Verify_CompareToExact_On_Single");
 
         // 1.000000001 is beyond the precision of single
         a = new BigFloat((float)100.000000);
         b = new BigFloat((float)100.000001);
-        AreEqual(0, a.CompareToExact(b), $"Fail-80a on Verify_CompareToExact_On_Single");
+        AreEqual(0, a.StrictCompareTo(b), $"Fail-80a on Verify_CompareToExact_On_Single");
 
         // These values are first translated from 53 bit doubles, then 24 bit floats
         a = new BigFloat((float)0.0000123);  //0.0000000000000000110011100101110000011001
         b = new BigFloat((float)0.00001234); //0.000000000000000011001111000001111110010
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-40a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-40a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)-0.000000044501); // 0.000000000000000000000000101111110010000101011101111100
         b = new BigFloat((float)-0.0000000445);   // 0.000000000000000000000000101111110010000001000100011101
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-50a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-50a on Verify_CompareToExact_On_Single");
 
         // 1.000000001 is beyond the precision of single
         a = new BigFloat((float)1.000000001);
         b = new BigFloat((float)1.000000002);
-        AreEqual(0, a.CompareToExact(b), $"Fail-55a on Verify_CompareToExact_On_Single");
+        AreEqual(0, a.StrictCompareTo(b), $"Fail-55a on Verify_CompareToExact_On_Single");
 
         a = new BigFloat((float)1.0);
         b = new BigFloat((float)1.01);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-60a on Verify_CompareToExact_On_Single");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-60a on Verify_CompareToExact_On_Single");
     }
 
     [TestMethod]
@@ -4711,36 +4712,60 @@ public class BigFloatTests
         // Integers
         a = new BigFloat(-1);
         b = new BigFloat(0);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-10 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-10a on Verify_CompareTo_With_Int");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-10b on Verify_StrictCompareTo_With_Int");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-10c on Verify_FullPrecisionCompareTo_With_Int");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-10d on Verify_IsExactMatchOf_With_Int");
 
         a = new BigFloat(0);
         b = new BigFloat(1);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-20 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-20a on Verify_CompareTo_With_Int");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-20b on Verify_StrictCompareTo_With_Int");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-20c on Verify_FullPrecisionCompareTo_With_Int");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-20d on Verify_IsExactMatchOf_With_Int");
 
         a = new BigFloat(1);
         b = new BigFloat(2);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-30 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-30a on Verify_CompareTo_With_Int");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-30b on Verify_StrictCompareTo_With_Int");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-30c on Verify_FullPrecisionCompareTo_With_Int");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-30d on Verify_IsExactMatchOf_With_Int");
 
-        // Floats of same size (should be same as VerifyCompareTo)
+        // Floats of same size
         a = new BigFloat(-0.0000123);
         b = new BigFloat(0.0000123);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-40 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-40a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-40b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-40c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-40d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat(-0.0000000445);
         b = new BigFloat(-0.0000000444);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-50 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-50a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-50b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-50c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-50d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat(0.0000122);
         b = new BigFloat(0.0000123);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-60 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-60a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-60b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-60c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-60d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat(100000000.000000);
         b = new BigFloat(100000000.000001);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-70 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-70a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-70b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-70c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-70d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat("100000000.000000");
         b = new BigFloat("100000000.000001");
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-80 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-80a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-80b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-80c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-80d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat("100000000.000001");
         b = new BigFloat(100000000.000001d);
@@ -4750,29 +4775,29 @@ public class BigFloatTests
         //b      1011111010111100001000000000000000000000000000100001100000000000000000000000000000000  28823037615171462162808832 (17d7840000004300000000)
         //b                                                           XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         //b      1011111010111100001000000000000000000000000000100001100000000000000000000000000000000  28823037615171462162808832 (17d7840000004300000000)
-        //area ignored for CompareToExact()                                                     XXXXXX
+        //area ignored for StrictCompareTo()                                                     XXXXXX
         //area ignored for Compare()                            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        AreNotEqual(0, a.CompareToExact(b), $"Fail-80 on Verify_CompareToExact_With_Doubles");
+        AreNotEqual(0, a.StrictCompareTo(b), $"Fail-80 on Verify_CompareToExact_With_Doubles");
         AreEqual(0, a.CompareTo(b), $"Fail-80 on Verify_CompareToExact_With_Doubles");
 
         // Floats of different sizes 
         // These values are first translated from 52 bit doubles
         a = new BigFloat(0.0000123);  //0.0000000000000000110011100101110000011001
         b = new BigFloat(0.00001234); //0.000000000000000011001111000001111110010
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-90 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-90 on Verify_CompareToExact_With_Doubles");
 
         a = new BigFloat(-0.000000044501); // 0.000000000000000000000000101111110010000101011101111100
         b = new BigFloat(-0.0000000445);   // 0.000000000000000000000000101111110010000001000100011101
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-100 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-100 on Verify_CompareToExact_With_Doubles");
 
         // 1.00000000000000001 is beyond the precision of double
         a = new BigFloat(1.00000000000000001);
         b = new BigFloat(1.00000000000000002);
-        AreEqual(0, a.CompareToExact(b), $"Fail-110 on Verify_CompareToExact_With_Doubles");
+        AreEqual(0, a.StrictCompareTo(b), $"Fail-110 on Verify_CompareToExact_With_Doubles");
 
         a = new BigFloat(1.0);
         b = new BigFloat(1.01);
-        IsTrue(a.CompareToExact(b) < 0, $"Fail-120 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-120 on Verify_CompareToExact_With_Doubles");
     }
 
     [TestMethod]
@@ -5254,7 +5279,7 @@ public class BigFloatTests
         AreEqual(output, expect, $"Step 25: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
 
         inputVal0 = new BigFloat("19", -3);  // 2.375
-        inputVal1 = new BigFloat("1.5", 2);  //  6.0
+        inputVal1 = new BigFloat("1.5", 2);  //  6.0 
         output = inputVal0 * inputVal1;
         expect = new BigFloat("14", 0);  // 142.5
         AreEqual(output, expect, $"Step 26: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");

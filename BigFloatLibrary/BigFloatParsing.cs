@@ -24,9 +24,9 @@ public readonly partial struct BigFloat
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
     /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
-    public BigFloat(string numericString, int binaryScaler = 0)
+    public BigFloat(string numericString, int binaryScaler = 0, int hiddenBitsIncluded = int.MinValue)
     {
-        this = Parse(numericString, binaryScaler);
+        this = Parse(numericString, binaryScaler, hiddenBitsIncluded);
     }
 
     /// <summary>
@@ -39,9 +39,9 @@ public readonly partial struct BigFloat
     /// </summary>
     /// <param name="numericString">The input decimal, hexadecimal, or binary number.</param>
     /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
-    public static BigFloat Parse(string numericString, int binaryScaler = 0)
+    public static BigFloat Parse(string numericString, int binaryScaler = 0, int hiddenBitsIncluded = int.MinValue)
     {
-        bool success = TryParse(numericString, out BigFloat biRes, binaryScaler);
+        bool success = TryParse(numericString, out BigFloat biRes, binaryScaler, hiddenBitsIncluded);
 
         if (!success)
         {
@@ -69,7 +69,7 @@ public readonly partial struct BigFloat
     /// <param name="result">The resulting BigFloat. Zero is returned if conversion failed.</param>
     /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParse(string numericString, out BigFloat result, int binaryScaler = 0)
+    public static bool TryParse(string numericString, out BigFloat result, int binaryScaler = 0, int hiddenBitsIncluded = int.MinValue)
     {
         //string orgValue = numericString;
         if (string.IsNullOrEmpty(numericString))
@@ -91,16 +91,17 @@ public readonly partial struct BigFloat
             if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'b' or 'B')  //[-,+]0b___
             {
                 // remove leading "0x" or "-0x"
-
-                return TryParseBinary(numericString.AsSpan(isNegHexOrBin ? 3 : 2), out result, binaryScaler, isNegHexOrBin ? -1 : 0);
+                //hiddenBitsIncluded = (hiddenBitsIncluded == int.MinValue) ? 0 : hiddenBitsIncluded;
+                return TryParseBinary(numericString.AsSpan(isNegHexOrBin ? 3 : 2), out result, binaryScaler, isNegHexOrBin ? -1 : 0, hiddenBitsIncluded);
             }
             else if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
             {
-                return TryParseHex(numericString, out result, binaryScaler);
+                hiddenBitsIncluded = (hiddenBitsIncluded == int.MinValue) ? 0 : hiddenBitsIncluded;
+                return TryParseHex(numericString, out result, binaryScaler, hiddenBitsIncluded);
             }
             //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
         }
-        return TryParseDecimal(numericString, out result, ref binaryScaler);
+        return TryParseDecimal(numericString, out result, ref binaryScaler, hiddenBitsIncluded);
     }
 
     /// <summary>
@@ -124,7 +125,7 @@ public readonly partial struct BigFloat
     /// <param name="result">(out) The returned result.</param>
     /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParseDecimal(string numericString, out BigFloat result, ref int binaryScaler)
+    public static bool TryParseDecimal(string numericString, out BigFloat result, ref int binaryScaler, int hiddenBitsIncluded = int.MinValue)
     {
         bool usedCommaAlready = false;
         bool usedSpaceAlready = false;
@@ -297,11 +298,14 @@ public readonly partial struct BigFloat
             return false;
         }
 
+
         // The 'accuracyDelimiterPosition', specified by '|' is:
         // (1) in base-10 needs to be converted to base-2
         // (2) currently it's measured from the MSB but should measure from LSB
-        int hiddenBitsFound = (accuracyDelimiterPosition < 0) ? 0
-            : (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
+        int hiddenBits = (hiddenBitsIncluded != int.MinValue) ? hiddenBitsIncluded :
+            (accuracyDelimiterPosition < 0) ? 0 /*(radixDepth >= 0 ? 0 : 1)*/ : 
+            (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
+
 
         //// Alternative Method - slower - maybe not as accurate either
         //int hiddenBitsFound = 0;
@@ -323,15 +327,15 @@ public readonly partial struct BigFloat
             decimalLocation = cleaned.Length;
         }
 
-        if (val.IsZero)
+        if (val.IsZero) 
         {
-            int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * 3.32192809488736235);
-            result = new BigFloat(BigInteger.Zero, scaleAmt, 0);
+            int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * 3.32192809488736235) - hiddenBits;
+            result = new BigFloat(BigInteger.Zero, scaleAmt, 0); //future: create a ZeroWithSpecificAccuracy(int prec) method.
             return true;
         }
 
         // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
-        if (hiddenBitsFound == 0 && BigInteger.Abs(val).IsOne)
+        if (hiddenBits == 0 && BigInteger.Abs(val).IsOne)
         {
             val <<= 1;
             binaryScaler -= 1;
@@ -341,33 +345,43 @@ public readonly partial struct BigFloat
         // When 1, an extra LSBit is kept and if it's set it will round up. (e.g. 0.1011 => 0.110)
         const int ROUND = 1;
         BigInteger intPart;
-
         int radixDepth = cleaned.Length - decimalLocation - exp;
+
         if (radixDepth == 0)
         {
-            result = new BigFloat(val, binaryScaler);
+            intPart = val << ExtraHiddenBits - hiddenBits;
+            binaryScaler += hiddenBits;
         }
         else if (radixDepth >= 0) //111.111 OR 0.000111
         {
             BigInteger a = BigInteger.Pow(5, radixDepth);
             int multBitLength = (int)a.GetBitLength();
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
-            int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND - hiddenBitsFound;  // added  "-1" because it was adding one to many digits 
+            int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND - hiddenBits;  // added  "-1" because it was adding one to many digits 
                                                                                            // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((val << shiftAmt) / a) + ROUND) >> ROUND;
-            binaryScaler += -multBitLength + 1 - radixDepth + hiddenBitsFound;
-            result = new BigFloat(intPart, binaryScaler, true);
+            binaryScaler += -multBitLength + 1 - radixDepth + hiddenBits;
         }
         else // 100010XX
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
             int multBitLength = (int)a.GetBitLength();
-            int shiftAmt = multBitLength - ExtraHiddenBits - ROUND + hiddenBitsFound;
+            int shiftAmt = multBitLength - ExtraHiddenBits - ROUND + hiddenBits;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;
-            binaryScaler += multBitLength - radixDepth + hiddenBitsFound;
-            result = new BigFloat(intPart, binaryScaler, true);
+            binaryScaler += multBitLength - radixDepth + hiddenBits;
         }
+
+        //if (hiddenBitsIncluded == int.MinValue)
+        //{
+        //    hiddenBitsIncluded = intPart > 8 ? 1 : 0;
+        //}
+
+
+        result = new BigFloat(intPart, binaryScaler, true);
+        var result2 = new BigFloat(intPart, binaryScaler); 
+        //result = new BigFloat(intPart, binaryScaler - hiddenBitsIncluded); need to change to is with hiddenbits
+
 
         result.AssertValid();
         return true;
@@ -404,7 +418,7 @@ public readonly partial struct BigFloat
     /// <param name="result">(out) The returned result.</param>
     /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParseHex(ReadOnlySpan<char> hexInput, out BigFloat result, int binaryScaler = 0)
+    public static bool TryParseHex(ReadOnlySpan<char> hexInput, out BigFloat result, int binaryScaler = 0, int hiddenBitsIncluded = 0)
     {
         if (hexInput.IsEmpty)
         {
@@ -569,12 +583,13 @@ public readonly partial struct BigFloat
             return false;
         }
 
+        asInt <<= ExtraHiddenBits - hiddenBitsIncluded;
+
         if (isNeg)
         {
             asInt = BigInteger.Negate(asInt);
         }
-
-        result = new BigFloat(asInt, newScale);
+        result = new BigFloat(asInt, newScale - hiddenBitsIncluded, true);
         return true;
     }
 
@@ -590,7 +605,7 @@ public readonly partial struct BigFloat
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
     /// <param name="includedHiddenBits">(optional)The number of sub-precision hidden bits that are included.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
-    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedHiddenBits = -1)
+    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedHiddenBits = int.MinValue) //todo: change "int includedHiddenBits = -1" " to 0
     {
         ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
@@ -612,7 +627,7 @@ public readonly partial struct BigFloat
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
     /// <param name="includesHiddenBits">(optional)The number of sub-precision hidden bits that are included. However, if the precision separator '|' is also used, this takes precedence.</param>
     /// <returns>Returns false if it fails or is given an empty or null string.</returns>
-    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = -1)
+    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int includesHiddenBits = int.MinValue)
     {
         int inputLen = input.Length;
 
@@ -669,13 +684,13 @@ public readonly partial struct BigFloat
                     }
                     radixPointFound = true;
                     break;
-                case ',' or '_' or ' ': // allow commas, underscores, and spaces (e.g.  1111_1111_0000) (optional - remove for better performance)
+                case ',' or '_' or ' ': // skip commas, underscores, and spaces (e.g.  1111_1111_0000) (optional - remove for better performance)
                     break;
                 case '|':
                     if (accuracyDelimiterPosition >= 0)
                     {
                         // multiple precision spacers found (| or :)
-                        result = new BigFloat(0);
+                        result = new BigFloat(0); 
                         return false;
                     }
                     accuracyDelimiterPosition = destinationLocation;
@@ -689,29 +704,14 @@ public readonly partial struct BigFloat
         if (destinationLocation == 0)
         {
             result = new BigFloat(0);
-            return false; // Function was not successful - duplicate '.'
+            return false;
         }
 
-        // if the user specified a precision spacer '|'
-        if (accuracyDelimiterPosition >= 0)
+        // if param includesHiddenBits not is specified then use '|' separator if present
+        if (includesHiddenBits == int.MinValue)
         {
-            // includedHiddenBits is specified?  if so, they must match!
-            if (includesHiddenBits >= 0)
-            {
-                // make sure they match and fail if they do not.
-                if (accuracyDelimiterPosition != includesHiddenBits)
-                {
-                    result = new BigFloat(0);
-                    return false;
-                }
-            }
-            else // includedHiddenBits NOT specified 
-            {
-                includesHiddenBits = accuracyDelimiterPosition;
-            }
+            includesHiddenBits = (accuracyDelimiterPosition >= 0) ? accuracyDelimiterPosition : 0;
         }
-        //else if (includedHiddenBits >= 0) { } // if no precision spacer (| or :) AND but includedHiddenBits was specified
-        //else { } //nether specified.
 
         // Lets add the missing zero hidden bits
         if (includesHiddenBits >= 0)
