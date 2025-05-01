@@ -147,6 +147,9 @@ public readonly partial struct BigFloat
     /// <param name="accuracy">The wanted accuracy between -32(ExtraHiddenBits) to Int.MaxValue.</param>
     public static BigFloat OneWithAccuracy(int accuracy)
     {
+        if (accuracy < -32)
+            throw new ArgumentOutOfRangeException("1 cannot have a negative accuracy that exceed the ExtraHiddenBits.");
+
         return new(BigInteger.One << (ExtraHiddenBits + accuracy), -accuracy, ExtraHiddenBits + 1 + accuracy); 
     }
 
