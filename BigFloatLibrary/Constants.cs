@@ -772,7 +772,7 @@ public readonly partial struct BigFloat
 
         private static BigFloat TryGetFromCache(string constantId, int precisionInBits)
         {
-            CacheLock.EnterReadLock();
+            CacheLock.EnterUpgradeableReadLock();
             try
             {
                 if (ConstantCache.TryGetValue(constantId, out var precisionMap))
@@ -788,10 +788,18 @@ public readonly partial struct BigFloat
                     {
                         if (entry.Key > precisionInBits)
                         {
-                            // We have a higher precision, so truncate it
-                            BigFloat truncated = TruncateByAndRound(entry.Value, entry.Value.Size - precisionInBits);
-                            // Add to cache for future use
-                            AddToCache(constantId, precisionInBits, truncated);
+                            var truncated = TruncateByAndRound(entry.Value, entry.Value.Size - precisionInBits);
+
+                            CacheLock.EnterWriteLock();
+                            try
+                            {
+                                precisionMap[precisionInBits] = truncated;
+                            }
+                            finally
+                            {
+                                CacheLock.ExitWriteLock();
+                            }
+
                             return truncated;
                         }
                     }
@@ -801,7 +809,7 @@ public readonly partial struct BigFloat
             }
             finally
             {
-                CacheLock.ExitReadLock();
+                CacheLock.ExitUpgradeableReadLock();
             }
         }
 
