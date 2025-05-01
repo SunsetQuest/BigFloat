@@ -1453,6 +1453,64 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
+    public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
+    {
+        // 1) zero and trivial cases
+        if (b == 0)
+            return Zero;            // exactly 0
+        if (b == 1)
+            return a;               // unchanged
+        if (b == -1)
+            return -a;              // flip sign
+
+        // 2) extract unsigned magnitude and sign
+        int sign = (b < 0) ? -1 : 1;
+        uint ub = (uint)Math.Abs(b);
+
+        // 3) fast path: if b == 2^k, just adjust exponent
+        //    value * 2^k = DataBits * 2^k * 2^Scale = DataBits * 2^Scale+k
+        if ((ub & (ub - 1)) == 0)
+        {
+            int k = BitOperations.TrailingZeroCount(ub);
+            return new BigFloat(
+                a.DataBits * sign,
+                a.Scale + k,
+                a._size               // mantissa bit-length unchanged
+            );
+        }
+
+        // 4) general integer multiply:
+        //    DataBits includes ExtraHiddenBits of guard bits.
+        //    Multiply mantissa by ub exactly.
+        BigInteger mant = a.DataBits * new BigInteger(ub);
+
+        // 5) clamp mantissa back to original _size bits (including ExtraHiddenBits)
+        //    if it grew larger, right-shift with round, and bump the scale
+        int sizePart = (int)BigInteger.Abs(mant).GetBitLength();
+        int origSize = a._size;
+        int shrinkBy = sizePart - origSize;
+        if (shrinkBy > 0)
+        {
+            // RightShiftWithRound shifts mantissa down by 'shrinkBy' bits,
+            // rounds according to your policy, and updates sizePart.
+            mant = RightShiftWithRound(mant, shrinkBy, ref sizePart);
+        }
+
+        // 6) adjust scale to compensate for the bits we shifted off
+        int resScale = a.Scale + shrinkBy;
+
+        // 7) assemble result (mantissa already has sign baked in if desired)
+        return new BigFloat(
+            mant * sign,
+            resScale,
+            sizePart
+        );
+    }
+
+    public static BigFloat operator *(int a, BigFloat b) //ChatGPT o4-mini-high
+        => b * a; // use the other overload
+    
+
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
         //future: add powerOf2 on dividend to see if we can do a fast shift divide
@@ -1487,6 +1545,89 @@ Other:                                         |   |         |         |       |
         return result;
     }
 
+    public static BigFloat operator /(BigFloat divisor, int dividend) //ChatGPT o4-mini-high AND Claude 3.7
+    {
+        if (dividend == 0)
+            throw new DivideByZeroException();
+
+        // Early return for zero divisor
+        if (divisor.IsStrictZero)
+            return ZeroWithSpecifiedLeastPrecision(divisor.Size);
+
+        // Extract the sign once and apply at the end
+        int sign = Math.Sign(dividend) * divisor.DataBits.Sign;
+        int absDividend = Math.Abs(dividend);
+
+        // Case 1: Division by power of two (optimization)
+        if ((absDividend & (absDividend - 1)) == 0)
+        {
+            // Just adjust the scale for powers of 2
+            int k = BitOperations.TrailingZeroCount((uint)absDividend);
+            return new BigFloat(
+                BigInteger.Abs(divisor.DataBits) * sign,
+                divisor.Scale - k,
+                divisor._size
+            );
+        }
+
+        // Case 2: General division
+        // First, determine target precision based on divisor's size
+        int targetSize = divisor._size;
+
+        // Shift the divisor's mantissa to ensure we maintain precision
+        // We add ExtraHiddenBits for rounding plus a small buffer for division
+        int extraShift = ExtraHiddenBits + 2; // 2 extra bits as buffer
+        BigInteger shifted = BigInteger.Abs(divisor.DataBits) << extraShift;
+
+        // Perform the division
+        BigInteger result = shifted / absDividend;
+
+        // Apply rounding (round to nearest)
+        BigInteger remainder = shifted % absDividend;
+        if (remainder * 2 >= absDividend)
+        {
+            result += 1;
+        }
+
+        // Calculate the new scale
+        int newScale = divisor.Scale - extraShift;
+
+        // Get the bit length of the result
+        int resultSize = (int)result.GetBitLength();
+
+        // Adjust to match the target size
+        if (resultSize < targetSize)
+        {
+            // Shift left to match the target size
+            int adjustShift = targetSize - resultSize;
+            result <<= adjustShift;
+            newScale -= adjustShift;
+        }
+        else if (resultSize > targetSize)
+        {
+            // Shift right with rounding to match the target size
+            int adjustShift = resultSize - targetSize;
+            BigInteger roundingBit = BigInteger.One << (adjustShift - 1);
+            result = (result + roundingBit) >> adjustShift;
+            newScale += adjustShift;
+
+            // Check if rounding caused a carry that increased the bit length
+            if (result.GetBitLength() > targetSize)
+            {
+                result >>= 1;
+                newScale += 1;
+            }
+        }
+
+        // Apply the sign
+        result *= sign;
+
+        // Return the new BigFloat with the original size
+        return new BigFloat(result, newScale, targetSize);
+    }
+
+    public static BigFloat operator /(int a, BigFloat b) // ChatGPT o4-mini-high
+        => b / a; // use the other overload
 
     ///////////////////////// Explicit CASTS /////////////////////////
 
