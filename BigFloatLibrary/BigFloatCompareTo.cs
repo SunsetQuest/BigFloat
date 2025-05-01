@@ -135,6 +135,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///   -1 when this instance is less than <paramref name="other"/>
     ///    0 when this instance is equal to <paramref name="other"/>
     ///   +1 when this instance is greater than <paramref name="other"/>
+    /// Since rounding may occur, out-of-precision hidden bits that are off by one are considered equal.
     /// Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
     /// CompareTo() is more often used as it is used to compare the in-precision digits.
     /// This Function is faster then the CompareTo() as no rounding takes place.
@@ -177,12 +178,14 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             // We must shrink the larger - in this case THIS
             BigInteger adjustedVal = DataBits >> (_size - other._size);
-            return adjustedVal.CompareTo(other.DataBits) * thisPos;
+            BigInteger diff2 = adjustedVal - other.DataBits;
+            return ((diff2 > 1)? 1 : (diff2 < -1) ? -1 : 0) * thisPos; //  adjustedVal.CompareTo(other.DataBits) * thisPos;
         }
 
         // We must shrink the larger - in this case other
         BigInteger adjustedOther = other.DataBits >> (other._size - _size);
-        return DataBits.CompareTo(adjustedOther) * thisPos;
+        BigInteger diff = DataBits - adjustedOther;
+        return ((diff > 1) ? 1 : (diff < -1) ? -1 : 0) * thisPos; // DataBits.CompareTo(adjustedOther) * thisPos;
     }
 
     /// <summary> 
