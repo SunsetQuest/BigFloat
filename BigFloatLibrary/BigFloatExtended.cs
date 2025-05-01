@@ -32,8 +32,9 @@ public readonly partial struct BigFloat
     /// </summary>
     public int Accuracy => -Scale;
 
+    //future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
     /// <summary>
-    /// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). ExtraHiddenBits will be added.
+    /// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). ExtraHiddenBits will be appended as well.
     /// </summary>
     /// <param name="pointOfLeastPrecision">The precision can be positive or negative.</param>
     public static BigFloat ZeroWithSpecifiedLeastPrecision(int pointOfLeastPrecision)

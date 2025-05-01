@@ -4,6 +4,8 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
+// Ignore Spelling: Mascheroni Ramanujan Soldner Meissel Mertens Apery Khintchine Glaisher Kinkelin Buffon Pisot Lemniscate Ln
+
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,12 +30,12 @@ public readonly partial struct BigFloat
         #region Mathematical Categories
 
         /// <summary>
-        /// Fundamental mathematical constants such as π (Pi) and e.
+        /// Fundamental mathematical constants such as pi and e.
         /// </summary>
         public static class Fundamental
         {
             /// <summary>
-            /// Pi (π): The ratio of a circle's circumference to its diameter.
+            /// pi: The ratio of a circle's circumference to its diameter.
             /// Approximately 3.14159265358979323846...
             /// </summary>
             public static BigFloat Pi => GetConstant(Catalog.Pi);
@@ -80,7 +82,7 @@ public readonly partial struct BigFloat
         {
             /// <summary>
             /// Twin Prime constant: Approximately 0.66016181584686957392...
-            /// Product over primes p of (1 - 1/(p-1)²).
+            /// Product over primes p of (1 - 1/(p-1)^2).
             /// </summary>
             public static BigFloat TwinPrime => GetConstant(Catalog.TwinPrimeConstant);
 
@@ -179,32 +181,32 @@ public readonly partial struct BigFloat
             public static BigFloat NaturalLogOfPhi => GetConstant(Catalog.NaturalLogOfPhi);
 
             /// <summary>
-            /// Pi squared (π²): Approximately 9.86960440108935...
+            /// pi squared (pi^2): Approximately 9.86960440108935...
             /// </summary>
             public static BigFloat PiSquared => GetConstant(Catalog.PiSquared);
 
             /// <summary>
-            /// e squared (e²): Approximately 7.38905609893065...
+            /// e squared (e^2): Approximately 7.38905609893065...
             /// </summary>
             public static BigFloat ESquared => GetConstant(Catalog.ESquared);
 
             /// <summary>
-            /// Pi times e (πe): Approximately 8.53973422267356...
+            /// pi times e (pie): Approximately 8.53973422267356...
             /// </summary>
             public static BigFloat PiTimesE => GetConstant(Catalog.PiTimesE);
 
             /// <summary>
-            /// e to the power of Pi (e^π): Approximately 23.14069263277926...
+            /// e to the power of pi (e^pi): Approximately 23.14069263277926...
             /// </summary>
             public static BigFloat EPowerPi => GetConstant(Catalog.EPowerPi);
 
             /// <summary>
-            /// Pi to the power of e (π^e): Approximately 22.45915771836104...
+            /// pi to the power of e (pi^e): Approximately 22.45915771836104...
             /// </summary>
             public static BigFloat PiPowerE => GetConstant(Catalog.PiPowerE);
 
             /// <summary>
-            /// Pi to the power of Pi (π^π): Approximately 36.46215960720791...
+            /// pi to the power of Pi (pi^pi): Approximately 36.46215960720791...
             /// </summary>
             public static BigFloat PiPowerPi => GetConstant(Catalog.PiPowerPi);
 
@@ -214,17 +216,17 @@ public readonly partial struct BigFloat
             public static BigFloat EPowerE => GetConstant(Catalog.EPowerE);
 
             /// <summary>
-            /// Ratio of Pi to e (π/e): Approximately 1.15572734979092...
+            /// Ratio of pi to e (pi/e): Approximately 1.15572734979092...
             /// </summary>
             public static BigFloat PiDividedByE => GetConstant(Catalog.PiDividedByE);
 
             /// <summary>
-            /// Ratio of e to Pi (e/π): Approximately 0.86525597943226...
+            /// Ratio of e to pi (e/pi): Approximately 0.86525597943226...
             /// </summary>
             public static BigFloat EDividedByPi => GetConstant(Catalog.EDividedByPi);
 
             /// <summary>
-            /// Logarithm of Pi (ln(π)): Approximately 1.14472988584940...
+            /// Logarithm of pi (ln(pi)): Approximately 1.14472988584940...
             /// </summary>
             public static BigFloat LogPi => GetConstant(Catalog.LogPi);
         }
@@ -235,34 +237,34 @@ public readonly partial struct BigFloat
         public static class Trigonometric
         {
             /// <summary>
-            /// Sine of 2π/5: Approximately 0.95105651629515...
+            /// Sine of 2pi/5: Approximately 0.95105651629515...
             /// Related to the regular pentagon.
             /// </summary>
             public static BigFloat Sin2PiDiv5 => GetConstant(Catalog.Sin2PiDiv5);
 
             /// <summary>
-            /// Cosine of π/8: Approximately 0.92387953251128...
+            /// Cosine of pi/8: Approximately 0.92387953251128...
             /// </summary>
             public static BigFloat CosPiDiv8 => GetConstant(Catalog.CosPiDiv8);
 
             /// <summary>
-            /// Cosine of π/16: Approximately 0.98078528040323...
+            /// Cosine of pi/16: Approximately 0.98078528040323...
             /// </summary>
             public static BigFloat CosPiDiv16 => GetConstant(Catalog.CosPiDiv16);
 
             /// <summary>
-            /// Cosine of π/20: Approximately 0.98768834059513...
+            /// Cosine of pi/20: Approximately 0.98768834059513...
             /// </summary>
             public static BigFloat CosPiDiv20 => GetConstant(Catalog.CosPiDiv20);
 
             /// <summary>
-            /// Buffon's constant (2/π): Approximately 0.63661977236758...
+            /// Buffon's constant (2/pi): Approximately 0.63661977236758...
             /// Related to the famous Buffon's needle problem.
             /// </summary>
             public static BigFloat Buffon => GetConstant(Catalog.BuffonConstant);
 
             /// <summary>
-            /// Sine of π/3 (√3/2): Approximately 0.86602540378443...
+            /// Sine of pi/3 (√3/2): Approximately 0.86602540378443...
             /// </summary>
             public static BigFloat SinPiDiv3 => GetConstant(Catalog.SinPiDiv3);
         }
@@ -274,13 +276,13 @@ public readonly partial struct BigFloat
         {
             /// <summary>
             /// Plastic number: Approximately 1.32471795724474...
-            /// The unique real root of x³ - x - 1 = 0.
+            /// The unique real root of x^3 - x - 1 = 0.
             /// </summary>
             public static BigFloat Plastic => GetConstant(Catalog.PlasticNumber);
 
             /// <summary>
             /// Pisot's constant: Approximately 1.38027756910156...
-            /// A Pisot-Vijayaraghavan number, the positive root of x⁴ - x³ - 1 = 0.
+            /// A Pisot-Vijayaraghavan number, the positive root of x^4 - x^3 - 1 = 0.
             /// </summary>
             public static BigFloat Pisot => GetConstant(Catalog.PisotsConstant);
 
@@ -292,7 +294,7 @@ public readonly partial struct BigFloat
 
             /// <summary>
             /// The imaginary unit raised to the imaginary power (i^i): Approximately 0.20787957635076...
-            /// Equal to exp(-π/2).
+            /// Equal to exp(-pi/2).
             /// </summary>
             public static BigFloat IPowerI => GetConstant(Catalog.IPowerI);
 
@@ -424,7 +426,7 @@ public readonly partial struct BigFloat
         #region Computation Methods
 
         /// <summary>
-        /// Generates Pi with a specified precision using a computational algorithm.
+        /// Generates pi with a specified precision using a computational algorithm.
         /// Uses a Chudnovsky-type algorithm for high precision computation.
         /// Useful when pre-computed digits aren't available or higher precision is needed.
         /// </summary>
