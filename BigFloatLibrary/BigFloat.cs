@@ -1079,7 +1079,50 @@ public readonly partial struct BigFloat
         }
     }
 
+    public static BigFloat operator +(BigFloat r1, int r2) //ChatGPT o4-mini-high
+    {
+        // trivial cases
+        if (r2 == 0) return r1;
+
+        // embed integer into mantissa with hidden bits
+        BigInteger r2Bits = new BigInteger(r2) << ExtraHiddenBits;
+        int r2Size = (int)BigInteger.Abs(r2Bits).GetBitLength();
+        int scaleDiff = r1.Scale;   // since r2Scale = 0
+
+        // if r2 is too small to affect r1 at r1’s precision ⇒ drop it
+        if (scaleDiff > r2Size)
+            return r1;
+
+        // if r1 is too small compared to r2 ⇒ result ≅ r2
+        if (-scaleDiff > r1._size)
+            return new BigFloat(r2Bits, 0, r2Size);
     
+        // align mantissas and add
+        BigInteger sum;
+        int resScale;
+        if (r1.Scale == 0)
+        {
+            // same exponent
+            sum = r1.DataBits + r2Bits;
+            resScale = 0;
+        }
+        else if (r1.Scale < 0)
+        {
+            // r2 has larger exponent: shift r1 down
+            sum = RightShiftWithRound(r1.DataBits, -scaleDiff) + r2Bits;
+            resScale = 0;
+        }
+        else // r1.Scale > 0
+        {
+            // r1 has larger exponent: shift r2 down
+            sum = r1.DataBits + RightShiftWithRound(r2Bits, scaleDiff);
+            resScale = r1.Scale;
+        }
+
+        int resSize = (int)BigInteger.Abs(sum).GetBitLength();
+        return new BigFloat(sum, resScale, resSize);
+    }
+
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
     
     /*                                         : BI | RoundTo| Scales  |Can Round  | Shift     |
@@ -1294,6 +1337,11 @@ Other:                                         |   |         |         |       |
         int size = Math.Max(0, (int)BigInteger.Abs(diff).GetBitLength());
 
         return new BigFloat(diff, r1.Scale < r2.Scale ? r2.Scale : r1.Scale, size);
+    }
+
+    public static BigFloat operator -(BigFloat r1, int r2)
+    {
+        return r1 + (-r2);
     }
 
     public static BigFloat PowerOf2(BigFloat val)
