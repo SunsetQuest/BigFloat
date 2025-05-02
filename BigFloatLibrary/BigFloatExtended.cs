@@ -70,6 +70,25 @@ public readonly partial struct BigFloat
 
     public static BigFloat NegativeOne => new(BigInteger.MinusOne << GuardBits, 0, GuardBits + 1);
 
+    /// <summary>
+    /// Left shift - Increases the size by adding least-significant zero bits. 
+    /// i.e. The precision is artificially enhanced. 
+    /// </summary>
+    /// <param name="shift">The number of bits to shift left.</param>
+    /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
+    public BigFloat LeftShiftMantissa(int bits)
+            => BigFloat.CreateFromRawComponents(Mantissa << bits, Scale, _size + bits);
+
+    /// <summary>
+    /// Right shift - Decreases the size by removing the least-significant bits. 
+    /// i.e. The precision is reduced. 
+    /// No rounding is performed and Scale is unchanged. 
+    /// </summary>
+    /// <param name="bits">The number of bits to shift right.</param>
+    /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
+    public BigFloat RightShiftMantissa(int bits)
+        => BigFloat.CreateFromRawComponents(Mantissa >> bits, Scale, _size - bits);
+
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
     public BigFloat(uint value, int scale = 0)
