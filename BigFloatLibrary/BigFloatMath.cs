@@ -4,6 +4,8 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT was used in the development of this library.
 
+// Ignore Spelling: Aprox
+
 using System;
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
@@ -25,18 +27,18 @@ public readonly partial struct BigFloat
         BigFloat x = x0; // new BigFloat(x0.Int*8, x0._scale-3);
         if (wantedPrecision == 0)
         {
-            wantedPrecision = x._size - ExtraHiddenBits;
+            wantedPrecision = x._size - GuardBits;
         }
 
-        if (x.DataBits == 0)
+        if (x.Mantissa == 0)
         {
             return new BigFloat((BigInteger)0, wantedPrecision, 0);
         }
 
         // Output should be (DataBits.GetBitLength()/2)+16 
-        int totalLen = x.Scale + (x._size - ExtraHiddenBits);
-        int needToShiftInputBy = (2 * wantedPrecision) - (x._size - ExtraHiddenBits) - (totalLen & 1);
-        BigInteger intPart = NewtonPlusSqrt(x.DataBits << (needToShiftInputBy + ExtraHiddenBits));
+        int totalLen = x.Scale + (x._size - GuardBits);
+        int needToShiftInputBy = (2 * wantedPrecision) - (x._size - GuardBits) - (totalLen & 1);
+        BigInteger intPart = NewtonPlusSqrt(x.Mantissa << (needToShiftInputBy + GuardBits));
         int retShift = ((totalLen + (totalLen > 0 ? 1 : 0)) / 2) - wantedPrecision;
 
         BigFloat result = new(intPart, retShift, (int)intPart.GetBitLength());
@@ -48,8 +50,8 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat Inverse(BigFloat x)
     {
-        int resScalePart = -x.Scale - (2 * (x._size - 1)) + ExtraHiddenBits + ExtraHiddenBits;
-        BigInteger resIntPartNew = BigIntegerTools.Inverse(x.DataBits, x._size);
+        int resScalePart = -x.Scale - (2 * (x._size - 1)) + GuardBits + GuardBits;
+        BigInteger resIntPartNew = BigIntegerTools.Inverse(x.Mantissa, x._size);
         BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithHiddenBits);
         return resultNew;
     }
@@ -59,7 +61,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat ABS(BigFloat x)
     {
-        return new BigFloat(-x.DataBits, x.Scale, x._size); //OR x.Sign < 0 ? -x : x;
+        return new BigFloat(-x.Mantissa, x.Scale, x._size); //OR x.Sign < 0 ? -x : x;
     }
 
     /// <summary>
@@ -104,7 +106,7 @@ public readonly partial struct BigFloat
             int removedExp = value.BinaryExponent;
 
             // todo: can be improved without using BigFloat  (See Pow(BigInteger,BigInteger) below)
-            double valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+            double valAsDouble = (double)new BigFloat(value.Mantissa, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
 
             //// if final result's scale would not fit in a double. 
             //int finalSizeWillBe = (int)(power * double.Log2(double.Abs(valAsDouble)));
@@ -115,10 +117,10 @@ public readonly partial struct BigFloat
             // perform operation  
             double res = double.Pow(valAsDouble, exponent);
             BigFloat tmp = (BigFloat)res;
-            value = SetPrecision(tmp, expectedFinalPrecision - ExtraHiddenBits);
+            value = SetPrecision(tmp, expectedFinalPrecision - GuardBits);
 
             // restore Scale
-            value = new BigFloat(value.DataBits, value.Scale + (removedExp * exponent), true);
+            value = new BigFloat(value.Mantissa, value.Scale + (removedExp * exponent), true);
 
             return value;
         }
@@ -163,7 +165,7 @@ public readonly partial struct BigFloat
         }
 
         // Check if Value is zero.
-        if (value.DataBits.Sign == 0)
+        if (value.Mantissa.Sign == 0)
         {
             // return Zero with a precision of value.Size
             return new(BigInteger.Zero, value.Size, 0);
@@ -187,8 +189,8 @@ public readonly partial struct BigFloat
         int newScale = value.Scale - removedScale;
 
         ////////// Use double's hardware to get the first 53-bits ////////
-        long mantissa = (long)(BigInteger.Abs(value.DataBits) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.BinaryExponent + 1023;// + 52 -4;
+        long mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ ((long)1 << 52);
+        long exp = value.BinaryExponent + 1023;
 
         // if exp is oversized for double we need to pull out some exp:
         if (Math.Abs(value.BinaryExponent) > 1020) // future: using 1020(not 1021) to be safe
@@ -233,14 +235,14 @@ public readonly partial struct BigFloat
     public static double Log2(BigFloat n)
     {
         // Special case for zero and negative numbers.
-        if (((n._size >= ExtraHiddenBits - 1) ? n.DataBits.Sign : 0) <= 0)
+        if (((n._size >= GuardBits - 1) ? n.Mantissa.Sign : 0) <= 0)
         {
             // if (!n.IsPositive)
             return double.NaN;
         }
 
         //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
-        long mantissa = (long)(n.DataBits >> (n._size - 53));// ^ ((long)1 << 52);
+        long mantissa = (long)(n.Mantissa >> (n._size - 53));// ^ ((long)1 << 52);
         long dubAsLong = (1023L << 52) | long.Abs(mantissa);
         double val = BitConverter.Int64BitsToDouble(dubAsLong);
         return double.Log2(val) + n.BinaryExponent;
@@ -298,7 +300,7 @@ public readonly partial struct BigFloat
                                                 // now 0 ≤ r ≤ pi/2
 
         // when zero, return zero
-        if (r.DataBits < 2) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);  
+        if (r.Mantissa < 2) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);  
 
         // ----- ----- choose the core routine ----------
         BigFloat result = (r.BinaryExponent <= _taylorExpSwitch)
@@ -318,9 +320,6 @@ public readonly partial struct BigFloat
         return s / c; // BigFloat.TruncateByAndRound(s / c, 1);
     }
 
-    // ------------------------------------------------------------------
-    //  (Optional) quick 32‑bit approximation – handy for sanity checks
-    // ------------------------------------------------------------------
     public static BigFloat SinAprox(BigFloat x)
     {
         //BigFloat x2 = x * x;

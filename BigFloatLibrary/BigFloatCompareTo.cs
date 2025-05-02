@@ -47,15 +47,15 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // At this point, the exponent is equal or off by one because of a rollover.
 
-        int sizeDiff = _size - other._size - BinaryExponent + other.BinaryExponent;
+        int sizeDiff = other.Scale - Scale;
 
         BigInteger diff = sizeDiff switch
         {
             //> 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),    // slightly faster version
-            > 0 => RightShiftWithRound(DataBits, sizeDiff) - other.DataBits, // slightly more precise version
+            > 0 => RightShiftWithRound(Mantissa, sizeDiff) - other.Mantissa, // slightly more precise version
             //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits),    // slightly faster version
-            < 0 => DataBits - RightShiftWithRound(other.DataBits, -sizeDiff),// slightly more precise version
-            0 => DataBits - other.DataBits
+            < 0 => Mantissa - RightShiftWithRound(other.Mantissa, -sizeDiff),// slightly more precise version
+            0 => Mantissa - other.Mantissa
         };
 
         // a quick exit
@@ -71,7 +71,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Future: need to benchmark A, B or C
         //int a = RightShiftWithRound(temp, ExtraHiddenBits).Sign;
         //int b = (BigInteger.Abs(temp) >> (ExtraHiddenBits - 1)).IsZero ? 0 : temp.Sign;
-        int c = ((int)((diff.Sign >= 0) ? diff : -diff).GetBitLength() < ExtraHiddenBits) ? 0 : diff.Sign;
+        int c = ((int)((diff.Sign >= 0) ? diff : -diff).GetBitLength() < GuardBits) ? 0 : diff.Sign;
 
         return c;
     }
@@ -80,20 +80,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         if (IsOutOfPrecision)
         {
-            result = other.IsOutOfPrecision ? 0 : -other.DataBits.Sign;
+            result = other.IsOutOfPrecision ? 0 : -other.Mantissa.Sign;
             return true;
         }
 
         if (other.IsOutOfPrecision)
         {
-            result = IsOutOfPrecision ? 0 : DataBits.Sign;
+            result = IsOutOfPrecision ? 0 : Mantissa.Sign;
             return true;
         }
 
         // Lets see if we can escape early by just looking at the Sign.
-        if (DataBits.Sign != other.DataBits.Sign)
+        if (Mantissa.Sign != other.Mantissa.Sign)
         {
-            result = DataBits.Sign;
+            result = Mantissa.Sign;
             return true;
         }
 
@@ -101,7 +101,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         int expDifference = BinaryExponent - other.BinaryExponent;
         if (Math.Abs(expDifference) > 1)
         {
-            result = BinaryExponent.CompareTo(other.BinaryExponent) * DataBits.Sign;
+            result = BinaryExponent.CompareTo(other.BinaryExponent) * Mantissa.Sign;
             return true;
         }
 
@@ -115,7 +115,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //If "this" is larger by one bit AND "this" is not in the format 10000000..., THEN "this" must be larger(or smaller if neg)
         if (expDifference == 1 && !IsOneBitFollowedByZeroBits)
         {
-            result = DataBits.Sign;
+            result = Mantissa.Sign;
             return true;
         }
 
@@ -142,8 +142,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int StrictCompareTo(BigFloat other)
     {
-        int thisPos = DataBits.Sign;
-        int otherPos = other.DataBits.Sign;
+        int thisPos = Mantissa.Sign;
+        int otherPos = other.Mantissa.Sign;
 
         // Let's first make sure the signs are the same, if not, the positive input is greater.
         if (thisPos != otherPos)
@@ -171,20 +171,20 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // If we made it here we know that both items have the same exponent 
         if (_size == other._size)
         {
-            return DataBits.CompareTo(other.DataBits);
+            return Mantissa.CompareTo(other.Mantissa);
         }
 
         if (_size > other._size)
         {
             // We must shrink the larger - in this case THIS
-            BigInteger adjustedVal = DataBits >> (_size - other._size);
-            BigInteger diff2 = adjustedVal - other.DataBits;
+            BigInteger adjustedVal = Mantissa >> (_size - other._size);
+            BigInteger diff2 = adjustedVal - other.Mantissa;
             return ((diff2 > 1)? 1 : (diff2 < -1) ? -1 : 0) * thisPos; //  adjustedVal.CompareTo(other.DataBits) * thisPos;
         }
 
         // We must shrink the larger - in this case other
-        BigInteger adjustedOther = other.DataBits >> (other._size - _size);
-        BigInteger diff = DataBits - adjustedOther;
+        BigInteger adjustedOther = other.Mantissa >> (other._size - _size);
+        BigInteger diff = Mantissa - adjustedOther;
         return ((diff > 1) ? 1 : (diff < -1) ? -1 : 0) * thisPos; // DataBits.CompareTo(adjustedOther) * thisPos;
     }
 
@@ -201,8 +201,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int FullPrecisionCompareTo(BigFloat other)
     {
-        int thisPos = DataBits.Sign;
-        int otherPos = other.DataBits.Sign;
+        int thisPos = Mantissa.Sign;
+        int otherPos = other.Mantissa.Sign;
 
         // Let's first make sure the signs are the same, if not, the positive input is greater.
         if (thisPos != otherPos)
@@ -230,19 +230,19 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // If we made it here we know that both items have the same exponent 
         if (_size == other._size)
         {
-            return DataBits.CompareTo(other.DataBits);
+            return Mantissa.CompareTo(other.Mantissa);
         }
 
         if (_size < other._size)
         {
             // We must grow the smaller - in this case THIS
-            BigInteger adjustedVal = DataBits << (other._size - _size);
-            return adjustedVal.CompareTo(other.DataBits) * thisPos;
+            BigInteger adjustedVal = Mantissa << (other._size - _size);
+            return adjustedVal.CompareTo(other.Mantissa) * thisPos;
         }
 
         // We must grow the smaller - in this case OTHER
-        BigInteger adjustedOther = other.DataBits << (_size - other._size);
-        return DataBits.CompareTo(adjustedOther) * thisPos;
+        BigInteger adjustedOther = other.Mantissa << (_size - other._size);
+        return Mantissa.CompareTo(adjustedOther) * thisPos;
     }
 
     /// <summary> 
@@ -258,7 +258,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public bool IsExactMatchOf(BigFloat other)
     {
-        return (other.DataBits == DataBits && other.Scale == Scale);
+        return (other.Mantissa == Mantissa && other.Scale == Scale);
     }
 
     /// <summary>  
@@ -278,21 +278,21 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Future: need to benchmark, next line is optional, escapes early if size is small
         //if (other._size < leastSignificantBitsToIgnore) return 0;
 
-        leastSignificantBitsToIgnore += ExtraHiddenBits;
+        leastSignificantBitsToIgnore += GuardBits;
 
         if (leastSignificantBitsToIgnore < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(leastSignificantBitsToIgnore),
-                $"Param cannot be less then -ExtraHiddenBits({-ExtraHiddenBits}).");
+                $"Param cannot be less then -ExtraHiddenBits({-GuardBits}).");
         }
 
         int scaleDiff = b.Scale - a.Scale;
 
         BigInteger temp = scaleDiff switch
         {
-            > 0 => (a.DataBits >> scaleDiff) - b.DataBits,  // 'a' has more accuracy
-            < 0 => a.DataBits - (b.DataBits >> -scaleDiff), // 'b' has more accuracy
-            _ => a.DataBits - b.DataBits
+            > 0 => (a.Mantissa >> scaleDiff) - b.Mantissa,  // 'a' has more accuracy
+            < 0 => a.Mantissa - (b.Mantissa >> -scaleDiff), // 'b' has more accuracy
+            _ => a.Mantissa - b.Mantissa
         };
 
 
@@ -324,7 +324,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int CompareTo(BigInteger bigInteger)
     {
-        int thisSign = DataBits.Sign;
+        int thisSign = Mantissa.Sign;
         int otherSign = bigInteger.Sign;
 
         // A fast sign check.
@@ -357,6 +357,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //};
 
         // Option B:
-        return RightShiftWithRound(DataBits, -Scale + ExtraHiddenBits).CompareTo(bigInteger);
+        return RightShiftWithRound(Mantissa, -Scale + GuardBits).CompareTo(bigInteger);
     }
 }

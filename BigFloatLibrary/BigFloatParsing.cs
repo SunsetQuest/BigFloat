@@ -349,7 +349,7 @@ public readonly partial struct BigFloat
 
         if (radixDepth == 0)
         {
-            intPart = val << ExtraHiddenBits - hiddenBits;
+            intPart = val << GuardBits - hiddenBits;
             binaryScaler += hiddenBits;
         }
         else if (radixDepth >= 0) //111.111 OR 0.000111
@@ -357,7 +357,7 @@ public readonly partial struct BigFloat
             BigInteger a = BigInteger.Pow(5, radixDepth);
             int multBitLength = (int)a.GetBitLength();
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
-            int shiftAmt = multBitLength + ExtraHiddenBits - 1 + ROUND - hiddenBits;  // added  "-1" because it was adding one to many digits 
+            int shiftAmt = multBitLength + GuardBits - 1 + ROUND - hiddenBits;  // added  "-1" because it was adding one to many digits 
                                                                                            // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((val << shiftAmt) / a) + ROUND) >> ROUND;
             binaryScaler += -multBitLength + 1 - radixDepth + hiddenBits;
@@ -366,7 +366,7 @@ public readonly partial struct BigFloat
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
             int multBitLength = (int)a.GetBitLength();
-            int shiftAmt = multBitLength - ExtraHiddenBits - ROUND + hiddenBits;
+            int shiftAmt = multBitLength - GuardBits - ROUND + hiddenBits;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;
             binaryScaler += multBitLength - radixDepth + hiddenBits;
@@ -583,7 +583,7 @@ public readonly partial struct BigFloat
             return false;
         }
 
-        asInt <<= ExtraHiddenBits - hiddenBitsIncluded;
+        asInt <<= GuardBits - hiddenBitsIncluded;
 
         if (isNeg)
         {
@@ -716,7 +716,7 @@ public readonly partial struct BigFloat
         // Lets add the missing zero hidden bits
         if (includesHiddenBits >= 0)
         {
-            int zerosNeededStill = ExtraHiddenBits - includesHiddenBits;
+            int zerosNeededStill = GuardBits - includesHiddenBits;
             //outputBitPosition += zerosNeededStill;
             if (!radixPointFound)
             {
@@ -770,7 +770,7 @@ public readonly partial struct BigFloat
 
         BigInteger bi = new(bytes, !isNeg);
 
-        result = new BigFloat(bi << (ExtraHiddenBits - includesHiddenBits), radixPointFound ? binaryScaler + includesHiddenBits : orgScale, true);
+        result = new BigFloat(bi << (GuardBits - includesHiddenBits), radixPointFound ? binaryScaler + includesHiddenBits : orgScale, true);
 
         result.AssertValid();
 

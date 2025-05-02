@@ -85,7 +85,7 @@ public readonly partial struct BigFloat
 
                 // Calculate how many Base64 characters we need for the requested bits
                 // Each Base64 character encodes 6 bits, and we need to account for the scale (4 bytes = 32 bits)
-                int bitsWithHidden = minAccuracyInBits + ExtraHiddenBits;
+                int bitsWithHidden = minAccuracyInBits + GuardBits;
                 int extraCharsForTrailingZero = cutOnTrailingZero ? 20 : 0; // Extra chars to find trailing zero
 
                 // Calculate chars needed (ceiling division to ensure we get enough chars)
@@ -119,11 +119,11 @@ public readonly partial struct BigFloat
                 int dataBitsLen = (int)dataBits.GetBitLength();
 
                 // Create BigFloat with valueIncludesHiddenBits set to true
-                int scale = RadixShiftFromLeadingBit - dataBitsLen + ExtraHiddenBits;
+                int scale = RadixShiftFromLeadingBit - dataBitsLen + GuardBits;
                 value = new BigFloat(dataBits, scale, valueIncludesHiddenBits: true);
 
                 // Check if we have enough bits
-                int availableBits = value._size - ExtraHiddenBits;
+                int availableBits = value._size - GuardBits;
 
                 if (availableBits < minAccuracyInBits)
                 {
@@ -139,7 +139,7 @@ public readonly partial struct BigFloat
                             {
                                 dataBits = new BigInteger(bytes, isUnsigned: false);
                                 value = new BigFloat(dataBits, RadixShiftFromLeadingBit, valueIncludesHiddenBits: true);
-                                availableBits = value._size - ExtraHiddenBits;
+                                availableBits = value._size - GuardBits;
                             }
                         }
                     }
@@ -158,7 +158,7 @@ public readonly partial struct BigFloat
                 }
 
                 // Apply precision adjustments if we have enough bits
-                int overAccurateBy = value._size - ExtraHiddenBits - minAccuracyInBits;
+                int overAccurateBy = value._size - GuardBits - minAccuracyInBits;
 
                 // If we don't have enough accuracy, return false
                 if (overAccurateBy < 0)
@@ -179,7 +179,7 @@ public readonly partial struct BigFloat
                 {
                     for (int i = overAccurateBy; i > 0; i--)
                     {
-                        if ((value.DataBits & (BigInteger.One << (i - 1))) == 0)
+                        if ((value.Mantissa & (BigInteger.One << (i - 1))) == 0)
                         {
                             // Found a zero bit, truncate here
                             value = ReducePrecision(value, i);
@@ -191,7 +191,7 @@ public readonly partial struct BigFloat
                 // If we didn't find a zero bit in backward search, look forward
                 for (int i = overAccurateBy + 1; i < value._size - 1; i++)
                 {
-                    if ((value.DataBits & (BigInteger.One << i)) == 0)
+                    if ((value.Mantissa & (BigInteger.One << i)) == 0)
                     {
                         value = ReducePrecision(value, i);
                         return true;
@@ -249,7 +249,7 @@ public readonly partial struct BigFloat
                             // Apply the trailing zero cut if needed
                             if (cutOnTrailingZero)
                             {
-                                int overAccurateBy = value._size - ExtraHiddenBits - minAccuracyInBits;
+                                int overAccurateBy = value._size - GuardBits - minAccuracyInBits;
                                 if (overAccurateBy > 0)
                                 {
                                     value = TruncateByAndRound(value, overAccurateBy);

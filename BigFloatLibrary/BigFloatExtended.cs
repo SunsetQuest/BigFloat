@@ -20,12 +20,12 @@ public readonly partial struct BigFloat
     /// Returns true if the value is exactly zero. All data bits and ExtraHiddenBits are zero.
     /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
     /// </summary>
-    public bool IsStrictZero => DataBits.IsZero;
+    public bool IsStrictZero => Mantissa.IsZero;
 
     /// <summary>
     /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits (HiddenBits) that are deemed precise.
     /// </summary>
-    public int Precision => _size - ExtraHiddenBits;
+    public int Precision => _size - GuardBits;
 
     /// <summary>
     /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places (in binary) to the right of the radix point.
@@ -50,9 +50,9 @@ public readonly partial struct BigFloat
     {
         int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
         // if the precision is shrunk to a size of zero it cannot contain any data bits
-        return precisionInBits < -(ExtraHiddenBits + intSize)
+        return precisionInBits < -(GuardBits + intSize)
             ? Zero
-            : new(intVal << (ExtraHiddenBits + precisionInBits), -precisionInBits, ExtraHiddenBits + intSize + precisionInBits);
+            : new(intVal << (GuardBits + precisionInBits), -precisionInBits, GuardBits + intSize + precisionInBits);
         // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
     }
 
@@ -62,74 +62,74 @@ public readonly partial struct BigFloat
     /// <param name="precisionInBits">The precision between (-ExtraHiddenBits - intVal.BitSize) to Int.MaxValue.</param>
     public static BigFloat IntWithAccuracy(int intVal, int precisionInBits)
     {
-        int size = int.Log2(int.Abs(intVal)) + 1 + ExtraHiddenBits;
+        int size = int.Log2(int.Abs(intVal)) + 1 + GuardBits;
         return precisionInBits < -size
             ? Zero
-            : new(((BigInteger)intVal) << (ExtraHiddenBits + precisionInBits), -precisionInBits, size + precisionInBits);
+            : new(((BigInteger)intVal) << (GuardBits + precisionInBits), -precisionInBits, size + precisionInBits);
     }
 
-    public static BigFloat NegativeOne => new(BigInteger.MinusOne << ExtraHiddenBits, 0, ExtraHiddenBits + 1);
+    public static BigFloat NegativeOne => new(BigInteger.MinusOne << GuardBits, 0, GuardBits + 1);
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
     public BigFloat(uint value, int scale = 0)
     {
-        DataBits = (BigInteger)value << ExtraHiddenBits;
+        Mantissa = (BigInteger)value << GuardBits;
         Scale = scale;
-        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + ExtraHiddenBits;
+        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + GuardBits;
         AssertValid();
     }
 
     public BigFloat(char integerPart, int binaryScaler = 0)
     {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         // Special handling required for int.MinValue
         _size = integerPart >= 0
-            ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits
+            ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + GuardBits
             : integerPart != char.MinValue
-                ? integerPart == 0 ? 0 : BitOperations.Log2((byte)-integerPart) + 1 + ExtraHiddenBits
-                : 7 + ExtraHiddenBits;
+                ? integerPart == 0 ? 0 : BitOperations.Log2((byte)-integerPart) + 1 + GuardBits
+                : 7 + GuardBits;
 
         AssertValid();
     }
 
     public BigFloat(byte integerPart, int binaryScaler = 0)
     {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
-        _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + ExtraHiddenBits;
+        _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + GuardBits;
         AssertValid();
     }
 
     public BigFloat(Int128 integerPart, int binaryScaler = 0)
     {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
+            ? (int)Int128.Log2(integerPart) + 1 + GuardBits
+            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + GuardBits : 0;
 
         AssertValid();
     }
 
     public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesHiddenBits)
     {
-        DataBits = (BigInteger)integerPart << ExtraHiddenBits;
+        Mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + ExtraHiddenBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + ExtraHiddenBits : 0;
+            ? (int)Int128.Log2(integerPart) + 1 + GuardBits
+            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + GuardBits : 0;
 
         AssertValid();
 
-        int applyHiddenBits = valueIncludesHiddenBits ? 0 : ExtraHiddenBits;
+        int applyHiddenBits = valueIncludesHiddenBits ? 0 : GuardBits;
         // we need Abs() so items that are a negative power of 2 have the same size as the positive version.
         _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyHiddenBits;
-        DataBits = integerPart << applyHiddenBits;
+        Mantissa = integerPart << applyHiddenBits;
         Scale = binaryScaler; // DataBits of zero can have scale
         AssertValid();
     }

@@ -18,7 +18,7 @@ public static class BigFloatExtensions
     /// <param name="shift">The number of bits to shift left.</param>
     /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
     public static BigFloat LeftShiftMantissa(this BigFloat value, int bits)
-            => BigFloat.CreateFromRawComponents(value.DataBits << bits, value.Scale, value._size + bits);
+            => BigFloat.CreateFromRawComponents(value.Mantissa << bits, value.Scale, value._size + bits);
 
     /// <summary>
     /// Right shift - Decreases the size by removing the least-significant bits. 
@@ -29,6 +29,6 @@ public static class BigFloatExtensions
     /// <param name="bits">The number of bits to shift right.</param>
     /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
     public static BigFloat RightShiftMantissa(this BigFloat value, int bits)
-        => BigFloat.CreateFromRawComponents(value.DataBits >> bits, value.Scale, value._size - bits);
+        => BigFloat.CreateFromRawComponents(value.Mantissa >> bits, value.Scale, value._size - bits);
 
 }

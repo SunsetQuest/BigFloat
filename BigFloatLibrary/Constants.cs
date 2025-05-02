@@ -434,7 +434,7 @@ public readonly partial struct BigFloat
         /// <returns>Pi with the specified precision.</returns>
         public static BigFloat GeneratePi(int accuracyInBits = DefaultPrecisionBits)
         {
-            BigInteger m = BigInteger.One << (accuracyInBits + ExtraHiddenBits + 12);
+            BigInteger m = BigInteger.One << (accuracyInBits + GuardBits + 12);
             BigInteger p = 125;
             BigInteger q = (239 * 239 * 239) << 2;
             BigInteger sum = (m / 5) - (m / (239 << 2));
@@ -462,7 +462,7 @@ public readonly partial struct BigFloat
             // Ensure last bits are correct
             sum >>= 8;
 
-            return new BigFloat(sum, 2 - (int)sum.GetBitLength() + ExtraHiddenBits, true);
+            return new BigFloat(sum, 2 - (int)sum.GetBitLength() + GuardBits, true);
         }
 
         /// <summary>
@@ -477,7 +477,7 @@ public readonly partial struct BigFloat
             int terms = (int)(accuracyInBits * 0.7); // Approximation: need fewer terms than bits
 
             // We'll compute with higher precision and then round
-            int workingPrecision = accuracyInBits + ExtraHiddenBits + 10;
+            int workingPrecision = accuracyInBits + GuardBits + 10;
 
             // Scale factor to maintain precision
             BigInteger scaleFactor = BigInteger.One << workingPrecision;
@@ -504,7 +504,7 @@ public readonly partial struct BigFloat
             }
 
             // Create BigFloat with correct scaling
-            return new BigFloat(result, -workingPrecision + ExtraHiddenBits, true);
+            return new BigFloat(result, -workingPrecision + GuardBits, true);
         }
 
         /// <summary>
@@ -517,7 +517,7 @@ public readonly partial struct BigFloat
         {
             // First, calculate √5 using the BigIntegerTools.NewtonPlusSqrt function
             // We'll use a higher precision to ensure final result has desired accuracy
-            int workingPrecision = accuracyInBits + ExtraHiddenBits + 4;
+            int workingPrecision = accuracyInBits + GuardBits + 4;
 
             // Create BigInteger 5 with sufficient precision
             BigInteger five = BigInteger.Parse("5") << workingPrecision;
@@ -532,7 +532,7 @@ public readonly partial struct BigFloat
             BigInteger phi = onePlusSqrt5 >> 1;
 
             // Create BigFloat with proper scaling
-            return new BigFloat(phi, -workingPrecision + ExtraHiddenBits, true);
+            return new BigFloat(phi, -workingPrecision + GuardBits, true);
         }
 
         /// <summary>
@@ -550,7 +550,7 @@ public readonly partial struct BigFloat
             int terms = accuracyInBits * 2; // Safe upper bound
 
             // We'll compute with higher precision
-            int workingPrecision = accuracyInBits + ExtraHiddenBits + 20;
+            int workingPrecision = accuracyInBits + GuardBits + 20;
 
             // Scale factor to maintain precision
             BigInteger scaleFactor = BigInteger.One << workingPrecision;
@@ -579,7 +579,7 @@ public readonly partial struct BigFloat
             result <<= 1;
 
             // Create BigFloat with correct scaling
-            return new BigFloat(result, -workingPrecision + ExtraHiddenBits, true);
+            return new BigFloat(result, -workingPrecision + GuardBits, true);
         }
 
         /// <summary>
@@ -595,7 +595,7 @@ public readonly partial struct BigFloat
             int terms = accuracyInBits * 3; // Safe upper bound
 
             // We'll compute with higher precision
-            int workingPrecision = accuracyInBits + ExtraHiddenBits + 20;
+            int workingPrecision = accuracyInBits + GuardBits + 20;
 
             // Scale factor to maintain precision
             BigInteger scaleFactor = BigInteger.One << workingPrecision;
@@ -624,7 +624,7 @@ public readonly partial struct BigFloat
             }
 
             // Create BigFloat with correct scaling
-            return new BigFloat(result, -workingPrecision + ExtraHiddenBits, true);
+            return new BigFloat(result, -workingPrecision + GuardBits, true);
         }
 
         /// <summary>
