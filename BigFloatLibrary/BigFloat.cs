@@ -150,7 +150,7 @@ public readonly partial struct BigFloat
         if (accuracy < -32)
             throw new ArgumentOutOfRangeException("1 cannot have a negative accuracy that exceed the ExtraHiddenBits.");
 
-        return new(BigInteger.One << (ExtraHiddenBits + accuracy), -accuracy, ExtraHiddenBits + 1 + accuracy); 
+        return new(BigInteger.One << (ExtraHiddenBits + accuracy), -accuracy, ExtraHiddenBits + 1 + accuracy);
     }
 
 
@@ -1096,7 +1096,7 @@ public readonly partial struct BigFloat
         // if r1 is too small compared to r2 ⇒ result ≅ r2
         if (-scaleDiff > r1._size)
             return new BigFloat(r2Bits, 0, r2Size);
-    
+
         // align mantissas and add
         BigInteger sum;
         int resScale;
@@ -1124,7 +1124,7 @@ public readonly partial struct BigFloat
     }
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
-    
+
     /*                                         : BI | RoundTo| Scales  |Can Round  | Shift     |
      *                                         | or | nearest| or Sets | up to     | or        |
     Public                                     | BF | int    | Size    |larger Size| Size by   |             notes
@@ -1639,7 +1639,7 @@ Other:                                         |   |         |         |       |
     {
         return (byte)DataIntValueWithRound(value.DataBits << value.Scale);
     }
-              
+
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
     public static explicit operator sbyte(BigFloat value)
     {

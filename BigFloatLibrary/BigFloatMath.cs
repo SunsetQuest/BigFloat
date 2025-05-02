@@ -13,7 +13,7 @@ namespace BigFloatLibrary;
 public readonly partial struct BigFloat
 {
     //////////////////////////////// MATH FUNCTIONS ////////////////////////////////////////////
-    
+
     /// <summary>
     /// Calculates the square root of a big floating point number.
     /// </summary>
@@ -257,5 +257,135 @@ public readonly partial struct BigFloat
     public static int Log2Int(BigFloat n)
     {
         return n.BinaryExponent;
+    }
+
+
+    //////////////////////////////// Trig FUNCTIONS ////////////////////////////////////////////
+    // source: Claude 3.7, ChatGPT o3, and Ryan
+
+    /// <summary>Switch point: if log2(|x|) ≤ –4 (~ 0.0625 rad) a direct Taylor series is fastest.</summary>
+    private const int _taylorExpSwitch = -4;    // 1/16 rad ~ 3.6 deg
+
+    // ------------------------------------------------------------------
+    //  Cosine & tangent – reuse sine to avoid duplication
+    // ------------------------------------------------------------------
+    public static BigFloat Cos(BigFloat x) //=> Sin(x + (Constants.GetConstant(Catalog.Pi, x.Precision) >> 1)); 
+    { return SinCos(x, true); }
+    public static BigFloat Sin(BigFloat x)
+    { return SinCos(x, false); }
+
+    private static BigFloat SinCos(BigFloat x,bool isCos) //=> Sin(x + (Constants.GetConstant(Catalog.Pi, x.Precision) >> 1)); 
+    {
+        int prec = Math.Max(x.Size, x.Accuracy) + 1;
+        BigFloat pi = Constants.GetConstant(Catalog.Pi, prec);
+        BigFloat halfPi = pi >> 1;
+
+        if (isCos) x += halfPi;
+
+        //if (x.IsZero) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);       // cheap exit
+        // future: if fits in double then return double Math.Sin(double(x));
+
+        BigFloat twoPi = pi << 1;
+
+        // ---------- Payne‑Hanek style reduction to [‑pi/2, pi/2] ----------
+        BigFloat r = x % twoPi;                 // |r| ≤ pi
+        if (r > pi) r -= twoPi;
+        if (r < -pi) r += twoPi;
+
+        bool negate = false;                    // sine is odd
+        if (r.Sign < 0) { r = -r; negate = true; }
+        if (r > halfPi) r = pi - r;             // sin(pi–x)=sin(x)
+                                                // now 0 ≤ r ≤ pi/2
+
+        // when zero, return zero
+        if (r.DataBits < 2) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);  
+
+        // ----- ----- choose the core routine ----------
+        BigFloat result = (r.BinaryExponent <= _taylorExpSwitch)
+                            ? SinCosTyler(r, r, -prec - 10, 2)           // already tiny
+                            : SinByHalving(r, prec);       // scale down first
+
+        // spec: output precision == input precision
+        //Debug.WriteLine($"wantedPrecision:{prec}  got:{result.Size}");
+        result = BigFloat.TruncateByAndRound(result, 3);
+        return negate ? -result : result;
+    }
+
+    public static BigFloat Tan(BigFloat x)
+    {
+        BigFloat s = Sin(x);
+        BigFloat c = Cos(x);
+        return s / c; // BigFloat.TruncateByAndRound(s / c, 1);
+    }
+
+    // ------------------------------------------------------------------
+    //  (Optional) quick 32‑bit approximation – handy for sanity checks
+    // ------------------------------------------------------------------
+    public static BigFloat SinAprox(BigFloat x)
+    {
+        //BigFloat x2 = x * x;
+        //return x * (OneWithAccuracy(x.Size + 2) - x2 / 6 + x2 * x2 / 120);   // up to x^5
+        int prec = x.Size;                              // how many bits of precision x carries
+        double xd = (double)x;                          // cast to double (rounded to ≤ 53 bits)
+        const double twoPiDouble = 2.0 * Math.PI;       // ≃ 6.283185307179586
+
+        // 1) only do the expensive BigFloat mod‐reduction if |xd| > 2pi or cast overflowed
+        if (double.IsInfinity(xd) || Math.Abs(xd) > twoPiDouble)
+        {
+            // get a 2pi BigFloat at a little extra precision (to avoid rounding errors in the reduction)
+            BigFloat twoPi = Constants.GetConstant(Catalog.Pi, x.Accuracy + 1) << 1;
+            x %= twoPi;                                 // now x is in [–2pi, 2pi]
+            xd = (double)x;                             // re-cast the reduced argument
+        }
+
+        // 2) hardware‐accelerated sine
+        double sd = Math.Sin(xd);
+
+        // 3) lift back to BigFloat and clamp to min(input‐precision, 52 bits)
+        BigFloat result = new(sd);
+        int wanted = Math.Min(prec, 52);
+        return BigFloat.SetPrecisionWithRound(result, wanted);
+    }
+
+    private static BigFloat SinCosTyler(BigFloat x, BigFloat term, int stopExp, int k)
+    {
+        BigFloat sum = term;
+        BigFloat x2 = x * x;
+        for (; ; k += 2)
+        {
+            // sin when k=2: term *= −x^2 / ((2k‑1)(2k))
+            // cos when k=1: term *= −x^2 / ((2k)(2k+1))
+            term = -term * x2 / (k * (k + 1));
+            sum += term;
+            if (term.BinaryExponent <= stopExp) break;
+        }
+        return sum;
+    }
+
+    private static BigFloat SinByHalving(BigFloat x, int p)
+    {
+        // halve until |x| < 2^-4
+        int halves = 0;
+        BigFloat y = x;
+        while (y.BinaryExponent > _taylorExpSwitch)
+        {
+            y >>= 1;
+            halves++;
+        }
+
+        // do the small‑angle evaluation with guard bits
+        int workP = p  + halves + 13;
+        BigFloat s = SinCosTyler(y, y,  -workP - 8, 2); //SinTaylor
+        BigFloat c = SinCosTyler(y, OneWithAccuracy(x.Size + 2), -workP, 1); //CosTaylor
+
+        // rebuild the original angle via repeated double‑angle
+        for (int i = 0; i < halves; i++)
+        {
+            BigFloat sNew = (s * c) << 1;       // sin(2 theta)
+            BigFloat cNew = c * c - s * s;      // cos(2 theta)
+            s = sNew;
+            c = cNew;
+        }
+        return s;
     }
 }

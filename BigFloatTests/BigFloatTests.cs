@@ -6783,5 +6783,131 @@ public class BigFloatTests
             }
         }
     }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //private static readonly BigFloat Pi = Constants.Fundamental.Pi;
+    private static readonly BigFloat Pi = BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, precisionInBits: 200);
+    private static readonly BigFloat HalfPi = Pi / 2;
+    private static readonly BigFloat QuarterPi = Pi / 4;
+
+    // ——— Exact values ————————————————————————————————————————————————————
+
+    [TestMethod]
+    public void Sin_Zero_IsZero()
+    {
+        var s = BigFloat.Sin(BigFloat.Zero);
+        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), s, "Sin(0) should be 0");
+    }
+
+    [TestMethod]
+    public void Cos_Zero_IsOne()
+    {
+        var c = BigFloat.Cos(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
+        Assert.AreEqual(BigFloat.OneWithAccuracy(100), c, "Cos(0) should be 1");
+    }
+
+    [TestMethod]
+    public void Sin_HalfPi_IsOne()
+    {
+        var s = BigFloat.Sin(HalfPi);
+        Assert.AreEqual(BigFloat.OneWithAccuracy(100), s, "Sin(pi/2) should be 1");
+    }
+
+    [TestMethod]
+    public void Cos_Pi_IsMinusOne()
+    {
+        var c = BigFloat.Cos(Pi);
+        Assert.AreEqual(-BigFloat.OneWithAccuracy(100), c, "Cos(pi) should be −1");
+    }
+
+    [TestMethod]
+    public void Sin_Pi_IsZero()
+    {
+        var s = BigFloat.Sin(Pi);
+        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-200), s, "Sin(pi) should be 0");
+    }
+
+    [TestMethod]
+    public void Tan_QuarterPi_IsOne()
+    {
+        var t = BigFloat.Tan(QuarterPi);
+        Assert.AreEqual(BigFloat.OneWithAccuracy(100), t, "Tan(pi/4) should be 1");
+    }
+
+    [TestMethod]
+    public void Tan_Zero_IsZero()
+    {
+        var t = BigFloat.Tan(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
+        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), t, "Tan(0) should be 0");
+    }
+
+    // ——— Approximate (double) comparisons ————————————————————————————————————
+
+    [TestMethod]
+    public void Sin_0p5_ShouldMatchMathSin()
+    {
+        const double x = 0.5;
+        // force a bit more precision internally to avoid rounding
+        var bf = BigFloat.Sin((BigFloat)x);
+        double got = (double)bf;
+        Assert.AreEqual(Math.Sin(x), got, 1e-15, "Sin(0.5) should match Math.Sin");
+    }
+
+    [TestMethod]
+    public void Cos_0p3_ShouldMatchMathCos()
+    {
+        const double x = 0.3;
+        BigFloat answer = BigFloat.Parse("0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629");
+        BigFloat valToConvert = BigFloat.Parse("0.30000000000000000000000000000000000000000000000000000000");
+        BigFloat result = BigFloat.Cos(valToConvert);
+        Debug.WriteLine(result.ToString(true));
+
+        Assert.AreEqual(0, answer.StrictCompareTo(result), $"BigFloat.Parse(\"0.9553364891256060196..) should match BigFloat.Cos(BigFloat.Parse(\"0.3000000000000000...) \r\n{answer.ToString(true)} != \r\n{result.ToString(true)}[{valToConvert.Size}->{result.Size}]");
+
+        double got = (double)BigFloat.Cos((BigFloat)x);
+        Debug.WriteLine("(double)" + ((BigFloat)x).ToString(true) + " --> " +(BigFloat.Cos((BigFloat)x).ToString(true)));
+        Assert.AreEqual(Math.Cos(x), got, 1e-15, $"Cos(0.3)({got}) should match Math.Cos({Math.Cos(x)})");
+    }
+
+    [TestMethod]
+    public void Tan_0p7_ShouldMatchMathTan()
+    {
+        const double x = 0.7;
+        var bf = BigFloat.Tan((BigFloat)x);
+        double got = (double)bf;
+        Assert.AreEqual(Math.Tan(x), got, 1e-14, "Tan(0.7) should match Math.Tan");
+    }
+
+    // ——— Optional quick-approx tests ——————————————————————————————————————
+
+    [TestMethod]
+    public void SinAprox_SmallAngle_IsReasonable()
+    {
+        const double x = 0.1;
+        var exact = BigFloat.Sin((BigFloat)x);
+        var approx = BigFloat.SinAprox((BigFloat)x);
+        // approx is a 5th-order Taylor; error ~ x^7/5040
+        double err = Math.Abs((double)(exact - approx));
+        Assert.IsTrue(err < 1e-24, $"SinAprox(0.1) error {err:N2} should be <1e-24");
+    }
+
+    [TestMethod]
+    public void SinAprox_LargerAngle_IsNotExact()
+    {
+        const double x = 1.0;
+        var exact = BigFloat.Sin((BigFloat)x);
+        var approx = BigFloat.SinAprox((BigFloat)x);
+        double err = Math.Abs((double)(exact - approx));
+        Assert.IsTrue(err < 1e-24, $"SinAprox(1.0) error {err:N2} should be <1e-24");
+    }
+
+
+
+
+
+
+
+
 }
 
