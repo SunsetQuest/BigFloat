@@ -8,7 +8,7 @@ The `BigFloat` struct is a sophisticated implementation of an arbitrary-precisio
 
 `BigFloat` is a **readonly partial struct** that represents a floating-point number with arbitrary precision. Unlike traditional floating-point types like `float` or `double`, which are constrained by fixed bit widths (e.g., 32 or 64 bits), `BigFloat` uses a `BigInteger` for its mantissa (`DataBits`) and an integer (`Scale`) for its base-2 exponent. This design allows it to handle numbers of any size and precision, making it ideal for applications requiring exact arithmetic, such as scientific computing, cryptography, or financial calculations.
 
-A key feature of `BigFloat` is its use of **extra hidden bits** (defined as a constant `ExtraHiddenBits`, typically 32), which are included in the `DataBits` to enhance precision and control rounding during operations. These hidden bits act as a buffer, ensuring that arithmetic results remain accurate even when precision is adjusted or numbers are converted.
+A key feature of `BigFloat` is its use of **extra guard bits** (defined as a constant `GuardBits`, typically 32), which are included in the `DataBits` to enhance precision and control rounding during operations. These guard bits act as a buffer, ensuring that arithmetic results remain accurate even when precision is adjusted or numbers are converted.
 
 ---
 
@@ -19,7 +19,7 @@ The `BigFloat` struct is defined as follows in C#:
 ```csharp
 public readonly partial struct BigFloat
 {
-    public const int ExtraHiddenBits = 32;
+    public const int GuardBits = 32;
     public readonly BigInteger DataBits { get; }
     internal readonly int _size;
     public readonly int Scale { get; init; }
@@ -30,17 +30,17 @@ public readonly partial struct BigFloat
 
 - **`DataBits` (readonly BigInteger)**:
   - The mantissa of the number, storing the significant digits in a `BigInteger`.
-  - Includes `ExtraHiddenBits` to provide additional precision beyond the visible significant bits.
+  - Includes `GuardBits` to provide additional precision beyond the visible significant bits.
   - Can be positive, negative, or zero, with the sign preserved in the `BigInteger`.
 
 - **`Scale` (readonly int)**:
   - The base-2 exponent offset, determining the position of the radix point (binary point).
   - A positive `Scale` shifts the radix point to the right, effectively multiplying the value by \(2^{\text{Scale}}\).
   - A negative `Scale` shifts the radix point to the left, dividing by \(2^{|\text{Scale}|}\).
-  - When `Scale` is zero, the radix point is positioned immediately after the main bits but before the hidden bits.
+  - When `Scale` is zero, the radix point is positioned immediately after the main bits but before the guard bits.
 
 - **`_size` (internal readonly int)**:
-  - Represents the bit length of the absolute value of `DataBits`, including the hidden bits.
+  - Represents the bit length of the absolute value of `DataBits`, including the guard bits.
   - Equals zero only if `DataBits` is exactly zero.
   - Used internally to track the total size of the number in bits.
 
@@ -51,43 +51,43 @@ public readonly partial struct BigFloat
 The `BigFloat` struct exposes a rich set of properties to describe its state and behavior:
 
 - **`Size` (int)**:
-  - The precision of the number in bits, excluding the `ExtraHiddenBits`.
-  - Calculated as `Math.Max(0, _size - ExtraHiddenBits)`.
-  - Represents the number of significant bits available for computation after accounting for the hidden bits.
+  - The precision of the number in bits, excluding the `GuardBits`.
+  - Calculated as `Math.Max(0, _size - GuardBits)`.
+  - Represents the number of significant bits available for computation after accounting for the guard bits.
 
 - **`BinaryExponent` (int)**:
   - The overall base-2 exponent of the number.
-  - Computed as `Scale + _size - ExtraHiddenBits - 1`.
+  - Computed as `Scale + _size - GuardBits - 1`.
   - Indicates the effective exponent when considering both the scale and the bit length.
 
 - **`IsZero` (bool)**:
   - Returns `true` if the value is effectively zero, taking into account precision and scale.
-  - Considers rounding effects from hidden bits.
+  - Considers rounding effects from guard bits.
 
 - **`IsStrictZero` (bool)**:
   - Returns `true` only if `DataBits` is exactly zero (no rounding considered).
 
 - **`IsOutOfPrecision` (bool)**:
-  - Returns `true` if the number has less than one bit of precision (`_size < ExtraHiddenBits`).
-  - Indicates that the number’s significant bits are entirely within the hidden bits range.
+  - Returns `true` if the number has less than one bit of precision (`_size < GuardBits`).
+  - Indicates that the number’s significant bits are entirely within the guard bits range.
 
 - **`IsPositive` / `IsNegative` (bool)**:
   - Determines the sign of the number based on the `Sign` property after rounding.
 
 - **`Sign` (int)**:
   - Returns `-1` (negative), `0` (zero), or `1` (positive).
-  - For numbers with insufficient precision, rounds based on the most significant hidden bit.
+  - For numbers with insufficient precision, rounds based on the most significant guard bit.
 
 - **`UnscaledValue` (BigInteger)**:
-  - The integer value of the number after removing and rounding the `ExtraHiddenBits`.
+  - The integer value of the number after removing and rounding the `GuardBits`.
   - Represents the mantissa as it would appear without the scale applied.
 
-- **`SizeWithHiddenBits` (int)**:
-  - An alias for `_size`, representing the total bit length of `DataBits`, including hidden bits.
+- **`SizeWithGuardBits` (int)**:
+  - An alias for `_size`, representing the total bit length of `DataBits`, including guard bits.
 
 - **`Precision` (int)**:
-  - The precision in bits, excluding hidden bits (`_size - ExtraHiddenBits`).
-  - Can be negative if `_size` is less than `ExtraHiddenBits`.
+  - The precision in bits, excluding guard bits (`_size - GuardBits`).
+  - Can be negative if `_size` is less than `GuardBits`.
 
 - **`Accuracy` (int)**:
   - The negative of the scale (`-Scale`).
@@ -95,15 +95,15 @@ The `BigFloat` struct exposes a rich set of properties to describe its state and
 
 - **`IsInteger` (bool)**:
   - Returns `true` if the fractional part is effectively zero or rounds to an integer.
-  - Considers up to half of the hidden bits for rounding purposes.
+  - Considers up to half of the guard bits for rounding purposes.
 
 ### Bit Extraction Properties
 
-- **`Lowest64BitsWithHiddenBits` (ulong)**:
-  - The least significant 64 bits of `DataBits`, including hidden bits.
+- **`Lowest64BitsWithGuardBits` (ulong)**:
+  - The least significant 64 bits of `DataBits`, including hidden guard bits.
 
 - **`Lowest64Bits` (ulong)**:
-  - The least significant 64 bits after rounding and removing hidden bits.
+  - The least significant 64 bits after rounding and removing guard bits.
 
 - **`Highest64Bits` (ulong)**:
   - The most significant 64 bits of the magnitude of `DataBits`.
@@ -121,10 +121,10 @@ The `BigFloat` struct exposes a rich set of properties to describe its state and
   - Represents the value 0 with zero size, precision, scale, and accuracy.
 
 - **`One` (BigFloat)**:
-  - Represents the value 1 with minimal precision plus `ExtraHiddenBits`.
+  - Represents the value 1 with minimal precision plus `GuardBits`.
 
 - **`NegativeOne` (BigFloat)**:
-  - Represents the value -1 with minimal precision plus `ExtraHiddenBits`.
+  - Represents the value -1 with minimal precision plus `GuardBits`.
 
 ---
 
@@ -132,9 +132,9 @@ The `BigFloat` struct exposes a rich set of properties to describe its state and
 
 `BigFloat` offers a variety of constructors to instantiate numbers from different numeric types:
 
-- **`BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesHiddenBits = false)`**:
+- **`BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false)`**:
   - Creates a `BigFloat` from a `BigInteger`.
-  - If `valueIncludesHiddenBits` is `false` (default), shifts the input left by `ExtraHiddenBits` to include hidden bits.
+  - If `valueIncludesGuardBits` is `false` (default), shifts the input left by `GuardBits` to include guard bits.
   - `binaryScaler` adjusts the `Scale`.
 
 - **Integer Constructors**:
@@ -153,7 +153,7 @@ The `BigFloat` struct exposes a rich set of properties to describe its state and
 
 - **Internal Constructor**:
   - **`BigFloat(BigInteger rawValue, int binaryScaler, int rawValueSize)`**:
-    - Constructs a `BigFloat` from raw parts, assuming `rawValue` includes hidden bits.
+    - Constructs a `BigFloat` from raw parts, assuming `rawValue` includes guard bits.
     - Intended for advanced or internal use.
 
 ---
@@ -169,7 +169,7 @@ Additional methods provide specialized ways to create `BigFloat` instances:
   - Creates the value 1 with the specified accuracy (`-Scale`).
 
 - **`IntWithAccuracy(BigInteger intVal, int precisionInBits)`**:
-  - Creates an integer value with additional precision bits beyond `ExtraHiddenBits`.
+  - Creates an integer value with additional precision bits beyond `GuardBits`.
 
 - **`IntWithAccuracy(int intVal, int precisionInBits)`**:
   - Similar to above, but for 32-bit integers.
@@ -195,11 +195,11 @@ Additional methods provide specialized ways to create `BigFloat` instances:
   - **`/`**: Divides one `BigFloat` by another.
   - **`%`**: Computes the remainder of division.
 
-  Results are rounded based on the precision of the operands and the `ExtraHiddenBits`.
+  Results are rounded based on the precision of the operands and the `GuardBits`.
 
 ### Comparison Operators
 
-- **`==`**: Checks equality, considering precision and hidden bits.
+- **`==`**: Checks equality, considering precision and guard bits.
 - **`!=`**: Checks inequality.
 - **`<`**: Less than.
 - **`>`**: Greater than.
@@ -229,7 +229,7 @@ From integer types to `BigFloat`:
   - From `float`, `double`, `BigInteger`.
 - **From `BigFloat`**:
   - To `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `Int128`, `UInt128`, `float`, `double`, `BigInteger`.
-  - Integer conversions apply the scale and round/truncate hidden/fractional bits.
+  - Integer conversions apply the scale and round/truncate guard/fractional bits.
   - Floating-point conversions may lose precision or overflow.
 
 ---
@@ -238,7 +238,7 @@ From integer types to `BigFloat`:
 
 - **`CompareTo(BigFloat other)`**:
   - Returns `-1`, `0`, or `1` based on comparison.
-  - Aligns scales and considers hidden bits for rounding.
+  - Aligns scales and considers guard bits for rounding.
 
 - **`CompareTo(object obj)`**:
   - Compares with another `BigFloat` or `BigInteger`.
@@ -301,10 +301,10 @@ From integer types to `BigFloat`:
   - Non-throwing parse attempt.
 
 - **`ToString()`**:
-  - Decimal string representation, rounding hidden bits.
+  - Decimal string representation, rounding guard bits.
 
 - **`ToString(bool includeOutOfPrecisionBits)`**:
-  - Includes hidden bit digits if `true`.
+  - Includes guard bit digits if `true`.
 
 - **`ToString(string format)`**:
   - Supports `"X"` (hex), `"B"` (binary).
@@ -335,4 +335,4 @@ From integer types to `BigFloat`:
 
 ## Conclusion
 
-The `BigFloat` struct is a powerful tool for arbitrary-precision arithmetic in C#, offering a robust and flexible framework for handling high-precision floating-point numbers. Its use of `BigInteger` for the mantissa, combined with a scalable base-2 exponent and hidden bits for precision control, makes it suitable for a wide range of applications. This specification has outlined its core structure, properties, operators, and methods, providing a comprehensive reference for developers seeking to leverage its capabilities.
+The `BigFloat` struct is a powerful tool for arbitrary-precision arithmetic in C#, offering a robust and flexible framework for handling high-precision floating-point numbers. Its use of `BigInteger` for the mantissa, combined with a scalable base-2 exponent and guard bits for precision control, makes it suitable for a wide range of applications. This specification has outlined its core structure, properties, operators, and methods, providing a comprehensive reference for developers seeking to leverage its capabilities.

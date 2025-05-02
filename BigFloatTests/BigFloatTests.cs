@@ -102,14 +102,14 @@ public class BigFloatTests
     public void Verify_BitwiseComplementOperator()
     {
         BigFloat a = BigFloat.ParseBinary("10.111");
-        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includedHiddenBits:BigFloat.GuardBits);
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includedGuardBits:BigFloat.GuardBits);
         AreEqual(expectedAns, ~a);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
-        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, includesHiddenBits: BigFloat.GuardBits);
+        _ = BigFloat.TryParseBinary("  11001001001.11111111111111111111111111111111", out expectedAns, includedGuardBits: BigFloat.GuardBits);
         AreEqual(expectedAns, ~a);
 
-        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, includesHiddenBits: BigFloat.GuardBits);
+        _ = BigFloat.TryParseBinary("11001001001.11111111111111111111111111111111", out a, includedGuardBits: BigFloat.GuardBits);
         _ = BigFloat.TryParseBinary("  110110110", out expectedAns);
         AreEqual(expectedAns, ~a);
 
@@ -226,26 +226,26 @@ public class BigFloatTests
 
         bool success = BigFloat.ConstantBuilder.Const_0_0307.TryGetAsBigFloat(out BigFloat bf, 100);
 
-        BigFloat ans = BigFloat.ParseBinary("0.0000011111011101100111101100000010101011110101000101011101101100000100100001101000100011010011110010000010011000011101001101011001111101100111100001001110101010011000111100110011100110110111000", includedHiddenBits: 32);
+        BigFloat ans = BigFloat.ParseBinary("0.0000011111011101100111101100000010101011110101000101011101101100000100100001101000100011010011110010000010011000011101001101011001111101100111100001001110101010011000111100110011100110110111000", includedGuardBits: 32);
         if (success)
             AreEqual(0, bf.StrictCompareTo(ans));
         
         success = BigFloat.ConstantBuilder.Const_0_4146.TryGetAsBigFloat(out bf, 200);
-        ans = BigFloat.ParseBinary("0.011010100010100010100010000010100000100010100010000010000010100000100010100000100010000010000000100010100010100010000000000000100010000010100000000010100000100000100010000010000010100000000010100010100000000000100000000000100010100010000010", includedHiddenBits: 32);
+        ans = BigFloat.ParseBinary("0.011010100010100010100010000010100000100010100010000010000010100000100010100000100010000010000000100010100010100010000000000000100010000010100000000010100000100000100010000010000010100000000010100010100000000000100000000000100010100010000010", includedGuardBits: 32);
         if (success)
             AreEqual(0, bf.StrictCompareTo(ans));
 
         success = BigFloat.ConstantBuilder.Const_0_5671.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedGuardBits: 32)));
 
         success = BigFloat.ConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
         if (success)
-            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedGuardBits: 32)));
 
         success = BigFloat.ConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 300);
         if (success)
-            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedHiddenBits: 32)));
+            AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedGuardBits: 32)));
     }
 
     [TestMethod]
@@ -437,43 +437,43 @@ public class BigFloatTests
         b = BigFloat.ParseBinary("100.000");
         IsFalse((a - b).IsZero);
 
-        IsFalse(BigFloat.ParseBinary("1|111111111", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
-        IsFalse(BigFloat.ParseBinary("0|111111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|111111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) 
-        IsTrue(BigFloat.ParseBinary("0|011111111", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)                                            
-        IsTrue(BigFloat.ParseBinary("0|011111111", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0|011111111", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsTrue(BigFloat.ParseBinary("0|001111111", 1, 0).IsZero); //                                               (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|001111111", 2, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|111111111", -2, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) 
+        IsFalse(BigFloat.ParseBinary("0|111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|111111111", 0, 0).IsZero); //  (no because _size >= GuardBits-2) 
+        IsTrue(BigFloat.ParseBinary("0|011111111", -1, 0).IsZero); //  (no because _size >= GuardBits-2)                                            
+        IsTrue(BigFloat.ParseBinary("0|011111111", 0, 0).IsZero); //   (no because _size >= GuardBits-2)
+        IsFalse(BigFloat.ParseBinary("0|011111111", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0|001111111", 1, 0).IsZero); //                                         (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|001111111", 2, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
         IsTrue(BigFloat.ParseBinary("0|000111111", 2, 0).IsZero); //
-        IsFalse(BigFloat.ParseBinary("0|000111111", 3, 0).IsZero); //                                              (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|000000000", -2, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) 
-        IsFalse(BigFloat.ParseBinary("1|000000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|000000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|100000000", -1, 0).IsZero); // (no because _size >= ExtraHiddenBits-2)
-        IsFalse(BigFloat.ParseBinary("0|100000000", 0, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|100000000", 1, 0).IsZero); //  (no because _size >= ExtraHiddenBits-2) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|000111111", 3, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|000000000", -2, 0).IsZero); // (no because _size >= GuardBits-2) 
+        IsFalse(BigFloat.ParseBinary("1|000000000", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|000000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|100000000", -1, 0).IsZero); // (no because _size >= GuardBits-2)
+        IsFalse(BigFloat.ParseBinary("0|100000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|100000000", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
 
 
         //  IntData    Scale  Precision  Zero
-        //1|111111111 << -2       1       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1|111111111 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) 
-        //0|111111111 << -1       0       Y -1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0|111111111 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) 
+        //1|111111111 << -2       1       Y -1 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
+        //1|111111111 << -1       1       N  0 (no because _size >= GuardBits-1) 
+        //0|111111111 << -1       0       Y -1 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
+        //0|111111111 <<  0       0       N  0 (no because _size >= GuardBits-1) 
         //0|011111111 << -1      -1       Y -2                                             
         //0|011111111 <<  0      -1       Y -1 (borderline)
-        //0|011111111 <<  1      -1       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|011111111 <<  1      -1       N  0                                       (no because (Scale + _size - GuardBits) < 0)
         //0|001111111 <<  1      -2       Y -1 (borderline)
-        //0|001111111 <<  2      -2       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|001111111 <<  2      -2       N  0                                       (no because (Scale + _size - GuardBits) < 0)
         //0|000111111 <<  2      -3       Y -1 (borderline)
-        //0|000111111 <<  3      -3       N  0                                             (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1|000000000 << -2       1       N -1 (no because _size >= ExtraHiddenBits-1) 
-        //1|000000000 << -1       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //1|000000000 <<  0       1       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0|100000000 << -1       0       N -1 (no because _size >= ExtraHiddenBits-1)
-        //0|100000000 <<  0       0       N  0 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
-        //0|100000000 <<  1       0       N  1 (no because _size >= ExtraHiddenBits-1) AND (no because (Scale + _size - ExtraHiddenBits) < 0)
+        //0|000111111 <<  3      -3       N  0                                       (no because (Scale + _size - GuardBits) < 0)
+        //1|000000000 << -2       1       N -1 (no because _size >= GuardBits-1) 
+        //1|000000000 << -1       1       N  0 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
+        //1|000000000 <<  0       1       N  0 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
+        //0|100000000 << -1       0       N -1 (no because _size >= GuardBits-1)
+        //0|100000000 <<  0       0       N  0 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
+        //0|100000000 <<  1       0       N  1 (no because _size >= GuardBits-1) AND (no because (Scale + _size - GuardBits) < 0)
 
         IsFalse(BigFloat.ParseBinary("100.01").IsZero);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000001").IsZero);
@@ -511,16 +511,16 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_GetPrecision()
     {
-        int hiddenBits = BigFloat.GuardBits;
+        int guardBits = BigFloat.GuardBits;
         AreEqual(5, BigFloat.ParseBinary("100.01").Precision);
         AreEqual(1, BigFloat.ParseBinary("-0.00000000000000000000001").Precision);
-        AreEqual(1 - hiddenBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hiddenBits).Precision);
-        AreEqual(1 - hiddenBits, BigFloat.ParseBinary("0.00001", 0, 0, hiddenBits).Precision);
-        AreEqual(4 - hiddenBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hiddenBits).Precision);
-        AreEqual(9 - hiddenBits, BigFloat.ParseBinary("100000000", 0, 0, hiddenBits).Precision);
-        AreEqual(17 - hiddenBits, BigFloat.ParseBinary("10000000000000000", 0, 0, hiddenBits).Precision);
-        AreEqual(25 - hiddenBits, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hiddenBits).Precision);
-        AreEqual(33 - hiddenBits, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hiddenBits).Precision);
+        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, guardBits).Precision);
+        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00001", 0, 0, guardBits).Precision);
+        AreEqual(4 - guardBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, guardBits).Precision);
+        AreEqual(9 - guardBits, BigFloat.ParseBinary("100000000", 0, 0, guardBits).Precision);
+        AreEqual(17 - guardBits, BigFloat.ParseBinary("10000000000000000", 0, 0, guardBits).Precision);
+        AreEqual(25 - guardBits, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, guardBits).Precision);
+        AreEqual(33 - guardBits, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, guardBits).Precision);
     }
 
     [TestMethod]
@@ -958,8 +958,8 @@ public class BigFloatTests
             IsFalse(resNeg == (BigFloat)sq);
 
             int resSize = (int)bi.GetBitLength();
-            AreEqual(resPos.SizeWithHiddenBits, resSize);
-            AreEqual(resNeg.SizeWithHiddenBits, resSize);
+            AreEqual(resPos.SizeWithGuardBits, resSize);
+            AreEqual(resNeg.SizeWithGuardBits, resSize);
         }
 
         // 1, 10, 100, 1000, 10000....testing (In Precision)
@@ -998,8 +998,8 @@ public class BigFloatTests
             IsFalse(resNeg == (BigFloat)sq);
 
             int resSize = (int)bi.GetBitLength();
-            AreEqual(resPos.SizeWithHiddenBits - 1, resSize);
-            AreEqual(resNeg.SizeWithHiddenBits - 1, resSize);
+            AreEqual(resPos.SizeWithGuardBits - 1, resSize);
+            AreEqual(resNeg.SizeWithGuardBits - 1, resSize);
         }
 
         // what about 31???
@@ -1941,43 +1941,43 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_TestHiLow64Bits()
     {
-        //                                                       Dec/Display,  low64WithHidden,       low64,              high64 
+        // BigFloat to test, Dec/Display, low64WithGuardBits, low64, high64 
         TestHiLow64Bits(new BigFloat((BigInteger)0x0, 0, true), "0.00000", "0000000000000000", "0000000000000000", "0000000000000000");
 
         // 0.00001
         TestHiLow64Bits(new BigFloat((BigInteger)0x1, 0, true), "0.00001", "0000000000000001", "0000000000000000", "8000000000000000");
 
-        //  0.1000000
+        // 0.1000000
         TestHiLow64Bits(new BigFloat((BigInteger)0x10000000, 0, true), "0.1000000", "0000000010000000", "0000000000000000", "8000000000000000");
 
-        // .999999
+        // 0.999999
         TestHiLow64Bits(new BigFloat((BigInteger)0xFFFFFFFF, 0, true), "0.999999", "00000000FFFFFFFF", "0000000000000000", "FFFFFFFF00000000");
 
-        //  1.000000
+        // 1.000000
         TestHiLow64Bits(new BigFloat((BigInteger)0x100000000, 0, true), "1.00000", "0000000100000000", "0000000000000001", "8000000000000000");
 
-        //  1.500000
+        // 1.500000
         TestHiLow64Bits(new BigFloat((BigInteger)0x180000000, 0, true), "1.50000", "0000000180000000", "0000000000000001", "C000000000000000");
 
         // 1.99999999
         TestHiLow64Bits(new BigFloat((BigInteger)0x1FFFFFFFF, 0, true), "1.999999", "00000001FFFFFFFF", "0000000000000001", "FFFFFFFF80000000");
 
-        //  2.000000
+        // 2.000000
         TestHiLow64Bits(new BigFloat((BigInteger)0x200000000, 0, true), "2.00000", "0000000200000000", "0000000000000002", "8000000000000000");
 
-        //  2.000...001
+        // 2.000...001
         TestHiLow64Bits(new BigFloat((BigInteger)0x200000001, 0, true), "2.00000...001", "0000000200000001", "0000000000000002", "8000000040000000");
 
-        //  3.500000
+        // 3.500000
         TestHiLow64Bits(new BigFloat((BigInteger)0x380000000, 0, true), "3.50000", "0000000380000000", "0000000000000003", "E000000000000000");
 
         // 3.99999999
         TestHiLow64Bits(new BigFloat((BigInteger)0x3FFFFFFFF, 0, true), "3.999999", "00000003FFFFFFFF", "0000000000000003", "FFFFFFFFC0000000");
 
-        //  4.000000
+        // 4.000000
         TestHiLow64Bits(new BigFloat((BigInteger)0x400000000, 0, true), "4.00000", "0000000400000000", "0000000000000004", "8000000000000000");
 
-        //  4.000...001
+        // 4.000...001
         TestHiLow64Bits(new BigFloat((BigInteger)0x400000001, 0, true), "4.00000...001", "0000000400000001", "0000000000000004", "8000000020000000");
 
         // 0x00000000 FFFFFFFF
@@ -2029,14 +2029,14 @@ public class BigFloatTests
         {
             BigFloat val = (BigFloat)x;
             BigFloat neg = -val;
-            AreEqual(val.Lowest64BitsWithHiddenBits, neg.Lowest64BitsWithHiddenBits);
+            AreEqual(val.Lowest64BitsWithGuardBits, neg.Lowest64BitsWithGuardBits);
             AreEqual(val.Lowest64Bits, neg.Lowest64Bits);
             AreEqual(val.Highest64Bits, neg.Highest64Bits);
         }
 
     }
 
-    private static void TestHiLow64Bits(BigFloat bf, string textInput, string low64WithHiddenAnswer, string low64Answer, string high64Answer)
+    private static void TestHiLow64Bits(BigFloat bf, string textInput, string low64WithGuardAnswer, string low64Answer, string high64Answer)
     {
         for (int i = 0; i < 2; i++)
         {
@@ -2045,22 +2045,22 @@ public class BigFloatTests
                 bf = -bf;
                 textInput = "-" + textInput;
             }
-            string res = bf.Lowest64BitsWithHiddenBits.ToString("X16");
-            AreEqual(res, low64WithHiddenAnswer, $"Low64BitsWithHidden: {res} != {low64WithHiddenAnswer} on input {textInput} [{bf.DebuggerDisplay}]");
+            string res = bf.Lowest64BitsWithGuardBits.ToString("X16");
+            AreEqual(res, low64WithGuardAnswer, $"Low64BitsWithGuard: {res} != {low64WithGuardAnswer} on input {textInput} [{bf.DebuggerDisplay}]");
             res = bf.Lowest64Bits.ToString("X16");
-            AreEqual(res, low64Answer, $"Lowest64Bits   : {res} != {low64Answer} on input {textInput} [{bf.DebuggerDisplay}]");
+            AreEqual(res, low64Answer, $"Lowest64Bits  : {res} != {low64Answer} on input {textInput} [{bf.DebuggerDisplay}]");
             res = bf.Highest64Bits.ToString("X16");
-            AreEqual(res, high64Answer, $"Highest64Bits  : {res} != {high64Answer} on input {textInput} [{bf.DebuggerDisplay}]");
+            AreEqual(res, high64Answer, $"Highest64Bits : {res} != {high64Answer} on input {textInput} [{bf.DebuggerDisplay}]");
         }
 
-        //Console.WriteLine("Lowest64BitsWithHiddenBits: " + bf.Lowest64BitsWithHiddenBits.ToString("X16"));
-        //Console.WriteLine("Lowest64Bits:               " + bf.Lowest64Bits.ToString("X16"));
-        //Console.WriteLine("Highest64Bits:              " + bf.Highest64Bits.ToString("X16"));
+        //Console.WriteLine("Lowest64BitsWithGuardBits: " + bf.Lowest64BitsWithGuardBits.ToString("X16"));
+        //Console.WriteLine("Lowest64Bits:              " + bf.Lowest64Bits.ToString("X16"));
+        //Console.WriteLine("Highest64Bits:             " + bf.Highest64Bits.ToString("X16"));
 
         //Console.WriteLine("-0.00000 " + bf.DebuggerDisplay);
-        //Console.WriteLine("Lowest64BitsWithHiddenBits: " + bf.Lowest64BitsWithHiddenBits.ToString("X16"));
-        //Console.WriteLine("Lowest64Bits:               " + bf.Lowest64Bits.ToString("X16"));
-        //Console.WriteLine("Highest64Bits:              " + bf.Highest64Bits.ToString("X16"));
+        //Console.WriteLine("Lowest64BitsWithGuardBits: " + bf.Lowest64BitsWithGuardBits.ToString("X16"));
+        //Console.WriteLine("Lowest64Bits:              " + bf.Lowest64Bits.ToString("X16"));
+        //Console.WriteLine("Highest64Bits:             " + bf.Highest64Bits.ToString("X16"));
         //return bf;
     }
 
@@ -4461,7 +4461,7 @@ public class BigFloatTests
         a = new BigFloat((float)-0.0000000444);//0.000000000000000000000000101111101011001001010001                 (init via float)
         //                                        0.00000000000000000000000010111111001000000100010001110110101100...(answer from https://www.exploringbinary.com/binary-converter)
         b = new BigFloat((float)-0.0000000445);//0.000000000000000000000000101111110010000001000100                 (init via float)
-        //                                                                             HiddenBits  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //                                                                             GuardBits  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) > 0, $"Fail-210 on Verify_CompareToIgnoringLeastSigBitsFast");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) < 0, $"Fail-210 on Verify_CompareToIgnoringLeastSigBitsFast");
 
@@ -5448,14 +5448,14 @@ public class BigFloatTests
 
         // output   11001110111111101101000111101110100100010001000110110110110101011101110001110001100011
         // expect   11001110111111101101000111101110100100010001000110111000000000000000000000000000000000
-        //                                                                ################################  hidden
+        //                                                                ################################  guard
         expect = new BigFloat("-14566005701624942", 96);
         AreEqual(output.Size, inputVal1.Size, $"Step 92a: Multiply ({inputVal0} * {inputVal1}) output size was {output.Size} bits but expected {inputVal1.Size} bits");
         AreEqual(output, expect, $"Step 92b: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
 
         // output     11001110111111101101000111101110100100010001000110110110110101011101110001110001100011    62560518121828658697411683
         // expected   110011101111111011010001111011101001000100000000000000000000000000000000                 889038433937 14566005701624942(DataBits = 3818390998646471524352)
-        //                                                    ################################  hidden
+        //                                                    ################################  GuardBits
         expect = new BigFloat("-889038433937", 110); //-1154037866912041818479159667074393539946217472
         AreEqual(output, expect, $"Step 94: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
 
@@ -5463,7 +5463,7 @@ public class BigFloatTests
         // output:    110011101111111011010001111011101001000100010001101101101101010111011101                 3818390998646768719325 (this.DataBits >> (sizeDiff - expDifference))
         // expect:    110011101111111011010001111011101001001                                                  444519216969 << (32 + 1) = 3818390998650766491648
         // expect:    110011101111111011010001111011101001001000000000000000000000000000000000                 3818390998650766491648 (other)  or 1154037866913250071024881716200922954189504512
-        //                                                    ################################  hidden
+        //                                                    ################################  GuardBits
         //                                                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  rounding
         expect = new BigFloat("-444519216969", 111); //-1154037866913250071024881716200922954189504512
         AreEqual(output, expect, $"Step 95: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
@@ -5485,7 +5485,7 @@ public class BigFloatTests
         expect = new BigFloat(BigInteger.Parse("-115403786691204181931719282793182013649615844287826014858001281754705681"), 0);
         // output     1000010111000100100000111100110000010001111010011101110101110111000001000011101011101011101000110001001001    42392656037190875842938869288009
         // expected   10000101110001001000001111001100000100011110100111011101011110010000010010100010000101001100101101011111000110111100100010110010111111011001101000101110111110101100100001111111100001100001111100010000000000100011010001001101011110001000100000000000000000000000000000000                   -_______ >> 32 = -115403786691204181931719282793182013649615844287826014858001281754705681
-        //                                                                                      ################################  hidden
+        //                                                                                      ################################  GuardBits
         IsFalse(output == expect, $"Step 97a: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
 
         // a little too small
@@ -5494,9 +5494,9 @@ public class BigFloatTests
         // output(be4 Round) 1000010111000100100000111100110000010001111010011101110101111001000001001000001000010100110010110101111100111111010011101111111110101110100100011001011110111100110101001101010111110101111111101110000110011111110
         // output            1000010111000100100000111100110000010001111010011101110101111001000001001000001000010100110010110101111101      42392656037190875851739737828733<<163
         // expected          10000101110001001000001111001100000100011110100111011101011110010000010010000000000000000000000000000000000000  678282496595054013627833570557952>>4
-        // output(rounded)   10000101110001001000001111001100000100011110100111011101011110010000010010                                              9870309391336253809682 << 163  (includes hidden)
+        // output(rounded)   10000101110001001000001111001100000100011110100111011101011110010000010010                                              9870309391336253809682 << 163  (includes GuardBits)
         // expected(rounded) 10000101110001001000001111001100000100011110100111011101011110010000010010
-        //                                                                                            ################################  hidden
+        //                                                                                            ################################  GuardBits
         AreEqual(output, expect, $"Step 97b: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         // a little too small
@@ -5505,7 +5505,7 @@ public class BigFloatTests
         // expected         100001011100010010000011110011000001000111101001110111010111100100100100101000100001010011001011010111110001101111001000101100101111110110011010001011101111101011001000011111111000011000011111000100000000001000110100010011010111100010001  (this)(right)  9870309391336253809811  (DataBits: 115403786691204181933215860469808858237856417556527488670128956678713105
         // output(rounded)  10000101110001001000001111001100000100011110100111011101011110010000010010  (other)(left)  9870309391336253809682 << 163  (DataBits: 42392656037190875851739737828733)
         // expected(rounded)10000101110001001000001111001100000100011110100111011101011110010010010011  (this)(right)  9870309391336253809811  (DataBits: 115403786691204181933215860469808858237856417556527488670128956678713105
-        //                                                                                      ^       ################################  hidden
+        //                                                                                      ^       ################################  GuardBits
         IsFalse(output == expect, $"Step 97c: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         // a little too small
@@ -5514,14 +5514,14 @@ public class BigFloatTests
         // expected         100001011100010010000011110011000001000111001001110111010111100100000100101000100001010011001011010111110001101111001000101100101111110110011010001011101111101011001000011111111000011000011111000100000000001000110100010011010111100010001
         // output(rounded)  10000101110001001000001111001100000100011110100111011101011110010000010010    (other)(left)                       9870309391336253809682 << 163  (DataBits: 42392656037190875851739737828733)
         // expected(rounded)10000101110001001000001111001100000100011100100111011101011110010000010011        DataBits: 115403786691179073524777736070126670491923013622161605436223425616654097
-        //                                                                                              ################################  hidden
+        //                                                                                              ################################  GuardBits
         IsFalse(output == expect, $"Step 97d: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         // a little too small
         expect = new BigFloat(BigInteger.Parse("-9870309391336253809680"), 163);
         // output     1000010111000100100000111100110000010001111010011101110101110111000001000011101011101011101000110001001001    42392656037190875842938869288009
         // expected   1000010111000100100000111100110000010001111010011101110101111001000001000000000000000000000000000000000000
-        //                                                                                      ################################  hidden
+        //                                                                                      ################################  GuardBits
         IsFalse(output == expect, $"Step 97d: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         // a little too big                          
@@ -5529,21 +5529,21 @@ public class BigFloatTests
         // manual calc 100001011100010010000011110011000001000111101001110111010111100100000100100000100001010011001011010111110001101111001000101100101111110110011010001011101111101011001000011111111000011000011111000100000000.00111011010001011011100110010101000001000000000000001100001101...  13434768967703471650801766289704559608123152231389557678010624.231532668
         // output  n   1000010111000100100000111100110000010001111010011101110101111001000001001000001000010100110010110101111101    42392656037190875851739737828733<<163
         // expected    1000010111000100100000111100110000010001111010011101110101111001000001000100000000000000000000000000000000    9870309391336253809681
-        //                                                                                       ################################  hidden
+        //                                                                                       ################################  GuardBits
         IsFalse(output == expect, $"Step 97e: Multiply ({inputVal0} * {inputVal1}) was {output} but expected {expect}");
 
         // just right  
         expect = new BigFloat(BigInteger.Parse("-9870309391336253809682"), 163);
         // output  n   1000010111000100100000111100110000010001111010011101110101111001000001001000001000010100110010110101111101    42392656037190875851739737828733<<163
         // expected    1000010111000100100000111100110000010001111010011101110101111001000001001000000000000000000000000000000000
-        //                                                                                       ################################  hidden
+        //                                                                                       ################################  GuardBits
         AreEqual(output, expect, $"Step 97f: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         // a little too big
         expect = new BigFloat(BigInteger.Parse("-9870309391336253809683"), 163);
         // output  n   1000010111000100100000111100110000010001111010011101110101111001000001001000001000010100110010110101111101    42392656037190875851739737828733<<163
         // expected    1000010111000100100000111100110000010001111010011101110101111001000001001100000000000000000000000000000000
-        //                                                                                       ################################  hidden
+        //                                                                                       ################################  GuardBits
         IsFalse(output == expect, $"Step 97f: Multiply ({inputVal0} * {inputVal1}) was {output} but this should not be equal to {expect}");
 
         (double growthSpeed_i, double growthSpeed_j, int MAX_INT) = TestTargetInMillseconds switch
@@ -6069,7 +6069,7 @@ public class BigFloatTests
         // b2:   10.11111111111111111111111111111111111111111111111111111111111111111111111111111111111111 10011 2.999999999999999999999999995
         // b3:    0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000 11000 0.00000000000000000000000001
         // would be true, by a small margin, because a4 == b3 
-        // BUT 0.333333333333333333333333333 is stored with hidden bits being 0x00000000 so it comes up false
+        // BUT 0.333333333333333333333333333 is stored with guard bits being 0x00000000 so it comes up false
         AreEqual(BigFloat.Inverse(a), b, $"Failed on: Inverse(-0.333333333333333333333333333)");
 
         b = new BigFloat("-3.0000"); // more true since too small (allows for larger tolerance)

@@ -31,22 +31,22 @@ public readonly partial struct BigFloat
 // IComparable, IComparable<BigFloat>, IEquatable<BigFloat> - see BigFloatCompareTo.cs
 {
     /// <summary>
-    /// The number of Extra Hidden Bits in the mantissa to aid in better precision. 
-    /// ExtraHiddenBits are a fixed amount of least-significant sub-precise bits.
+    /// The number of extra hidden guard bits in the mantissa to aid in better precision. 
+    /// GuardBits are a fixed amount of least-significant sub-precise bits.
     /// These bits help guard against some nuisances such as "7" * "9" being 60. 
     /// </summary>
     public const int GuardBits = 32;  // 0-62, must be even (for sqrt)
 
     /// <summary>
-    /// Gets the full integer's data bits, including extra hidden bits.
+    /// Gets the full integer's data bits, including guard bits.
     /// </summary>
     public readonly BigInteger Mantissa { get; }
 
     /// <summary>
     /// _size are the number of precision bits. It is equal to "ABS(DataBits).GetBitLength()". The ABS is for 
     ///       power-of-two negative BigIntegers (-1,-2,-4,-8...) so it is the same whether positive or negative.
-    /// _size INCLUDES ExtraHiddenBits (the Property Size subtracts out ExtraHiddenBits)
-    /// _size does not include rounding from ExtraHiddenBits. (11[111...111] (where [111...111] is ExtraHiddenBits) is still 2 bits. So the user will see it as 0b100 with a size of 2.)
+    /// _size INCLUDES GuardBits (the Property Size subtracts out GuardBits)
+    /// _size does not include rounding from GuardBits. (11[111...111] (where [111...111] is GuardBits) is still 2 bits. So the user will see it as 0b100 with a size of 2.)
     /// _size is 0 only when 'DataBits==0'
     /// When BigFloat is Zero, the size is zero.
     /// </summary>
@@ -65,15 +65,15 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// The binary Scale (or -Accuracy) is the amount to left shift (<<) the DataBits (i.e. right shift the radix point) to get to the desired value.
-    /// When Scale is Zero, the value is equal to the DataBits with the ExtraHiddenBits removed. (i.e. DataBits >> ExtraHiddenBits)
+    /// When Scale is Zero, the value is equal to the DataBits with the GuardBits removed. (i.e. DataBits >> GuardBits)
     /// When BigFloat is Zero, scale is the point of least accuracy.
-    /// note: _scale = Scale-ExtraHiddenBits (or Scale = _scale + ExtraHiddenBits)
+    /// note: _scale = Scale-GuardBits (or Scale = _scale + GuardBits)
     /// </summary>
     public readonly int Scale { get; init; }
 
     /// <summary>
     /// The Size is the precision. It is the number of bits required to hold the number. 
-    /// ExtraHiddenBits are subtracted out. Use SizeWithHiddenBits to include ExtraHiddenBits.
+    /// GuardBits are subtracted out. Use SizeWithGuardBits to include GuardBits.
     /// </summary>
     public readonly int Size => Math.Max(0, _size - GuardBits);
 
@@ -113,22 +113,22 @@ public readonly partial struct BigFloat
 
 
     /// <summary>
-    /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in ExtraHiddenBits is counted.
+    /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in GuardBits is counted.
     /// </summary>
     public bool IsPositive => Sign > 0;
 
     /// <summary>
-    /// Rounds and returns true if this value is negative. Only the top bit in ExtraHiddenBits is counted.
+    /// Rounds and returns true if this value is negative. Only the top bit in GuardBits is counted.
     /// </summary>
     public bool IsNegative => Sign < 0;
 
     /// <summary>
-    /// Rounds and returns -1 if negative, 0 if zero, and +1 if positive. Only the top bit in ExtraHiddenBits and top out-of-precision hidden bit are included.
+    /// Rounds with GuardBits and returns -1 if negative, 0 if zero, and +1 if positive.
     /// </summary>
     public int Sign => (_size >= GuardBits - 1) ? Mantissa.Sign : 0;
 
     /// <summary>
-    /// Gets the integer part of the BigFloat with no scaling is applied. ExtraHiddenBits are rounded and removed.
+    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
     /// </summary>
     public readonly BigInteger UnscaledValue => DataIntValueWithRound(Mantissa);
 
@@ -138,14 +138,14 @@ public readonly partial struct BigFloat
     public static BigFloat Zero => new(0, 0, 0);
 
     /// <summary>
-    /// Returns a '1' with only 1 bit of precision. (1 << ExtraHiddenBits)
+    /// Returns a '1' with only 1 bit of precision. (1 << GuardBits)
     /// </summary>
     public static BigFloat One => new(BigInteger.One << GuardBits, 0, GuardBits + 1);
 
     /// <summary>
     /// Returns a "1" with a specific accuracy. 
     /// </summary>
-    /// <param name="accuracy">The wanted accuracy between -32(ExtraHiddenBits) to Int.MaxValue.</param>
+    /// <param name="accuracy">The wanted accuracy between -32(GuardBits) to Int.MaxValue.</param>
     public static BigFloat OneWithAccuracy(int accuracy)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(accuracy, -32);
@@ -156,9 +156,9 @@ public readonly partial struct BigFloat
     /////////////////////////    CONVERSION  FUNCTIONS     /////////////////////////
 
     /// <summary>
-    /// Constructs a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="rawValueSize"/> with respect to the ExtraHiddenBits.
+    /// Constructs a BigFloat using the raw elemental parts. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="rawValueSize"/> with respect to the GuardBits.
     /// </summary>
-    /// <param name="rawValue">The raw mantissa value as a BigInteger. It should INCLUDE the ExtraHiddenBits.</param>
+    /// <param name="rawValue">The raw mantissa value as a BigInteger. It should INCLUDE the GuardBits.</param>
     /// <param name="binaryScaler">How much should the <paramref name="rawValue"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="rawValueSize">The size of rawValue. </param>
     private BigFloat(BigInteger rawValue, int binaryScaler, int rawValueSize)
@@ -175,12 +175,12 @@ public readonly partial struct BigFloat
     /// </summary>
     /// <param name="integerPart">The integer part of the BigFloat that will have a <paramref name="binaryScaler"/> applied to it. </param>
     /// <param name="binaryScaler">How much should the <paramref name="integerPart"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
-    /// <param name="valueIncludesHiddenBits">if true, then the hidden bits should be included in the integer part.</param>
-    public BigFloat(BigInteger integerPart, int binaryScaler = 0, bool valueIncludesHiddenBits = false)
+    /// <param name="valueIncludesGuardBits">if true, then the guard bits should be included in the integer part.</param>
+    public BigFloat(BigInteger integerPart, int binaryScaler = 0, bool valueIncludesGuardBits = false)
     {
-        int applyHiddenBits = valueIncludesHiddenBits ? 0 : GuardBits;
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
         // we need Abs() so items that are a negative power of 2 has the same size as the positive version.
-        Mantissa = integerPart << applyHiddenBits;
+        Mantissa = integerPart << applyGuardBits;
         _size = (int)BigInteger.Abs(Mantissa).GetBitLength();
         Scale = binaryScaler; // DataBits of zero can have scale
 
@@ -315,9 +315,9 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Constructs a BigFloat using the raw elemental components. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="mantissaSize"/> with respect to the ExtraHiddenBits.
+    /// Constructs a BigFloat using the raw elemental components. The user is responsible to pre-up-shift rawValue and set <paramref name="binaryScaler"/> and <paramref name="mantissaSize"/> with respect to the GuardBits.
     /// </summary>
-    /// <param name="mantissa">The raw integer part that includes the ExtraHiddenBits.</param>
+    /// <param name="mantissa">The raw integer part that includes the GuardBits.</param>
     /// <param name="binaryScaler">How much should the <paramref name="mantissa"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="mantissaSize">The size of the <paramref name="mantissa"/>.</param>
     public static BigFloat CreateFromRawComponents(BigInteger mantissa, int binaryScaler, int mantissaSize)
@@ -331,15 +331,15 @@ public readonly partial struct BigFloat
     ///////////////////////// [END] INIT / CONVERSION  FUNCTIONS [END] /////////////////////////
 
     /// <summary>
-    /// Checks to see if the value is an integer. Returns true if all the bits between the radix point and the middle of ExtraHiddenBits are all 0 or all 1.
-    ///   for scale <= 0, if all bits are 0 or 1 between radix and half-way through the ExtraHiddenBits
-    ///   for scale >= (ExtraHiddenBits/2), is always true.
+    /// Checks to see if the value is an integer. Returns true if all the bits between the radix point and the middle of GuardBits are all 0 or all 1.
+    ///   for scale <= 0, if all bits are 0 or 1 between radix and half-way through the GuardBits
+    ///   for scale >= (GuardBits/2), is always true.
     /// 
     /// if we call it an integer then it should follow that ...
-    ///   it should not round up based on ExtraHiddenBits
+    ///   it should not round up based on GuardBits
     ///   Ceiling would round up (and Floor down for negative)
     /// </summary>
-    public bool IsInteger  //v3 -  just checks bits between radix and middle of hidden bits
+    public bool IsInteger  //v3 -  just checks bits between radix and middle of guard bits
     {
         get
         {
@@ -364,7 +364,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool IsOneBitFollowedByZeroBits => BigInteger.TrailingZeroCount(Mantissa >> (GuardBits - 1)) == (_size - GuardBits);
 
-    public ulong Lowest64BitsWithHiddenBits
+    public ulong Lowest64BitsWithGuardBits
     {
         get
         {
@@ -390,7 +390,7 @@ public readonly partial struct BigFloat
             else if (_size >= GuardBits)
             {
                 return ~(ulong)(((Mantissa - 1) >> GuardBits) & ulong.MaxValue);
-                //return (ulong)((BigInteger.Abs(DataBits) >> ExtraHiddenBits) & ulong.MaxValue); //perf: benchmark
+                //return (ulong)((BigInteger.Abs(DataBits) >> GuardBits) & ulong.MaxValue); //perf: benchmark
 
             }
             else
@@ -442,32 +442,32 @@ public readonly partial struct BigFloat
         if (Mantissa.Sign > 0)
         {
             // If Positive and Floor, the size should always remain the same.
-            // If Scale is between 0 and ExtraHiddenBits..
+            // If Scale is between 0 and GuardBits..
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
-            if (Scale >= 0) // SCALE >= 0 and SCALE < ExtraHiddenBits
+            if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
             {
                 return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
             }
 
             // If Scale is between -size and 0..
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  10.1101[10101010010...00010]  -> 10.[00000000000...00000]
-            //BigInteger intPart = ((DataBits >> bitsToClear) + 1) << ExtraHiddenBits;
+            //BigInteger intPart = ((DataBits >> bitsToClear) + 1) << GuardBits;
             //return new BigFloat((DataBits >> bitsToClear) +  (IsInteger?0:1));
             return new BigFloat(Mantissa >> bitsToClear);
         }
         else  // if (DataBits.Sign <= 0)
         {
             //   If Negative and Flooring, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
-            // Lets just remove the bits and clear ExtraHiddenBits
+            // Lets just remove the bits and clear GuardBits
             //   Example: Scale =  4, int=45, size=8+32=40  -> bitsToClear=32-4  11101101[1010.1010010...00010]  -> 11101101[1010.0000000...00000]
 
             // clear bitToClear bits 
 
             _ = GuardBits - Math.Max(0, Scale);
 
-            // If Scale is between 0 and ExtraHiddenBits..
+            // If Scale is between 0 and GuardBits..
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-            if (Scale >= 0) // SCALE >= 0 and SCALE < ExtraHiddenBits
+            if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
             {
                 bool roundsUp = (Mantissa & ((1 << bitsToClear) - 1)) > 0;
                 BigInteger intPart = Mantissa >> bitsToClear << bitsToClear;
@@ -492,7 +492,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the HiddenBits, 
+    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the GuardBits, 
     /// then they are considered not equal. 
     ///   Returns negative => this instance is less than other
     ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
@@ -520,15 +520,15 @@ public readonly partial struct BigFloat
         {
             return (-diff >> (GuardBits - 1)).Sign;
         }
-        // Alternative Method - this method rounds off the ExtraHiddenBits and then compares the numbers. 
+        // Alternative Method - this method rounds off the GuardBits and then compares the numbers. 
         // The drawback to this method are...
-        //   - the two numbers can be one tick apart in the hidden bits but considered not equal.
+        //   - the two numbers can be one tick apart in the guard bits but considered not equal.
         //   - the two numbers can be very near 1 apart but considered not equal..
         // The advantage to this method are...
         //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
         //   - may have slightly better performance.
-        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + ExtraHiddenBits);
-        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + ExtraHiddenBits);
+        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + GuardBits);
+        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + GuardBits);
         // return a.CompareTo(b);
     }
 
@@ -546,7 +546,7 @@ public readonly partial struct BigFloat
 
         // If bitsToClear <= 0, then all fraction bits are implicitly zero and nothing needs to be done.
         //   Example: Scale = 32+7, int=45, size=6+32=38 -> bitsToClear=-7   -101101[10101010010...00010]0000000.
-        if (bitsToClear <= 0) // Scale >= ExtraHiddenBits
+        if (bitsToClear <= 0) // Scale >= GuardBits
         {
             return this;
         }
@@ -558,9 +558,9 @@ public readonly partial struct BigFloat
             return Mantissa.Sign <= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits);
         }
 
-        // Radix point is in the ExtraHiddenBits area
+        // Radix point is in the GuardBits area
         //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-        if (Scale < GuardBits) // SCALE >= 0 and SCALE<ExtraHiddenBits
+        if (Scale < GuardBits) // SCALE >= 0 and SCALE<GuardBits
         {
             // optimization here?
         }
@@ -568,11 +568,11 @@ public readonly partial struct BigFloat
         if (Mantissa.Sign > 0)
         {
             //   If Positive and Ceiling, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
-            // Lets just remove the bits and clear ExtraHiddenBits
+            // Lets just remove the bits and clear GuardBits
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  10.1101[10101010010...00010]  -> 10.[00000000000...00000]
 
-            if (Scale >= 0) // Scale is between 0 and ExtraHiddenBits
+            if (Scale >= 0) // Scale is between 0 and GuardBits
             {
                 //  Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
                 bool roundsUp = (Mantissa & ((1 << bitsToClear) - 1)) > 0;
@@ -591,7 +591,7 @@ public readonly partial struct BigFloat
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  -11.1101[10101010010...00010]  -> -100.[00000000000...00000]
             else //if (Scale < 0)
             {
-                // round up if any bits set between (ExtraHiddenBits/2) and (ExtraHiddenBits-Scale) 
+                // round up if any bits set between (GuardBits/2) and (GuardBits-Scale) 
                 bool roundsUp = (Mantissa & (((BigInteger.One << ((GuardBits / 2) - Scale)) - 1) << (GuardBits / 2))) > 0;
 
                 BigInteger intPart = Mantissa >> bitsToClear << GuardBits;
@@ -609,7 +609,7 @@ public readonly partial struct BigFloat
         else  // if (DataBits.Sign <= 0)
         {
             // If Negative and Ceiling, the size should always remain the same.
-            // If Scale is between 0 and ExtraHiddenBits..
+            // If Scale is between 0 and GuardBits..
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
             if (Scale >= 0)
             {
@@ -641,7 +641,7 @@ public readonly partial struct BigFloat
     /// When a rollover is near these bits are included. 
     ///   e.g. 11110 and 100000 returns 3
     ///   
-    /// HiddenBits are included.
+    /// GuardBits are included.
     /// </summary>
     /// <param name="a">The first BigFloat to compare to.</param>
     /// <param name="b">The second BigFloat to compare to.</param>
@@ -673,7 +673,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Returns the number of matching leading bits that exactly match. HiddenBits are included.
+    /// Returns the number of matching leading bits that exactly match. GuardBits are included.
     /// i.e. The number of leading bits that exactly match.
     /// e.g. 11010 and 11111 returns 2
     /// e.g. 100000 and 111111 returns 1
@@ -975,7 +975,7 @@ public readonly partial struct BigFloat
 
     public static BigFloat operator ++(BigFloat r)
     {
-        // hidden bits = 4
+        // assuming GuardBits is 4:
         // A)  1111|1111__.  => 1111|1111<< 6   +1  =>  1111|1111__.
         // B)  1111|1111_.   => 1111|1111<< 5   +1  =>  10000|0000#.
         // C)  1111|1111.    => 1111|1111<< 4   +1  =>  10000|0000.
@@ -1031,7 +1031,7 @@ public readonly partial struct BigFloat
     public static BigFloat operator +(BigFloat r1, BigFloat r2)
     {
         // Shortcuts (to benchmark, does it actually save any time)
-        // Given ExtraHiddenBits = 8, a number like "B2D"00 + 0.00"3F" should be just "B2D"00 since the smaller number is below the precision range.
+        // Given GuardBits = 8, a number like "B2D"00 + 0.00"3F" should be just "B2D"00 since the smaller number is below the precision range.
         //
         // Example: "12345678"9ABCDEF0________.         (Size: 29, _size: 61, Scale: 64)
         //        +                  "12"34560.789A     (Size:  5, _size: 37, Scale: 20)
@@ -1083,7 +1083,7 @@ public readonly partial struct BigFloat
         // trivial cases
         if (r2 == 0) return r1;
 
-        // embed integer into mantissa with hidden bits
+        // embed integer into mantissa with guard bits
         BigInteger r2Bits = new BigInteger(r2) << GuardBits;
         int r2Size = (int)BigInteger.Abs(r2Bits).GetBitLength();
         int scaleDiff = r1.Scale;   // since r2Scale = 0
@@ -1124,31 +1124,31 @@ public readonly partial struct BigFloat
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
 
-    /*                                         : BI | RoundTo| Scales  |Can Round  | Shift     |
-     *                                         | or | nearest| or Sets | up to     | or        |
-    Public                                     | BF | int    | Size    |larger Size| Size by   |             notes
+    /*                                         : BI | RoundTo| Scales  |Can Round| Shift   |
+     *                                         | or | nearest| or Sets |to larger| or      |
+    Public                                     | BF | int    | Size    |Size     | Size by |             notes
     ====================================================================================================================                  
-    P BF  =(<<, >>)BF                          | F |   No    | SetsSize|  No   |    (param)    | Provides a shift similar to other data types. (removes/adds bits)
-      BI  =DataIntValueWithRound(BI)/Int       | I | Rounds  | Scales  |  Yes  |ExtraHiddenBits| return WouldRound(val) ? (val >> ExtraHiddenBits) + 1 : val >> ExtraHiddenBits;
-      BI  =DataIntValueWithRound(BI,bool)/Int  | I | Rounds  | Scales  |  Yes  |ExtraHiddenBits| return needToRound ? (val >> ExtraHiddenBits) + 1 : val >> ExtraHiddenBits;
-    P BF  =RightShiftWithRound(BF,int)         | F | Rounds  | Scales  |  Yes  |    (param)    |
-    P BF  =RightShiftWithRound(BF,int,out)     | F | Rounds  | Scales  |  Yes  |    (param)    |
-      BI  =RightShiftWithRound(BI,ref int)     | I | Rounds  | Scales  |  Yes  |    (param)    |
-      BI  =RightShiftWithRound(BI, int)        | I | Rounds  | Scales  |  Yes  |    (param)    |
-      BF  =TruncateByAndRound(BF, int)         | F | Rounds  | SetsSize|  Yes  |    (param)    |
-      BF  =TruncateToAndRound(BI, int)         | I | Rounds  | SetsSize|  Yes  |    (param)    |
-      BF  =UpScale(BI, int)                    | I |   No    | Scales  |  No   |    (param)    | i.e. Shifts scale up
-      BF  =DownScale(BI, int)                  | I |   No    | Scales  |  No   |    (param)    | i.e. Shifts using down
-      BF  =AdjustScale(BI, int)                | I |   No    | Scales  |  No   |    (param)    | i.e. Shifts using up or down
-      BF  =SetPrecision(BF, int)               | F |   No    | SetsSize|  No   |    (param)    |
-    P BF  =SetPrecisionWithRound(BF,int)       | F | Rounds  | SetsSize|  Yes  |    (param)    |
-      BF  =ExtendPrecision(BF, int)            | F |   No    | SetsSize|  No   |    (param)    |
-      BI  Int                                  | I | Rounds  | Scales  |  Yes  |ExtraHiddenBits| i.e. Int => DataIntValueWithRound(DataBits);
-Other:                                         |   |         |         |       |               |
-    P bool=WouldRound()                        | F | Rounds  | n/a     |  Yes  |ExtraHiddenBits| return WouldRound(DataBits, ExtraHiddenBits);
-    P bool=WouldRound(int bottomBitsRemoved)   | F | Rounds  | n/a     |  Yes  |ExtraHiddenBits| return WouldRound(DataBits, bottomBitsRemoved);
-    P bool=WouldRound(BI)                      | F | Rounds  | n/a     |  Yes  |ExtraHiddenBits| return WouldRound(bi, ExtraHiddenBits);
-    P bool=WouldRound(BI,int bottomBitsRemove) | F | Rounds  | n/a     |  Yes  |    (param)    | return !(bi & ((BigInteger)1 << (bottomBitsRemoved - 1))).OutOfPrecision;
+    P BF  =(<<, >>)BF                          | F |   No    | SetsSize|  No     | (param) | Provides a shift similar to other data types. (removes/adds bits)
+      BI  =DataIntValueWithRound(BI)/Int       | I | Rounds  | Scales  |  Yes    |GuardBits| return WouldRound(val) ? (val >> GuardBits) + 1 : val >> GuardBits;
+      BI  =DataIntValueWithRound(BI,bool)/Int  | I | Rounds  | Scales  |  Yes    |GuardBits| return needToRound ? (val >> GuardBits) + 1 : val >> GuardBits;
+    P BF  =RightShiftWithRound(BF,int)         | F | Rounds  | Scales  |  Yes    | (param) |
+    P BF  =RightShiftWithRound(BF,int,out)     | F | Rounds  | Scales  |  Yes    | (param) |
+      BI  =RightShiftWithRound(BI,ref int)     | I | Rounds  | Scales  |  Yes    | (param) |
+      BI  =RightShiftWithRound(BI, int)        | I | Rounds  | Scales  |  Yes    | (param) |
+      BF  =TruncateByAndRound(BF, int)         | F | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =TruncateToAndRound(BI, int)         | I | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =UpScale(BI, int)                    | I |   No    | Scales  |  No     | (param) | i.e. Shifts scale up
+      BF  =DownScale(BI, int)                  | I |   No    | Scales  |  No     | (param) | i.e. Shifts using down
+      BF  =AdjustScale(BI, int)                | I |   No    | Scales  |  No     | (param) | i.e. Shifts using up or down
+      BF  =SetPrecision(BF, int)               | F |   No    | SetsSize|  No     | (param) |
+    P BF  =SetPrecisionWithRound(BF,int)       | F | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =ExtendPrecision(BF, int)            | F |   No    | SetsSize|  No     | (param) |
+      BI  Int                                  | I | Rounds  | Scales  |  Yes    |GuardBits| i.e. Int => DataIntValueWithRound(DataBits);
+Other:                                         |   |         |         |         |         |
+    P bool=WouldRound()                        | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, GuardBits);
+    P bool=WouldRound(int bottomBitsRemoved)   | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, bottomBitsRemoved);
+    P bool=WouldRound(BI)                      | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(bi, GuardBits);
+    P bool=WouldRound(BI,int bottomBitsRemove) | F | Rounds  | n/a     |  Yes    | (param) | return !(bi & ((BigInteger)1 << (bottomBitsRemoved - 1))).OutOfPrecision;
 
       
     * SetsSize = forces a particular size using the param (instead of add/removes the size)
@@ -1160,7 +1160,7 @@ Other:                                         |   |         |         |       |
     /////////////////////////////////
 
     /// <summary>
-    /// Checks to see if this integerPart would round-up if ExtraHiddenBits are removed.
+    /// Checks to see if this integerPart would round-up if GuardBits are removed.
     /// </summary>
     /// <param name="bi">The BigInteger we would like check if it would round up.</param>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
@@ -1170,7 +1170,7 @@ Other:                                         |   |         |         |       |
     }
 
     /// <summary>
-    /// Checks to see if the integerPart would round-up if the ExtraHiddenBits were removed. 
+    /// Checks to see if the integerPart would round-up if the GuardBits were removed. 
     /// e.g. 11010101 with 3 bits removed would be 11011.
     /// </summary>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
@@ -1191,7 +1191,7 @@ Other:                                         |   |         |         |       |
     }
 
     /// <summary>
-    /// Checks to see if the integerPart would round-up if the ExtraHiddenBits were removed. 
+    /// Checks to see if the integerPart would round-up if the GuardBits were removed. 
     /// e.g. 11010101 with 3 bits removed would be 11011.
     /// </summary>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
@@ -1207,18 +1207,18 @@ Other:                                         |   |         |         |       |
     /////////////////////////////////////////////
 
     /// <summary>
-    /// Retrieves the internal data bits and removes ExtraHiddenBits and rounds.
+    /// Retrieves the internal data bits and removes GuardBits and rounds.
     /// </summary>
-    /// <param name="x">The DataBits part where to remove ExtraHiddenBits and round.</param>
+    /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
     private static BigInteger DataIntValueWithRound(BigInteger x)
     {
         return RightShiftWithRound(x, GuardBits);
     }
 
     /// <summary>
-    /// Removes ExtraHiddenBits and rounds. It also requires the current size and will adjust it if it grows.
+    /// Removes GuardBits and rounds. It also requires the current size and will adjust it if it grows.
     /// </summary>
-    /// <param name="x">The DataBits part where to remove ExtraHiddenBits and round.</param>
+    /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
     private static BigInteger DataIntValueWithRound(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, GuardBits, ref size);
@@ -1479,11 +1479,11 @@ Other:                                         |   |         |         |       |
         }
 
         // 4) general integer multiply:
-        //    DataBits includes ExtraHiddenBits of guard bits.
+        //    DataBits includes GuardBits of guard bits.
         //    Multiply mantissa by ub exactly.
         BigInteger mant = a.Mantissa * new BigInteger(ub);
 
-        // 5) clamp mantissa back to original _size bits (including ExtraHiddenBits)
+        // 5) clamp mantissa back to original _size bits (including GuardBits)
         //    if it grew larger, right-shift with round, and bump the scale
         int sizePart = (int)BigInteger.Abs(mant).GetBitLength();
         int origSize = a._size;
@@ -1574,7 +1574,7 @@ Other:                                         |   |         |         |       |
         int targetSize = divisor._size;
 
         // Shift the divisor's mantissa to ensure we maintain precision
-        // We add ExtraHiddenBits for rounding plus a small buffer for division
+        // We add GuardBits for rounding plus a small buffer for division
         int extraShift = GuardBits + 2; // 2 extra bits as buffer
         BigInteger shifted = BigInteger.Abs(divisor.Mantissa) << extraShift;
 
@@ -1646,50 +1646,50 @@ Other:                                         |   |         |         |       |
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator ushort(BigFloat value)
     {
         return (ushort)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator short(BigFloat value)
     {
         return (short)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator ulong(BigFloat value)
     {
         return (ulong)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator long(BigFloat value)
     {
         return (long)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator UInt128(BigFloat value)
     {
         return (UInt128)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed 128-bit integer. 
-    /// The fractional part (including ExtraHiddenBits) are simply discarded.</summary>
+    /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator Int128(BigFloat value)
     {
         return (Int128)DataIntValueWithRound(value.Mantissa << value.Scale);
     }
 
     /// <summary>
-    /// Casts a BigInteger to a BigFloat. The ExtraHiddenBits are set to zero. 
-    /// Example: a BigInteger of 1 would translate to "1+ExtraHiddenBits" bits of precision.
+    /// Casts a BigInteger to a BigFloat. The GuardBits are set to zero. 
+    /// Example: a BigInteger of 1 would translate to "1+GuardBits" bits of precision.
     /// </summary>
     /// <param name="value">The BigInteger to cast to a BigFloat.</param>
     public static explicit operator BigFloat(BigInteger value)
@@ -1741,7 +1741,7 @@ Other:                                         |   |         |         |       |
     }
 
     /// <summary>
-    /// Casts a BigFloat to a BigInteger. The fractional part (including hidden bits) are simply discarded.
+    /// Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.
     /// </summary>
     /// <param name="value">The BigFloat to cast as a BigInteger.</param>
     public static explicit operator BigInteger(BigFloat value)
@@ -1795,7 +1795,7 @@ Other:                                         |   |         |         |       |
         return (int)(value.Mantissa << (value.Scale - GuardBits));
     }
 
-    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including hidden bits) are simply discarded.</summary>
+    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
         return (uint)(value.Mantissa << (value.Scale - GuardBits));

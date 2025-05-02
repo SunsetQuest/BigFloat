@@ -20,7 +20,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     //   string ToString() - calls ToStringDecimal()
     //   string ToString(string format) - to Hex(e.g. A4B.F2) and Binary(e.g. 1010111.001)
     //   string ToStringDecimal() - To Decimal, e.g. 9999.99
-    //   string ToStringHexScientific(bool showHiddenBits = false, bool showSize = false, bool showInTwosComplement = false) - e.g. "12AC<<22"
+    //   string ToStringHexScientific(bool showGuardBits = false, bool showSize = false, bool showInTwosComplement = false) - e.g. "12AC<<22"
 
     [DebuggerHidden()]
     public override string ToString()
@@ -62,7 +62,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     private string ToHexString()
     {
-        // When Scale is non-negative, shift off the extra hidden bits and format.
+        // When Scale is non-negative, shift off the extra guard bits and format.
         if (Scale >= 0)
         {
             return (Mantissa >> (GuardBits - Scale)).ToString("X");
@@ -170,7 +170,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             destination[pos++] = '-';
         }
 
-        // Get the absolute value as a byte array (after rounding off hidden bits).
+        // Get the absolute value as a byte array (after rounding off guard bits).
         int size = _size;
         ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(Mantissa), GuardBits, ref size).ToByteArray();
 
@@ -337,7 +337,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             string numberText = power5Scaled.ToString();
 
             int decimalOffset = numberText.Length - decimalDigits;
-            //int decimalOffset2 = ((int)((_size - ExtraHiddenBits + scale2) / 3.32192809488736235)) - ((numberText[0] - '5') / 8.0);  //alternative
+            //int decimalOffset2 = ((int)((_size - GuardBits + scale2) / 3.32192809488736235)) - ((numberText[0] - '5') / 8.0);  //alternative
 
             if (decimalOffset < -10)  // 0.0000000000xxxxx 
             {
@@ -417,10 +417,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Generates the data-bits in hex followed by the amount to shift(in decimal). Example: 12AC<<22 or B1>>3
     /// </summary>
-    /// <param name="showHiddenBits">Includes the extra 32 hidden bits. Example: 12AC|F0F00000<<22</param>
+    /// <param name="includeGuardBits">Includes the extra 32 hidden guard bits. Example: 12AC|F0F00000<<22</param>
     /// <param name="showSize">Appends a [##] to the number with it's size in bits. Example: 22AC[14]<<22</param>
     /// <param name="showInTwosComplement">When enabled, shows the show result in two's complement form with no leading sign. Example: -5 --> B[3]<<0</param>
-    public string ToStringHexScientific(bool showHiddenBits = false, bool showSize = false, bool showInTwosComplement = false)
+    public string ToStringHexScientific(bool includeGuardBits = false, bool showSize = false, bool showInTwosComplement = false)
     {
         StringBuilder sb = new();
 
@@ -431,7 +431,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             intVal = -intVal;
         }
         _ = sb.Append($"{intVal >> GuardBits:X}");
-        if (showHiddenBits)
+        if (includeGuardBits)
         {
             _ = sb.Append($":{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
         }
@@ -457,7 +457,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     /// <summary>
-    /// Returns the value's bits, including hidden bits, as a string. 
+    /// Returns the value's bits, including extra hidden guard bits, as a string. 
     /// Negative values will have a leading '-' sign.
     /// </summary>
     public string GetAllBitsAsString(bool twosComplement = false)
@@ -466,7 +466,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     /// <summary>
-    /// Returns the value's data bits as a string. ExtraHiddenBits are not included and result is rounded.
+    /// Returns the value's data bits as a string. GuardBits are not included and result is rounded.
     /// Negative values will have a leading '-' sign.
     /// </summary>
     public string GetBitsAsString()
@@ -502,8 +502,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
         Console.WriteLine($"   Debug : {DebuggerDisplay}");
         Console.WriteLine($"  String : {ToString()}");
-        //Console.WriteLine($"  Int|hex: {DataBits >> ExtraHiddenBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Hidden-bits round {(WouldRound() ? "up" : "down")})");
-        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Hidden-bits round {(WouldRoundUp() ? "up" : "down")})");
+        //Console.WriteLine($"  Int|hex: {DataBits >> GuardBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard-bits round {(WouldRound() ? "up" : "down")})");
+        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard-bits round {(WouldRoundUp() ? "up" : "down")})");
         Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
         Console.WriteLine($"    |Dec : {Mantissa >> GuardBits}{((double)(Mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
         Console.WriteLine($"    |Dec : {Mantissa >> GuardBits}:{Mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)

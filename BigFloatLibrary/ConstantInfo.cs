@@ -85,11 +85,11 @@ public readonly partial struct BigFloat
 
                 // Calculate how many Base64 characters we need for the requested bits
                 // Each Base64 character encodes 6 bits, and we need to account for the scale (4 bytes = 32 bits)
-                int bitsWithHidden = minAccuracyInBits + GuardBits;
+                int bitsWithGuard = minAccuracyInBits + GuardBits;
                 int extraCharsForTrailingZero = cutOnTrailingZero ? 20 : 0; // Extra chars to find trailing zero
 
                 // Calculate chars needed (ceiling division to ensure we get enough chars)
-                int base64CharsNeeded = ((bitsWithHidden + 5) / 6) + extraCharsForTrailingZero;
+                int base64CharsNeeded = ((bitsWithGuard + 5) / 6) + extraCharsForTrailingZero;
 
                 // Base64 decoding requires input length to be a multiple of 4
                 base64CharsNeeded = ((base64CharsNeeded + 3) / 4) * 4;
@@ -97,7 +97,7 @@ public readonly partial struct BigFloat
                 // Make sure we don't exceed the available characters
                 base64CharsNeeded = Math.Min(base64CharsNeeded, base64Part.Length);
 
-                // If debugging: Debug.WriteLine($"Bits needed: {bitsWithHidden}, Chars needed: {base64CharsNeeded} of {base64Part.Length}");
+                // If debugging: Debug.WriteLine($"Bits needed: {bitsWithGuard}, Chars needed: {base64CharsNeeded} of {base64Part.Length}");
 
                 // Decode only the part of Base64 that we need
                 Span<byte> bytes = stackalloc byte[base64CharsNeeded * 3 / 4]; // Maximum size needed for decoding
@@ -118,9 +118,9 @@ public readonly partial struct BigFloat
                 BigInteger dataBits = new(bytes, isUnsigned: true, isBigEndian: true);
                 int dataBitsLen = (int)dataBits.GetBitLength();
 
-                // Create BigFloat with valueIncludesHiddenBits set to true
+                // Create BigFloat with valueIncludesGuardBits set to true
                 int scale = RadixShiftFromLeadingBit - dataBitsLen + GuardBits;
-                value = new BigFloat(dataBits, scale, valueIncludesHiddenBits: true);
+                value = new BigFloat(dataBits, scale, valueIncludesGuardBits: true);
 
                 // Check if we have enough bits
                 int availableBits = value._size - GuardBits;
@@ -138,7 +138,7 @@ public readonly partial struct BigFloat
                             if (bytes.Length >= 4)
                             {
                                 dataBits = new BigInteger(bytes, isUnsigned: false);
-                                value = new BigFloat(dataBits, RadixShiftFromLeadingBit, valueIncludesHiddenBits: true);
+                                value = new BigFloat(dataBits, RadixShiftFromLeadingBit, valueIncludesGuardBits: true);
                                 availableBits = value._size - GuardBits;
                             }
                         }

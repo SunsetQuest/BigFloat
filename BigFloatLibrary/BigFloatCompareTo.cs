@@ -69,8 +69,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         diff -= diff.Sign; // decrements towards 0
 
         // Future: need to benchmark A, B or C
-        //int a = RightShiftWithRound(temp, ExtraHiddenBits).Sign;
-        //int b = (BigInteger.Abs(temp) >> (ExtraHiddenBits - 1)).IsZero ? 0 : temp.Sign;
+        //int a = RightShiftWithRound(temp, GuardBits).Sign;
+        //int b = (BigInteger.Abs(temp) >> (GuardBits - 1)).IsZero ? 0 : temp.Sign;
         int c = ((int)((diff.Sign >= 0) ? diff : -diff).GetBitLength() < GuardBits) ? 0 : diff.Sign;
 
         return c;
@@ -131,11 +131,11 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     /// <summary> 
-    /// Compares two values, including the out-of-precision hidden bits, and returns:
+    /// Compares two values, including the out-of-precision guard bits, and returns:
     ///   -1 when this instance is less than <paramref name="other"/>
     ///    0 when this instance is equal to <paramref name="other"/>
     ///   +1 when this instance is greater than <paramref name="other"/>
-    /// Since rounding may occur, out-of-precision hidden bits that are off by one are considered equal.
+    /// Since rounding may occur, out-of-precision guard bits that are off by one are considered equal.
     /// Equals(Zero) generally should be avoided as missing accuracy in the less accurate number has 0 appended. And these values would need to much match exactly.
     /// CompareTo() is more often used as it is used to compare the in-precision digits.
     /// This Function is faster then the CompareTo() as no rounding takes place.
@@ -264,7 +264,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>  
     /// Compares two values ignoring the least number of significant bits specified. 
     /// e.g. CompareToIgnoringLeastSigBits(0b1001.1111, 0b1000.111101, 3) => (b1001.11, 0b1001.0)
-    /// Valid ranges are from -ExtraHiddenBits and up.
+    /// Valid ranges are from -GuardBits and up.
     ///   Returns -1 when <paramref name="b"/> is less than <paramref name="a"/>
     ///   Returns  0 when <paramref name="b"/> is equal to <paramref name="a"/> when ignoring the least significant bits.
     ///   Returns  1 when <paramref name="b"/> is greater than <paramref name="a"/>
@@ -273,7 +273,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         //if (leastSignificantBitsToIgnore == 0) return a.CompareTo(b);
 
-        // future: if (leastSignificateBitToIgnore == -ExtraHiddenBits) return CompareToExact(other);
+        // future: if (leastSignificateBitToIgnore == -GuardBits) return CompareToExact(other);
 
         // Future: need to benchmark, next line is optional, escapes early if size is small
         //if (other._size < leastSignificantBitsToIgnore) return 0;
@@ -283,7 +283,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (leastSignificantBitsToIgnore < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(leastSignificantBitsToIgnore),
-                $"Param cannot be less then -ExtraHiddenBits({-GuardBits}).");
+                $"Param cannot be less then -GuardBits({-GuardBits}).");
         }
 
         int scaleDiff = b.Scale - a.Scale;
@@ -320,7 +320,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     ///   Returns -1 when this instance is less than the other
     ///   Returns  0 when this instance is equal to the other 
     ///   Returns  1 when this instance is greater than the other
-    /// The hidden bits are removed. 
+    /// The guard bits are removed. 
     /// </summary>
     public int CompareTo(BigInteger bigInteger)
     {

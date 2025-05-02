@@ -52,7 +52,7 @@ public readonly partial struct BigFloat
     {
         int resScalePart = -x.Scale - (2 * (x._size - 1)) + GuardBits + GuardBits;
         BigInteger resIntPartNew = BigIntegerTools.Inverse(x.Mantissa, x._size);
-        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithHiddenBits);
+        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithGuardBits);
         return resultNew;
     }
 

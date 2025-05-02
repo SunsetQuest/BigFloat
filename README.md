@@ -195,17 +195,17 @@ Console.WriteLine($"GetPrecision: {num6.GetPrecision}");
 // Output: GetPrecision: 21
 ```
 
-## HiddenBits
+## GuardBits
 
-In BigFloat, the actual "data bits" are stored in a `BigInteger`. `BigFloat` designates the 32 least significant bits as "hidden bits." These bits are not generally considered precise but play a vital role in maintaining accuracy.
+In BigFloat, the actual "data bits" are stored in a `BigInteger`. `BigFloat` designates the 32 least significant bits as "extra hidden guard bits." These bits are not generally considered precise but play a vital role in maintaining accuracy.
 
-### The Role of Hidden Bits
+### The Role of Guard Bits
 
 To help with the accuracy of the final result, BigFloat keeps some extra bits that act as an extended buffer during arithmetic operations. Think of them as extended precision that is partially accurate and holds the remnants of calculations. This might not be substantial, but it leads to a more precise outcome after several consecutive math operations.
 
 ### Example Illustration
 
-Consider the following binary addition, where the pipe character '`|`' separates precise bits from non-precision hidden-bits:
+Consider the following binary addition, where the pipe character '`|`' separates precise bits from non-precision GuardBits:
 ```
   101.01100|110011001100110011001100110011 (approximately 5.4)
 + 100.01001|100110011001100110011001100110 (approximately 4.3)
@@ -216,7 +216,7 @@ If we were only to add the precise bits, our result would be ``1001.101``, missi
 
 ### Practical Implications
 
-By carrying these extra 32 hidden bits, `BigFloat` can perform operations with higher accuracy. When multiple operations are chained, these "hidden bits" help to correct cumulative rounding errors that would otherwise lead to significant inaccuracies. In essence, they serve as a "safety net" for precision.
+By carrying these extra 32 hidden guard bits, `BigFloat` can perform operations with higher accuracy. When multiple operations are chained, these "guard bits" help to correct cumulative rounding errors that would otherwise lead to significant inaccuracies. In essence, they serve as a "safety net" for precision.
 
 ## Decimal-to-Binary and Binary-to-Decimal Conversions
 
@@ -234,7 +234,7 @@ There can be some precision loss when converting from a Decimal String to binary
 
 Infinitely repeating binary digits do not fit in an integer very well! We must cut it off or do some magic trickery - that I will get to later. In a nutshell, most decimal numbers cannot be accurately represented.
 
-Hidden bits to the rescue! Well, kind of. The advantage of keeping some extra hidden bits is that we can more accurately represent additional repeating bits. The bits are considered out-of-precision, but at the same time, more repeated bits can be stored for better accuracy. We can store more of those repeated binary digits. When we say 5.3 liters of water, we specify two decimal digits (or about seven binary digits, 101.0110). But at the same time, 5.3 can be better described with more bits, 101.0110011001100.
+Guard bits to the rescue! Well, kind of. The advantage of keeping some extra hidden guard bits is that we can more accurately represent additional repeating bits. The bits are considered out-of-precision, but at the same time, more repeated bits can be stored for better accuracy. We can store more of those repeated binary digits. When we say 5.3 liters of water, we specify two decimal digits (or about seven binary digits, 101.0110). But at the same time, 5.3 can be better described with more bits, 101.0110011001100.
 
 #### Accurate Representation of Repeating Bits - a Possible Future Feature
 
@@ -246,7 +246,7 @@ When converting from a real decimal number, for example, 4.3, to a binary number
 
 When viewing things in binary precision, it becomes clearer because binary is the smallest base. The decimal numbers, like 1, 3, 4, or 9, all have one place in precision, but in binary, these numbers have anywhere from 1 to 4 bits of precision. In fact, we can calculate the number of binary digits by finding `Floor(log-base-2(x)+1)`, or programmatically `(int)Log2(n) + 1`. If we check out some results for just a single digit, `Floor(Log2(3)+1) `is 2 bits, and `Floor(Log2(9)+1)` is 4 bits. We can see the larger the number, the more binary places it will have and, thus, the more binary precision it will have. 19 has more significant binary digits than 11. So, the number of bits required to represent a number grows as the number grows in binary.
 
-However, unexpected issues could arise. If we multiply 3 by 7, we expect to get 21. In multiplication, the output precision is the smaller one of the two factors. Since 3 is just 2 bits, the output should also have two bits (plus its shift). So instead of 3 x 7 = 21 (or 11 x 111 = 10101), we end up with a confusing 18 (or, 11 x 111 = 11 << 3 => 18). Here come the hidden bits to the rescue again. This oddity goes away with just a few extra hidden bits for this example. (11.000 x 111.000 = 10101. => 21). Hidden bits will prevent this, but only when the multipliers differ by less than 32 bits. If we take two multipliers with even more differences in size, it will exhaust the hidden bits.
+However, unexpected issues could arise. If we multiply 3 by 7, we expect to get 21. In multiplication, the output precision is the smaller one of the two factors. Since 3 is just 2 bits, the output should also have two bits (plus its shift). So instead of 3 x 7 = 21 (or 11 x 111 = 10101), we end up with a confusing 18 (or, 11 x 111 = 11 << 3 => 18). Here come the hidden guard bits to the rescue again. This oddity goes away with just a few extra hidden guard bits for this example. (11.000 x 111.000 = 10101. => 21). Hidden guard bits will prevent this, but only when the multipliers differ by less than 32 bits. If we take two multipliers with even more differences in size, it will exhaust the guard bits.
 
 ### Output Notation
 
@@ -258,28 +258,28 @@ While it's possible to display these numbers with trailing zeros, like "`2320000
 
 ## Maintaining Precision - A Core Focus
 
-Some of `BigFloat`'s recent developments have been focused on rounding to increase accuracy. Initially, `BigFloat` would drop the least significant bits. This is not a huge deal since these removed bits were past even the lower 32 sub-precision hidden bits. However, after billions of math operations of constant rounding down, this could eat up all the 32 hidden bits and cause an unfavorable result. As the project evolved, the importance of rounding these bits became evident. Rounding helps maintain precision, especially in sequential mathematical operations.
+Some of `BigFloat`'s recent developments have been focused on rounding to increase accuracy. Initially, `BigFloat` would drop the least significant bits. This is not a huge deal since these removed bits were past even the lower 32 sub-precision guard bits. However, after billions of math operations of constant rounding down, this could eat up all the 32 guard bits and cause an unfavorable result. As the project evolved, the importance of rounding these bits became evident. Rounding helps maintain precision, especially in sequential mathematical operations.
 
-Many of the functions have been updated to round the last sub-precision hidden bit, but not all. Some math functions still need updating.
+Many of the functions have been updated to round the last sub-precision guard bit, but not all. Some math functions still need updating.
 
 ### Rounding in BigFloat
 
 -   **How it's Done**: After an operation, rounding is applied by checking the most significant digit removed. If set, we increment by one. This rounding method is a simple yet effective approach.
--   **Impact on Precision**: Proper rounding can reduce precision loss. After billions of operations, this would even use up the 32 `HiddenBits`.\
+-   **Impact on Precision**: Proper rounding can reduce precision loss. After billions of operations, this would even use up the 32 `GuardBits`.\
     While this is more of a perfect-world example, here is an example:
-    -   **With Dropping Bits**: With a trillion (or 2^40^) serial add operations and just dropping the extra bits, we would end up with a result 2^39^ too low. This is because half of the math operations would round down when they should be rounding up. This would translate into the bottom 39 bits being out-of-precision, depleting the 32 hidden bits and even going into the bits considered in-precision.
-    -   **With Rounding:** If we round those dropped bits instead, those trillion serial operations would only see 18 bits affected on average, keeping us within the 32 hidden bits, thus maintaining accuracy. We get to the 18 because the rounding is correct 75% of the time. So the standard deviation would be Sqrt(2^40^ / 4) / 2 => an average deviation of 262144 or 18 bits.
+    -   **With Dropping Bits**: With a trillion (or 2^40^) serial add operations and just dropping the extra bits, we would end up with a result 2^39^ too low. This is because half of the math operations would round down when they should be rounding up. This would translate into the bottom 39 bits being out-of-precision, depleting the 32 hidden guard bits and even going into the bits considered in-precision.
+    -   **With Rounding:** If we round those dropped bits instead, those trillion serial operations would only see 18 bits affected on average, keeping us within the 32 guard bits, thus maintaining accuracy. We get to the 18 because the rounding is correct 75% of the time. So the standard deviation would be Sqrt(2^40^ / 4) / 2 => an average deviation of 262144 or 18 bits.
 -   **Banker's Rounding Not Employed**
 
     In the realm of floating-point arithmetic, particularly with `Float`/`Double` data types, Banker's rounding plays a pivotal role in enhancing accuracy. This rounding technique is commonly applied in IEEE float operations, where, upon encountering extra bits that exceed the capacity of the representation---akin to encountering a situation where a decision must be made whether to round a number ending in 0.5000... up or down---Banker's rounding opts to round to the nearest even number, effectively rounding up only half of the time. This approach is crucial for IEEE floats, which maintain only a limited number of extra bits, making encounters with such borderline rounding decisions relatively frequent.
 
-    However, in the case of BigFloat, Banker's rounding is not utilized. The reason behind this deviation lies in BigFloat's capacity to handle significantly more `HiddenBits`. Given this enhanced bit capacity, the likelihood of a rounding decision falling precisely on the halfway mark is exceedingly rare. As such, the specific conditions that necessitate Banker's rounding in IEEE floats are not a concern for BigFloat, obviating the need for its implementation.
+    However, in the case of BigFloat, Banker's rounding is not utilized. The reason behind this deviation lies in BigFloat's capacity to handle significantly more `GuardBits`. Given this enhanced bit capacity, the likelihood of a rounding decision falling precisely on the halfway mark is exceedingly rare. As such, the specific conditions that necessitate Banker's rounding in IEEE floats are not a concern for BigFloat, obviating the need for its implementation.
 
 ### Theoretical Limits of Precision
 
-Over time, the 32 "hidden bits" in our calculations will gradually be consumed. Each rounding operation—whether up or down—discards a fraction of a bit of precision. Through repeated operations, this loss accumulates. For operations on **BigFloat** that adhere to proper rounding rules (though not all functions do), it would take approximately (2$^{32}$ * 2)$^{2}$ * 4 or 1.5 x 10^21 operations, before all the hidden bits are exhausted and we begin to lose precision in the main significant bits. 
+Over time, the 32 "guard bits" in our calculations will gradually be consumed. Each rounding operation—whether up or down—discards a fraction of a bit of precision. Through repeated operations, this loss accumulates. For operations on **BigFloat** that adhere to proper rounding rules (though not all functions do), it would take approximately (2$^{32}$ * 2)$^{2}$ * 4 or 1.5 x 10^21 operations, before all the guard bits are exhausted and we begin to lose precision in the main significant bits. 
 
-While this suggests the loss of hidden bits would take a considerable amount of time, the reality is that many BigFloat functions and operations do not strictly follow proper rounding rules. As a result, precision degradation will likely occur much sooner in practical use cases.
+While this suggests the loss of guard bits would take a considerable amount of time, the reality is that many BigFloat functions and operations do not strictly follow proper rounding rules. As a result, precision degradation will likely occur much sooner in practical use cases.
 
 #### Rounding Example
 ```
@@ -290,12 +290,12 @@ x 100.|01011001101001011100101110110101 (approximately 4)
   110.|11001100100110110010011001111111 (if rounding down or dropping bits)
   110.|11001100100110110010011010000000 (if rounded to nearest)
 ```
-^** "|" is the separator for the in-precision and out-of-precision hidden bits.*\
-*** "[ ]" bits even past the hidden bits - the bits to be rounded*^
+^** "|" is the separator for the in-precision and out-of-precision guard bits.*\
+*** "[ ]" bits even past the guard bits - the bits to be rounded*^
 
-Even though these bits were in the hidden area and are considered out-of-precision, rounding helps with the loss of precision with successive math operations operating on it. The precision slowly decreases with chopping off the bits (i.e., rounding down). However, if rounding is done correctly for some math functions, the rounding up and down of the least significant digit will cancel each other out over time. This is equivalent to counting the number of heads when flipping a coin several times.
+Even though these bits were in the hidden guard area and are considered out-of-precision, rounding helps with the loss of precision with successive math operations operating on it. The precision slowly decreases with chopping off the bits (i.e., rounding down). However, if rounding is done correctly for some math functions, the rounding up and down of the least significant digit will cancel each other out over time. This is equivalent to counting the number of heads when flipping a coin several times.
 
-Here is an example where hidden bits correct cumulative rounding errors. For Reference, the correct answer...
+Here is an example where guard bits correct cumulative rounding errors. For Reference, the correct answer...
 ```
 1000.110100|000000010000000001010110... (exact)
 ```
