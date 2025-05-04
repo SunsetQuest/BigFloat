@@ -179,10 +179,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
         int binaryExponent = Scale + size - 1;
 
-        // Three cases
-        //   Type '0.123' - all numbers are to the right of the radix point. (has leading '0.' or '-0.')
-        //   Type '12300' - if all bits are to the left of the radix point(no radix point required)
-        //   Type '12.30' - has numbers below AND above the point. (e.g. 11.01)
+        // Three cases:
+        //   Type '0.110' - all bits are to the right of the radix point. (has leading '0.' or '-0.')
+        //   Type '11010' - if all bits are to the left of the radix point(no radix point required)
+        //   Type '11.01' - has bits below AND above the point.
 
         // Special cases: '0.999' - like 0.123 above, however because of rounding, has leading '1.' or '-1.'
 

@@ -89,9 +89,8 @@ public readonly partial struct BigFloat
     /// Returns true if the value is essentially zero.
     /// </summary>
     public bool IsZero => _size == 0 || ((_size + Scale) < GuardBits && _size < GuardBits);
-
-    // What is considered Zero: any dataInt that is LESS then 0|10000000, and also the shift results in a 0|10000000.
-    //   IntData    Scale Size Sz+Sc Precision  Zero
+    // What is considered Zero: any mantissa that is LESS then 0|10000000, and also the shift results in a 0|10000000.
+    //   Mantissa   Scale Size Sz+Sc Precision  Zero
     // 1|11111111.. << -2   33    31      1       N
     // 1|00000000.. << -2   33    31      1       N
     // 1|00000000.. << -1   33    32      1       N
@@ -338,7 +337,7 @@ public readonly partial struct BigFloat
     {
         get
         {
-            int begMask = GuardBits >> 1;
+            int begMask = GuardBits >> 1; //future: maybe instead of the middle we just check the single bit between radix and the 2nd guard bit
             int endMask = GuardBits - Scale;
 
             if (begMask <= Scale ||
@@ -1214,6 +1213,7 @@ Other:                                         |   |         |         |        
     /// Removes GuardBits and rounds. It also requires the current size and will adjust it if it grows.
     /// </summary>
     /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
+    /// <param name="size">IN: the size of Val.  OUT: The size of the output.</param>
     private static BigInteger DataIntValueWithRound(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, GuardBits, ref size);
