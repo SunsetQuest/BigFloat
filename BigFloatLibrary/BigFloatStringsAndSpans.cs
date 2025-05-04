@@ -482,7 +482,11 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             StringBuilder sb = new(32);
             _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
             _ = sb.Append($"{(Mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(Mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
-            _ = sb.Append($"[{Size}+{GuardBits}={_size}], {((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}");
+            //_ = sb.Append($"{ToBinaryString()}"); // hex part
+            if (_size > GuardBits) _ = sb.Append($"[{_size- GuardBits}+{GuardBits} GuardBits]");
+            if (_size == GuardBits) _ = sb.Append($"[{GuardBits}]");
+            if (_size < GuardBits) _ = sb.Append($"[{_size} - Out Of Precision!]");
+            _ = sb.Append($" << {Scale}");
 
             return sb.ToString();
         }
