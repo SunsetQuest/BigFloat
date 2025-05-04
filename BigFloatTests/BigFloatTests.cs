@@ -439,23 +439,24 @@ public class BigFloatTests
         b = BigFloat.ParseBinary("100.000");
         IsFalse((a - b).IsZero);
 
-        IsFalse(BigFloat.ParseBinary("1|111111111", -2, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) 
-        IsFalse(BigFloat.ParseBinary("0|111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|111111111", 0, 0).IsZero); //  (no because _size >= GuardBits-2) 
-        IsTrue(BigFloat.ParseBinary("0|011111111", -1, 0).IsZero); //  (no because _size >= GuardBits-2)                                            
-        IsTrue(BigFloat.ParseBinary("0|011111111", 0, 0).IsZero); //   (no because _size >= GuardBits-2)
-        IsFalse(BigFloat.ParseBinary("0|011111111", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsTrue(BigFloat.ParseBinary("0|001111111", 1, 0).IsZero); //                                         (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|001111111", 2, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
-        IsTrue(BigFloat.ParseBinary("0|000111111", 2, 0).IsZero); //
-        IsFalse(BigFloat.ParseBinary("0|000111111", 3, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|000000000", -2, 0).IsZero); // (no because _size >= GuardBits-2) 
-        IsFalse(BigFloat.ParseBinary("1|000000000", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("1|000000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|100000000", -1, 0).IsZero); // (no because _size >= GuardBits-2)
-        IsFalse(BigFloat.ParseBinary("0|100000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
-        IsFalse(BigFloat.ParseBinary("0|100000000", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|.111111111", -2, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|.111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) 
+        IsFalse(BigFloat.ParseBinary("0|.111111111", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.111111111", 0, 0).IsZero); //  (no because _size >= GuardBits-2) 
+        IsFalse(BigFloat.ParseBinary("0|.011111111", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.001111111", 2, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.000111111", 3, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.000111111", 4, 0).IsZero); //                                        (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|.000000000", -2, 0).IsZero); // (no because _size >= GuardBits-2) 
+        IsFalse(BigFloat.ParseBinary("1|.000000000", -1, 0).IsZero); // (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("1|.000000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.100000000", -1, 0).IsZero); // (no because _size >= GuardBits-2)
+        IsFalse(BigFloat.ParseBinary("0|.100000000", 0, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsFalse(BigFloat.ParseBinary("0|.100000000", 1, 0).IsZero); //  (no because _size >= GuardBits-2) AND (no because (Scale + _size - GuardBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0|.011111111", -1, 0).IsZero); //  (no because _size >= GuardBits-2)                                            
+        IsTrue(BigFloat.ParseBinary("0|.011111111", 0, 0).IsZero); //   (no because _size >= GuardBits-2)
+        IsTrue(BigFloat.ParseBinary("0|.001111111", 1, 0).IsZero); //                                         (no because (Scale + _size - GuardBits) < 0)
+        IsTrue(BigFloat.ParseBinary("0|.000111111", 2, 0).IsZero); //
 
 
         //  IntData    Scale  Precision  Zero
@@ -484,10 +485,14 @@ public class BigFloatTests
         IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001", 0, 0, BigFloat.GuardBits).IsZero);
         IsTrue(BigFloat.ParseBinary("0.00001", 0, 0, BigFloat.GuardBits).IsZero);
         IsTrue(BigFloat.ParseBinary("0.000000000000001000", 0, 0, BigFloat.GuardBits).IsZero);
-        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, BigFloat.GuardBits).IsZero);
-        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.0100000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.010000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsTrue(BigFloat.ParseBinary("0.01000000000000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
         IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
+        IsFalse(BigFloat.ParseBinary("0.0100000000000000000000000000000000", 0, 0, BigFloat.GuardBits).IsZero);
     }
 
     [TestMethod]
@@ -516,10 +521,10 @@ public class BigFloatTests
         int guardBits = BigFloat.GuardBits;
         AreEqual(5, BigFloat.ParseBinary("100.01").Precision);
         AreEqual(1, BigFloat.ParseBinary("-0.00000000000000000000001").Precision);
-        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, guardBits).Precision);
-        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00001", 0, 0, guardBits).Precision);
-        AreEqual(4 - guardBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, guardBits).Precision);
-        AreEqual(9 - guardBits, BigFloat.ParseBinary("100000000", 0, 0, guardBits).Precision);
+        AreEqual(1 -  guardBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, guardBits).Precision);
+        AreEqual(1 -  guardBits, BigFloat.ParseBinary("0.00001", 0, 0, guardBits).Precision);
+        AreEqual(4 -  guardBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, guardBits).Precision);
+        AreEqual(9 -  guardBits, BigFloat.ParseBinary("100000000", 0, 0, guardBits).Precision);
         AreEqual(17 - guardBits, BigFloat.ParseBinary("10000000000000000", 0, 0, guardBits).Precision);
         AreEqual(25 - guardBits, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, guardBits).Precision);
         AreEqual(33 - guardBits, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, guardBits).Precision);
@@ -533,11 +538,16 @@ public class BigFloatTests
         AreEqual(23, BigFloat.ParseBinary("-0.00000000000000000000001").Accuracy);
         AreEqual(23 - hb, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).Accuracy);
         AreEqual(5 -  hb, BigFloat.ParseBinary("0.00001", 0, 0, hb).Accuracy);
-        AreEqual(18 - hb, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).Accuracy);     // 0|00000000000000.00000000000000000000001" (accuracy is -14)
-        AreEqual(hb - hb, BigFloat.ParseBinary("100000000", 0, 0, hb).Accuracy);                // 0.|00000000000000000000000100000000        (accuracy is 0)
-        AreEqual(hb - hb, BigFloat.ParseBinary("10000000000000000", 0, 0, hb).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
-        AreEqual(hb - hb, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).Accuracy);// 0.|00000001000000000000000000000000        (accuracy is 0)
-        AreEqual(hb - hb, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).Accuracy);//1.|00000000000000000000000000000000(accuracy is 0)
+        AreEqual(18 - hb, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).Accuracy);       // 0|00000000000000.00000000000000000000001" (accuracy is -14)
+        AreEqual(hb - hb, BigFloat.ParseBinary("100000000", -hb, 0, hb).Accuracy);                // 0.|00000000000000000000000100000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("10000000000000000", -hb, 0, hb).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("1000000000000000000000000", -hb, 0, hb).Accuracy);// 0.|00000001000000000000000000000000        (accuracy is 0)
+        AreEqual(hb - hb, BigFloat.ParseBinary("100000000000000000000000000000000", -hb, 0, hb).Accuracy);//1.|00000000000000000000000000000000(accuracy is 0)
+
+        AreEqual(-hb, BigFloat.ParseBinary("100000000", 0, 0, hb).Accuracy);                        // 0|00000000000000000000000100000000.(accuracy is -32)
+        AreEqual(-hb, BigFloat.ParseBinary("10000000000000000", 0, 0, hb).Accuracy);                // 0|00000000000000010000000000000000.(accuracy is -32)
+        AreEqual(-hb, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).Accuracy);        // 0|00000001000000000000000000000000.(accuracy is -32)
+        AreEqual(-hb, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).Accuracy);// 1|00000000000000000000000000000000.(accuracy is -32)
     }
 
     [TestMethod]

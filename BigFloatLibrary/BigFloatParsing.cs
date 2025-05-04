@@ -770,7 +770,7 @@ public readonly partial struct BigFloat
 
         BigInteger bi = new(bytes, !isNeg);
 
-        result = new BigFloat(bi << (GuardBits - includedGuardBits), radixPointFound ? binaryScaler + includedGuardBits : orgScale, true);
+        result = new BigFloat(bi << (GuardBits - includedGuardBits), includedGuardBits + (radixPointFound ? binaryScaler : orgScale), true);
 
         result.AssertValid();
 
