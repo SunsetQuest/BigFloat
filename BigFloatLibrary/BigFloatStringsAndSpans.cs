@@ -387,7 +387,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // Check to see if we have an integer, if so no Pow(5) scaling required
         if (scale == 0)
         {
-            return DataIntValueWithRound(intVal).ToString();
+            return MantissaWithoutGuardBits(intVal).ToString();
         }
 
         // At this point we the number have a positive exponent. e.g 7XXXXX or 7e+10 (no decimal point)
@@ -471,7 +471,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetBitsAsString()
     {
-        return BigIntegerToBinaryString(UnscaledValue);
+        return BigIntegerToBinaryString(RightShiftWithRound(Mantissa, GuardBits));
     }
 
     public string DebuggerDisplay

@@ -6464,72 +6464,72 @@ public class BigFloatTests
 
         inputVal = new BigFloat("2222222222", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.UnscaledValue != 132)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 132)
         {
-            Console.WriteLine($"TrunkAndRnd70 - Should be 132 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd70 - Should be 132 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("-2222222222", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.UnscaledValue != -132)
+        if (retBF.MantissaWithGuardBitsRoundedOff != -132)
         {
-            Console.WriteLine($"TrunkAndRnd80 - Should be -132 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd80 - Should be -132 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("-1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.UnscaledValue != -128)
+        if (retBF.MantissaWithGuardBitsRoundedOff != -128)
         {
-            Console.WriteLine($"TrunkAndRnd90 - Should be -128 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd90 - Should be -128 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 8);
-        if (retBF.UnscaledValue != 128)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 128)
         {
-            Console.WriteLine($"TrunkAndRnd100 - Should be 128 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd100 - Should be 128 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1022", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
-        if (retBF.UnscaledValue != 511)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 511)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 511 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 511 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1023", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 9);
-        if (retBF.UnscaledValue != 512)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 512)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 512 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 512 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1022", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.UnscaledValue != 1022)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 1022)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 1022 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1022 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1023", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.UnscaledValue != 1023)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 1023)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 1023 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 1023 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1024", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.UnscaledValue != 256)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 256)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 256 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 256 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("1025", 0);
         retBF = BigFloat.SetPrecisionWithRound(inputVal, 10);
-        if (retBF.UnscaledValue != 257)
+        if (retBF.MantissaWithGuardBitsRoundedOff != 257)
         {
-            Console.WriteLine($"TrunkAndRnd110 - Should be 257 but got {retBF.UnscaledValue}");
+            Console.WriteLine($"TrunkAndRnd110 - Should be 257 but got {retBF.MantissaWithGuardBitsRoundedOff}");
         }
 
         inputVal = new BigFloat("2.00000000000", 0);

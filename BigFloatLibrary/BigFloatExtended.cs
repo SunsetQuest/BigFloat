@@ -6,6 +6,7 @@
 
 using System;
 using System.Numerics;
+using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
 
@@ -31,6 +32,11 @@ public readonly partial struct BigFloat
     /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places (in binary) to the right of the radix point.
     /// </summary>
     public int Accuracy => -Scale;
+
+    /// <summary>
+    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
+    /// </summary>
+    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(Mantissa, GuardBits);
 
     //future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
     /// <summary>

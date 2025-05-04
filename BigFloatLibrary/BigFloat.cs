@@ -128,11 +128,6 @@ public readonly partial struct BigFloat
     public int Sign => (_size >= GuardBits - 1) ? Mantissa.Sign : 0;
 
     /// <summary>
-    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
-    /// </summary>
-    public readonly BigInteger UnscaledValue => DataIntValueWithRound(Mantissa);
-
-    /// <summary>
     /// Returns the default zero with with a zero size, precision, scale, and accuracy.
     /// </summary>
     public static BigFloat Zero => new(0, 0, 0);
@@ -1207,10 +1202,10 @@ Other:                                         |   |         |         |        
     /////////////////////////////////////////////
 
     /// <summary>
-    /// Retrieves the internal data bits and removes GuardBits and rounds.
+    /// Returns Mantissa with GuardBits rounded off.
     /// </summary>
     /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
-    private static BigInteger DataIntValueWithRound(BigInteger x)
+    private static BigInteger MantissaWithoutGuardBits(BigInteger x)
     {
         return RightShiftWithRound(x, GuardBits);
     }
@@ -1636,55 +1631,55 @@ Other:                                         |   |         |         |        
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned byte.</summary>
     public static explicit operator byte(BigFloat value)
     {
-        return (byte)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (byte)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
     public static explicit operator sbyte(BigFloat value)
     {
-        return (sbyte)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (sbyte)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator ushort(BigFloat value)
     {
-        return (ushort)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (ushort)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator short(BigFloat value)
     {
-        return (short)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (short)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator ulong(BigFloat value)
     {
-        return (ulong)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (ulong)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator long(BigFloat value)
     {
-        return (long)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (long)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator UInt128(BigFloat value)
     {
-        return (UInt128)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (UInt128)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed 128-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     public static explicit operator Int128(BigFloat value)
     {
-        return (Int128)DataIntValueWithRound(value.Mantissa << value.Scale);
+        return (Int128)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>
@@ -1868,7 +1863,7 @@ Other:                                         |   |         |         |        
     /// </summary>
     public bool Equals(BigInteger other)
     {
-        return other.Equals(UnscaledValue);
+        return other.Equals(RightShiftWithRound(Mantissa, GuardBits));
     }
 
     /// <summary>
@@ -1906,7 +1901,7 @@ Other:                                         |   |         |         |        
     /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
     public override int GetHashCode()
     {
-        return DataIntValueWithRound(Mantissa).GetHashCode() ^ Scale;
+        return RightShiftWithRound(Mantissa, GuardBits).GetHashCode() ^ Scale;
     }
 
     /// <summary>
