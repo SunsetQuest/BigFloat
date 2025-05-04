@@ -29,9 +29,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     [DebuggerHidden()]
-    public string ToString(bool includeOutOfPrecisionBits = false)
+    public string ToString(bool includeOutOfPrecisionBits = false, bool showGuard = false)
     {
-        return ToStringDecimal(this, includeOutOfPrecisionBits);
+        return ToStringDecimal(this, includeOutOfPrecisionBits, showGuard);
     }
 
     /// <summary>
@@ -274,7 +274,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // Typically "R" means Round-trip, so you might want
             // maximum decimal digits. For now, call your existing
             // decimal version:
-            "G" or "R" => ToStringDecimal(this, includeOutOfPrecisionBits: false),
+            "G" or "R" => ToStringDecimal(this, includeGuardBits: false),
 
             "X" => ToHexString(),
 
@@ -283,7 +283,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // Future: "N", "F", "E"...
 
             // Future: For truly custom numeric format strings, you'd parse `format`.
-            _ => ToStringDecimal(this, includeOutOfPrecisionBits: false),
+            _ => ToStringDecimal(this, includeGuardBits: false),
         };
     }
 
@@ -291,15 +291,15 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// Format the value of the current instance to a decimal number.
     /// </summary>
     /// <param name="val">The BigFloat that should be converted to a string.</param>
-    /// <param name="includeOutOfPrecisionBits">Include out-of-precision bits in result. This will include additional decimal places.</param>
+    /// <param name="includeGuardBits">Include out-of-precision bits in result. This will include additional decimal places.</param>
     //[DebuggerHidden()]
-    public static string ToStringDecimal(BigFloat val, bool includeOutOfPrecisionBits = false)
+    public static string ToStringDecimal(BigFloat val, bool includeGuardBits = false, bool showGuard = false)
     {
         BigInteger intVal = val.Mantissa;
         int scale = val.Scale;
         int valSize = val._size;
 
-        if (includeOutOfPrecisionBits)
+        if (includeGuardBits)
         {
             intVal <<= GuardBits;
             scale -= GuardBits;

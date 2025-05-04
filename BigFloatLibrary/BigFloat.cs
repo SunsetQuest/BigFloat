@@ -333,23 +333,45 @@ public readonly partial struct BigFloat
     ///   it should not round up based on GuardBits
     ///   Ceiling would round up (and Floor down for negative)
     /// </summary>
-    public bool IsInteger  //v3 -  just checks bits between radix and middle of guard bits
+    public bool IsInteger  //v4 - check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
     {
         get
         {
-            int begMask = GuardBits >> 1; //future: maybe instead of the middle we just check the single bit between radix and the 2nd guard bit
-            int endMask = GuardBits - Scale;
 
-            if (begMask <= Scale ||
-                begMask >= endMask)
+            // Assuming GuardBits is 4...
+            // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
+            // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
+            // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+
+            if (Scale < 0)
             {
-                return true; // technically inconclusive though.
+                // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
+                BigInteger val2 = (Mantissa >> (GuardBits - 1)) & (BigInteger.One << (Scale + 1) - 1);
+                bool ret = (val2 == 0 || (~val2 == 0));
+                return ret;
             }
+            else if (Scale == 0)
+            {
+                return true;
+                // Optional: return ((((Mantissa >> 30) & 3) + 1) & 3) == 0; //return true if top 2 bits are |00 or |11
+            }
+            //else if (Scale > 0) // inconclusive
+            return false;
 
-            BigInteger mask = ((BigInteger.One << (endMask - begMask)) - 1) << begMask;
-            BigInteger maskApplied = Mantissa & mask;
-            int bitsSet = (int)BigInteger.PopCount(maskApplied);
-            return (bitsSet == 0) || (bitsSet == endMask - begMask);
+            // past...  v3 -  just checks bits between radix and middle of guard bits
+            //int begMask = GuardBits >> 1; //future: maybe instead of the middle we just check the single bit between radix and the 2nd guard bit
+            //int endMask = GuardBits - Scale;
+
+            //if (begMask <= Scale ||
+            //    begMask >= endMask)
+            //{
+            //    return true; // technically inconclusive though.
+            //}
+
+            //BigInteger mask = ((BigInteger.One << (endMask - begMask)) - 1) << begMask;
+            //BigInteger maskApplied = Mantissa & mask;
+            //int bitsSet = (int)BigInteger.PopCount(maskApplied);
+            //return (bitsSet == 0) || (bitsSet == endMask - begMask);
         }
     }
 
@@ -1804,38 +1826,72 @@ Other:                                         |   |         |         |        
         //return (Exponent + 1023 - 1) is not (<= 0 or > 2046);
         return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
-
+    
     ///////////////////////// COMPARE FUNCTIONS /////////////////////////
 
     /// <summary>Returns an input that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)
     {
-        //Todo: what about zero?
-        if (BinaryExponent >= 64) // 'this' is too large, not possible to be equal.
+        if (BinaryExponent > 62) // 'this' is too large, not possible to be equal.
         {
-            return false;
+            // The only 64 bit long is long.MinValue
+            return (BinaryExponent == 63 && other == long.MinValue);
         }
         else if (BinaryExponent < -1)
         {
             return other == 0;
         }
-        else if (BinaryExponent == 63)
+
+        // Assuming GuardBits is 4...
+        // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
+        // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
+        // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+
+        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits))
         {
-            // if 64 bits then 'other' must be long.MinValue as that is the only 64 bit input
-            // any Int of the form "1000"000000000 is also valid if the _scale is set correctly.
+            return false; // too large by 1
+        }
+        //    int size = _size;
 
-            // return (other == long.MinValue && Int.Equals(long.MinValue));
 
-            // short-circuit - if 64 bits then other has to be long.MinValue
-            if (other != long.MinValue)
-            {
-                return false;
-            }
-
-            //return (Int << _scale) == other;
+        if (!IsInteger) // are the top half of the guard bits zero?
+        {
+            return false;
         }
 
-        return Scale >= 0 ? Mantissa >> GuardBits == other >> Scale : Mantissa << (Scale - GuardBits) == other;
+        //if (Scale == 0)
+        //{
+        //    return (long)RightShiftWithRound(Mantissa, GuardBits) == other;
+        //}
+
+        long val = (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
+        return val == other;
+
+        //if ((Scale- Size) > 0)
+        //{
+        //    // check if it is a fraction..
+        //    if ((val & ((1 << Scale) - 1)) != 0)
+        //    {
+        //        return false; // fraction
+        //    }
+
+        //    //return val >> Scale == other;
+        //}
+
+        //return val == other;
+
+        //long val = (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
+
+        //long val = (long)MantissaWithoutGuardBits(Mantissa) << Scale;
+
+
+        //return RightShiftWithRound(Mantissa << Scale, GuardBits) == other;
+
+        //return Mantissa >> GuardBits == other >> Scale;
+
+
+        //return Scale >= 0 ? Mantissa >> GuardBits == other >> Scale 
+        //    : Mantissa << (Scale - GuardBits) == other;
     }
 
     /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
@@ -1849,12 +1905,15 @@ Other:                                         |   |         |         |        
         {
             return other == 0;
         }
-        else if (Mantissa.Sign < 0)
+        //else if (Mantissa.Sign < 0)
+        //{
+        //    return false; // negative
+        //}
+        else if (Scale < 0)
         {
-            return false; // negative
+            return false; 
         }
-
-        return Scale >= 0 ? Mantissa >> GuardBits == other >> Scale : Mantissa << (Scale - GuardBits) == other;
+        return RightShiftWithRound(Mantissa << Scale, GuardBits)  == other;
     }
 
     /// <summary>

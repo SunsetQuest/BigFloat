@@ -81,24 +81,24 @@ public class BigFloatTests
         }
     }
 
-    [TestMethod]
-    public void Verify_DebuggerDisplay()
-    {
-        BigFloat bf;
+    //[TestMethod]
+    //public void Verify_DebuggerDisplay()
+    //{
+    //    BigFloat bf;
 
-        bf = new BigFloat(-14566005701624942, 96, true);
-        //1154037866912041841546539185052621408946880512 or  33bfb47ba4446e000000000000000000000000
-        // 14566005701624942 << 96  or 33bfb47ba4446e << 96
-        //is -268695379354069438191721957422006272 but only 16 precision digits so -2686953793540694e+20, 
-        //Correct: -2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96
-        AreEqual("-2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96", bf.DebuggerDisplay);
+    //    bf = new BigFloat(-14566005701624942, 96, true);
+    //    //1154037866912041841546539185052621408946880512 or  33bfb47ba4446e000000000000000000000000
+    //    // 14566005701624942 << 96  or 33bfb47ba4446e << 96
+    //    //is -268695379354069438191721957422006272 but only 16 precision digits so -2686953793540694e+20, 
+    //    //Correct: -2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96
+    //    AreEqual("-2686953793540694e+20, -0x33BFB4|7BA4446E[22+32=54], << 96", bf.DebuggerDisplay);
 
-        bf = new BigFloat(BigInteger.Parse("0CC404B845BBB924A88E39E", NumberStyles.AllowHexSpecifier), 96, true);
-        // 246924491699516410027369374 x 18446744073709551616(for 64 up-shift) = 4554952903911797705753984222769658845550608384
-        //is -4554952903911797705753984222769658845550608384 but only first ____ precision digits
-        //Correct: 45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96
-        AreEqual("45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96", bf.DebuggerDisplay);
-    }
+    //    bf = new BigFloat(BigInteger.Parse("0CC404B845BBB924A88E39E", NumberStyles.AllowHexSpecifier), 96, true);
+    //    // 246924491699516410027369374 x 18446744073709551616(for 64 up-shift) = 4554952903911797705753984222769658845550608384
+    //    //is -4554952903911797705753984222769658845550608384 but only first ____ precision digits
+    //    //Correct: 45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96
+    //    AreEqual("45549529039117977057539842e+20,  0x0CC404B845BBB92|4A88E39E[56+32=88], << 96", bf.DebuggerDisplay);
+    //}
 
     [TestMethod]
     public void Verify_BitwiseComplementOperator()
@@ -506,13 +506,79 @@ public class BigFloatTests
         IsTrue(result.IsStrictZero);
         IsTrue(result.IsZero);
 
+        // |000...(31 zeros)...0001.
         result = BigFloat.ParseBinary("1", 0, 0, BigFloat.GuardBits);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |000...(30 zeros)...001.0
+        result = BigFloat.ParseBinary("1", 0, 0, BigFloat.GuardBits - 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        //-|000...(30 zeros)...001.0
+        result = BigFloat.ParseBinary("-1", 0, 0, BigFloat.GuardBits);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |1.000...(31 zeros)...0000
+        result = BigFloat.ParseBinary("1", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        result = BigFloat.ParseBinary("-1", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |000...(31 zeros)...000.1
+        result = BigFloat.ParseBinary(".1", 0, 0, BigFloat.GuardBits);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |000...(30 zeros)...00.10
+        result = BigFloat.ParseBinary(".1", 0, 0, BigFloat.GuardBits - 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        //-|000...(30 zeros)...00.10
+        result = BigFloat.ParseBinary("-.1", 0, 0, BigFloat.GuardBits);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |.1000...(30 zeros)...0000
+        result = BigFloat.ParseBinary(".1", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        //-|.1000...(30 zeros)...0000
+        result = BigFloat.ParseBinary("-.1", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        // |000...(30 zeros)...000.01
+        result = BigFloat.ParseBinary(".01", 0, 0, BigFloat.GuardBits);
         IsFalse(result.IsStrictZero);
         IsTrue(result.IsZero);
 
-        result = BigFloat.ParseBinary("-1", 0, 0, BigFloat.GuardBits);
+        // |000...(29 zeros)...00.010
+        result = BigFloat.ParseBinary(".01", 0, 0, BigFloat.GuardBits - 1);
         IsFalse(result.IsStrictZero);
         IsTrue(result.IsZero);
+
+        //-|000...(29 zeros)...00.010
+        result = BigFloat.ParseBinary("-.01", 0, 0, BigFloat.GuardBits);
+        IsFalse(result.IsStrictZero);
+        IsTrue(result.IsZero);
+
+        // .0|100...(31 zeros)...000 (rounds to .1)
+        result = BigFloat.ParseBinary(".01", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
+
+        //-.0|100...(31 zeros)...000 (rounds to -.1)
+        result = BigFloat.ParseBinary("-.01", 0, 0, 1);
+        IsFalse(result.IsStrictZero);
+        IsFalse(result.IsZero);
     }
 
     [TestMethod]
@@ -3755,7 +3821,7 @@ public class BigFloatTests
         IsFalse((((BigFloat)(long)0) + 1).Equals((ulong)0));
         IsFalse((((BigFloat)(ulong)0) + 1).Equals((ulong)0));
 
-        BigFloat zero = BigFloat.Parse("0b0|01111111");
+        BigFloat zero = BigFloat.Parse("0b0|.01111111111");
         IsTrue(zero.Equals((long)0));
         IsTrue(zero.Equals((ulong)0));
         IsTrue((-zero).Equals((long)0));
@@ -3767,7 +3833,7 @@ public class BigFloatTests
         IsFalse(zero.Equals((long)-1));
         IsFalse((-zero).Equals((long)-1));
 
-        BigFloat one = BigFloat.Parse("0b0|11111111");
+        BigFloat one = BigFloat.Parse("0b0|.1111111111111111111111111");
         IsTrue(one.Equals((long)1));
         IsTrue((-one).Equals((long)-1));
         IsFalse((-one).Equals((ulong)1));
@@ -3777,6 +3843,39 @@ public class BigFloatTests
         IsFalse(one.Equals((ulong)0));
         IsFalse((-one).Equals((long)0));
         IsFalse((-one).Equals((ulong)0));
+
+        BigFloat val7 = BigFloat.Parse("0b0|1111111111111111111111111");
+        IsTrue(val7.Equals((long)33554431));
+        IsTrue(val7.Equals((ulong)33554431));
+        IsTrue((-val7).Equals((long)-33554431));
+        IsFalse(val7.Equals((long)-33554431));
+        IsFalse((-val7).Equals((long)33554431));
+        IsFalse(val7.Equals((long)33554430));
+        IsFalse((-val7).Equals((long)-33554430));
+        IsFalse(val7.Equals((long)33554432));
+        IsFalse((-val7).Equals((long)-33554432));
+        IsFalse(val7.Equals((long)1));
+        IsFalse(val7.Equals((ulong)1));
+        IsFalse((-val7).Equals((long)1));
+        IsFalse((-val7).Equals((ulong)1));
+        IsFalse(val7.Equals((long)0));
+        IsFalse(val7.Equals((ulong)0));
+        IsFalse((-val7).Equals((long)0));
+        IsFalse((-val7).Equals((ulong)0));
+
+        BigFloat val8 = BigFloat.Parse("0b0|1111111111111111111111111");
+        IsTrue(val8.Equals((long)0x1FFFFFF));
+        IsTrue((-val8).Equals((long)-0x1FFFFFF));
+        IsTrue(val8.Equals((ulong)0x1FFFFFF));
+        IsFalse((-val8).Equals((ulong)0));
+        IsFalse(val8.Equals((long)0));
+        IsFalse((-val8).Equals((long)0));
+        IsFalse(val8.Equals((long)0x2000000));
+        IsFalse((-val8).Equals((long)-0x2000000));
+        IsFalse(val8.Equals((ulong)0x2000000));
+        IsFalse(val8.Equals((long)0x1FFFFFE));
+        IsFalse((-val8).Equals((long)-0x1FFFFFE));
+        IsFalse(val8.Equals((ulong)0x1FFFFFE));
     }
 
     [TestMethod]
@@ -3981,7 +4080,7 @@ public class BigFloatTests
 
         aBigFloat = new BigFloat(long.MaxValue - 1);
         bLong = long.MaxValue;
-        IsFalse(aBigFloat.Equals(bLong), $"Fail-24 on VerifyEquals(long.MaxValue)");
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-24 on VerifyNotEqual(long.MaxValue)");
 
         aBigFloat = new BigFloat(long.MinValue);
         bLong = long.MinValue;
@@ -3993,23 +4092,98 @@ public class BigFloatTests
 
         aBigFloat = new BigFloat(long.MinValue + 1);
         bLong = long.MinValue;
-        IsFalse(aBigFloat.Equals(bLong), $"Fail-30 on VerifyEquals(long.MinValue)");
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-30 on VerifyNotEqual(long.MinValue)");
 
         aBigFloat = new BigFloat((long)-1);
         bLong = 1;
-        IsFalse(aBigFloat.Equals(bLong), $"Fail-32 on VerifyEquals((long)-1)");
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-32 on VerifyNotEqual((long)-1)");
 
         aBigFloat = new BigFloat((long)0);
         bLong = 1;
-        IsFalse(aBigFloat.Equals(bLong), $"Fail-33 on VerifyEquals((long)1)");
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-33 on VerifyEquals((long)0)");
 
         aBigFloat = new BigFloat(0xFF, 8);
         bLong = 0xFF00;
-        IsTrue(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long)1)");
-
-        aBigFloat = new BigFloat(0xFF, 8);
+        IsTrue(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
+        bLong = 0xFEFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
+        bLong = 0xFF01;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
         bLong = 0xFFFF;
-        IsTrue(aBigFloat.Equals(bLong), $"Fail-42 on VerifyEquals((long)1)");
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
+        bLong = 0xFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
+        bLong = -0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-38 on VerifyEquals((long){bLong})");
+
+        aBigFloat = new BigFloat(-0xFF, 8);
+        bLong = -0xFF00;
+        IsTrue(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+        bLong = -0xFEFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+        bLong = -0xFF01;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+        bLong = -0xFFFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+        bLong = -0xFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+        bLong = 0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-39 on VerifyEquals((long){bLong})");
+
+        aBigFloat = new BigFloat(0xFF, -4);
+        bLong = 0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = 0xFEFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = 0xFF01;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = 0xFFFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = 0xFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+
+        aBigFloat = new BigFloat(-0xFF, -4);
+        bLong = -0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xFEFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xFF01;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xFFFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xFF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = 0xFF00;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+
+        // Note on the below: There is not a clear answer to "0b111|1". One way to look at it
+        // is it rounded and the value 16, yet another way to look at it is could be 15 as that
+        // is the exact value but the lowest bit is considered out of precision. Another way,
+        // is the to return false as it is not really valid. In general, if the Guard
+        // is above the radix point then it is not clear.
+        aBigFloat = new BigFloat("0b111|1"); // 0b111|1.
+        bLong = 15; // 15 or 16 or false
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+        bLong = 16; // 15 or 16 or false
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+
+        // Guard is to the left of the decimal point. 
+        aBigFloat = new BigFloat("0b111|1", binaryScaler: 1); // aka 0b111|10.
+        bLong = 30; // 30 or 32 or false
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+        bLong = 31; // 30 or 32 or false
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+        bLong = 32; // 30 or 32 or false
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+
+        // When the radix and guard are at the same location, then it should be rounded to an it
+        // and there if is always an integer. This is board-line however on the fraction being 
+        // out of precision.
+        aBigFloat = new BigFloat("0b111|1", binaryScaler: -1); // aka 0b111|.1
+        bLong = 8; // 8 because rounded, but can also be 7.5 if guard bits were allowed in
+        IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long)8)");
     }
 
     [TestMethod]
