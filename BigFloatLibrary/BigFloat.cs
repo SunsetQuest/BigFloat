@@ -1838,7 +1838,8 @@ Other:                                         |   |         |         |        
             // The only 64 bit long is long.MinValue
             return (BinaryExponent == 63 && other == long.MinValue);
         }
-        else if (BinaryExponent < -1)
+
+        if (BinaryExponent < -1)
         {
             return other == 0;
         }
@@ -1855,7 +1856,7 @@ Other:                                         |   |         |         |        
         //    int size = _size;
 
 
-        if (!IsInteger) // are the top half of the guard bits zero?
+        if (!IsInteger) // are the top 1/4 of the guard bits zero?
         {
             return false;
         }
@@ -1898,23 +1899,36 @@ Other:                                         |   |         |         |        
     /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
     public bool Equals(ulong other)
     {
-        if (BinaryExponent >= 64)
+        if (BinaryExponent >= 64) // 'this' is too large, not possible to be equal.
         {
             return false; // too large
         }
-        else if (BinaryExponent < -1)
+
+        if (BinaryExponent < -1)
         {
             return other == 0;
         }
-        //else if (Mantissa.Sign < 0)
-        //{
-        //    return false; // negative
-        //}
-        else if (Scale < 0)
+
+        // Assuming GuardBits is 4...
+        // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
+        // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
+        // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+
+        if ((Mantissa >> (GuardBits-1)).Sign < 0)
+        {
+            return false; // is negitive
+        }
+        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits))
+        {
+            return false; // too large by 1
+        }
+        if (!IsInteger) // are the top 1/4 of the guard bits zero?
         {
             return false; 
         }
-        return RightShiftWithRound(Mantissa << Scale, GuardBits)  == other;
+
+        ulong val = (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits);
+        return val == other;
     }
 
     /// <summary>

@@ -3845,9 +3845,9 @@ public class BigFloatTests
         IsFalse((-one).Equals((ulong)0));
 
         BigFloat val7 = BigFloat.Parse("0b0|1111111111111111111111111");
-        IsTrue(val7.Equals((long)33554431));
-        IsTrue(val7.Equals((ulong)33554431));
-        IsTrue((-val7).Equals((long)-33554431));
+        IsFalse(val7.Equals((long)33554431));
+        IsFalse(val7.Equals((ulong)33554431));
+        IsFalse((-val7).Equals((long)-33554431));
         IsFalse(val7.Equals((long)-33554431));
         IsFalse((-val7).Equals((long)33554431));
         IsFalse(val7.Equals((long)33554430));
@@ -3864,6 +3864,20 @@ public class BigFloatTests
         IsFalse((-val7).Equals((ulong)0));
 
         BigFloat val8 = BigFloat.Parse("0b0|1111111111111111111111111");
+        IsFalse(val8.Equals((long)0x1FFFFFF));
+        IsFalse((-val8).Equals((long)-0x1FFFFFF));
+        IsFalse(val8.Equals((ulong)0x1FFFFFF));
+        IsFalse((-val8).Equals((ulong)0));
+        IsFalse(val8.Equals((long)0));
+        IsFalse((-val8).Equals((long)0));
+        IsFalse(val8.Equals((long)0x2000000));
+        IsFalse((-val8).Equals((long)-0x2000000));
+        IsFalse(val8.Equals((ulong)0x2000000));
+        IsFalse(val8.Equals((long)0x1FFFFFE));
+        IsFalse((-val8).Equals((long)-0x1FFFFFE));
+        IsFalse(val8.Equals((ulong)0x1FFFFFE));
+
+        val8 = BigFloat.Parse("0b11111111111111111111|11111");
         IsTrue(val8.Equals((long)0x1FFFFFF));
         IsTrue((-val8).Equals((long)-0x1FFFFFF));
         IsTrue(val8.Equals((ulong)0x1FFFFFF));
@@ -4157,6 +4171,10 @@ public class BigFloatTests
         IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
         bLong = 0xFF00;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0xF;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
+        bLong = -0x10;
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-40 on VerifyEquals((long){bLong})");
 
         // Note on the below: There is not a clear answer to "0b111|1". One way to look at it
         // is it rounded and the value 16, yet another way to look at it is could be 15 as that
@@ -4164,16 +4182,20 @@ public class BigFloatTests
         // is the to return false as it is not really valid. In general, if the Guard
         // is above the radix point then it is not clear.
         aBigFloat = new BigFloat("0b111|1"); // 0b111|1.
-        bLong = 15; // 15 or 16 or false
+        bLong = 15; 
+        IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+        bLong = 14;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
-        bLong = 16; // 15 or 16 or false
+        bLong = 16;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
 
         // Guard is to the left of the decimal point. 
         aBigFloat = new BigFloat("0b111|1", binaryScaler: 1); // aka 0b111|10.
-        bLong = 30; // 30 or 32 or false
+        bLong = 30; // 29 or 31 or false
+        IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
+        bLong = 29; 
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
-        bLong = 31; // 30 or 32 or false
+        bLong = 31;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
         bLong = 32; // 30 or 32 or false
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
@@ -4182,8 +4204,8 @@ public class BigFloatTests
         // and there if is always an integer. This is board-line however on the fraction being 
         // out of precision.
         aBigFloat = new BigFloat("0b111|1", binaryScaler: -1); // aka 0b111|.1
-        bLong = 8; // 8 because rounded, but can also be 7.5 if guard bits were allowed in
-        IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long)8)");
+        bLong = 8; // this can really be either way
+        IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long)8)");
     }
 
     [TestMethod]
@@ -4592,25 +4614,26 @@ public class BigFloatTests
         a = new BigFloat(0);
         b = new BigFloat(1);
         // 0|0000...0000  - 1|0000...0000 = -1|0000...0000
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-100 on CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2), $"Fail-110 on CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32), $"Fail-100 on CompareToIgnoringLeastSigBitsFast");
+        AreEqual(-1, BigFloat.CompareToIgnoringLeastSigBits(a, b, 0 + 32), $"Fail-100 on CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32), $"Fail-110 on CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-1);
         b = new BigFloat(0);
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-120 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2), $"Fail-130 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2 + 32), $"Fail-120 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2 + 32), $"Fail-130 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(2);
         b = new BigFloat(1);
         //10 - 1 = 1 ===> ignore bottom bit, is zero or equal
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1), $"Fail-140 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1), $"Fail-150 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32), $"Fail-140 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32), $"Fail-150 on Verify_CompareToIgnoringLeastSigBitsFast");
 
 
         a = new BigFloat(-1);
         b = new BigFloat(-2);
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1), $"Fail-160 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1), $"Fail-710 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32), $"Fail-160 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32), $"Fail-710 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-1);
         b = new BigFloat(2);
@@ -4620,12 +4643,12 @@ public class BigFloatTests
         a = new BigFloat(2); // 10 -> .10
         b = new BigFloat(1); // -1 -> .01
                              //  1 -> .01 -> 0
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-140 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2 + 32), $"Fail-140 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(1); //  1 -> .01
         b = new BigFloat(2); //-10 -> .10
                              // -1 -> .01 -> 0
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-150 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2 + 32), $"Fail-150 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-1);
         b = new BigFloat(-2);
@@ -4727,37 +4750,37 @@ public class BigFloatTests
         b = new BigFloat(554, 0);
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) > 0, $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) < 0, $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1+32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1+32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-555, 0);
         b = new BigFloat(-554, 0);
         // -1000101011.0 - -1000101010.0 = 1.0 --> Shift 0 --> 1
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) < 0, $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) > 0, $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0 + 32) < 0, $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0 + 32) > 0, $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
         // -1000101011.0 - -1000101010.0 = 1.0 --> Shift 1 --> 0.1 ---> Round --> 1
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
         // -1000101011.0 - -1000101010.0 = 1.0 --> Shift 2 --> 0.01 ---> Round --> 0
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2 + 32), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2 + 32), $"Fail-410 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-555, 0); //  -555    -1000101011
         b = new BigFloat(-554, 1); // -1108   -1000101010_
         // -555 - -1108 = pos
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) > 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) < 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 1) > 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 1) < 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 20), $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 20), $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0 + 32) > 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0 + 32) < 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32) > 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32) < 0, $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 20 + 32), $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 20 + 32), $"Fail-420 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(555, 0);  //  555    1000101011
         b = new BigFloat(554, 1);  // 1108   1000101010_
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) < 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) > 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 1) < 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
-        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 1) > 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0 + 32) < 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0 + 32) > 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32) < 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
+        IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32) > 0, $"Fail-430 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat("55555555555555555555552");
         b = new BigFloat("55555555555555555555554");
