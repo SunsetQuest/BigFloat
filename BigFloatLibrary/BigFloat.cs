@@ -181,26 +181,27 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    public BigFloat(int integerPart, int binaryScaler = 0) : this((long)integerPart, binaryScaler) { }
+    public BigFloat(int integerPart, int binaryScaler = 0, int addedBinaryPrecision = 32) : this((long)integerPart, binaryScaler, addedBinaryPrecision) { }
 
-    public BigFloat(long value, int binaryScaler = 0)
+    public BigFloat(long value, int binaryScaler = 0, int addedBinaryPrecision = 64)
     {
-        Mantissa = (BigInteger)value << GuardBits;
-        Scale = binaryScaler;
+        Mantissa = (BigInteger)value << (GuardBits + addedBinaryPrecision);
         _size = value switch
         {
-            > 0 => BitOperations.Log2((ulong)value) + 1 + GuardBits,
-            < 0 => 64 - BitOperations.LeadingZeroCount(~((ulong)value - 1)) + GuardBits,
+            > 0 => BitOperations.Log2((ulong)value) + 1 + GuardBits + addedBinaryPrecision,
+            < 0 => 64 - BitOperations.LeadingZeroCount(~((ulong)value - 1)) + GuardBits + addedBinaryPrecision,
             _ => 0,
         };
+
+        Scale = binaryScaler - addedBinaryPrecision;
         AssertValid();
     }
 
-    public BigFloat(ulong value, int binaryScaler = 0)
+    public BigFloat(ulong value, int binaryScaler = 0, int addedBinaryPrecision = 64)
     {
-        Mantissa = (BigInteger)value << GuardBits;
-        Scale = binaryScaler;
-        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + GuardBits;
+        Mantissa = (BigInteger)value << (GuardBits + addedBinaryPrecision);
+        _size = value == 0 ? 0 : (BitOperations.Log2(value) + 1 + GuardBits + addedBinaryPrecision);
+        Scale = binaryScaler - addedBinaryPrecision;
         AssertValid();
     }
 
