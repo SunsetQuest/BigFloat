@@ -338,26 +338,46 @@ public readonly partial struct BigFloat
     {
         get
         {
-
             // Assuming GuardBits is 4...
             // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
             // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
             // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
-
+            const int topBitsToCheck = 8;
+            bool r;
             if (Scale < 0)
             {
                 // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
-                BigInteger val2 = (Mantissa >> (GuardBits - 1)) & (BigInteger.One << (Scale + 1) - 1);
-                bool ret = (val2 == 0 || (~val2 == 0));
-                return ret;
+                //BigInteger val3 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
+                //return (val3 & (val3 + 1)) == 0; //return true if top 2 bits are all 0 or 1
+                r= BitsUniformInRange(Mantissa, GuardBits - Scale - 0, GuardBits - 1);
+                return r;
             }
-            else if (Scale == 0)
+
+            if (Scale == 0)
             {
-                return true;
-                // Optional: return ((((Mantissa >> 30) & 3) + 1) & 3) == 0; //return true if top 2 bits are |00 or |11
+                // The radix point and guard are in the same place. This is typically an integer however lets verify the top 1/4 the guard are 0 or 1.
+                //return true;
+                //int topBits = (int)(Mantissa >> (GuardBits - topBitsToCheck)) & ((1 << topBitsToCheck) - 1);
+                //return (topBits & (topBits + 1)) == 0; //return true if top 2 bits are all 0 or 1
+                r= BitsUniformInRange(Mantissa, GuardBits, GuardBits - topBitsToCheck);
+                return r;
             }
-            //else if (Scale > 0) // inconclusive
-            return false;
+
+            if (Scale > topBitsToCheck)
+            {
+                // The radix point is at least 8 bits into the guard area so it is very inconclusive at this point.
+                // If someone says, I have around 1000 kg of rocks, is that an integer? not really
+                return false;
+            }
+
+            // Optional: return ((((Mantissa >> 30) & 3) + 1) & 3) == 0; //return true if top 8 bits are |00000000 or |11111111
+
+            // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
+            // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
+            BigInteger val2 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
+            r= BitsUniformInRange(Mantissa, GuardBits-Scale, GuardBits - 8 - Scale);
+            return r;
+
 
             // past...  v3 -  just checks bits between radix and middle of guard bits
             //int begMask = GuardBits >> 1; //future: maybe instead of the middle we just check the single bit between radix and the 2nd guard bit
@@ -374,6 +394,20 @@ public readonly partial struct BigFloat
             //int bitsSet = (int)BigInteger.PopCount(maskApplied);
             //return (bitsSet == 0) || (bitsSet == endMask - begMask);
         }
+
+
+    }
+
+    static bool BitsUniformInRange(BigInteger value, int a, int b)
+    {
+        // precondition: 0 ≤ b < a ≤ 32
+        int width = a - b;
+        // mask == (1<<width)-1, i.e. width low bits = 1, the rest = 0
+        BigInteger mask = (BigInteger.One << width) - 1;
+        // extract the [b..a) bits down into the low bits of 'bits'
+        BigInteger bits = (BigInteger.Abs(value) >> b & mask);
+        // true iff all those bits are 0, or all are 1
+        return bits == 0u || bits == mask;
     }
 
     /// <summary>
@@ -1853,47 +1887,14 @@ Other:                                         |   |         |         |        
         {
             return false; // too large by 1
         }
-        //    int size = _size;
-
 
         if (!IsInteger) // are the top 1/4 of the guard bits zero?
         {
             return false;
         }
 
-        //if (Scale == 0)
-        //{
-        //    return (long)RightShiftWithRound(Mantissa, GuardBits) == other;
-        //}
-
         long val = (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
         return val == other;
-
-        //if ((Scale- Size) > 0)
-        //{
-        //    // check if it is a fraction..
-        //    if ((val & ((1 << Scale) - 1)) != 0)
-        //    {
-        //        return false; // fraction
-        //    }
-
-        //    //return val >> Scale == other;
-        //}
-
-        //return val == other;
-
-        //long val = (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
-
-        //long val = (long)MantissaWithoutGuardBits(Mantissa) << Scale;
-
-
-        //return RightShiftWithRound(Mantissa << Scale, GuardBits) == other;
-
-        //return Mantissa >> GuardBits == other >> Scale;
-
-
-        //return Scale >= 0 ? Mantissa >> GuardBits == other >> Scale 
-        //    : Mantissa << (Scale - GuardBits) == other;
     }
 
     /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
@@ -1924,7 +1925,7 @@ Other:                                         |   |         |         |        
         }
         if (!IsInteger) // are the top 1/4 of the guard bits zero?
         {
-            return false; 
+            return false;
         }
 
         ulong val = (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits);
