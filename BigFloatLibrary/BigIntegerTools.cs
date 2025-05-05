@@ -94,6 +94,9 @@ public static class BigIntegerTools
         // For Two's complement, we don't pass special parameters to ToByteArray().
         // For standard representation, we pass (isUnsigned=true, isBigEndian=false).
         // (We do it separately inside each helper, but we also do it here for buffer-size planning.)
+            
+        if (!twosComplement && x.Sign < 0) x = -x;
+
         ReadOnlySpan<byte> bytes = twosComplement
             ? x.ToByteArray()
             : x.ToByteArray(true, false);
