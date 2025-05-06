@@ -57,14 +57,14 @@ public class BigFloatTests
         for (int i = 0; i > -1073; i--)
         {
             // issues at BigFloat(1, -1071).ToString() and BigFloat(1, -8).ToString()
-            BigFloat value = new(1, i);
+            BigFloat value = new(1, i, addedBinaryPrecision: 0);
             IsFalse(new BigFloat(value.ToString()).IsOutOfPrecision, "0.000...1->BigFloat->String->BigInteger should never be zero.");
             IsFalse(value.IsOutOfPrecision, "0.000...1->BigFloat->OutOfPrecision should never be zero.");
         }
 
-        AreEqual(new BigFloat(1, -8) % 1, 0); // 0.00390625 % 01
-        AreEqual((new BigFloat(1, -1074) % 1), 0);   // 0   == 0.000...001
-        IsFalse(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52));  // 0 != -1.0
+        AreEqual(new BigFloat(1, -8, addedBinaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer then 0
+        AreEqual((new BigFloat(1, -1074, addedBinaryPrecision: 0) % 1), 0);   // 0   == 0.000...001
+        IsFalse(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, addedBinaryPrecision: 0));  // 0 != -1.0
 
         BigFloat temp = new(ulong.MaxValue);
         temp++;
@@ -346,7 +346,7 @@ public class BigFloatTests
         CheckNthRootAccuracy(1000000000000000, 5, "1000.000000000000|0000000000000000");
         CheckNthRootAccuracy(1000000000000000, 6, "316.2277660168379|3319988935444327");
         CheckNthRootAccuracy(100000000000000, 2, "10000000.0000000|00000000000000000");
-        CheckNthRootAccuracy(100000000000000, 3, "46415.8883361278|88924100763509194");
+        CheckNthRootAccuracy(100000000000000, 3, "46415.8883361277|88924100763509194");    // update 5-5-2025 original was incorrect, correct is 46415.888336127788924100763509194465... https://www.ttmath.org/online_calculator
         CheckNthRootAccuracy(100000000000000, 4, "3162.27766016837|93319988935444327");
         CheckNthRootAccuracy(100000000000000, 5, "630.957344480193|24943436013662234");
         CheckNthRootAccuracy(100000000000000, 6, "215.443469003188|37217592935665193");
@@ -1012,7 +1012,7 @@ public class BigFloatTests
             BigFloat resPos = BigFloat.PowerOf2(i);
             BigFloat resNeg = BigFloat.PowerOf2(-i);
             //int sqBitCt = (sizeof(uint)*8) - BitOperations.LeadingZeroCount((uint)sq);
-            int sqBitCt = (int)BigInteger.Log2(i) + 1;
+            int sqBitCt = (int)BigInteger.Log2(i) + 1 + BigFloat.GuardBits;
             AreEqual(resPos, sq);
             AreEqual(resNeg, sq);
             AreEqual(resPos.Size, sqBitCt);
@@ -1364,16 +1364,21 @@ public class BigFloatTests
         AreEqual(BigFloat.Pow(1, 2), 1, $"Failed on: 1^2");
         AreEqual(BigFloat.Pow(2, 2), 4, $"Failed on: 2^2");
 
-        AreEqual(BigFloat.Pow(3, 2), 8, $"Failed on: 3^2");  // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
-        AreEqual(BigFloat.Pow(3, 2), 9, $"Failed on: 3^2");
+        BigFloat three = new(3, addedBinaryPrecision: 0);
+        AreEqual(BigFloat.Pow(three, 2), 8, $"Failed on: 3^2");  // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
+        AreEqual(BigFloat.Pow(three, 2), 9, $"Failed on: 3^2");
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
-        AreEqual(BigFloat.Pow(3, 2), 10, $"Failed on: 3^2");  // does (10|01. == 1010.|00)?  1001-1010=00|01, so less then 00|1, so true 
+        AreEqual(BigFloat.Pow(three, 2), 10, $"Failed on: 3^2");  // does (10|01. == 1010.|00)?  1001-1010=00|01, so less then 00|1, so true 
 
         AreEqual(BigFloat.Pow(0, 3), 0, $"Failed on: 0^3");
         AreEqual(BigFloat.Pow(1, 3), 1, $"Failed on: 1^3");
         AreEqual(BigFloat.Pow(2, 3), 8, $"Failed on: 2^3");
         AreEqual(BigFloat.Pow(3, 3), 27, $"Failed on: 3^3");
 
+        AreEqual(BigFloat.Pow(-0, 3), -0, $"Failed on: 0^3");
+        AreEqual(BigFloat.Pow(-1, 3), -1, $"Failed on: 1^3");
+        AreEqual(BigFloat.Pow(-2, 3), -8, $"Failed on: 2^3");
+        AreEqual(BigFloat.Pow(-3, 3), -27, $"Failed on: 3^3");
 
         AreEqual(BigFloat.Pow(BigFloat.Parse("0.5"), 2), BigFloat.Parse("  0.25"), $"Failed on: 0.5^2");
         AreEqual(BigFloat.Pow(BigFloat.Parse("1.5"), 2), BigFloat.Parse("  2.25"), $"Failed on: 1.5^2");
@@ -1788,26 +1793,26 @@ public class BigFloatTests
         //=========
         //   100010.  (34)   (aka  1000|10.) 
         //     --  (out of precision digits)
-        BigFloat v = new(0b101011, 1);
-        BigFloat w = new(0b1101, 2);
-        ModVerify__True(v, w, new BigFloat(0b100010, 0)); // 1000.1<<2 == 100010<<0
-        ModVerify__True(v, w, new BigFloat(0b10001, 1));  // 1000.1<<2 ==  10001<<1
-        ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 ==   1000<<2 or 1001!=1000  (if we do not round up)
+        BigFloat v = new(0b101011, 1, 0);
+        BigFloat w = new(0b1101, 2, 0);
+        ModVerify__True(v, w, new BigFloat(0b100010, 0, 0)); // 1000.1<<2 == 100010<<0
+        ModVerify__True(v, w, new BigFloat(0b10001, 1, 0));  // 1000.1<<2 ==  10001<<1
+        ModVerify_False(v, w, new BigFloat(0b1000, 2, 0));   // 1000.1<<2 ==   1000<<2 or 1001!=1000  (if we do not round up)
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
-        ModVerify_False(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
+        ModVerify_False(v, w, new BigFloat(0b1001, 2, 0));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
 
         // Below two tests are the same as above two tests.
         // IsFalse(v % w == new BigFloat(0b1000, 2));  //reverse order:  1000<<2 == 1000.1<<2 or 1000!=1001  (if we do not round up)
         // IsFalse(v % w == new BigFloat(0b1001, 2));  //reverse order:  1001<<2 == 1000.1<<2 or 1001=1001  (if we do     round up)
-        ModVerify__True(v, w, new BigFloat(0b100, 3));    // 1000.1<<2 ==    100<<3 
-        ModVerify__True(v, w, new BigFloat(0b100011, 0)); // 1000.1<<2 == 100011<<0 
+        ModVerify__True(v, w, new BigFloat(0b100, 3, 0));    // 1000.1<<2 ==    100<<3   
+        ModVerify__True(v, w, new BigFloat(0b100011, 0, 0)); // 1000.1<<2 == 100011<<0 
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
-        ModVerify_False(v, w, new BigFloat(0b10010, 1));  // 1000.1<<2 ==  10010<<1 ("1000|10 == 10010|0." can be considered 1001==1001 but questionable)
+        ModVerify_False(v, w, new BigFloat(0b10010, 1, 0));  // 1000.1<<2 ==  10010<<1 ("1000|10 == 10010|0." can be considered 1001==1001 but questionable)
         // Below test is the same as above test.
         //ModVerify__True(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 !=   1001<<2 ("1000|10 == 1001|00." can be considered 1001==1001 but questionable)
-        ModVerify_False(v, w, new BigFloat(0b100000, 0)); // 1000.1<<2 != 100000<<0
-        ModVerify_False(v, w, new BigFloat(0b011111, 0)); // 1000.1<<2 !=  11111<<0
-        ModVerify_False(v, w, new BigFloat(0b1000, 2));   // 1000.1<<2 !=   1000<<2
+        ModVerify_False(v, w, new BigFloat(0b100000, 0, 0)); // 1000.1<<2 != 100000<<0
+        ModVerify_False(v, w, new BigFloat(0b011111, 0, 0)); // 1000.1<<2 !=  11111<<0
+        ModVerify_False(v, w, new BigFloat(0b1000, 2, 0));   // 1000.1<<2 !=   1000<<2
 
         ModVerify__True(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
         ModVerify__True(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
@@ -3658,122 +3663,122 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_ToBinaryStringFormat()
     {
-        BigFloat bi;
+        BigFloat bf;
         string str;
 
-        bi = new(1.5);
-        str = bi.ToString("B");
+        bf = new(1.5);
+        str = bf.ToString("B");
         AreEqual("1.1000000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 1.5");
 
-        bi = new(1.25);
-        str = bi.ToString("B");
+        bf = new(1.25);
+        str = bf.ToString("B");
         AreEqual("1.0100000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 1.25");
 
-        bi = new(2.5);
-        str = bi.ToString("B");
+        bf = new(2.5);
+        str = bf.ToString("B");
         AreEqual("10.100000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 2.5");
 
-        bi = new(3.5);
-        str = bi.ToString("B");
+        bf = new(3.5);
+        str = bf.ToString("B");
         AreEqual("11.100000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 3.5");
 
-        bi = new(7.5);
-        str = bi.ToString("B");
+        bf = new(7.5);
+        str = bf.ToString("B");
         AreEqual("111.10000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 7.5");
 
-        bi = new(15.5);
-        str = bi.ToString("B");
+        bf = new(15.5);
+        str = bf.ToString("B");
         AreEqual("1111.1000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 15.5");
 
-        bi = new(31.25);
-        str = bi.ToString("B");
+        bf = new(31.25);
+        str = bf.ToString("B");
         AreEqual("11111.010000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 31.25");
 
-        bi = new(63.25);
-        str = bi.ToString("B");
+        bf = new(63.25);
+        str = bf.ToString("B");
         AreEqual("111111.01000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 63.25");
 
-        bi = new(127.25);
-        str = bi.ToString("B");
+        bf = new(127.25);
+        str = bf.ToString("B");
         AreEqual("1111111.0100000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 127.25");
 
-        bi = new(255.25);
-        str = bi.ToString("B");
+        bf = new(255.25);
+        str = bf.ToString("B");
         AreEqual("11111111.010000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 255.25");
 
-        bi = new(0.0000123);
-        str = bi.ToString("B");
+        bf = new(0.0000123);
+        str = bf.ToString("B");
         AreEqual("0.000000000000000011001110010111000001100100000101100010101000001110000", str, "Verify_ToStringFormat on 0.0000123");
         //     answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
         //                               12345678901234567890123456789012345678901234567890123  (expect 1+52= 53 significant bits)
         //   expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
 
-        bi = new(1230000000);
-        str = bi.ToString("B");
+        bf = new(1230000000, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("1001001010100000100111110000000", str, "Verify_ToStringFormat on 1230000000");
 
-        bi = new(123, 5);
-        str = bi.ToString("B");
+        bf = new(123, 5, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("111101100000", str, "Verify_ToStringFormat on 123 * 2^5");
 
-        bi = new(123, 40);
-        str = bi.ToString("B");
+        bf = new(123, 40, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("11110110000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 123 * 2^5");
 
-        bi = new(0.0000123);
-        str = bi.ToString("B");
+        bf = new(0.0000123);
+        str = bf.ToString("B");
         AreEqual("0.000000000000000011001110010111000001100100000101100010101000001110000", str, "Verify_ToStringFormat on 0.0000123");
         //     answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
         //                               12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
 
-        bi = new(-0.123);
-        str = bi.ToString("B");
+        bf = new(-0.123);
+        str = bf.ToString("B");
         AreEqual("-0.00011111011111001110110110010001011010000111001010110000", str, "Verify_ToStringFormat on -3.5");
         //     answer: -0.00011111011111001110110110010001011010000111001010110000001000...
         //                   12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: -0.00011111011111001110110110010001011010000111001010110000
 
-        bi = new(-3.5);
-        str = bi.ToString("B");
+        bf = new(-3.5);
+        str = bf.ToString("B");
         AreEqual("-11.100000000000000000000000000000000000000000000000000", str, "Verify_ToStringFormat on -3.5");
 
-        bi = new(-1230000000.0);
-        str = bi.ToString("B");
+        bf = new(-1230000000.0);
+        str = bf.ToString("B");
         AreEqual("-1001001010100000100111110000000.0000000000000000000000", str, "Verify_ToStringFormat on 1230000000");
 
-        bi = new(-123, 5);
-        str = bi.ToString("B");
+        bf = new(-123, 5, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("-111101100000", str, "Verify_ToStringFormat on 123 * 2^5");
 
-        bi = new(-123, 40);
-        str = bi.ToString("B");
+        bf = new(-123, 40, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("-11110110000000000000000000000000000000000000000", str, "Verify_ToStringFormat on 123 * 2^5");
 
         //////////////// Int conversions ////////////////
-        bi = new(1230000000);
-        str = bi.ToString("B");
+        bf = new(1230000000, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("1001001010100000100111110000000", str, "Verify_ToStringFormat on 1230000000");
 
-        bi = new(-1230000000);
-        str = bi.ToString("B");
+        bf = new(-1230000000, addedBinaryPrecision: 0);
+        str = bf.ToString("B");
         AreEqual("-1001001010100000100111110000000", str, "Verify_ToStringFormat on -1230000000");
 
         //////////////// String conversions ////////////////
-        bi = new("1230000000");
-        str = bi.ToString("B");
+        bf = new("1230000000");
+        str = bf.ToString("B");
         AreEqual("1001001010100000100111110000000", str, "Verify_ToStringFormat on 1230000000");
 
-        bi = new("-1230000000");
-        str = bi.ToString("B");
+        bf = new("-1230000000");
+        str = bf.ToString("B");
         AreEqual("-1001001010100000100111110000000", str, "Verify_ToStringFormat on -1230000000");
 
-        bi = new("1230000000.0");
-        str = bi.ToString("B");
+        bf = new("1230000000.0");
+        str = bf.ToString("B");
         AreEqual("1001001010100000100111110000000.000", str, "Verify_ToStringFormat on 1230000000.0");
 
-        bi = new("-123456.7890123");
-        str = bi.ToString("B");
+        bf = new("-123456.7890123");
+        str = bf.ToString("B");
         AreEqual("-11110001001000000.11001001111111001011011", str, "Verify_ToStringFormat on -123456.7890123");
         //     answer: -11110001001000000.110010011111110010110101110010001010010001001001001000000000010010000010010001011011111111...
         //                                012345678901234567890123 (expect 7 * 3.321928 = 23.253 significant binary digits)
@@ -5452,32 +5457,32 @@ public class BigFloatTests
         expect.DebugPrint();
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
-        inputVal0 = new BigFloat(2119, 18);  //  5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(5555);   //      -5555  
+        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  //  5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(5555, addedBinaryPrecision:0);   //      -5555  
         output = inputVal0 - inputVal1;                  //= 5555_____
         expect = new BigFloat("555572222");  // expected: 555572222 result:555483136  OK
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
-        inputVal0 = new BigFloat(2119, 18);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(555555); //          -10000111101000100011    -555555  
+        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(555555, addedBinaryPrecision: 0); //          -10000111101000100011    -555555  
         output = inputVal0 - inputVal1;                  //=100001000101                    5549_____
         expect = new BigFloat(2117, 18);
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
-        inputVal0 = new BigFloat(2119, 18);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(-555555);//          +10000111101000100011    +555555              +555555
+        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(-555555, addedBinaryPrecision: 0);//          +10000111101000100011    +555555              +555555
         output = inputVal0 - inputVal1;                  //=100001001001                    5561_____            556038691
         expect = new BigFloat(2121, 18);
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
-        inputVal0 = new BigFloat(-2119, 18);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(555555);//          +10000111101000100011    +555555              +555555
+        inputVal0 = new BigFloat(-2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(555555, addedBinaryPrecision: 0);//          +10000111101000100011    +555555              +555555
         output = inputVal0 - inputVal1;                  //=100001001001                    5561_____            556038691
         expect = new BigFloat(-2121, 18);
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
-        inputVal0 = new BigFloat(-2119, 18);  // -100001000111                   -5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(-555555); //           +10000111101000100011    +555555  
+        inputVal0 = new BigFloat(-2119, 18, addedBinaryPrecision: 0);  // -100001000111                   -5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(-555555, addedBinaryPrecision: 0); //           +10000111101000100011    +555555  
         output = inputVal0 - inputVal1;                   //=-100001000101                   -5549_____
         expect = new BigFloat(-2117, 18);
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");

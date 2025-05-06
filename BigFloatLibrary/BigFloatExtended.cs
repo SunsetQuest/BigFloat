@@ -209,6 +209,7 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    // future: all of these should be the same in terms of a "int addedBinaryPrecision = 32" parameter
     /// <summary>Defines an implicit conversion of a signed 32-bit integer to a BigFloat.</summary>
     public static implicit operator BigFloat(int value)
     {
