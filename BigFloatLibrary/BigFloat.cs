@@ -1960,18 +1960,6 @@ Other:                                         |   |         |         |        
 
         return obj is BigFloat other && Equals(other);
     }
-    //public override bool Equals(object obj)
-    //{
-    //    //Check for null and compare run-time types.
-    //    if (obj == null || !GetType().Equals(obj.GetType()))
-    //    {
-    //        return false;
-    //    }
-
-    //    BigFloat p = (BigFloat)obj;
-    //    return Equals(p); //todo: to test
-    //}
-
 
     /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
     public override int GetHashCode()

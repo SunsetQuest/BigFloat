@@ -452,8 +452,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         BigInteger abs = BigInteger.Abs(Mantissa);
         int shiftAmount = _size - numberOfBits;
         return shiftAmount >= 0
-            ? BigIntegerToBinaryString(abs >> shiftAmount)
-            : BigIntegerToBinaryString(abs) + new string('_', -shiftAmount);
+            ? BigIntegerTools.ToBinaryString(abs >> shiftAmount)
+            : BigIntegerTools.ToBinaryString(abs) + new string('_', -shiftAmount);
     }
 
     /// <summary>
@@ -462,7 +462,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetAllBitsAsString(bool twosComplement = false)
     {
-        return BigIntegerToBinaryString(Mantissa, twosComplement);
+        return BigIntegerTools.ToBinaryString(Mantissa, twosComplement ? BinaryStringFormat.TwosComplement: BinaryStringFormat.Standard);
     }
 
     /// <summary>
@@ -471,7 +471,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetBitsAsString()
     {
-        return BigIntegerToBinaryString(RightShiftWithRound(Mantissa, GuardBits));
+        BigInteger shiftedMantissa = RightShiftWithRound(Mantissa, GuardBits);
+        return BigIntegerTools.ToBinaryString(shiftedMantissa);
     }
 
     public string DebuggerDisplay

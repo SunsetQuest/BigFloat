@@ -7172,7 +7172,27 @@ public class BigFloatTests
         Assert.IsTrue(err < 1e-24, $"SinAprox(1.0) error {err:N2} should be <1e-24");
     }
 
+    [TestMethod]
+    public void TestBigIntegerToBinaryString()
+    {
+        BigInteger input;
+        string answer, result;
+        
+        input = BigInteger.Parse("127");
+        answer = "1111111";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
 
+        input = BigInteger.Parse("-127");
+        answer = "-1111111";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+
+        input = BigInteger.Parse("-127");
+        answer = "10000001";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+    }
 
 
 
