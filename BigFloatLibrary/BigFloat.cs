@@ -370,32 +370,10 @@ public readonly partial struct BigFloat
                 return false;
             }
 
-            // Optional: return ((((Mantissa >> 30) & 3) + 1) & 3) == 0; //return true if top 8 bits are |00000000 or |11111111
-
             // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
             // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
-            BigInteger val2 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
-            r= BitsUniformInRange(Mantissa, GuardBits-Scale, GuardBits - 8 - Scale);
-            return r;
-
-
-            // past...  v3 -  just checks bits between radix and middle of guard bits
-            //int begMask = GuardBits >> 1; //future: maybe instead of the middle we just check the single bit between radix and the 2nd guard bit
-            //int endMask = GuardBits - Scale;
-
-            //if (begMask <= Scale ||
-            //    begMask >= endMask)
-            //{
-            //    return true; // technically inconclusive though.
-            //}
-
-            //BigInteger mask = ((BigInteger.One << (endMask - begMask)) - 1) << begMask;
-            //BigInteger maskApplied = Mantissa & mask;
-            //int bitsSet = (int)BigInteger.PopCount(maskApplied);
-            //return (bitsSet == 0) || (bitsSet == endMask - begMask);
+            return BitsUniformInRange(Mantissa, GuardBits-Scale, GuardBits - 8 - Scale);
         }
-
-
     }
 
     static bool BitsUniformInRange(BigInteger value, int a, int b)
