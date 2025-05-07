@@ -7177,20 +7177,55 @@ public class BigFloatTests
     {
         BigInteger input;
         string answer, result;
-        
-        input = BigInteger.Parse("127");
-        answer = "1111111";
+
+        input = BigInteger.Parse("256");
+        answer = "0000000100000000"; //leading zero because two's complement 
         result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
         Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "0000000100000000"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 12);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "···█········"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 12);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "100000000"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "█········"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
 
-        input = BigInteger.Parse("-127");
-        answer = "-1111111";
+        input = BigInteger.Parse("127");
+        answer = "01111111"; //leading zero because two's complement 
         result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "1111111"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "███████"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
         Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
 
         input = BigInteger.Parse("-127");
         answer = "10000001";
         result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "-1111111";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "-███████"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+
+        input = BigInteger.Parse("-63");
+        answer = "1111111111000001";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 16);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "-0000000000111111";
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 16);
+        Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
+        answer = "-██████"; //leading zero because two's complement 
+        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
         Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
     }
 

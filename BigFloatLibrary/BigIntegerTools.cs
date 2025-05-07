@@ -26,6 +26,134 @@ public enum BinaryStringFormat
 
 public static class BigIntegerTools
 {
+
+    /// <summary>
+    /// Converts <paramref name="value"/> to a binary string.
+    /// </summary>
+    /// <param name="value">The number to encode.</param>
+    /// <param name="format">
+    /// Use <see cref="BinaryStringFormat.Standard"/> (default) or
+    /// <see cref="BinaryStringFormat.TwosComplement"/>; optionally OR with
+    /// <see cref="BinaryStringFormat.Shades"/> to substitute █/· for 1/0.
+    /// </param>
+    /// <param name="minWidth">
+    /// Left‑pads with appropriate bit ('0'/'1' or '·'/'█') so that the digit section is at least this wide.
+    /// Ignored when it is ≤ the natural width.
+    /// </param>
+    public static string ToBinaryString1(
+        this BigInteger value,
+        BinaryStringFormat format = BinaryStringFormat.Standard,
+        int minWidth = 0)
+    {
+        bool twoC = format.HasFlag(BinaryStringFormat.TwosComplement);
+        bool shades = format.HasFlag(BinaryStringFormat.Shades);
+        bool isNegative = value.Sign < 0;
+        bool standardNegative = !twoC && isNegative;
+
+        if (standardNegative) value = BigInteger.Abs(value);     // sign handled separately for standard format
+
+        // ==== 1. Determine buffer sizes ====
+        int byteCount = value.GetByteCount(isUnsigned: !twoC);
+        if (byteCount == 0) byteCount = 1;          // BigInteger 0 → 0 bytes
+
+        // Calculate natural digit width and total width
+        int naturalDigitWidth = 8 * byteCount;
+        int signWidth = standardNegative ? 1 : 0;
+
+        // For two's complement, ensure we have at least minWidth or the natural width (whichever is larger)
+        int actualDigitWidth = Math.Max(naturalDigitWidth, minWidth);
+        int totalWidth = signWidth + actualDigitWidth;
+
+        const int STACK_THRESHOLD = 512;
+        Span<char> dest = totalWidth <= STACK_THRESHOLD
+            ? stackalloc char[totalWidth]
+            : ArrayPool<char>.Shared.Rent(totalWidth);
+        try
+        {
+            // ==== 2. Add sign if needed for standard format ====
+            int currentPos = 0;
+            if (standardNegative)
+            {
+                dest[0] = '-';
+                currentPos = 1;
+            }
+
+            // ==== 3. Write bit pattern ====
+            int digitsWritten;
+
+            if (twoC)
+            {
+                // For two's complement, handle padding as part of the pattern
+                digitsWritten = WriteTwosComplementWithPadding(value, dest.Slice(currentPos), actualDigitWidth, isNegative);
+            }
+            else
+            {
+                // For standard format, add padding first
+                int paddingWidth = minWidth > naturalDigitWidth ? currentPos + minWidth - naturalDigitWidth : 0;
+
+                // Add padding zeros
+                if (paddingWidth > 0)
+                {
+                    dest.Slice(currentPos, paddingWidth).Fill('0');
+                    currentPos += paddingWidth;
+                }
+
+                // Then write digits
+                digitsWritten = WriteStandard(value, dest.Slice(currentPos), false); // Sign already handled
+            }
+
+            int totalWritten = currentPos + digitsWritten;
+
+            // ==== 4. Apply shades, if requested ====
+            if (shades)
+            {
+                // Skip sign
+                for (int i = signWidth; i < totalWritten; ++i)
+                    dest[i] = dest[i] == '1' ? '█' : '·';
+            }
+
+            return new string(dest[..totalWritten]);
+        }
+        finally
+        {
+            if (dest.Length > STACK_THRESHOLD)
+            {
+                ArrayPool<char>.Shared.Return(dest.ToArray());
+            }
+        }
+    }
+
+    // Helper method to properly handle two's complement padding with the correct sign extension
+    private static int WriteTwosComplementWithPadding(BigInteger value, Span<char> dest, int width, bool isNegative)
+    {
+        // First write the raw two's complement to a temporary buffer to determine its length
+        // We're using a separate buffer to avoid overwriting and to get the exact length
+        Span<char> tempBuf = stackalloc char[value.GetByteCount(isUnsigned: false) * 8 + 1];
+        int actualDigitCount = WriteTwosComplement(value, tempBuf);
+
+        // Character to use for padding
+        char padChar = isNegative ? '1' : '0';
+
+        // If we need more width than actual digit count
+        if (actualDigitCount < width)
+        {
+            // Fill the left side with the appropriate padding
+            dest.Slice(0, width - actualDigitCount).Fill(padChar);
+
+            // Copy the actual digits to the right position
+            tempBuf.Slice(0, actualDigitCount).CopyTo(dest.Slice(width - actualDigitCount, actualDigitCount));
+
+            return width;
+        }
+        else
+        {
+            // Just copy the digits as they are (no padding needed)
+            tempBuf.Slice(0, actualDigitCount).CopyTo(dest);
+            return actualDigitCount;
+        }
+    }
+
+
     /// <summary>
     /// Converts <paramref name="value"/> to a binary string.
     /// </summary>
@@ -54,7 +182,7 @@ public static class BigIntegerTools
         int byteCount = value.GetByteCount(isUnsigned: !twoC);
         if (byteCount == 0) byteCount = 1;          // BigInteger 0 → 0 bytes
 
-        int tentativeChars = 8 * byteCount + (neg ? 1 : 0);
+        int tentativeChars = Math.Max(minWidth, 8 * byteCount) + (neg ? 1 : 0);
         const int STACK_THRESHOLD = 512;
 
         Span<char> dest = tentativeChars <= STACK_THRESHOLD
@@ -76,7 +204,8 @@ public static class BigIntegerTools
                 int pad = minWidth - digitSpan;
                 // shift right and fill with the right glyph
                 dest.Slice(signOfs, digitSpan).CopyTo(dest[(signOfs + pad)..]);
-                dest.Slice(signOfs, pad).Fill(shades ? '·' : '0');
+                char padChar = shades ? '·' : ((twoC && value.Sign < 0) ? '1' : '0');
+                dest.Slice(signOfs, pad).Fill(padChar);
                 written += pad;
             }
 
@@ -93,73 +222,86 @@ public static class BigIntegerTools
         {
             if (dest.Length > STACK_THRESHOLD)
             {
-                char[] charArray1 = dest.ToArray();
-                ArrayPool<char>.Shared.Return(charArray1);
+                ArrayPool<char>.Shared.Return(dest.ToArray());
             }
         }
     }
 
     /// <summary>
-    /// Tries to parse <paramref name="binary"/> (optionally using shades)
-    /// into a <see cref="BigInteger"/>.  Returns <c>false</c> on malformed input.
+    /// Converts the binary text in ReadOnlySpan<char> to a BigInteger. 
+    /// If it fails it returns false.
+    /// e.g '-11111100.101' would ignore the decimal and set the BigInteger to -252.
     /// </summary>
-    public static bool TryParseBinary(
-        ReadOnlySpan<char> binary,
-        out BigInteger value,
-        bool shadesAware = true)
+    /// <param name="input">(out) The binary string input. It should be only [-/+, 0,1,' ', period,comma,_]</param>
+    /// <param name="result">The BigInteger result.</param>
+    /// <returns>True is successful; False if it fails.</returns>
+    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigInteger result)
     {
-        value = BigInteger.Zero;
-        if (binary.IsEmpty) return false;
+        int inputLen = input.Length;
 
-        int idx = 0;
-        bool neg = binary[idx] is '-';
-        if (neg || binary[idx] is '+') idx++;
-
-        // pass 1: count accepted bits so we can pre‑size the byte buffer
-        int bitCount = 0;
-        for (int i = idx; i < binary.Length; ++i)
+        if (inputLen == 0)
         {
-            char c = binary[i];
-            if (c is '0' or '1' ||
-               (shadesAware && (c is '█' or '·')))
-            {
-                bitCount++;
-            }
-            else if (c is '.' or '_' or ',' or ' ') { /* skip */ }
-            else { return false; }
+            result = new BigInteger(0);
+            return false;
         }
-        if (bitCount == 0) return false;
 
-        int byteCount = (bitCount + 7) >> 3;
-        Span<byte> buf = byteCount <= 512 ? stackalloc byte[byteCount] : new byte[byteCount];
+        byte[] bytes = new byte[(inputLen + 7) / 8];
+        int outputBitPosition = 0;   // The current bit we are writing to.
 
-        // pass 2: pack bits MSB→LSB
-        int bitPos = bitCount - 1;
-        for (int i = idx; i < binary.Length; ++i)
+        // if it starts with a '-' then set negative rawValue to zero
+        bool isNeg = input[0] == '-'; // 0x2D;
+
+        // if starting with - or + then headPosition should be 1.
+        int headPosition = isNeg | input[0] == '+' ? 1 : 0;
+
+        int periodLoc = input.LastIndexOf('.');
+        int tailPosition = (periodLoc < 0 ? inputLen : periodLoc) - 1;
+        for (; tailPosition >= headPosition; tailPosition--)
         {
-            char c = binary[i];
-            int bit =
-                c is '1' or '█' ? 1 :
-                c is '0' or '·' ? 0 : -1;
-
-            if (bit >= 0)
+            switch (input[tailPosition])
             {
-                if (bit == 1)
-                    buf[bitPos >> 3] |= (byte)(1 << (bitPos & 7));
-                bitPos--;
+                case '1':
+                    bytes[outputBitPosition >> 3] |= (byte)(1 << (outputBitPosition & 0x7));
+                    goto case '0';
+                case '0':
+                    outputBitPosition++;
+                    break;
+                case ',' or '_' or ' ': // allow commas, underscores, and spaces (e.g.  1111_1111_0000) (optional - remove for better performance)
+                    break;
+                default:
+                    result = new BigInteger(0);
+                    return false; // Function was not successful - unsupported char found
             }
         }
 
-        if (neg)
+        // If the number is negative, let's perform Two's complement: (1) negate the bits (2) add 1 to the bottom byte
+        if (isNeg)
         {
-            // Two’s complement of buf in‑place
-            for (int i = 0; i < buf.Length; i++) buf[i] ^= 0xFF;
-            for (int i = 0; i < buf.Length; i++)
-                if (++buf[i] != 0) break;
+            int byteCount = bytes.Length;
+
+            //   (1) negate the bits
+            for (int i = 0; i < byteCount; i++)
+            {
+                bytes[i] ^= 0xff;
+            }
+
+            //   (2) increment the LSB and increment more significant bytes as needed.
+            bytes[0]++;
+            for (int i = 0; bytes[i] == 0; i++)
+            {
+                if (i + 1 >= byteCount)
+                {
+                    break;
+                }
+
+                bytes[i + 1]++;
+            }
         }
 
-        value = new BigInteger(buf, isBigEndian: false, isUnsigned: !neg);
-        return true;
+        result = new(bytes, !isNeg);
+
+        // return true if success, if no 0/1 bits found then return false.
+        return outputBitPosition != 0;
     }
 
     // ======== private helpers =========
