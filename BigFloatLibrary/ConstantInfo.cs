@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
-{ 
+{
     public readonly struct ConstantInfo(string name, string formula, string moreInfoLink, string sourceOfDigitsURL, string sourceOfDigitsName, int sizeAvailableInFile, int scale, string bitsInBase64)
     {
         /// <summary>
@@ -58,10 +58,7 @@ public readonly partial struct BigFloat
             string displayPart = BitsInBase64.Split('|')[0];
             int decimalPoint = displayPart.IndexOf('.');
 
-            if (decimalPoint < 0)
-                return 0;
-
-            return displayPart.Length - decimalPoint - 1;
+            return decimalPoint < 0 ? 0 : displayPart.Length - decimalPoint - 1;
         }
 
         /// <summary>
@@ -92,7 +89,7 @@ public readonly partial struct BigFloat
                 int base64CharsNeeded = ((bitsWithGuard + 5) / 6) + extraCharsForTrailingZero;
 
                 // Base64 decoding requires input length to be a multiple of 4
-                base64CharsNeeded = ((base64CharsNeeded + 3) / 4) * 4;
+                base64CharsNeeded = (base64CharsNeeded + 3) / 4 * 4;
 
                 // Make sure we don't exceed the available characters
                 base64CharsNeeded = Math.Min(base64CharsNeeded, base64Part.Length);
@@ -218,8 +215,8 @@ public readonly partial struct BigFloat
             {
                 // The built-in constant in the code was not long enough. Check if constant exists in external file.
                 string fileName = Name ?? BitsInBase64.Split('|')[0];
-                if (fileName.Length > 14)
-                    fileName = fileName[..14];
+                if (fileName.Length > 14) fileName = fileName[..14];
+
 
                 string fileToTryAndLoad = Path.Combine("Values", fileName + ".txt");
 
@@ -303,32 +300,31 @@ public readonly partial struct BigFloat
             if (existingDecimals >= decimalDigits)
             {
                 // Truncate to requested number of digits
-                strValue = strValue.Substring(0, decimalPos + 1 + decimalDigits);
+                strValue = strValue[..(decimalPos + 1 + decimalDigits)];
             }
 
             // If we don't want to group digits, return the string as is
-            if (!groupDigits)
-                return strValue;
+            if (!groupDigits) return strValue;
 
             // Group digits for readability
-            var result = new System.Text.StringBuilder();
+            System.Text.StringBuilder result = new();
 
             // Add the integer part (before decimal)
-            result.Append(strValue.Substring(0, decimalPos));
+            _ = result.Append(strValue[..decimalPos]);
 
             // Add the decimal point
-            result.Append('.');
+            _ = result.Append('.');
 
             // Add the fractional part with grouping
-            string fractionalPart = strValue.Substring(decimalPos + 1);
+            string fractionalPart = strValue[(decimalPos + 1)..];
             for (int i = 0; i < fractionalPart.Length; i++)
             {
-                result.Append(fractionalPart[i]);
+                _ = result.Append(fractionalPart[i]);
 
                 // Add space after every digitGroupSize digits (except at the end)
                 if ((i + 1) % digitGroupSize == 0 && i < fractionalPart.Length - 1)
                 {
-                    result.Append(' ');
+                    _ = result.Append(' ');
                 }
             }
 

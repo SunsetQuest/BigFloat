@@ -8,7 +8,6 @@ using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
-using System.Text;
 
 namespace BigFloatLibrary;
 
@@ -48,11 +47,11 @@ public static class BigIntegerTools
         bool shades = format.HasFlag(BinaryStringFormat.Shades);
         bool neg = !twoC && value.Sign < 0;
 
-        if (neg) value = BigInteger.Abs(value);     // sign handled separately
+        if (neg) { value = BigInteger.Abs(value); }    // sign handled separately
 
         // ==== 1.  Determine buffer sizes ====
         int byteCount = value.GetByteCount(isUnsigned: !twoC);
-        if (byteCount == 0) byteCount = 1;          // BigInteger 0 → 0 bytes
+        if (byteCount == 0) { byteCount = 1; }         // BigInteger 0 → 0 bytes
 
         int tentativeChars = Math.Max(minWidth, 8 * byteCount) + (neg ? 1 : 0);
         const int STACK_THRESHOLD = 512;
@@ -85,7 +84,9 @@ public static class BigIntegerTools
             if (shades)
             {
                 for (int i = signOfs; i < written; ++i)
+                {
                     dest[i] = dest[i] == '1' ? '█' : '·';
+                }
             }
 
             return new string(dest[..written]);
@@ -182,16 +183,21 @@ public static class BigIntegerTools
         BigInteger absValue, Span<char> dest, bool addMinus)
     {
         Span<byte> bytes = stackalloc byte[absValue.GetByteCount(isUnsigned: true)];
-        absValue.TryWriteBytes(bytes, out int n, isUnsigned: true, isBigEndian: false);
+        _ = absValue.TryWriteBytes(bytes, out int n, isUnsigned: true, isBigEndian: false);
 
         int d = 0;
-        if (addMinus) dest[d++] = '-';
+        if (addMinus)
+        {
+            dest[d++] = '-';
+        }
 
         // top byte: skip its leading zero bits
         byte hi = bytes[n - 1];
         int msb = BitOperations.Log2(hi);
         for (int b = msb; b >= 0; --b)
+        {
             dest[d++] = ((hi >> b) & 1) == 1 ? '1' : '0';
+        }
 
         // full bytes
         for (int i = n - 2; i >= 0; --i)
@@ -213,7 +219,7 @@ public static class BigIntegerTools
         BigInteger value, Span<char> dest)
     {
         Span<byte> bytes = stackalloc byte[value.GetByteCount(isUnsigned: false)];
-        value.TryWriteBytes(bytes, out int n, isUnsigned: false, isBigEndian: false);
+        _ = value.TryWriteBytes(bytes, out int n, isUnsigned: false, isBigEndian: false);
 
         int d = 0;
         for (int i = n - 1; i >= 0; --i)
@@ -414,7 +420,8 @@ public static class BigIntegerTools
         UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
         UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
 
-        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); //todo: should use  "pow4>>127"
+        //Todo: next line should use "pow4>>127"??
+        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen));
         Int128 denominator2 = n * (Int128)(pow3 >> 89);
 
         BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
@@ -442,7 +449,7 @@ public static class BigIntegerTools
             lastVal = val;
             int valSize = (int)val.GetBitLength();
             BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out _ /*int shifted*/, valSize, valSize - reduceBy);
-            BigInteger numerator = ((pow * (val >> reduceBy))) - (x >> (2 * reduceBy - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
+            BigInteger numerator = (pow * (val >> reduceBy)) - (x >> ((2 * reduceBy) - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
             //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
             val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
             loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
@@ -1079,7 +1086,10 @@ public static class BigIntegerTools
             //// back off until we see both a zero and one
             if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision)
             {
-                if ((int)(doubleCurSize * 0.95) > requestedPrecision) Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
+                if ((int)(doubleCurSize * 0.95) > requestedPrecision)
+                {
+                    Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
+                }
 
                 result = ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (doubleCurSize + curSize - requestedPrecision);
                 //result = ((result << curSize) - ((result * (xTimesY & mask)) >> curSize)) >> (doubleCurSize - requestedPrecision - 1);
@@ -1239,7 +1249,10 @@ public static class BigIntegerTools
             //// back off until we see both a zero and one
             if (doubleCurSize - EXTRA_TO_REMOVE2 > requestedPrecision)
             {
-                if ((int)(doubleCurSize * 0.95) > requestedPrecision) Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
+                if ((int)(doubleCurSize * 0.95) > requestedPrecision)
+                {
+                    Console.WriteLine($"Overshot size:{doubleCurSize} requestedPrecision:{requestedPrecision}");
+                }
 
                 result = ((result << doubleCurSize) - (result * (xTimesY & mask))) >> (doubleCurSize + curSize - requestedPrecision);
                 //result = ((result << curSize) - ((result * (xTimesY & mask)) >> curSize)) >> (doubleCurSize - requestedPrecision - 1);
@@ -1484,25 +1497,4 @@ public static class BigIntegerTools
         bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - ((bits - 1) % 8)));
         return new BigInteger(bytes, true);
     }
-
-
-    //// Converts a double value to a string in base 2 for display.
-    //// Example: 123.5 --> "0:10000000101:1110111000000000000000000000000000000000000000000000"
-    //// https://stackoverflow.com/a/68052530/2352507  Ryan S. White in 2020
-    //public static string DoubleToBinaryString(double val)
-    //{
-    //    long v = BitConverter.DoubleToInt64Bits(val);
-    //    string binary = Convert.ToString(v, 2);
-    //    return binary.PadLeft(64, '0').Insert(12, ":").Insert(1, ":");
-    //}
-
-    //// Converts a double value in Int64 format to a string in base 2 for display.
-    //// https://stackoverflow.com/a/68052530/2352507  Ryan S. White in 2020
-    //static string DoubleToBinaryString(long doubleInInt64Format)
-    //{
-    //    string binary = Convert.ToString(doubleInInt64Format, 2);
-    //    binary = binary.PadLeft(64, '0').Insert(12, ":").Insert(1, ":");
-    //    return binary;
-    //}
-
 }

@@ -349,14 +349,16 @@ public readonly partial struct BigFloat
                 }
 
                 // Use parallel processing for better performance with large sets
-                var result = new ConcurrentDictionary<string, BigFloat>();
+                ConcurrentDictionary<string, BigFloat> result = new();
 
-                Parallel.ForEach(Catalog.AllConstants, constantId =>
+                _ = Parallel.ForEach(Catalog.AllConstants, constantId =>
                 {
 
-                    var value = GetConstant(constantId, precisionInBits, cutOnTrailingZero, useExternalFiles);
+                    BigFloat value = GetConstant(constantId, precisionInBits, cutOnTrailingZero, useExternalFiles);
                     if (!value.IsZero)
-                        result.TryAdd(constantId, value);
+                    {
+                        _ = result.TryAdd(constantId, value);
+                    }
                 });
 
                 return new Dictionary<string, BigFloat>(result);
@@ -383,13 +385,15 @@ public readonly partial struct BigFloat
                 }
 
                 // Use parallel processing for better performance with large sets
-                var result = new ConcurrentDictionary<string, BigFloat>();
+                ConcurrentDictionary<string, BigFloat> result = new();
 
-                Parallel.ForEach(category, constantId =>
+                _ = Parallel.ForEach(category, constantId =>
                 {
-                    var value = GetConstant(constantId, precisionInBits, cutOnTrailingZero, useExternalFiles);
+                    BigFloat value = GetConstant(constantId, precisionInBits, cutOnTrailingZero, useExternalFiles);
                     if (!value.IsZero)
-                        result.TryAdd(constantId, value);
+                    {
+                        _ = result.TryAdd(constantId, value);
+                    }
                 });
 
                 return new Dictionary<string, BigFloat>(result);
@@ -417,8 +421,10 @@ public readonly partial struct BigFloat
         /// </summary>
         /// <param name="constantId">The constant identifier from the Catalog.</param>
         /// <returns>The constant with default precision.</returns>
-        public static BigFloat Get(string constantId) =>
-            GetConstant(constantId, DefaultPrecisionBits, DefaultCutOnTrailingZero, true);
+        public static BigFloat Get(string constantId)
+        {
+            return GetConstant(constantId, DefaultPrecisionBits, DefaultCutOnTrailingZero, true);
+        }
 
         #endregion // end Configuration and Direct Access
 
@@ -496,8 +502,7 @@ public readonly partial struct BigFloat
                 BigInteger term = scaleFactor / factorial;
 
                 // If term is too small to affect result, we're done
-                if (term == 0)
-                    break;
+                if (term == 0) { break; }
 
                 // Add term to result
                 result += term;
@@ -561,15 +566,14 @@ public readonly partial struct BigFloat
             for (int k = 0; k < terms; k++)
             {
                 // Calculate denominator: (2k+1) * 2^(2k+1)
-                int denomPower = 2 * k + 1;
+                int denomPower = (2 * k) + 1;
                 BigInteger denom = denomPower * (BigInteger.One << denomPower);
 
                 // Calculate term
                 BigInteger term = scaleFactor / denom;
 
                 // If term is too small to affect result, we're done
-                if (term == 0)
-                    break;
+                if (term == 0) break;
 
                 // Add term to result
                 result += term;
@@ -607,14 +611,13 @@ public readonly partial struct BigFloat
             for (int k = 0; k < terms; k++)
             {
                 // Calculate denominator: (2k+1)^2
-                BigInteger denom = BigInteger.Pow(2 * k + 1, 2);
+                BigInteger denom = BigInteger.Pow((2 * k) + 1, 2);
 
                 // Calculate term
                 BigInteger term = scaleFactor / denom;
 
                 // If term is too small to affect result, we're done
-                if (term == 0)
-                    break;
+                if (term == 0) break;
 
                 // Add or subtract term based on sign
                 result += sign * term;
@@ -687,28 +690,27 @@ public readonly partial struct BigFloat
             }
 
             // If we don't want to group digits, return the string as is
-            if (!groupDigits)
-                return strValue;
+            if (!groupDigits) return strValue;
 
             // Group digits for readability
-            var result = new StringBuilder();
+            StringBuilder result = new();
 
             // Add the integer part (before decimal)
-            result.Append(strValue[..decimalPos]);
+            _ = result.Append(strValue[..decimalPos]);
 
             // Add the decimal point
-            result.Append('.');
+            _ = result.Append('.');
 
             // Add the fractional part with grouping
             string fractionalPart = strValue[(decimalPos + 1)..];
             for (int i = 0; i < fractionalPart.Length; i++)
             {
-                result.Append(fractionalPart[i]);
+                _ = result.Append(fractionalPart[i]);
 
                 // Add space after every digitGroupSize digits (except at the end)
                 if (groupDigits && (i + 1) % digitGroupSize == 0 && i < fractionalPart.Length - 1)
                 {
-                    result.Append(' ');
+                    _ = result.Append(' ');
                 }
             }
 
@@ -775,20 +777,20 @@ public readonly partial struct BigFloat
             CacheLock.EnterUpgradeableReadLock();
             try
             {
-                if (ConstantCache.TryGetValue(constantId, out var precisionMap))
+                if (ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat> precisionMap))
                 {
                     // Check if we have the exact precision
-                    if (precisionMap.TryGetValue(precisionInBits, out var exactValue))
+                    if (precisionMap.TryGetValue(precisionInBits, out BigFloat exactValue))
                     {
                         return exactValue;
                     }
 
                     // Check if we have a higher precision we can use
-                    foreach (var entry in precisionMap)
+                    foreach (KeyValuePair<int, BigFloat> entry in precisionMap)
                     {
                         if (entry.Key > precisionInBits)
                         {
-                            var truncated = TruncateByAndRound(entry.Value, entry.Value.Size - precisionInBits);
+                            BigFloat truncated = TruncateByAndRound(entry.Value, entry.Value.Size - precisionInBits);
 
                             CacheLock.EnterWriteLock();
                             try
@@ -818,7 +820,7 @@ public readonly partial struct BigFloat
             CacheLock.EnterWriteLock();
             try
             {
-                if (!ConstantCache.TryGetValue(constantId, out var precisionMap))
+                if (!ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat> precisionMap))
                 {
                     precisionMap = [];
                     ConstantCache[constantId] = precisionMap;

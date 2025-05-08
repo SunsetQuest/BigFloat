@@ -4,13 +4,14 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
+using BigFloatLibrary;
 using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
-using BigFloatLibrary;
+using System.Collections.Generic;
 using static BigFloatLibrary.BigFloat;
 
 #pragma warning disable IDE0051  // Ignore unused private members
@@ -91,7 +92,7 @@ public static class Showcase
 
         //////////////////// Working with Mathematical Constants: ////////////////////
         // Access constants like Pi or E from Constants
-        var bigConstants = Constants.WithConfig(precisionInBits: 1000).GetAll();
+        Dictionary<string, BigFloat> bigConstants = Constants.WithConfig(precisionInBits: 1000).GetAll();
         BigFloat pi = bigConstants["Pi"];
         BigFloat e = bigConstants["E"];
 
@@ -226,7 +227,12 @@ public static class Showcase
                     valToTest += 1 + (valToTest / 23); //(valToTest >> 5); //(valToTest / 100003); 23 127 251 503 997 7727  100003
                     int valLenth = (int)valToTest.GetBitLength();
                     if (valLenth < 0) continue;
-                    if (valLenth > 10000 && !stoppedAready) { DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy); Console.ReadKey(); stoppedAready = true; }
+                    if (valLenth > 10000 && !stoppedAready) 
+                    { 
+                        DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy); 
+                        _ = Console.ReadKey();
+                        stoppedAready = true;
+                    }
 
                     BenchmarkInverseMethod(valToTest, perfTimerClassic, perfTimerNew, k, valLenth);
                 }
@@ -240,7 +246,9 @@ public static class Showcase
             double thisTotal = (double)perfTimerClassic.ElapsedTicks / perfTimerNew.ElapsedTicks;
             totalSpeedup += thisTotal;
             totalCount++;
-            Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} -> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) (Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
+            Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} " +
+                $"-> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) " +
+                $"(Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
         }
     }
 
@@ -338,7 +346,6 @@ public static class Showcase
             sw.Stop();
 
 
-
             // |---------------|----------------|
             bool isTooSmall = BigInteger.Pow(result, n - 1) > val;
             bool isTooLarge = val >= BigInteger.Pow(result + 2, n);
@@ -350,8 +357,8 @@ public static class Showcase
                 Console.WriteLine($"MissBy:{diff,2}  val: {val}^(1/{n}) Ans:{answer}[{outputBits}] != Res:{result} valBits: {BigIntegerTools.ToBinaryString(answer)}");
             }
 
-            Interlocked.Add(ref totalTime, sw.ElapsedTicks); //totalTime += sw.ElapsedTicks;
-            Interlocked.Add(ref totalTimeBase, swBase.ElapsedTicks); //totalTime += sw.ElapsedTicks;
+            _ = Interlocked.Add(ref totalTime, sw.ElapsedTicks); //totalTime += sw.ElapsedTicks;
+            _ = Interlocked.Add(ref totalTimeBase, swBase.ElapsedTicks); //totalTime += sw.ElapsedTicks;
 
             if (i % 1000 == 0 && totalTime > 0)
             {
@@ -362,7 +369,7 @@ public static class Showcase
     }
 
     // Verify nthRoot by Bisection
-    // https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, Cryptonite, 2014
+    // source: https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, Cryptonite, 2014
     public static BigInteger NthRootBisection(BigInteger value, int root, out BigInteger remainder)
     {
         //special conditions
@@ -418,7 +425,6 @@ public static class Showcase
         return lowerbound;
     }
 
-
     private static void NthRoot_DRAFT_Stuff()
     {
         Stopwatch timer = Stopwatch.StartNew();
@@ -455,9 +461,7 @@ public static class Showcase
     }
 
 
-
     //////////////  Pow() Play Area & Examples //////////////
-
     private static void Pow_Stuff()
     {
         //// BigFloat.Zero  BigFloat.One

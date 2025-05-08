@@ -316,7 +316,9 @@ public readonly partial struct BigFloat
     /// <param name="binaryScaler">How much should the <paramref name="mantissa"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="integerPart"/>.</param>
     /// <param name="mantissaSize">The size of the <paramref name="mantissa"/>.</param>
     public static BigFloat CreateFromRawComponents(BigInteger mantissa, int binaryScaler, int mantissaSize)
-    => new(mantissa, binaryScaler, mantissaSize);
+    {
+        return new(mantissa, binaryScaler, mantissaSize);
+    }
 
     [DoesNotReturn]
     private static void ThrowInvalidInitializationException(string reason)
@@ -343,24 +345,20 @@ public readonly partial struct BigFloat
             // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
             // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
             const int topBitsToCheck = 8;
-            bool r;
             if (Scale < 0)
             {
                 // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
                 //BigInteger val3 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
                 //return (val3 & (val3 + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                r= BitsUniformInRange(Mantissa, GuardBits - Scale - 0, GuardBits - 1);
-                return r;
+                return BitsUniformInRange(Mantissa, GuardBits - Scale - 0, GuardBits - 1);
             }
 
             if (Scale == 0)
             {
                 // The radix point and guard are in the same place. This is typically an integer however lets verify the top 1/4 the guard are 0 or 1.
-                //return true;
                 //int topBits = (int)(Mantissa >> (GuardBits - topBitsToCheck)) & ((1 << topBitsToCheck) - 1);
                 //return (topBits & (topBits + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                r= BitsUniformInRange(Mantissa, GuardBits, GuardBits - topBitsToCheck);
-                return r;
+                return BitsUniformInRange(Mantissa, GuardBits, GuardBits - topBitsToCheck);
             }
 
             if (Scale > topBitsToCheck)
@@ -372,18 +370,18 @@ public readonly partial struct BigFloat
 
             // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
             // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
-            return BitsUniformInRange(Mantissa, GuardBits-Scale, GuardBits - 8 - Scale);
+            return BitsUniformInRange(Mantissa, GuardBits - Scale, GuardBits - 8 - Scale);
         }
     }
 
-    static bool BitsUniformInRange(BigInteger value, int a, int b)
+    private static bool BitsUniformInRange(BigInteger value, int a, int b)
     {
         // precondition: 0 ≤ b < a ≤ 32
         int width = a - b;
         // mask == (1<<width)-1, i.e. width low bits = 1, the rest = 0
         BigInteger mask = (BigInteger.One << width) - 1;
         // extract the [b..a) bits down into the low bits of 'bits'
-        BigInteger bits = (BigInteger.Abs(value) >> b & mask);
+        BigInteger bits = (BigInteger.Abs(value) >> b) & mask;
         // true iff all those bits are 0, or all are 1
         return bits == 0u || bits == mask;
     }
@@ -541,14 +539,9 @@ public readonly partial struct BigFloat
             - ((sizeDiff > 0) ? (Mantissa >> sizeDiff) : Mantissa);
 
 
-        if (diff.Sign >= 0)
-        {
-            return -(diff >> (GuardBits - 1)).Sign;
-        }
-        else
-        {
-            return (-diff >> (GuardBits - 1)).Sign;
-        }
+        return diff.Sign >= 0 ? 
+            -(diff >> (GuardBits - 1)).Sign : 
+            (-diff >> (GuardBits - 1)).Sign;
         // Alternative Method - this method rounds off the GuardBits and then compares the numbers. 
         // The drawback to this method are...
         //   - the two numbers can be one tick apart in the guard bits but considered not equal.
@@ -1110,7 +1103,7 @@ public readonly partial struct BigFloat
     public static BigFloat operator +(BigFloat r1, int r2) //ChatGPT o4-mini-high
     {
         // trivial cases
-        if (r2 == 0) return r1;
+        if (r2 == 0) { return r1; }
 
         // embed integer into mantissa with guard bits
         BigInteger r2Bits = new BigInteger(r2) << GuardBits;
@@ -1118,12 +1111,10 @@ public readonly partial struct BigFloat
         int scaleDiff = r1.Scale;   // since r2Scale = 0
 
         // if r2 is too small to affect r1 at r1’s precision ⇒ drop it
-        if (scaleDiff > r2Size)
-            return r1;
+        if (scaleDiff > r2Size) { return r1; }
 
         // if r1 is too small compared to r2 ⇒ result ≅ r2
-        if (-scaleDiff > r1._size)
-            return new BigFloat(r2Bits, 0, r2Size);
+        if (-scaleDiff > r1._size) { return new BigFloat(r2Bits, 0, r2Size); }
 
         // align mantissas and add
         BigInteger sum;
@@ -1485,12 +1476,9 @@ Other:                                         |   |         |         |        
     public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
     {
         // 1) zero and trivial cases
-        if (b == 0)
-            return Zero;            // exactly 0
-        if (b == 1)
-            return a;               // unchanged
-        if (b == -1)
-            return -a;              // flip sign
+        if (b == 0) { return Zero; }     // exactly 0
+        if (b == 1) { return a; }        // unchanged
+        if (b == -1) { return -a; }      // flip sign
 
         // 2) extract unsigned magnitude and sign
         int sign = (b < 0) ? -1 : 1;
@@ -1537,8 +1525,9 @@ Other:                                         |   |         |         |        
     }
 
     public static BigFloat operator *(int a, BigFloat b) //ChatGPT o4-mini-high
-        => b * a; // use the other overload
-    
+    {
+        return b * a; // use the other overload
+    }
 
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
@@ -1576,12 +1565,8 @@ Other:                                         |   |         |         |        
 
     public static BigFloat operator /(BigFloat divisor, int dividend) //ChatGPT o4-mini-high AND Claude 3.7
     {
-        if (dividend == 0)
-            throw new DivideByZeroException();
-
-        // Early return for zero divisor
-        if (divisor.IsStrictZero)
-            return ZeroWithSpecifiedLeastPrecision(divisor.Size);
+        if (dividend == 0) { throw new DivideByZeroException(); }
+        if (divisor.IsStrictZero) { return ZeroWithSpecifiedLeastPrecision(divisor.Size); } // Early return for zero divisor
 
         // Extract the sign once and apply at the end
         int sign = Math.Sign(dividend) * divisor.Mantissa.Sign;
@@ -1655,8 +1640,10 @@ Other:                                         |   |         |         |        
         return new BigFloat(result, newScale, targetSize);
     }
 
-    public static BigFloat operator /(int a, BigFloat b) // ChatGPT o4-mini-high
-        => b / a; // use the other overload
+    public static BigFloat operator /(int a, BigFloat b)
+    {
+        return b / a;
+    }
 
     ///////////////////////// Explicit CASTS /////////////////////////
 
@@ -1777,10 +1764,9 @@ Other:                                         |   |         |         |        
     public static explicit operator BigInteger(BigFloat value)
     {
         int shift = value.Scale - GuardBits;
-        if (shift >= GuardBits)
-            return value.Mantissa << shift;
-
-        return RightShiftWithRound(value.Mantissa, -shift);
+        return shift >= GuardBits ? 
+            value.Mantissa << shift : 
+            RightShiftWithRound(value.Mantissa, -shift);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
@@ -1839,75 +1825,43 @@ Other:                                         |   |         |         |        
         //return (Exponent + 1023 - 1) is not (<= 0 or > 2046);
         return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
-    
+
     ///////////////////////// COMPARE FUNCTIONS /////////////////////////
 
     /// <summary>Returns an input that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)
     {
-        if (BinaryExponent > 62) // 'this' is too large, not possible to be equal.
-        {
-            // The only 64 bit long is long.MinValue
-            return (BinaryExponent == 63 && other == long.MinValue);
-        }
+        // 'this' is too large, not possible to be equal. The only 64 bit long is long.MinValue
+        if (BinaryExponent > 62) { return BinaryExponent == 63 && other == long.MinValue; }
 
-        if (BinaryExponent < -1)
-        {
-            return other == 0;
-        }
+        if (BinaryExponent < -1) { return other == 0; }
 
-        // Assuming GuardBits is 4...
-        // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-        // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
-        // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+        // Example assuming GuardBits is 4...
+        //  11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
+        //  111.|1000  Scale ==0 - when scale is 0, it is always an integer
+        //  111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) { return false; } // too large by 1
 
-        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits))
-        {
-            return false; // too large by 1
-        }
+        if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
 
-        if (!IsInteger) // are the top 1/4 of the guard bits zero?
-        {
-            return false;
-        }
-
-        long val = (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
-        return val == other;
+        return other == (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
     }
 
     /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
     public bool Equals(ulong other)
     {
-        if (BinaryExponent >= 64) // 'this' is too large, not possible to be equal.
-        {
-            return false; // too large
-        }
-
-        if (BinaryExponent < -1)
-        {
-            return other == 0;
-        }
+        if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
+        if (BinaryExponent < -1) { return other == 0; }
 
         // Assuming GuardBits is 4...
         // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
         // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
         // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
 
-        if ((Mantissa >> (GuardBits-1)).Sign < 0)
-        {
-            return false; // is negitive
-        }
-        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits))
-        {
-            return false; // too large by 1
-        }
-        if (!IsInteger) // are the top 1/4 of the guard bits zero?
-        {
-            return false;
-        }
-
-        ulong val = (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits);
-        return val == other;
+        if ((Mantissa >> (GuardBits - 1)).Sign < 0) { return false; }   // is negative
+        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) return false; // too large by 1
+        if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
+        return (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits) == other;
     }
 
     /// <summary>

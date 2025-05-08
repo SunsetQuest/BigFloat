@@ -149,11 +149,14 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    private int CalculateBinaryStringLength() => _size - GuardBits
+    private int CalculateBinaryStringLength()
+    {
+        return _size - GuardBits
             + Math.Max(Math.Max(Scale, -(_size - GuardBits) - Scale), 0) // out-of-precision zeros in the output.
             + (Mantissa.Sign < 0 ? 1 : 0)       // add one if a leading '-' sign (-0.1)
             + (Scale < 0 ? 1 : 0)               // add one if it has a point like (1.1)
             + (BinaryExponent <= 0 ? 1 : 0);    // add one if <1 for leading Zero (0.1) 
+    }
 
     /// <summary>
     /// Writes the binary representation into the provided span.
@@ -265,8 +268,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // For the simplest usage, treat a null/empty format as "G".
         // You might also treat "R" and "G" similarly. .NET double does that.
         // "R" often implies round-trip decimal format, "G" is general, etc.
-        if (string.IsNullOrEmpty(format))
-            format = "G";
+        if (string.IsNullOrEmpty(format)) { format = "G"; }
 
         // You can do a simple switch:
         return format.ToUpperInvariant() switch
@@ -400,15 +402,15 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
         // Let put together the string. 
         StringBuilder result = new();
-        result.Append(resScaled);
+        _ = result.Append(resScaled);
         if (maskSize > 10)
         {
-            result.Append("e+");
-            result.Append(maskSize);
+            _ = result.Append("e+");
+            _ = result.Append(maskSize);
         }
         else
         {
-            result.Append(new string('X', maskSize));
+            _ = result.Append(new string('X', maskSize));
         }
 
         return result.ToString();
@@ -462,7 +464,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetAllBitsAsString(bool twosComplement = false)
     {
-        return BigIntegerTools.ToBinaryString(Mantissa, twosComplement ? BinaryStringFormat.TwosComplement: BinaryStringFormat.Standard);
+        return BigIntegerTools.ToBinaryString(Mantissa, twosComplement ? 
+            BinaryStringFormat.TwosComplement : 
+            BinaryStringFormat.Standard);
     }
 
     /// <summary>
@@ -484,9 +488,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
             _ = sb.Append($"{(Mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(Mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
             //_ = sb.Append($"{ToBinaryString()}"); // hex part
-            if (_size > GuardBits) _ = sb.Append($"[{_size- GuardBits}+{GuardBits} GuardBits]");
-            if (_size == GuardBits) _ = sb.Append($"[{GuardBits}]");
-            if (_size < GuardBits) _ = sb.Append($"[{_size} - Out Of Precision!]");
+            if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits} GuardBits]"); }
+            if (_size == GuardBits) { _ = sb.Append($"[{GuardBits}]"); }
+            if (_size < GuardBits)  { _ = sb.Append($"[{_size} - Out Of Precision!]"); }
+
             _ = sb.Append($" << {Scale}");
 
             return sb.ToString();

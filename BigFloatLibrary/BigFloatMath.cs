@@ -78,7 +78,7 @@ public readonly partial struct BigFloat
         {
             return exponent switch
             {
-                0 => One,  
+                0 => One,
                 1 => value,
                 -1 => Inverse(value),
                 2 => value * value,
@@ -105,14 +105,7 @@ public readonly partial struct BigFloat
             //bool expOverflows = value.Exponent < -1022 || value.Exponent > 1023;
             int removedExp = value.BinaryExponent;
 
-            // todo: can be improved without using BigFloat  (See Pow(BigInteger,BigInteger) below)
             double valAsDouble = (double)new BigFloat(value.Mantissa, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
-
-            //// if final result's scale would not fit in a double. 
-            //int finalSizeWillBe = (int)(power * double.Log2(double.Abs(valAsDouble)));
-            //bool finalResultsScaleFitsInDouble = finalSizeWillBe < 1020;  // should be <1023, but using 1020 for safety
-            //if (!finalResultsScaleFitsInDouble)
-            //    valAsDouble = (double)new BigFloat(value.DataBits, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
 
             // perform operation  
             double res = double.Pow(valAsDouble, exponent);
@@ -124,6 +117,8 @@ public readonly partial struct BigFloat
 
             return value;
         }
+
+        //Todo: can be improved without with using BigInteger.Pow(BigFloat,int)?
 
         // the expectedFinalPrecision >= 53 bits and Power >= 3, so pretty big.
 
@@ -149,11 +144,11 @@ public readonly partial struct BigFloat
             product = Inverse(product);
         }
 
-        //product.DebugPrint("bf1");
         return product;
     }
 
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT(BigFloat value, int root) // todo:
+    //Todo: Remove Draft State on NthRoot_INCOMPLETE_DRAFT
+    public static BigFloat NthRoot_INCOMPLETE_DRAFT(BigFloat value, int root)
     {
         if (root < 0) //future: add support for negative roots
         {
@@ -248,7 +243,7 @@ public readonly partial struct BigFloat
         return double.Log2(val) + n.BinaryExponent;
     }
 
-    //todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
+    //Todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
     /// <summary>
     /// Returns the Log2 of a BigFloat number as an integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
     /// Sign is ignored. Negative values will return the same value as their positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
@@ -276,13 +271,16 @@ public readonly partial struct BigFloat
     public static BigFloat Sin(BigFloat x)
     { return SinCos(x, false); }
 
-    private static BigFloat SinCos(BigFloat x,bool isCos) //=> Sin(x + (Constants.GetConstant(Catalog.Pi, x.Precision) >> 1)); 
+    private static BigFloat SinCos(BigFloat x, bool isCos) //=> Sin(x + (Constants.GetConstant(Catalog.Pi, x.Precision) >> 1)); 
     {
         int prec = Math.Max(x.Size, x.Accuracy) + 1;
         BigFloat pi = Constants.GetConstant(Catalog.Pi, prec);
         BigFloat halfPi = pi >> 1;
 
-        if (isCos) x += halfPi;
+        if (isCos)
+        {
+            x += halfPi;
+        }
 
         //if (x.IsZero) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);       // cheap exit
         // future: if fits in double then return double Math.Sin(double(x));
@@ -291,25 +289,24 @@ public readonly partial struct BigFloat
 
         // ---------- Payne‑Hanek style reduction to [‑pi/2, pi/2] ----------
         BigFloat r = x % twoPi;                 // |r| ≤ pi
-        if (r > pi) r -= twoPi;
-        if (r < -pi) r += twoPi;
+        if (r > pi) { r -= twoPi; }
+        if (r < -pi) { r += twoPi; }
 
-        bool negate = false;                    // sine is odd
+        bool negate = false;
         if (r.Sign < 0) { r = -r; negate = true; }
-        if (r > halfPi) r = pi - r;             // sin(pi–x)=sin(x)
-                                                // now 0 ≤ r ≤ pi/2
+        if (r > halfPi) { r = pi - r; }             // sin(pi–x)=sin(x)
+
+        // now 0 ≤ r ≤ pi/2
 
         // when zero, return zero
-        if (r.Mantissa < 2) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);  
+        if (r.Mantissa < 2) { return ZeroWithSpecifiedLeastPrecision(x.Accuracy); }
 
         // ----- ----- choose the core routine ----------
         BigFloat result = (r.BinaryExponent <= _taylorExpSwitch)
-                            ? SinCosTyler(r, r, -prec - 10, 2)           // already tiny
-                            : SinByHalving(r, prec);       // scale down first
+                            ? SinCosTyler(r, r, -prec - 10, 2)  // already tiny
+                            : SinByHalving(r, prec);            // scale down first
 
-        // spec: output precision == input precision
-        //Debug.WriteLine($"wantedPrecision:{prec}  got:{result.Size}");
-        result = BigFloat.TruncateByAndRound(result, 3);
+        result = TruncateByAndRound(result, 3);
         return negate ? -result : result;
     }
 
@@ -322,8 +319,6 @@ public readonly partial struct BigFloat
 
     public static BigFloat SinAprox(BigFloat x)
     {
-        //BigFloat x2 = x * x;
-        //return x * (OneWithAccuracy(x.Size + 2) - x2 / 6 + x2 * x2 / 120);   // up to x^5
         int prec = x.Size;                              // how many bits of precision x carries
         double xd = (double)x;                          // cast to double (rounded to ≤ 53 bits)
         const double twoPiDouble = 2.0 * Math.PI;       // ≃ 6.283185307179586
@@ -350,13 +345,14 @@ public readonly partial struct BigFloat
     {
         BigFloat sum = term;
         BigFloat x2 = x * x;
-        for (; ; k += 2)
+        while(true)
         {
             // sin when k=2: term *= −x^2 / ((2k‑1)(2k))
             // cos when k=1: term *= −x^2 / ((2k)(2k+1))
             term = -term * x2 / (k * (k + 1));
             sum += term;
-            if (term.BinaryExponent <= stopExp) break;
+            if (term.BinaryExponent <= stopExp) { break; }
+            k += 2;
         }
         return sum;
     }
@@ -373,15 +369,15 @@ public readonly partial struct BigFloat
         }
 
         // do the small‑angle evaluation with guard bits
-        int workP = p  + halves + 13;
-        BigFloat s = SinCosTyler(y, y,  -workP - 8, 2); //SinTaylor
+        int workP = p + halves + 13;
+        BigFloat s = SinCosTyler(y, y, -workP - 8, 2); //SinTaylor
         BigFloat c = SinCosTyler(y, OneWithAccuracy(x.Size + 2), -workP, 1); //CosTaylor
 
         // rebuild the original angle via repeated double‑angle
         for (int i = 0; i < halves; i++)
         {
             BigFloat sNew = (s * c) << 1;       // sin(2 theta)
-            BigFloat cNew = c * c - s * s;      // cos(2 theta)
+            BigFloat cNew = (c * c) - (s * s);  // cos(2 theta)
             s = sNew;
             c = cNew;
         }

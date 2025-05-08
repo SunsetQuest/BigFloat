@@ -5,7 +5,6 @@
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
 
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
 
@@ -76,7 +75,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return c;
     }
 
-    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result) //todo: move to BigFloat.cs since CompareTo() uses it
+    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result) //Todo: move to BigFloat.cs since CompareTo() uses it
     {
         if (IsOutOfPrecision)
         {
@@ -161,7 +160,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (thisPos == 0 /*&& otherPos == 0*/) { return 0; }
 
         //Note: CompareTo would be the opposite for negative numbers
-        
+
         // A fast general size check. (aka. Exponent vs Exponent)
         if ((Scale + _size) != (other.Scale + other._size))
         {
@@ -179,7 +178,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // We must shrink the larger - in this case THIS
             BigInteger adjustedVal = Mantissa >> (_size - other._size);
             BigInteger diff2 = adjustedVal - other.Mantissa;
-            return ((diff2 > 1)? 1 : (diff2 < -1) ? -1 : 0) * thisPos; //  adjustedVal.CompareTo(other.DataBits) * thisPos;
+            return ((diff2 > 1) ? 1 : (diff2 < -1) ? -1 : 0) * thisPos;
         }
 
         // We must shrink the larger - in this case other
@@ -258,7 +257,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public bool IsExactMatchOf(BigFloat other)
     {
-        return (other.Mantissa == Mantissa && other.Scale == Scale);
+        return other.Mantissa == Mantissa && other.Scale == Scale;
     }
 
     /// <summary>  

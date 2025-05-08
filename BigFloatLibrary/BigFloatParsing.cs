@@ -145,7 +145,7 @@ public readonly partial struct BigFloat
             char c = numericString[inputCurser];
             switch (c)
             {
-                case (>= '0' and <= '9'):
+                case >= '0' and <= '9':
                     cleaned[destinationLocation++] = c;
                     break;
                 case '.':
@@ -287,7 +287,8 @@ public readonly partial struct BigFloat
                 result = 0;
                 return false;
             }
-            if (expSign < 0) exp = -exp;
+            if (expSign < 0) { exp = -exp; }
+
             cleaned = cleaned[0..expLocation];
         }
 
@@ -303,31 +304,18 @@ public readonly partial struct BigFloat
         // (1) in base-10 needs to be converted to base-2
         // (2) currently it's measured from the MSB but should measure from LSB
         int guardBits = (guardBitsIncluded != int.MinValue) ? guardBitsIncluded :
-            (accuracyDelimiterPosition < 0) ? 0 /*(radixDepth >= 0 ? 0 : 1)*/ : 
+            (accuracyDelimiterPosition < 0) ? 0 /*(radixDepth >= 0 ? 0 : 1)*/ :
             (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
 
-
-        //// Alternative Method - slower - maybe not as accurate either
-        //int guardBitsFound = 0;
-        //if (accuracyDelimiterPosition >= 0)
-        //{
-        //    if (!BigInteger.TryParse(cleaned[..accuracyDelimiterPosition], out BigInteger guardBits))
-        //    {
-        //        result = new BigFloat(0);
-        //        return false;
-        //    }
-        //    guardBitsFound = int.Max((int)(val.GetBitLength() - guardBits.GetBitLength()-1),0);
-        //}
-
-        if (sign < 0) val = BigInteger.Negate(val);
-
+        if (sign < 0) { val = BigInteger.Negate(val); }
+        
         // No decimal point found, so place it at the end.
         if (decimalLocation < 0)
         {
             decimalLocation = cleaned.Length;
         }
 
-        if (val.IsZero) 
+        if (val.IsZero)
         {
             int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * 3.32192809488736235) - guardBits;
             result = new BigFloat(BigInteger.Zero, scaleAmt, 0); //future: create a ZeroWithSpecificAccuracy(int prec) method.
@@ -349,7 +337,7 @@ public readonly partial struct BigFloat
 
         if (radixDepth == 0)
         {
-            intPart = val << GuardBits - guardBits;
+            intPart = val << (GuardBits - guardBits);
             binaryScaler += guardBits;
         }
         else if (radixDepth >= 0) //111.111 OR 0.000111
@@ -358,7 +346,7 @@ public readonly partial struct BigFloat
             int multBitLength = (int)a.GetBitLength();
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + GuardBits - 1 + ROUND - guardBits;  // added  "-1" because it was adding one to many digits 
-                                                                                           // make asInt larger by the size of "a" before we dividing by "a"
+                                                                               // make asInt larger by the size of "a" before we dividing by "a"
             intPart = (((val << shiftAmt) / a) + ROUND) >> ROUND;
             binaryScaler += -multBitLength + 1 - radixDepth + guardBits;
         }
@@ -372,16 +360,8 @@ public readonly partial struct BigFloat
             binaryScaler += multBitLength - radixDepth + guardBits;
         }
 
-        //if (guardBitsIncluded == int.MinValue)
-        //{
-        //    guardBitsIncluded = intPart > 8 ? 1 : 0;
-        //}
-
 
         result = new BigFloat(intPart, binaryScaler, true);
-        var result2 = new BigFloat(intPart, binaryScaler); 
-        //result = new BigFloat(intPart, binaryScaler - guardBitsIncluded); need to change to is with guardbits
-
 
         result.AssertValid();
         return true;
@@ -390,9 +370,11 @@ public readonly partial struct BigFloat
         {
             // only whitespace is allowed after closing brace/bracket/param 
             while (inputCurser < numericString.Length && char.IsWhiteSpace(numericString[inputCurser]))
+            {
                 inputCurser++;
+            }
 
-            return (inputCurser >= numericString.Length);
+            return inputCurser >= numericString.Length;
         }
     }
 
@@ -565,7 +547,11 @@ public readonly partial struct BigFloat
 
         // Remove trailing '\0' 
         int spanEnd = cleaned.Length - 1;
-        for (; cleaned[spanEnd] == '\0'; spanEnd--);
+        while (cleaned[spanEnd] == '\0')
+        {
+            spanEnd--;
+        }
+
         cleaned = cleaned[..(spanEnd + 1)];
 
         // radixLocation is the distance from the MSB, it should be from the LSB. (or leave at 0 if radix point not found)
@@ -605,7 +591,7 @@ public readonly partial struct BigFloat
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
     /// <param name="includedGuardBits">(optional)The number of sub-precision guard bits that are included.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
-    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue) //todo: change "int includedGuardBits = -1" " to 0
+    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue) //Todo: change "int includedGuardBits = -1" " to 0
     {
         ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
@@ -690,7 +676,7 @@ public readonly partial struct BigFloat
                     if (accuracyDelimiterPosition >= 0)
                     {
                         // multiple precision spacers found (| or :)
-                        result = new BigFloat(0); 
+                        result = new BigFloat(0);
                         return false;
                     }
                     accuracyDelimiterPosition = destinationLocation;

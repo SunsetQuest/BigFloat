@@ -6,6 +6,8 @@
 
 // Ignore Spelling: Aprox
 
+using BigFloatLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,9 +16,6 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using BigFloatLibrary;
-
 using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace BigFloatTests;
@@ -63,7 +62,7 @@ public class BigFloatTests
         }
 
         AreEqual(new BigFloat(1, -8, addedBinaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer then 0
-        AreEqual((new BigFloat(1, -1074, addedBinaryPrecision: 0) % 1), 0);   // 0   == 0.000...001
+        AreEqual(new BigFloat(1, -1074, addedBinaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
         IsFalse(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, addedBinaryPrecision: 0));  // 0 != -1.0
 
         BigFloat temp = new(ulong.MaxValue);
@@ -104,7 +103,7 @@ public class BigFloatTests
     public void Verify_BitwiseComplementOperator()
     {
         BigFloat a = BigFloat.ParseBinary("10.111");
-        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includedGuardBits:BigFloat.GuardBits);
+        BigFloat expectedAns = BigFloat.ParseBinary(" 1.000 11111111111111111111111111111111", includedGuardBits: BigFloat.GuardBits);
         AreEqual(expectedAns, ~a);
 
         _ = BigFloat.TryParseBinary("1100110110110", out a);
@@ -131,7 +130,7 @@ public class BigFloatTests
             _ => 2000,
         };
         int MAX_INT = 2000;
-        var bigConstants = BigFloat.Constants.WithConfig(precisionInBits: MAX_INT).GetAll();
+        Dictionary<string, BigFloat> bigConstants = BigFloat.Constants.WithConfig(precisionInBits: MAX_INT).GetAll();
         BigFloat pi200ref = bigConstants["Pi"];
         BigFloat pi200gen = BigFloat.Constants.GeneratePi(MAX_INT);
         AreEqual(pi200ref, pi200gen, $"We got some Pi in our face. The generated pi does not match the literal constant Pi.");
@@ -208,7 +207,7 @@ public class BigFloatTests
 
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
         AreEqual(bigFloatTotal, (BigFloat)doubleTotal, "Fail on Verify_Constants");
-        
+
         double BigFloatZero1 = (double)BigFloat.Zero;
         double BigFloatZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
         AreEqual(BigFloatZero2, BigFloatZero1, "Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)");
@@ -230,24 +229,34 @@ public class BigFloatTests
 
         BigFloat ans = BigFloat.ParseBinary("0.0000011111011101100111101100000010101011110101000101011101101100000100100001101000100011010011110010000010011000011101001101011001111101100111100001001110101010011000111100110011100110110111000", includedGuardBits: 32);
         if (success)
+        {
             AreEqual(0, bf.StrictCompareTo(ans));
-        
+        }
+
         success = BigFloat.ConstantBuilder.Const_0_4146.TryGetAsBigFloat(out bf, 200);
         ans = BigFloat.ParseBinary("0.011010100010100010100010000010100000100010100010000010000010100000100010100000100010000010000000100010100010100010000000000000100010000010100000000010100000100000100010000010000010100000000010100010100000000000100000000000100010100010000010", includedGuardBits: 32);
         if (success)
+        {
             AreEqual(0, bf.StrictCompareTo(ans));
+        }
 
         success = BigFloat.ConstantBuilder.Const_0_5671.TryGetAsBigFloat(out bf, 200);
         if (success)
+        {
             AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("0.100100010011000001001101011111000111010010110010101110100101111010101111110111011010101001100010100001101101110000101000111000010110111010000110111011001110100001010111000110101000100000001100100100111111011100000011010100101000111000", includedGuardBits: 32)));
+        }
 
         success = BigFloat.ConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
         if (success)
+        {
             AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedGuardBits: 32)));
+        }
 
         success = BigFloat.ConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 300);
         if (success)
+        {
             AreEqual(0, bf.StrictCompareTo(BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedGuardBits: 32)));
+        }
     }
 
     [TestMethod]
@@ -587,10 +596,10 @@ public class BigFloatTests
         int guardBits = BigFloat.GuardBits;
         AreEqual(5, BigFloat.ParseBinary("100.01").Precision);
         AreEqual(1, BigFloat.ParseBinary("-0.00000000000000000000001").Precision);
-        AreEqual(1 -  guardBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, guardBits).Precision);
-        AreEqual(1 -  guardBits, BigFloat.ParseBinary("0.00001", 0, 0, guardBits).Precision);
-        AreEqual(4 -  guardBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, guardBits).Precision);
-        AreEqual(9 -  guardBits, BigFloat.ParseBinary("100000000", 0, 0, guardBits).Precision);
+        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, guardBits).Precision);
+        AreEqual(1 - guardBits, BigFloat.ParseBinary("0.00001", 0, 0, guardBits).Precision);
+        AreEqual(4 - guardBits, BigFloat.ParseBinary("0.000000000000001000", 0, 0, guardBits).Precision);
+        AreEqual(9 - guardBits, BigFloat.ParseBinary("100000000", 0, 0, guardBits).Precision);
         AreEqual(17 - guardBits, BigFloat.ParseBinary("10000000000000000", 0, 0, guardBits).Precision);
         AreEqual(25 - guardBits, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, guardBits).Precision);
         AreEqual(33 - guardBits, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, guardBits).Precision);
@@ -603,7 +612,7 @@ public class BigFloatTests
         AreEqual(2, BigFloat.ParseBinary("100.01").Accuracy);
         AreEqual(23, BigFloat.ParseBinary("-0.00000000000000000000001").Accuracy);
         AreEqual(23 - hb, BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).Accuracy);
-        AreEqual(5 -  hb, BigFloat.ParseBinary("0.00001", 0, 0, hb).Accuracy);
+        AreEqual(5 - hb, BigFloat.ParseBinary("0.00001", 0, 0, hb).Accuracy);
         AreEqual(18 - hb, BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).Accuracy);       // 0|00000000000000.00000000000000000000001" (accuracy is -14)
         AreEqual(hb - hb, BigFloat.ParseBinary("100000000", -hb, 0, hb).Accuracy);                // 0.|00000000000000000000000100000000        (accuracy is 0)
         AreEqual(hb - hb, BigFloat.ParseBinary("10000000000000000", -hb, 0, hb).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
@@ -671,14 +680,14 @@ public class BigFloatTests
         IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
         a = BigFloat.ParseBinary("100000");
-        expectedAnswer = BigFloat.ParseBinary("100000",1);
+        expectedAnswer = BigFloat.ParseBinary("100000", 1);
         IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
-        a =              BigFloat.ParseBinary("0.0000100000");
+        a = BigFloat.ParseBinary("0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("0.000100000");
         IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
 
-        a =              BigFloat.ParseBinary("-0.0000100000");
+        a = BigFloat.ParseBinary("-0.0000100000");
         expectedAnswer = BigFloat.ParseBinary("-0.000100000");
         IsTrue((a << 1).IsExactMatchOf(expectedAnswer));
     }
@@ -959,14 +968,14 @@ public class BigFloatTests
         res = BigFloat.Log2(aaa);
         resStr = res.ToString();
         //IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887[34]\d*"));
-        IsTrue(resStr.StartsWith("3321.9280948873") 
+        IsTrue(resStr.StartsWith("3321.9280948873")
             || resStr.StartsWith("3321.9280948874"));
 
         aaa = new("1.0000000000e+1000");
         res = BigFloat.Log2(aaa);
         resStr = res.ToString();
         //IsTrue(Regex.IsMatch(res.ToString(), @"3321\.928094887362[2345]"));
-        IsTrue(resStr.StartsWith("3321.928094887362") 
+        IsTrue(resStr.StartsWith("3321.928094887362")
             || resStr.StartsWith("3321.928094887363")
             || resStr.StartsWith("3321.928094887364")
             || resStr.StartsWith("3321.928094887365"));
@@ -1524,7 +1533,7 @@ public class BigFloatTests
         int maxValBitSize = 4200;
         int maxWantedBitSize = 4200;
         int maxExpSize = 17;
-        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism);
+        int runCount = TestTargetInMillseconds * MaxDegreeOfParallelism;
 
         int roundFailsAllowed = (int)(runCount * 0.01);
 
@@ -1577,12 +1586,12 @@ public class BigFloatTests
                 { // 11111111111  100000000000
                     // 'shiftedAccur' is one smaller then 'shiftedAnswr'
                     // the shift indicates it did so lets make sure resAccur is correct.
-                    AreEqual(resAccur + 1 >> 1, resApprx, "Shift amount is incorrect.");
+                    AreEqual((resAccur + 1) >> 1, resApprx, "Shift amount is incorrect.");
                 }
                 else // 'shiftedAccur' is one larger then 'shiftedAnswr'
                 {  // 100000000000  11111111111
                     // the shift indicates it SHOULD HAVE but didn't. Lets make sure resAccur is correct.
-                    AreEqual(resApprx + 1 >> 1, resAccur, "Shift amount is incorrect.");
+                    AreEqual((resApprx + 1) >> 1, resAccur, "Shift amount is incorrect.");
                 }
 
                 roundFailsAllowed--;
@@ -1597,7 +1606,7 @@ public class BigFloatTests
         int maxValBitSize = 1650;
         int maxWantedBitSize = 1650;
         int maxExpSize = 10;
-        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism) / 8;
+        int runCount = TestTargetInMillseconds * MaxDegreeOfParallelism / 8;
 #else
         int maxValBitSize = 2050;
         int maxWantedBitSize = 2050;
@@ -1616,12 +1625,12 @@ public class BigFloatTests
 
             int valSize = (int)val.GetBitLength();
             //if ((long)exp * Math.Max(valSize, wantedBits) >= int.MaxValue)   return;
-            
+
             bool roundDown = false;
             // Answer Setup using accurate version of PowMostSignificantBits
             BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
             BigInteger ansAnswr = PowAccurate(val, exp, out int shiftedAnswr, wantedBits, roundDown);
-            
+
             if (val.IsZero)
             {
                 AreEqual(0, resAccur, "When input value is zero the result is always zero.");
@@ -1680,12 +1689,12 @@ public class BigFloatTests
                 { // 11111111111  100000000000
                     // 'shiftedAccur' is one smaller then 'shiftedAnswr'
                     // the shift indicates it did so lets make sure resAccur is correct.
-                    AreEqual(resAccur + 1 >> 1, ansAnswr, "Shift amount is incorrect.");
+                    AreEqual((resAccur + 1) >> 1, ansAnswr, "Shift amount is incorrect.");
                 }
                 else // 'shiftedAccur' is one larger then 'shiftedAnswr'
                 {  // 100000000000  11111111111
                     // the shift indicates it SHOULD HAVE but didn't. Lets make sure resAccur is correct.
-                    AreEqual(ansAnswr + 1 >> 1, resAccur, "Shift amount is incorrect.");
+                    AreEqual((ansAnswr + 1) >> 1, resAccur, "Shift amount is incorrect.");
                 }
 
                 roundFailsAllowed--;
@@ -1724,7 +1733,11 @@ public class BigFloatTests
             //return BigIntegerTools.RightShiftWithRound(res, shifted);
             bool carried1 = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(
                 out BigInteger result, res, shifted);
-            if (carried1) shifted++;
+            if (carried1)
+            {
+                shifted++;
+            }
+
             return result;
         }
     }
@@ -1735,7 +1748,7 @@ public class BigFloatTests
         Random.Shared.NextBytes(data);
         data[^1] >>= 8 - (maxNumberOfBits % 8);
         return new(data, true);
-        
+
     }
     private static int GenerateLogUniformRandomInt(int maxLengthInBits)
     {
@@ -1921,33 +1934,33 @@ public class BigFloatTests
         if (input is >= char.MinValue and <= char.MaxValue)
         {
             res = new((char)input, scale);
-            AreEqual((res << scale), input);
+            AreEqual(res << scale, input);
         }
 
         // byte -> BigFloat -> byte
         if (input is >= byte.MinValue and <= byte.MaxValue)
         {
             res = new((byte)input, scale);
-            AreEqual((res << scale), input);
+            AreEqual(res << scale, input);
         }
 
         // short -> BigFloat -> short
         if (input is >= short.MinValue and <= short.MaxValue)
         {
             res = new((short)input, scale);
-            AreEqual((res << scale), input);
+            AreEqual(res << scale, input);
         }
 
         // ushort -> BigFloat -> ushort
         if (input is >= ushort.MinValue and <= ushort.MaxValue)
         {
             res = new((int)input, scale);
-            AreEqual((res << scale), input);
+            AreEqual(res << scale, input);
         }
 
         // long -> BigFloat -> long
         res = new(input, scale);
-        AreEqual((res << scale), input);
+        AreEqual(res << scale, input);
     }
 
     [TestMethod]
@@ -1998,7 +2011,7 @@ public class BigFloatTests
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.111 / 22.111 = 1 -> Is Integer
-        bf = new BigFloat("22.111") / new BigFloat(22.111); 
+        bf = new BigFloat("22.111") / new BigFloat(22.111);
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.000 / 22.111 -> Is Not Integer
@@ -2017,7 +2030,7 @@ public class BigFloatTests
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         // 22.501 * 2 -> Is Integer
-        bf = new BigFloat("22.501") * new BigFloat(2); 
+        bf = new BigFloat("22.501") * new BigFloat(2);
         IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
     }
 
@@ -2286,7 +2299,7 @@ public class BigFloatTests
             }
             else
             {
-                AreEqual((floorBI + 1), ceilingBI, $"For non-integers, ({val}).Floor() should be one unit less then ({val}).Ceiling()).");
+                AreEqual(floorBI + 1, ceilingBI, $"For non-integers, ({val}).Floor() should be one unit less then ({val}).Ceiling()).");
             }
         }
     }
@@ -2322,7 +2335,7 @@ public class BigFloatTests
         }
         else
         {
-            AreEqual((floorBI + 1), ceilingBI, $"For non-integers, ({res}).Floor() should be one unit less then ({res}).Ceiling()).");
+            AreEqual(floorBI + 1, ceilingBI, $"For non-integers, ({res}).Floor() should be one unit less then ({res}).Ceiling()).");
         }
     }
 
@@ -2809,7 +2822,7 @@ public class BigFloatTests
             IsTrue(BigFloat.TryParseBinary(strVal, out output));
             AreEqual(output, (BigFloat)(-i));
         }
-        
+
         IsTrue(BigFloat.TryParseBinary("1000000000000000.|", out output));
         AreEqual(output, new BigFloat((ulong)32768 << BigFloat.GuardBits, 0, true));
 
@@ -3078,23 +3091,23 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("+1111111111", out output));
         AreEqual(output, 1023);
         IsTrue(BigIntegerTools.TryParseBinary("-1000000", out output));
-        AreEqual(output, (-64));
+        AreEqual(output, -64);
         IsTrue(BigIntegerTools.TryParseBinary("-10000000", out output));
-        AreEqual(output, (-128));
+        AreEqual(output, -128);
         IsTrue(BigIntegerTools.TryParseBinary("-100000000", out output));
-        AreEqual(output, (-256));
+        AreEqual(output, -256);
         IsTrue(BigIntegerTools.TryParseBinary("-1000000000", out output));
-        AreEqual(output, (-512));
+        AreEqual(output, -512);
         IsTrue(BigIntegerTools.TryParseBinary("-1111111", out output));
-        AreEqual(output, (-127));
+        AreEqual(output, -127);
         IsTrue(BigIntegerTools.TryParseBinary("-11111111", out output));
-        AreEqual(output, (-255));
+        AreEqual(output, -255);
         IsTrue(BigIntegerTools.TryParseBinary("-111111111", out output));
-        AreEqual(output, (-511));
+        AreEqual(output, -511);
         IsTrue(BigIntegerTools.TryParseBinary("-1111111111", out output));
-        AreEqual(output, (-1023));
+        AreEqual(output, -1023);
         IsTrue(BigIntegerTools.TryParseBinary("-11111111111", out output));
-        AreEqual(output, (-2047));
+        AreEqual(output, -2047);
 
         // Test values around the one byte 2 byte marker
         IsTrue(BigIntegerTools.TryParseBinary("1000000000000000", out output));
@@ -3122,13 +3135,13 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("+1111111111111110", out output));
         AreEqual(output, 65534);
         IsTrue(BigIntegerTools.TryParseBinary("-1111111111111111", out output));
-        AreEqual(output, (-65535));
+        AreEqual(output, -65535);
         IsTrue(BigIntegerTools.TryParseBinary("10000000000000000.", out output));
         AreEqual(output, 65536);
         IsTrue(BigIntegerTools.TryParseBinary("10000000000000000.0", out output));
         AreEqual(output, 65536);
         IsTrue(BigIntegerTools.TryParseBinary("-10000000000000000.0", out output));
-        AreEqual(output, (-65536));
+        AreEqual(output, -65536);
         IsTrue(BigIntegerTools.TryParseBinary("+10000000000000001", out output));
         AreEqual(output, 65537);
         IsTrue(BigIntegerTools.TryParseBinary("10000000000000010.00", out output));
@@ -3146,7 +3159,7 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("1001100110011000001101110101110110001100011011011100100.", out output));
         AreEqual(output, 21616517498418916);
         IsTrue(BigIntegerTools.TryParseBinary("-100110011001100000110111010111011000110001101101110010011.0", out output));
-        AreEqual(output, (-86466069993675667));
+        AreEqual(output, -86466069993675667);
         IsTrue(BigIntegerTools.TryParseBinary("+101010101010101010101010101010101010101010101010101010101010101.", out output));
         AreEqual(output, 6148914691236517205);
 
@@ -3160,7 +3173,7 @@ public class BigFloatTests
         IsTrue(BigIntegerTools.TryParseBinary("1001100110011000001101110101110110001100011011011100100.", out output));
         AreEqual(output, 21616517498418916);
         IsTrue(BigIntegerTools.TryParseBinary("-100110011001100000110111010111011000110001101101110010011.0", out output));
-        AreEqual(output, (-86466069993675667));
+        AreEqual(output, -86466069993675667);
         IsTrue(BigIntegerTools.TryParseBinary("+101010101010101010101010101010101010101010101010101010101010101.", out output));
         AreEqual(output, 6148914691236517205);
 
@@ -3576,7 +3589,7 @@ public class BigFloatTests
         //  123.124:   1111011.0001111110|11111...   
         //  123.123|5: 1111011.0001111110|01110...   
         //                         Diff: |10001      
-        IsFalse(BF123123_5 == BF123124); 
+        IsFalse(BF123123_5 == BF123124);
     }
 
     /// <summary>
@@ -3592,8 +3605,8 @@ public class BigFloatTests
         IsFalse(BigFloat.TryParse("1e", out _), @"BigFloat.TryParse(""1e"") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1e1.", out _), @"BigFloat.TryParse(""1e1."") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1e1.1", out _), @"BigFloat.TryParse(""1e1.1"") reported True but should be False.");
-        IsFalse(BigFloat.TryParse("1e1+", out _),  @"BigFloat.TryParse(""1e1+"") reported True but should be False.");
-        IsFalse(BigFloat.TryParse("1e1-", out _),  @"BigFloat.TryParse(""1e1-"") reported True but should be False.");
+        IsFalse(BigFloat.TryParse("1e1+", out _), @"BigFloat.TryParse(""1e1+"") reported True but should be False.");
+        IsFalse(BigFloat.TryParse("1e1-", out _), @"BigFloat.TryParse(""1e1-"") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1e--1", out _), @"BigFloat.TryParse(""1e--1"") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1e-+1", out _), @"BigFloat.TryParse(""1e-+1"") reported True but should be False.");
         IsFalse(BigFloat.TryParse("1e++1", out _), @"BigFloat.TryParse(""1e++1"") reported True but should be False.");
@@ -3792,9 +3805,9 @@ public class BigFloatTests
         IsTrue(((BigFloat)ulong.MaxValue).Equals(ulong.MaxValue));
         IsTrue(((BigFloat)ulong.MinValue).Equals(ulong.MinValue));
 
-        IsTrue((((BigFloat)long.MaxValue) - 1).Equals(long.MaxValue-1));
-        IsTrue((((BigFloat)ulong.MaxValue) - 1).Equals(ulong.MaxValue-1));
-        IsTrue((((BigFloat)ulong.MinValue) + 1).Equals(ulong.MinValue+1));
+        IsTrue((((BigFloat)long.MaxValue) - 1).Equals(long.MaxValue - 1));
+        IsTrue((((BigFloat)ulong.MaxValue) - 1).Equals(ulong.MaxValue - 1));
+        IsTrue((((BigFloat)ulong.MinValue) + 1).Equals(ulong.MinValue + 1));
 
         IsFalse((((BigFloat)long.MaxValue) + 1).Equals(long.MaxValue));
         IsFalse((((BigFloat)ulong.MaxValue) + 1).Equals(ulong.MaxValue));
@@ -3803,97 +3816,97 @@ public class BigFloatTests
         IsFalse((((BigFloat)ulong.MaxValue) - 1).Equals(ulong.MaxValue));
         IsFalse((((BigFloat)ulong.MinValue) - 1).Equals(ulong.MinValue));
 
-        IsTrue((((BigFloat)(long)0) - 1).Equals((long)-1));
-        IsTrue((((BigFloat)(ulong)0) - 1).Equals((long)-1));
+        IsTrue((((BigFloat)(long)0) - 1).Equals(-1));
+        IsTrue((((BigFloat)(ulong)0) - 1).Equals(-1));
 
-        IsTrue((((BigFloat)(long)0)).Equals((long)0));
-        IsTrue((((BigFloat)(ulong)0)).Equals((long)0));
-        IsTrue((((BigFloat)(long)0)).Equals((ulong)0));
-        IsTrue((((BigFloat)(ulong)0)).Equals((ulong)0));
+        IsTrue(((BigFloat)(long)0).Equals(0));
+        IsTrue(((BigFloat)(ulong)0).Equals(0));
+        IsTrue(((BigFloat)(long)0).Equals((ulong)0));
+        IsTrue(((BigFloat)(ulong)0).Equals((ulong)0));
 
-        IsTrue((((BigFloat)(long)0) + 1).Equals((long)1));
-        IsTrue((((BigFloat)(ulong)0) + 1).Equals((long)1));
+        IsTrue((((BigFloat)(long)0) + 1).Equals(1));
+        IsTrue((((BigFloat)(ulong)0) + 1).Equals(1));
         IsTrue((((BigFloat)(long)0) + 1).Equals((ulong)1));
         IsTrue((((BigFloat)(ulong)0) + 1).Equals((ulong)1));
 
-        IsFalse((((BigFloat)(long)0) - 1).Equals((long)0));
-        IsFalse((((BigFloat)(ulong)0) - 1).Equals((long)0));
+        IsFalse((((BigFloat)(long)0) - 1).Equals(0));
+        IsFalse((((BigFloat)(ulong)0) - 1).Equals(0));
         IsFalse((((BigFloat)(long)0) - 1).Equals((ulong)0));
         IsFalse((((BigFloat)(ulong)0) - 1).Equals((ulong)0));
 
-        IsFalse((((BigFloat)(long)0) + 1).Equals((long)0));
-        IsFalse((((BigFloat)(ulong)0) + 1).Equals((long)0));
+        IsFalse((((BigFloat)(long)0) + 1).Equals(0));
+        IsFalse((((BigFloat)(ulong)0) + 1).Equals(0));
         IsFalse((((BigFloat)(long)0) + 1).Equals((ulong)0));
         IsFalse((((BigFloat)(ulong)0) + 1).Equals((ulong)0));
 
         BigFloat zero = BigFloat.Parse("0b0|.01111111111");
-        IsTrue(zero.Equals((long)0));
+        IsTrue(zero.Equals(0));
         IsTrue(zero.Equals((ulong)0));
-        IsTrue((-zero).Equals((long)0));
+        IsTrue((-zero).Equals(0));
         IsTrue((-zero).Equals((ulong)0));
-        IsFalse(zero.Equals((long)1));
+        IsFalse(zero.Equals(1));
         IsFalse(zero.Equals((ulong)1));
-        IsFalse((-zero).Equals((long)1));
+        IsFalse((-zero).Equals(1));
         IsFalse((-zero).Equals((ulong)1));
-        IsFalse(zero.Equals((long)-1));
-        IsFalse((-zero).Equals((long)-1));
+        IsFalse(zero.Equals(-1));
+        IsFalse((-zero).Equals(-1));
 
         BigFloat one = BigFloat.Parse("0b0|.1111111111111111111111111");
-        IsTrue(one.Equals((long)1));
-        IsTrue((-one).Equals((long)-1));
+        IsTrue(one.Equals(1));
+        IsTrue((-one).Equals(-1));
         IsFalse((-one).Equals((ulong)1));
-        IsFalse((one).Equals((long)-1));
-        IsFalse((-one).Equals((long)1));
-        IsFalse(one.Equals((long)0));
+        IsFalse(one.Equals(-1));
+        IsFalse((-one).Equals(1));
+        IsFalse(one.Equals(0));
         IsFalse(one.Equals((ulong)0));
-        IsFalse((-one).Equals((long)0));
+        IsFalse((-one).Equals(0));
         IsFalse((-one).Equals((ulong)0));
 
         BigFloat val7 = BigFloat.Parse("0b0|1111111111111111111111111");
-        IsFalse(val7.Equals((long)33554431));
+        IsFalse(val7.Equals(33554431));
         IsFalse(val7.Equals((ulong)33554431));
-        IsFalse((-val7).Equals((long)-33554431));
-        IsFalse(val7.Equals((long)-33554431));
-        IsFalse((-val7).Equals((long)33554431));
-        IsFalse(val7.Equals((long)33554430));
-        IsFalse((-val7).Equals((long)-33554430));
-        IsFalse(val7.Equals((long)33554432));
-        IsFalse((-val7).Equals((long)-33554432));
-        IsFalse(val7.Equals((long)1));
+        IsFalse((-val7).Equals(-33554431));
+        IsFalse(val7.Equals(-33554431));
+        IsFalse((-val7).Equals(33554431));
+        IsFalse(val7.Equals(33554430));
+        IsFalse((-val7).Equals(-33554430));
+        IsFalse(val7.Equals(33554432));
+        IsFalse((-val7).Equals(-33554432));
+        IsFalse(val7.Equals(1));
         IsFalse(val7.Equals((ulong)1));
-        IsFalse((-val7).Equals((long)1));
+        IsFalse((-val7).Equals(1));
         IsFalse((-val7).Equals((ulong)1));
-        IsFalse(val7.Equals((long)0));
+        IsFalse(val7.Equals(0));
         IsFalse(val7.Equals((ulong)0));
-        IsFalse((-val7).Equals((long)0));
+        IsFalse((-val7).Equals(0));
         IsFalse((-val7).Equals((ulong)0));
 
         BigFloat val8 = BigFloat.Parse("0b0|1111111111111111111111111");
-        IsFalse(val8.Equals((long)0x1FFFFFF));
-        IsFalse((-val8).Equals((long)-0x1FFFFFF));
+        IsFalse(val8.Equals(0x1FFFFFF));
+        IsFalse((-val8).Equals(-0x1FFFFFF));
         IsFalse(val8.Equals((ulong)0x1FFFFFF));
         IsFalse((-val8).Equals((ulong)0));
-        IsFalse(val8.Equals((long)0));
-        IsFalse((-val8).Equals((long)0));
-        IsFalse(val8.Equals((long)0x2000000));
-        IsFalse((-val8).Equals((long)-0x2000000));
+        IsFalse(val8.Equals(0));
+        IsFalse((-val8).Equals(0));
+        IsFalse(val8.Equals(0x2000000));
+        IsFalse((-val8).Equals(-0x2000000));
         IsFalse(val8.Equals((ulong)0x2000000));
-        IsFalse(val8.Equals((long)0x1FFFFFE));
-        IsFalse((-val8).Equals((long)-0x1FFFFFE));
+        IsFalse(val8.Equals(0x1FFFFFE));
+        IsFalse((-val8).Equals(-0x1FFFFFE));
         IsFalse(val8.Equals((ulong)0x1FFFFFE));
 
         val8 = BigFloat.Parse("0b11111111111111111111|11111");
-        IsTrue(val8.Equals((long)0x1FFFFFF));
-        IsTrue((-val8).Equals((long)-0x1FFFFFF));
+        IsTrue(val8.Equals(0x1FFFFFF));
+        IsTrue((-val8).Equals(-0x1FFFFFF));
         IsTrue(val8.Equals((ulong)0x1FFFFFF));
         IsFalse((-val8).Equals((ulong)0));
-        IsFalse(val8.Equals((long)0));
-        IsFalse((-val8).Equals((long)0));
-        IsFalse(val8.Equals((long)0x2000000));
-        IsFalse((-val8).Equals((long)-0x2000000));
+        IsFalse(val8.Equals(0));
+        IsFalse((-val8).Equals(0));
+        IsFalse(val8.Equals(0x2000000));
+        IsFalse((-val8).Equals(-0x2000000));
         IsFalse(val8.Equals((ulong)0x2000000));
-        IsFalse(val8.Equals((long)0x1FFFFFE));
-        IsFalse((-val8).Equals((long)-0x1FFFFFE));
+        IsFalse(val8.Equals(0x1FFFFFE));
+        IsFalse((-val8).Equals(-0x1FFFFFE));
         IsFalse(val8.Equals((ulong)0x1FFFFFE));
     }
 
@@ -4187,7 +4200,7 @@ public class BigFloatTests
         // is the to return false as it is not really valid. In general, if the Guard
         // is above the radix point then it is not clear.
         aBigFloat = new BigFloat("0b111|1"); // 0b111|1.
-        bLong = 15; 
+        bLong = 15;
         IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
         bLong = 14;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
@@ -4198,7 +4211,7 @@ public class BigFloatTests
         aBigFloat = new BigFloat("0b111|1", binaryScaler: 1); // aka 0b111|10.
         bLong = 30; // 29 or 31 or false
         IsTrue(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
-        bLong = 29; 
+        bLong = 29;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
         bLong = 31;
         IsFalse(aBigFloat.Equals(bLong), $"Fail-50 on VerifyEquals((long){bLong})");
@@ -4292,39 +4305,39 @@ public class BigFloatTests
     {
         string actual;
         // Note: We have includeOutOfPrecisionBits set to true so we expect to see 32 bits of out of precision bits here. 
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true);                    AreEqual("12300000000000000.000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true);                   AreEqual("123000000000000000.00000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true);                  AreEqual("1230000000000000000.0000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true);                 AreEqual("12300000000000000000.000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true);                AreEqual("123000000000000000000.00000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true);               AreEqual("1230000000000000000000.0000", actual, false, $"Fail-R on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true);             AreEqual("123000000000000002097152.00", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true);            AreEqual("1229999999999999920308224.0", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true);           AreEqual("12300000000000000276824064" , actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true);          AreEqual("12299999999999999847327334X", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true);         AreEqual("12300000000000000190924718XX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true);       AreEqual("12300000000000000300875881XXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true);      AreEqual("12299999999999999597188439XXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true);     AreEqual("12299999999999999597188439XXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true);    AreEqual("12300000000000000497908365XXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true);   AreEqual("12300000000000000137620394XXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true);  AreEqual("12300000000000000425850771XXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true); AreEqual("12300000000000000.000000000", actual, false, $"Fail-M on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true); AreEqual("123000000000000000.00000000", actual, false, $"Fail-N on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true); AreEqual("1230000000000000000.0000000", actual, false, $"Fail-O on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true); AreEqual("12300000000000000000.000000", actual, false, $"Fail-P on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true); AreEqual("123000000000000000000.00000", actual, false, $"Fail-Q on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true); AreEqual("1230000000000000000000.0000", actual, false, $"Fail-R on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true); AreEqual("123000000000000002097152.00", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); AreEqual("1229999999999999920308224.0", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); AreEqual("12300000000000000276824064", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); AreEqual("12299999999999999847327334X", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true); AreEqual("12300000000000000190924718XX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true); AreEqual("12300000000000000300875881XXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true); AreEqual("12299999999999999597188439XXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true); AreEqual("12299999999999999597188439XXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true); AreEqual("12300000000000000497908365XXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true); AreEqual("12300000000000000137620394XXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true); AreEqual("12300000000000000425850771XXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
         actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000000.0), true); AreEqual("12299999999999999503513567XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
         actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000000.0), true); AreEqual("12299999999999999503513567e+11", actual, false, $"Fail-V on Double->BigFloat->ToString");
 
-        actual = new BigFloat(12300000000000000.0).ToString();              AreEqual("1230000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000.0).ToString();             AreEqual("12300000000000000X", actual, false, $"Fail-N on Double->BigFloat->ToString");
-        actual = new BigFloat(1230000000000000000.0).ToString();            AreEqual("1230000000000000XXX", actual, false, $"Fail-O on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000.0).ToString();           AreEqual("1230000000000000XXXX", actual, false, $"Fail-P on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000000.0).ToString();          AreEqual("12300000000000000XXXX", actual, false, $"Fail-Q on Double->BigFloat->ToString");
-        actual = new BigFloat(1230000000000000000000.0).ToString();         AreEqual("1230000000000000XXXXXX", actual, false, $"Fail-R on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000.0).ToString();        AreEqual("1230000000000000XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000000000.0).ToString();       AreEqual("12300000000000000XXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = new BigFloat(1230000000000000000000000.0).ToString();      AreEqual("1230000000000000XXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000000.0).ToString();     AreEqual("1230000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
-        actual = new BigFloat(123000000000000000000000000.0).ToString();    AreEqual("12300000000000000XXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
-        actual = new BigFloat(1230000000000000000000000000.0).ToString();   AreEqual("12300000000000000e+11", actual, false, $"Fail-W on Double->BigFloat->ToString");
-        actual = new BigFloat(12300000000000000000000000000.0).ToString();  AreEqual("1230000000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000.0).ToString(); AreEqual("1230000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000.0).ToString(); AreEqual("12300000000000000X", actual, false, $"Fail-N on Double->BigFloat->ToString");
+        actual = new BigFloat(1230000000000000000.0).ToString(); AreEqual("1230000000000000XXX", actual, false, $"Fail-O on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000.0).ToString(); AreEqual("1230000000000000XXXX", actual, false, $"Fail-P on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000.0).ToString(); AreEqual("12300000000000000XXXX", actual, false, $"Fail-Q on Double->BigFloat->ToString");
+        actual = new BigFloat(1230000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXX", actual, false, $"Fail-R on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000000.0).ToString(); AreEqual("12300000000000000XXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = new BigFloat(1230000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000000.0).ToString(); AreEqual("1230000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
+        actual = new BigFloat(123000000000000000000000000.0).ToString(); AreEqual("12300000000000000XXXXXXXXXX", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(1230000000000000000000000000.0).ToString(); AreEqual("12300000000000000e+11", actual, false, $"Fail-W on Double->BigFloat->ToString");
+        actual = new BigFloat(12300000000000000000000000000.0).ToString(); AreEqual("1230000000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
         actual = new BigFloat(123000000000000000000000000000.0).ToString(); AreEqual("12300000000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
 
         actual = new BigFloat(99990000000000000.0).ToString(); AreEqual("9999000000000000X", actual, false, $"Fail-M on Double->BigFloat->ToString");
@@ -4333,9 +4346,9 @@ public class BigFloatTests
         actual = new BigFloat(99990000000000000000.0).ToString(); AreEqual("9999000000000000XXXX", actual, false, $"Fail-P on Double->BigFloat->ToString");
         actual = new BigFloat(999900000000000000000.0).ToString(); AreEqual("9999000000000000XXXXX", actual, false, $"Fail-Q on Double->BigFloat->ToString");
         actual = new BigFloat(9999000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXX", actual, false, $"Fail-R on Double->BigFloat->ToString");
-        actual = new BigFloat(99990000000000000000000.0).ToString();    AreEqual("9999000000000001XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
-        actual = new BigFloat(999900000000000000000000.0).ToString();   AreEqual("9999000000000000XXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
-        actual = new BigFloat(9999000000000000000000000.0).ToString();  AreEqual("999900000000000XXXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
+        actual = new BigFloat(99990000000000000000000.0).ToString(); AreEqual("9999000000000001XXXXXXX", actual, false, $"Fail-S on Double->BigFloat->ToString");
+        actual = new BigFloat(999900000000000000000000.0).ToString(); AreEqual("9999000000000000XXXXXXXX", actual, false, $"Fail-T on Double->BigFloat->ToString");
+        actual = new BigFloat(9999000000000000000000000.0).ToString(); AreEqual("999900000000000XXXXXXXXXX", actual, false, $"Fail-U on Double->BigFloat->ToString");
         actual = new BigFloat(99990000000000000000000000.0).ToString(); AreEqual("9999000000000000XXXXXXXXXX", actual, false, $"Fail-V on Double->BigFloat->ToString");
         actual = new BigFloat(999900000000000000000000000.0).ToString(); AreEqual("9999000000000001e+11", actual, false, $"Fail-W on Double->BigFloat->ToString");
         actual = new BigFloat(9999000000000000000000000000.0).ToString(); AreEqual("999900000000000e+13", actual, false, $"Fail-W on Double->BigFloat->ToString");
@@ -4514,10 +4527,10 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_EqualsWithObject()
     {
-        IsTrue((new BigFloat(1)).Equals((object)BigFloat.One));
-        IsTrue((new BigFloat(0)).Equals((object)BigFloat.Zero));
-        IsFalse((new BigFloat(1)).Equals(null));
-        IsFalse((new BigFloat(1)).Equals((object)1));
+        IsTrue(new BigFloat(1).Equals((object)BigFloat.One));
+        IsTrue(new BigFloat(0).Equals((object)BigFloat.Zero));
+        IsFalse(new BigFloat(1).Equals(null));
+        IsFalse(new BigFloat(1).Equals((object)1));
     }
 
     [TestMethod]
@@ -4727,13 +4740,13 @@ public class BigFloatTests
         _ = BigFloat.TryParseBinary("10.0001", out a);
         _ = BigFloat.TryParseBinary("10.01", out b);
         AreEqual(-1, BigFloat.CompareToIgnoringLeastSigBits(a, b, 0), $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 1, BigFloat.CompareToIgnoringLeastSigBits(b, a, 0),$"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1),$"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1),$"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2),$"Fail-371 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2),$"Fail-371 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 3),$"Fail-381 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual( 0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 3),$"Fail-381 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(1, BigFloat.CompareToIgnoringLeastSigBits(b, a, 0), $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1), $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1), $"Fail-361 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 2), $"Fail-371 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 2), $"Fail-371 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 3), $"Fail-381 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 3), $"Fail-381 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat("-0b11", 0);
         b = new BigFloat("-0b01", 1);
@@ -4753,8 +4766,8 @@ public class BigFloatTests
         b = new BigFloat(554, 0);
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(a, b, 0) > 0, $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
         IsTrue(BigFloat.CompareToIgnoringLeastSigBits(b, a, 0) < 0, $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1+32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
-        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1+32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(a, b, 1 + 32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
+        AreEqual(0, BigFloat.CompareToIgnoringLeastSigBits(b, a, 1 + 32), $"Fail-400 on Verify_CompareToIgnoringLeastSigBitsFast");
 
         a = new BigFloat(-555, 0);
         b = new BigFloat(-554, 0);
@@ -5458,7 +5471,7 @@ public class BigFloatTests
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
 
         inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  //  5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(5555, addedBinaryPrecision:0);   //      -5555  
+        inputVal1 = new BigFloat(5555, addedBinaryPrecision: 0);   //      -5555  
         output = inputVal0 - inputVal1;                  //= 5555_____
         expect = new BigFloat("555572222");  // expected: 555572222 result:555483136  OK
         AreEqual(output, expect, $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}");
@@ -6011,7 +6024,7 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_NewtonPlusSqrt_Brute_Force()
     {
-        Parallel.For(0, sqrtBruteForceStoppedAt, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+        _ = Parallel.For(0, sqrtBruteForceStoppedAt, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
         {
             BigInteger root = BigIntegerTools.NewtonPlusSqrt(x);
             BigInteger lowerBound = root * root;
@@ -6029,7 +6042,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         for (int s = 0; s < 32; s++)
         {
-            Parallel.For((s * 512) + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            _ = Parallel.For((s * 512) + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
             {
                 if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
                 {
@@ -6060,7 +6073,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         int startAt = BitOperations.Log2(sqrtBruteForceStoppedAt) - 1;
 
-        Parallel.For(startAt, 1000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        _ = Parallel.For(startAt, 1000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
         {
             if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
             {
@@ -6090,7 +6103,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         int startAt = BitOperations.Log2(sqrtBruteForceStoppedAt) - 1;
 
-        Parallel.For(startAt, 10000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        _ = Parallel.For(startAt, 10000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
         {
             if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
             {
@@ -6128,7 +6141,7 @@ public class BigFloatTests
 
         while (sw.ElapsedMilliseconds < TestTargetInMillseconds)
         {
-            Parallel.For(0, 1024, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            _ = Parallel.For(0, 1024, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
             {
                 for (int i = 0; i < 2; i++)
                 {
@@ -6163,7 +6176,7 @@ public class BigFloatTests
 
         Stopwatch sw = Stopwatch.StartNew();
 
-        Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
+        _ = Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
         {
             Random r = new(p + RAND_SEED);
             int counter = 0;
@@ -6301,17 +6314,17 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_Inverse_Common_Fails()
     {
-        CheckInverse(BigInteger.MinusOne);
-        CheckInverse(BigInteger.One);
+        _ = CheckInverse(BigInteger.MinusOne);
+        _ = CheckInverse(BigInteger.One);
         BigInteger valToTest = BigInteger.Parse("8273153554255617868983008432299507701873690283447163912225368429446311715550180068658483561349865846704311797996005892990494607142525675800342567010930760478881504606029054999488050624099750939339790755426321297478858807972510657577430552150649899640468901338121294090979219428234512847003533414175726178693610069347755095659695353545360529790683181065043538446867918248788742705333365840422466199773229341881841562551926235483545177894989221351527346588987721531194144175285969973689640218042094418808237706900648114671371775300698367651383174442595695957899162146670906778789201530522867749937550298524431256635047931");
-        CheckInverse(valToTest);
-        CheckInverse(valToTest + 1);
-        CheckInverse(BigInteger.Parse("374622190995713598813029737925947051705809638079728648837203317232520450544987889076160147970041374918121757949602129193189627732344065706383371226187835319714209031377906"));
-        CheckInverse(BigInteger.Parse("285013714838916124746332799963584856696559114154526436450316172786090750322481976436201683157295661247422269749708947463647574230159095313041740438915381154333683134147981881052909187062730083973334780414971356303334003636993678034868083193818348023091003363888921565718173027783621779517877300200724459318883522235112068285932195519037519165902397752860489674895796976400390836349751427026061658964203208207986236200932628791719083132376094639338301197454891161371254361839889401887706282292505789937819779959717878950744690490451460250552140684616855021515468623300887218921710277512975593031191949892800748540749262661949870473705897585049029946162622106546347620917265696194559801244123684550639057819166981442116592210707318201455631684986737606526635568852133623155695703543483277590334799035273474221366689251730228654333498348983148060215237998018186668782906813463794675647274428135720809334669780620193631012355614590578191925576697141901"));
-        CheckInverse(BigInteger.Parse("645939712405401427719711254063813468156213415200850699928240890973548642930906671628067939561389768742610260274947216253535958539046510117181847336215500441547828988008499863283321060888285180958716586132295468008708718750886004174750090339672254391327068510418655854996295608654912181466562066392576946408280444645720652219224611465788921115672007871684057345123697713619795572111218976868165977088388076018155579127963692414645217516226582443109944361333778959142017020766702585614084557002374143856684835403030114576877613125361001081612661505866535992828793261026218710006019409384286248553489144084836908483354058059174031935080941095970669550752672290188012935344941625941224776598832005105461709062131845129678963155310027422917876006618051141488519807701539489712459454171376535906228081656842506129847531133807702931600418505954342868857145344054108555281592568541709103974802015219413388401920300146704419785634503745727784608594651862819775429285667691480255596598355137918884688681242925903869182365424076667891828794970711995156501553646245103285321272836088502175303126383961643724861657121768832605051542254287022038928115325910288733210686961346257986675795521419117484112569337949140264990"));
-        CheckInverse(BigInteger.Parse("14226342718751118987907712656792939014609116305038288508984965665170435278580333690269830569305522770533115648153109977677970505910625922454536026835852861332513459837041790011369159613511987064990374692209153941946410250817507783093926309366818470453091487613497831683214972282433680630982532763190683188379014716931664367628856712864496549434590849436602433350062473844636337430852410107263030344416723319870714159741005261604289621571405370996571482202189946969590725396299242462841573118206347715965805077151815088089898712040656448748652946583617809438541519496216169721658653723720561561601101228727064752442615455482001090437223561687360017043925134663500743462770265751193548606236574887993897708234798015778243132964667428178856994844952952767372869586443371631986024216806390351458153350155473742698605698036672929293892925483318864445513221152207924537215494391086982099603955047363639252292415150243702042020253673557543258256080860766767245166366206504042341743664890169812601231127032334294569486704846172949043552949441316944714028840689338784401867179801203613271182276331013888454830352391740343025859921596673531204457761831252242526173047406966821405710834640264664514325319700094788810229600338339048034248472906440829567003568352904106454211600272772441256937357011526350840028766974271849878883968029793821029979280359368212174059092944193932724591216533306907868949240183508100414983415165523499662280683154859830743035090387199495274469840495806979622786301340"));
-        CheckInverse(BigInteger.Parse("41597037944448288110263031477097654167384303281785501659348547438859712932895265129174863537442219208764808367754224325676189013224863230815238211318298805347258792422345044074873622426170281290814220505198280942180680987026072516738908213582080426073114716009829990895938425085364287895467011390686208508278438730461229031670604488583132047013295327251056792004212211984418619663447584994978851293935131110818345158735090825798050014339956039806087253671405307536505969146032086905214682999371273072327848485190337222112654049779316736398006552350156349884603007360240860067257909482396786549588732357562118172137668037090856181026987902018187123355906466294875863290720195176549809520330510535389796132984892059640168902171480943753536264315689507100966013546691280187870571451205108217441077590372742568828587495458227141473387320433587383078311146940539855321485599293540008356160519179316373740003907476816065356834101152604366223141056328388148703861540389801990631343518586799040845656241392934834522495698513979794700246917693292354190436213407849292690244331619453139129528311878463071451903744767274814238809831756377838973380878611727693240233305958509793663676407892016477218846901984357526107274350245333587892891647258020839563922086967136639138149549163501535002313407476514168371528265958304129029559790809555296315581870799758675251593555164438335668433357530966606494565841539517226231078555238897938082287091553434761476447011358899223501505465429569334182561228540892303214811082283526723697168379678479540727712438070861914927293109710911106707261295892041586638725763206110753540190896772169081260784380"));
-        
+        _ = CheckInverse(valToTest);
+        _ = CheckInverse(valToTest + 1);
+        _ = CheckInverse(BigInteger.Parse("374622190995713598813029737925947051705809638079728648837203317232520450544987889076160147970041374918121757949602129193189627732344065706383371226187835319714209031377906"));
+        _ = CheckInverse(BigInteger.Parse("285013714838916124746332799963584856696559114154526436450316172786090750322481976436201683157295661247422269749708947463647574230159095313041740438915381154333683134147981881052909187062730083973334780414971356303334003636993678034868083193818348023091003363888921565718173027783621779517877300200724459318883522235112068285932195519037519165902397752860489674895796976400390836349751427026061658964203208207986236200932628791719083132376094639338301197454891161371254361839889401887706282292505789937819779959717878950744690490451460250552140684616855021515468623300887218921710277512975593031191949892800748540749262661949870473705897585049029946162622106546347620917265696194559801244123684550639057819166981442116592210707318201455631684986737606526635568852133623155695703543483277590334799035273474221366689251730228654333498348983148060215237998018186668782906813463794675647274428135720809334669780620193631012355614590578191925576697141901"));
+        _ = CheckInverse(BigInteger.Parse("645939712405401427719711254063813468156213415200850699928240890973548642930906671628067939561389768742610260274947216253535958539046510117181847336215500441547828988008499863283321060888285180958716586132295468008708718750886004174750090339672254391327068510418655854996295608654912181466562066392576946408280444645720652219224611465788921115672007871684057345123697713619795572111218976868165977088388076018155579127963692414645217516226582443109944361333778959142017020766702585614084557002374143856684835403030114576877613125361001081612661505866535992828793261026218710006019409384286248553489144084836908483354058059174031935080941095970669550752672290188012935344941625941224776598832005105461709062131845129678963155310027422917876006618051141488519807701539489712459454171376535906228081656842506129847531133807702931600418505954342868857145344054108555281592568541709103974802015219413388401920300146704419785634503745727784608594651862819775429285667691480255596598355137918884688681242925903869182365424076667891828794970711995156501553646245103285321272836088502175303126383961643724861657121768832605051542254287022038928115325910288733210686961346257986675795521419117484112569337949140264990"));
+        _ = CheckInverse(BigInteger.Parse("14226342718751118987907712656792939014609116305038288508984965665170435278580333690269830569305522770533115648153109977677970505910625922454536026835852861332513459837041790011369159613511987064990374692209153941946410250817507783093926309366818470453091487613497831683214972282433680630982532763190683188379014716931664367628856712864496549434590849436602433350062473844636337430852410107263030344416723319870714159741005261604289621571405370996571482202189946969590725396299242462841573118206347715965805077151815088089898712040656448748652946583617809438541519496216169721658653723720561561601101228727064752442615455482001090437223561687360017043925134663500743462770265751193548606236574887993897708234798015778243132964667428178856994844952952767372869586443371631986024216806390351458153350155473742698605698036672929293892925483318864445513221152207924537215494391086982099603955047363639252292415150243702042020253673557543258256080860766767245166366206504042341743664890169812601231127032334294569486704846172949043552949441316944714028840689338784401867179801203613271182276331013888454830352391740343025859921596673531204457761831252242526173047406966821405710834640264664514325319700094788810229600338339048034248472906440829567003568352904106454211600272772441256937357011526350840028766974271849878883968029793821029979280359368212174059092944193932724591216533306907868949240183508100414983415165523499662280683154859830743035090387199495274469840495806979622786301340"));
+        _ = CheckInverse(BigInteger.Parse("41597037944448288110263031477097654167384303281785501659348547438859712932895265129174863537442219208764808367754224325676189013224863230815238211318298805347258792422345044074873622426170281290814220505198280942180680987026072516738908213582080426073114716009829990895938425085364287895467011390686208508278438730461229031670604488583132047013295327251056792004212211984418619663447584994978851293935131110818345158735090825798050014339956039806087253671405307536505969146032086905214682999371273072327848485190337222112654049779316736398006552350156349884603007360240860067257909482396786549588732357562118172137668037090856181026987902018187123355906466294875863290720195176549809520330510535389796132984892059640168902171480943753536264315689507100966013546691280187870571451205108217441077590372742568828587495458227141473387320433587383078311146940539855321485599293540008356160519179316373740003907476816065356834101152604366223141056328388148703861540389801990631343518586799040845656241392934834522495698513979794700246917693292354190436213407849292690244331619453139129528311878463071451903744767274814238809831756377838973380878611727693240233305958509793663676407892016477218846901984357526107274350245333587892891647258020839563922086967136639138149549163501535002313407476514168371528265958304129029559790809555296315581870799758675251593555164438335668433357530966606494565841539517226231078555238897938082287091553434761476447011358899223501505465429569334182561228540892303214811082283526723697168379678479540727712438070861914927293109710911106707261295892041586638725763206110753540190896772169081260784380"));
+
     }
 
     /// <summary>
@@ -6320,9 +6333,9 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_Inverse_Brute_Force()
     {
-        Parallel.For(2, inverseBruteForceStoppedAt, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (valToTest, s) =>
+        _ = Parallel.For(2, inverseBruteForceStoppedAt, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (valToTest, s) =>
         {
-            CheckInverse(valToTest);
+            _ = CheckInverse(valToTest);
         });
     }
 
@@ -6335,7 +6348,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         for (int s = 0; s < 32; s++)
         {
-            Parallel.For((s * 512) + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            _ = Parallel.For((s * 512) + 8, (s * 512) + 512 + 8, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
             {
                 if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
                 {
@@ -6345,7 +6358,7 @@ public class BigFloatTests
                 for (long i = -5; i < 6; i++)
                 {
                     BigInteger valToTest = BigInteger.Pow(2, x) + i;
-                    CheckInverse(valToTest);
+                    _ = CheckInverse(valToTest);
                 }
             });
         }
@@ -6360,7 +6373,7 @@ public class BigFloatTests
         Stopwatch sw = Stopwatch.StartNew();
         int startAt = BitOperations.Log2(inverseBruteForceStoppedAt) - 1;
 
-        Parallel.For(startAt, 1000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
+        _ = Parallel.For(startAt, 1000, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (length, s) =>
         {
             if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
             {
@@ -6370,7 +6383,7 @@ public class BigFloatTests
             for (int i = 1; i <= length; i++)
             {
                 BigInteger valToTest = ((BigInteger.One << i) - 1) << (length - i);
-                CheckInverse(valToTest);
+                _ = CheckInverse(valToTest);
             }
         });
     }
@@ -6401,7 +6414,7 @@ public class BigFloatTests
             {
                 valToTest <<= 1;
             }
-            CheckInverse(valToTest);
+            _ = CheckInverse(valToTest);
 
         });
     }
@@ -6418,12 +6431,12 @@ public class BigFloatTests
 
         while (sw.ElapsedMilliseconds < TestTargetInMillseconds)
         {
-            Parallel.For(0, 1024, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
+            _ = Parallel.For(0, 1024, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (x, s) =>
             {
                 for (int i = 0; i < 2; i++)
                 {
                     BigInteger valToTest = (2 * (c + x)) - i;
-                    CheckInverse(valToTest);
+                    _ = CheckInverse(valToTest);
                 }
 
                 if (sw.ElapsedMilliseconds > TestTargetInMillseconds)
@@ -6447,7 +6460,7 @@ public class BigFloatTests
 
         Stopwatch sw = Stopwatch.StartNew();
         int fullCounter = 0;
-        Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
+        _ = Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
         {
             Random r = new(p + RAND_SEED);
             int counter = 0;
@@ -6467,7 +6480,7 @@ public class BigFloatTests
                 bytes[byteCt - 1] >>= 7 - ((bitLen - 1) % 8);
                 BigInteger valToTest = new(bytes, true, false);
 
-                CheckInverse(valToTest);
+                _ = CheckInverse(valToTest);
 
                 fullCounter++;
                 if (counter++ % 0x1000000 == 0)
@@ -6496,7 +6509,7 @@ public class BigFloatTests
 
         Stopwatch sw = Stopwatch.StartNew();
         int fullCounter = 0;
-        Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
+        _ = Parallel.For(0, MaxDegreeOfParallelism, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParallelism }, (p, s) =>
         {
             Random r = new(p + RAND_SEED);
             int counter = 0;
@@ -6516,7 +6529,7 @@ public class BigFloatTests
                 bytes[byteCt - 1] >>= 7 - ((bitLen - 1) % 8);
                 BigInteger valToTest = new(bytes, true, false);
 
-                CheckInverse(valToTest);
+                _ = CheckInverse(valToTest);
 
                 fullCounter++;
                 if (counter++ % 0x1000000 == 0)
@@ -6559,24 +6572,24 @@ public class BigFloatTests
 
         if (!success)
         {
-            sb.AppendLine($"Inverse Fail with input {x}");
-            sb.AppendLine($"  Result: {xInvRes} !=");
-            sb.AppendLine($"  Answer: {xInvTst}");
+            _ = sb.AppendLine($"Inverse Fail with input {x}");
+            _ = sb.AppendLine($"  Result: {xInvRes} !=");
+            _ = sb.AppendLine($"  Answer: {xInvTst}");
 
             if (xInvRes.GetBitLength() != x.GetBitLength())
             {
-                sb.AppendLine($"  Result length incorrect:  [{xInvRes.GetBitLength()}] != [{x.GetBitLength(),-4}]");
+                _ = sb.AppendLine($"  Result length incorrect:  [{xInvRes.GetBitLength()}] != [{x.GetBitLength(),-4}]");
             }
 
             if (xInvTst.GetBitLength() != x.GetBitLength())
             {
-                sb.AppendLine($"  Classic length incorrect: [{xInvTst.GetBitLength()}] != [{x.GetBitLength(),-4}]");
+                _ = sb.AppendLine($"  Classic length incorrect: [{xInvTst.GetBitLength()}] != [{x.GetBitLength(),-4}]");
             }
 
             correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
             if (xInvRes.GetBitLength() - correctBits > 0)
             {
-                sb.AppendLine($"  incorrect bits:[{xInvRes.GetBitLength()-correctBits}]  CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}]");
+                _ = sb.AppendLine($"  incorrect bits:[{xInvRes.GetBitLength() - correctBits}]  CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}]");
             }
 
             Fail(sb.ToString());
@@ -6595,11 +6608,9 @@ public class BigFloatTests
             {
                 throw new DivideByZeroException("'precisionBits' can not be negative.");
             }
-            if (x.IsPowerOfTwo)
-            {
-                return (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x);
-            }
-            return (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
+            return x.IsPowerOfTwo
+                ? (BigInteger.One * x.Sign) << (int)BigInteger.TrailingZeroCount(x)
+                : (BigInteger.One << (xLen + ((requestedPrecision == 0) ? xLen : requestedPrecision) - 1)) / x;
         }
     }
 
@@ -6990,7 +7001,7 @@ public class BigFloatTests
             res = BigFloat.SetPrecision(inputVal, i);
             output = res.ToString("B");
             int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-            int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
+            int mostSigBigInRemovedSection = exact[i + 2] - 48;
             expect = Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, ".");
             AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
         }
@@ -6999,7 +7010,7 @@ public class BigFloatTests
             res = BigFloat.SetPrecision(inputVal, i);
             output = res.ToString("B");
             int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-            int mostSigBigInRemovedSection = (int)exact[i + 2] - 48;
+            int mostSigBigInRemovedSection = exact[i + 2] - 48;
             expect = "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2);
             AreEqual(output, expect, $"SetPrecision({inputVal}) was {output} but expected {expect}");
         }
@@ -7070,49 +7081,49 @@ public class BigFloatTests
     [TestMethod]
     public void Sin_Zero_IsZero()
     {
-        var s = BigFloat.Sin(BigFloat.Zero);
+        BigFloat s = BigFloat.Sin(BigFloat.Zero);
         Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), s, "Sin(0) should be 0");
     }
 
     [TestMethod]
     public void Cos_Zero_IsOne()
     {
-        var c = BigFloat.Cos(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
+        BigFloat c = BigFloat.Cos(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
         Assert.AreEqual(BigFloat.OneWithAccuracy(100), c, "Cos(0) should be 1");
     }
 
     [TestMethod]
     public void Sin_HalfPi_IsOne()
     {
-        var s = BigFloat.Sin(HalfPi);
+        BigFloat s = BigFloat.Sin(HalfPi);
         Assert.AreEqual(BigFloat.OneWithAccuracy(100), s, "Sin(pi/2) should be 1");
     }
 
     [TestMethod]
     public void Cos_Pi_IsMinusOne()
     {
-        var c = BigFloat.Cos(Pi);
+        BigFloat c = BigFloat.Cos(Pi);
         Assert.AreEqual(-BigFloat.OneWithAccuracy(100), c, "Cos(pi) should be −1");
     }
 
     [TestMethod]
     public void Sin_Pi_IsZero()
     {
-        var s = BigFloat.Sin(Pi);
+        BigFloat s = BigFloat.Sin(Pi);
         Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-200), s, "Sin(pi) should be 0");
     }
 
     [TestMethod]
     public void Tan_QuarterPi_IsOne()
     {
-        var t = BigFloat.Tan(QuarterPi);
+        BigFloat t = BigFloat.Tan(QuarterPi);
         Assert.AreEqual(BigFloat.OneWithAccuracy(100), t, "Tan(pi/4) should be 1");
     }
 
     [TestMethod]
     public void Tan_Zero_IsZero()
     {
-        var t = BigFloat.Tan(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
+        BigFloat t = BigFloat.Tan(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
         Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), t, "Tan(0) should be 0");
     }
 
@@ -7121,7 +7132,7 @@ public class BigFloatTests
     {
         const double x = 0.5;
         // force a bit more precision internally to avoid rounding
-        var bf = BigFloat.Sin((BigFloat)x);
+        BigFloat bf = BigFloat.Sin((BigFloat)x);
         double got = (double)bf;
         Assert.AreEqual(Math.Sin(x), got, 1e-15, "Sin(0.5) should match Math.Sin");
     }
@@ -7138,7 +7149,7 @@ public class BigFloatTests
         Assert.AreEqual(0, answer.StrictCompareTo(result), $"BigFloat.Parse(\"0.9553364891256060196..) should match BigFloat.Cos(BigFloat.Parse(\"0.3000000000000000...) \r\n{answer.ToString(true)} != \r\n{result.ToString(true)}[{valToConvert.Size}->{result.Size}]");
 
         double got = (double)BigFloat.Cos((BigFloat)x);
-        Debug.WriteLine("(double)" + ((BigFloat)x).ToString(true) + " --> " +(BigFloat.Cos((BigFloat)x).ToString(true)));
+        Debug.WriteLine("(double)" + ((BigFloat)x).ToString(true) + " --> " + BigFloat.Cos((BigFloat)x).ToString(true));
         Assert.AreEqual(Math.Cos(x), got, 1e-15, $"Cos(0.3)({got}) should match Math.Cos({Math.Cos(x)})");
     }
 
@@ -7146,7 +7157,7 @@ public class BigFloatTests
     public void Tan_0p7_ShouldMatchMathTan()
     {
         const double x = 0.7;
-        var bf = BigFloat.Tan((BigFloat)x);
+        BigFloat bf = BigFloat.Tan((BigFloat)x);
         double got = (double)bf;
         Assert.AreEqual(Math.Tan(x), got, 1e-14, "Tan(0.7) should match Math.Tan");
     }
@@ -7155,8 +7166,8 @@ public class BigFloatTests
     public void SinAprox_SmallAngle_IsReasonable()
     {
         const double x = 0.1;
-        var exact = BigFloat.Sin((BigFloat)x);
-        var approx = BigFloat.SinAprox((BigFloat)x);
+        BigFloat exact = BigFloat.Sin((BigFloat)x);
+        BigFloat approx = BigFloat.SinAprox((BigFloat)x);
         // approx is a 5th-order Taylor; error ~ x^7/5040
         double err = Math.Abs((double)(exact - approx));
         Assert.IsTrue(err < 1e-24, $"SinAprox(0.1) error {err:N2} should be <1e-24");
@@ -7166,8 +7177,8 @@ public class BigFloatTests
     public void SinAprox_LargerAngle_IsNotExact()
     {
         const double x = 1.0;
-        var exact = BigFloat.Sin((BigFloat)x);
-        var approx = BigFloat.SinAprox((BigFloat)x);
+        BigFloat exact = BigFloat.Sin((BigFloat)x);
+        BigFloat approx = BigFloat.SinAprox((BigFloat)x);
         double err = Math.Abs((double)(exact - approx));
         Assert.IsTrue(err < 1e-24, $"SinAprox(1.0) error {err:N2} should be <1e-24");
     }

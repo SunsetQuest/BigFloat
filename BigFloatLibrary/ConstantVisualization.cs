@@ -51,28 +51,27 @@ public readonly partial struct BigFloat
             }
 
             // If we don't want to group digits, return the string as is
-            if (!groupDigits)
-                return strValue;
+            if (!groupDigits) { return strValue; }
 
             // Group digits for readability
-            var result = new StringBuilder();
+            StringBuilder result = new();
 
             // Add the integer part (before decimal)
-            result.Append(strValue.AsSpan(0, decimalPos));
+            _ = result.Append(strValue.AsSpan(0, decimalPos));
 
             // Add the decimal point
-            result.Append('.');
+            _ = result.Append('.');
 
             // Add the fractional part with grouping
             string fractionalPart = strValue[(decimalPos + 1)..];
             for (int i = 0; i < fractionalPart.Length; i++)
             {
-                result.Append(fractionalPart[i]);
+                _ = result.Append(fractionalPart[i]);
 
                 // Add space after every digitGroupSize digits (except at the end)
                 if (groupDigits && (i + 1) % digitGroupSize == 0 && i < fractionalPart.Length - 1)
                 {
-                    result.Append(' ');
+                    _ = result.Append(' ');
                 }
             }
 
@@ -87,7 +86,7 @@ public readonly partial struct BigFloat
         /// <returns>A formatted string containing the comparison table.</returns>
         public static string CreateComparisonTable(Dictionary<string, BigFloat> constants, int decimalDigits = 20)
         {
-            var table = new StringBuilder();
+            StringBuilder table = new();
 
             // Calculate appropriate column width
             int nameWidth = Math.Max(15, constants.Keys.Max(k => k.Length) + 2);
@@ -97,12 +96,12 @@ public readonly partial struct BigFloat
             string header = $"| {"Constant".PadRight(nameWidth)} | {"Value".PadRight(valueWidth)} |";
             string separator = $"|{new string('-', nameWidth + 2)}|{new string('-', valueWidth + 2)}|";
 
-            table.AppendLine(separator);
-            table.AppendLine(header);
-            table.AppendLine(separator);
+            _ = table.AppendLine(separator);
+            _ = table.AppendLine(header);
+            _ = table.AppendLine(separator);
 
             // Add each constant
-            foreach (var entry in constants.OrderBy(e => e.Key))
+            foreach (KeyValuePair<string, BigFloat> entry in constants.OrderBy(e => e.Key))
             {
                 string value = FormatConstant(entry.Value, decimalDigits, false);
                 if (value.Length > valueWidth)
@@ -110,10 +109,10 @@ public readonly partial struct BigFloat
                     value = string.Concat(value.AsSpan(0, valueWidth - 3), "...");
                 }
 
-                table.AppendLine($"| {entry.Key.PadRight(nameWidth)} | {value.PadRight(valueWidth)} |");
+                _ = table.AppendLine($"| {entry.Key.PadRight(nameWidth)} | {value.PadRight(valueWidth)} |");
             }
 
-            table.AppendLine(separator);
+            _ = table.AppendLine(separator);
 
             return table.ToString();
         }
@@ -126,8 +125,8 @@ public readonly partial struct BigFloat
         /// <returns>A string containing the continued fraction representation.</returns>
         public static string GetContinuedFraction(BigFloat value, int terms = 10)
         {
-            var result = new StringBuilder();
-            var continuedFractionTerms = new List<BigInteger>();
+            StringBuilder result = new();
+            List<BigInteger> continuedFractionTerms = [];
 
             // Extract the integer part
             BigFloat remaining = value;
@@ -141,8 +140,7 @@ public readonly partial struct BigFloat
                 remaining -= new BigFloat(integerPart);
 
                 // If the remainder is effectively zero, we're done
-                if (remaining.IsZero)
-                    break;
+                if (remaining.IsZero) break;
 
                 // Take reciprocal and continue
                 remaining = One / remaining;
@@ -153,23 +151,23 @@ public readonly partial struct BigFloat
             }
 
             // Format the output
-            result.Append(continuedFractionTerms[0]);
+            _ = result.Append(continuedFractionTerms[0]);
 
             if (continuedFractionTerms.Count > 1)
             {
-                result.Append(" + 1/(");
-                result.Append(continuedFractionTerms[1]);
+                _ = result.Append(" + 1/(");
+                _ = result.Append(continuedFractionTerms[1]);
 
                 for (int i = 2; i < continuedFractionTerms.Count; i++)
                 {
-                    result.Append(" + 1/(");
-                    result.Append(continuedFractionTerms[i]);
+                    _ = result.Append(" + 1/(");
+                    _ = result.Append(continuedFractionTerms[i]);
                 }
 
                 // Close all the parentheses
                 for (int i = 1; i < continuedFractionTerms.Count; i++)
                 {
-                    result.Append(')');
+                    _ = result.Append(')');
                 }
             }
 
@@ -196,48 +194,48 @@ public readonly partial struct BigFloat
                 return $"Could not compute value for constant '{constantId}'.";
             }
 
-            var result = new StringBuilder();
+            StringBuilder result = new();
 
             // Add name and basic information
-            result.AppendLine($"Constant: {info.Name ?? constantId}");
-            result.AppendLine(new string('=', 50));
+            _ = result.AppendLine($"Constant: {info.Name ?? constantId}");
+            _ = result.AppendLine(new string('=', 50));
 
             if (!string.IsNullOrEmpty(info.Formula))
             {
-                result.AppendLine($"Formula: {info.Formula}");
+                _ = result.AppendLine($"Formula: {info.Formula}");
             }
 
             // Add the value with formatted digits
-            result.AppendLine("\nValue:");
-            result.AppendLine(FormatConstant(value, decimalDigits));
+            _ = result.AppendLine("\nValue:");
+            _ = result.AppendLine(FormatConstant(value, decimalDigits));
 
             // Add continued fraction expansion if appropriate
-            result.AppendLine("\nContinued Fraction Expansion:");
-            result.AppendLine(GetContinuedFraction(value, 15));
+            _ = result.AppendLine("\nContinued Fraction Expansion:");
+            _ = result.AppendLine(GetContinuedFraction(value, 15));
 
             // Add additional information if available
             if (!string.IsNullOrEmpty(info.MoreInfoURL))
             {
-                result.AppendLine($"\nMore Information: {info.MoreInfoURL}");
+                _ = result.AppendLine($"\nMore Information: {info.MoreInfoURL}");
             }
 
             if (!string.IsNullOrEmpty(info.SourceOfDigitsURL))
             {
-                result.AppendLine($"Source of Digits: {info.SourceOfDigitsURL}");
+                _ = result.AppendLine($"Source of Digits: {info.SourceOfDigitsURL}");
             }
 
             if (!string.IsNullOrEmpty(info.SourceOfDigitsName))
             {
-                result.AppendLine($"Calculated by: {info.SourceOfDigitsName}");
+                _ = result.AppendLine($"Calculated by: {info.SourceOfDigitsName}");
             }
 
             // Add precision information
-            result.AppendLine($"\nPrecision Available:");
-            result.AppendLine($"- In Memory: {Math.Round(info.BitsInBase64.Length * 6 / 3.32192809489,0)} decimal digits");
+            _ = result.AppendLine($"\nPrecision Available:");
+            _ = result.AppendLine($"- In Memory: {Math.Round(info.BitsInBase64.Length * 6 / 3.32192809489, 0)} decimal digits");
 
             if (info.SizeAvailableInFile > 0)
             {
-                result.AppendLine($"- In External Files: {info.SizeAvailableInFile} decimal digits");
+                _ = result.AppendLine($"- In External Files: {info.SizeAvailableInFile} decimal digits");
             }
 
             return result.ToString();
