@@ -304,7 +304,7 @@ public readonly partial struct BigFloat
             }
 
             // If we don't want to group digits, return the string as is
-            if (!groupDigits) return strValue;
+            if (!groupDigits) { return strValue; }
 
             // Group digits for readability
             System.Text.StringBuilder result = new();

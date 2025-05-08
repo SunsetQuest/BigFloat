@@ -1475,14 +1475,27 @@ Other:                                         |   |         |         |        
 
     public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
     {
-        // 1) zero and trivial cases
-        if (b == 0) { return Zero; }     // exactly 0
-        if (b == 1) { return a; }        // unchanged
-        if (b == -1) { return -a; }      // flip sign
-
-        // 2) extract unsigned magnitude and sign
+        // 1) extract unsigned magnitude and sign
         int sign = (b < 0) ? -1 : 1;
         uint ub = (uint)Math.Abs(b);
+
+        // 2) zero and trivial cases
+        if (ub <= 4)
+        {
+            return b switch
+            {
+                0 => Zero,         // exactly 0  
+                1 => a,            // unchanged  
+                -1 => -a,          // flip sign  
+                2 => a << 1,
+                -2 => -a << 1,
+                3 => (a << 1) + a,
+                -3 => (-a << 1) - a,
+                4 => a << 2,
+                -4 => -a << 2,
+                _ => throw new NotImplementedException(),
+            };
+        }
 
         // 3) fast path: if b == 2^k, just adjust exponent
         //    value * 2^k = DataBits * 2^k * 2^Scale = DataBits * 2^Scale+k
