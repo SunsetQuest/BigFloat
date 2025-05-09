@@ -22,9 +22,8 @@ public readonly partial struct BigFloat
     /// <param name="x">The input.</param>
     /// <param name="wantedPrecision">(Optional) The number of in-precision bits to return.</param>
     /// <returns>Returns the square root of x as a BigFloat.</returns>
-    public static BigFloat Sqrt(BigFloat x0, int wantedPrecision = 0)
+    public static BigFloat Sqrt(BigFloat x, int wantedPrecision = 0)
     {
-        BigFloat x = x0; // new BigFloat(x0.Int*8, x0._scale-3);
         if (wantedPrecision == 0)
         {
             wantedPrecision = x._size - GuardBits;
