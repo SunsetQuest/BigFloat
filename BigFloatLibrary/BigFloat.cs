@@ -15,13 +15,13 @@ namespace BigFloatLibrary;
 // BigFloat.cs (this file) - contains the main BigFloat struct and its core properties and methods.
 // BigIntegerTools.cs - contains helper methods for working with BigIntegers.
 // optional: (contains additional methods that are not part of the core)
-//   BigFloatExtended.cs 
 //   BigFloatCompareTo.cs
+//   BigFloatExtended.cs 
 //   BigFloatMath.cs
 //   BigFloatParsing.cs
+//   BigFloatRandom.cs
 //   BigFloatStringsAndSpans.cs
 //   Constants.cs
-//   Int128Tools.cs
 
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
