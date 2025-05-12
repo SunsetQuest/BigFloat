@@ -428,10 +428,10 @@ public static class Showcase
     private static void NthRoot_DRAFT_Stuff()
     {
         Stopwatch timer = Stopwatch.StartNew();
-        BigFloat result = NthRoot_INCOMPLETE_DRAFT(new BigFloat((ulong)3 << 60, -60), 3);
+        BigFloat result = NthRoot(new BigFloat((ulong)3 << 60, -60), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
-        result = NthRoot_INCOMPLETE_DRAFT(new BigFloat((BigInteger)3 << 200, -200), 3);
+        result = NthRoot(new BigFloat((BigInteger)3 << 200, -200), 3);
         Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         timer.Stop();
@@ -447,7 +447,7 @@ public static class Showcase
                     //timer = Stopwatch.StartNew();
                     timer.Restart();
                     timer.Start();
-                    BigFloat result2 = NthRoot_INCOMPLETE_DRAFT(bf, e);
+                    BigFloat result2 = NthRoot(bf, e);
                     timer.Stop();
                     if (i == 0)
                     {
@@ -457,7 +457,7 @@ public static class Showcase
             }
         }
 
-        Console.WriteLine(NthRoot_INCOMPLETE_DRAFT(100000000000, 5));
+        Console.WriteLine(NthRoot(100000000000, 5));
     }
 
 

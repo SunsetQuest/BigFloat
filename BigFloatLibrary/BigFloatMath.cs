@@ -101,20 +101,21 @@ public readonly partial struct BigFloat
                 return Zero; // technically more of a "NA".
             }
 
-            //bool expOverflows = value.Exponent < -1022 || value.Exponent > 1023;
             int removedExp = value.BinaryExponent;
 
             double valAsDouble = (double)new BigFloat(value.Mantissa, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+            //if (double.IsFinite(valAsDouble))
+            {
+                // perform operation  
+                double res = double.Pow(valAsDouble, exponent);
+                BigFloat tmp = (BigFloat)res;
+                value = SetPrecision(tmp, expectedFinalPrecision - GuardBits);
 
-            // perform operation  
-            double res = double.Pow(valAsDouble, exponent);
-            BigFloat tmp = (BigFloat)res;
-            value = SetPrecision(tmp, expectedFinalPrecision - GuardBits);
+                // restore Scale
+                value = new BigFloat(value.Mantissa, value.Scale + (removedExp * exponent), true);
 
-            // restore Scale
-            value = new BigFloat(value.Mantissa, value.Scale + (removedExp * exponent), true);
-
-            return value;
+                return value;
+            }
         }
 
         //Todo: can be improved without with using BigInteger.Pow(BigFloat,int)?
@@ -146,76 +147,65 @@ public readonly partial struct BigFloat
         return product;
     }
 
-    //Todo: Remove Draft State on NthRoot_INCOMPLETE_DRAFT
-    public static BigFloat NthRoot_INCOMPLETE_DRAFT(BigFloat value, int root)
+    public static BigFloat NthRoot(BigFloat value, int root)
     {
-        if (root < 0) //future: add support for negative roots
+        //future: add support for negative roots and values
+        if (root < 3)
         {
-            throw new ArgumentOutOfRangeException(nameof(root), "Root must be a positive number.");
+            if (root < 0) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be positive."); }
+            if (root == 0) { return OneWithAccuracy(value.Size); }
+            if (root == 1) { return value; }
+            if (root == 2) { return Sqrt(value); }
         }
-        if (value.Sign < 0) //future: add support for negative roots
+        //if (root > 20) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be below 22."); }
+        if (value.Mantissa.Sign <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), "Value must be a positive number.");
-        }
-
-        // Check if Value is zero.
-        if (value.Mantissa.Sign == 0)
-        {
-            // return Zero with a precision of value.Size
-            return new(BigInteger.Zero, value.Size, 0);
-        }
-
-        // Check for common roots... 
-        switch (root)
-        {
-            case 0:
-                return OneWithAccuracy(value.Size);
-            case 1:
-                return value;
+            if (value.Mantissa.Sign > 0) { throw new ArgumentOutOfRangeException(nameof(value), "Value must be positive."); }
+            // Check if Value is zero, and if so, return Zero with a precision of value.Size
+            if (value.Mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }
 
-        //int xLen = value._size;
-        //int rootSize = BitOperations.Log2((uint)root);
-        //int wantedPrecision = (int)BigInteger.Log2(value.DataBits) + rootSize; // for better accuracy for small roots add: "+ rootSize / Math.Pow(( root >> (rootSize - 3)), root) - 0.5"
+        // Use double's hardware to get the first 53-bits
+        long mantissa = (long)(BigInteger.Abs(value.Mantissa)
+                            >> (value._size - 53))
+                        | (1L << 52);
+        int valExp = value.BinaryExponent;
 
-        ////////// Let's remove value's scale (and just leave the last bit so scale is 0 or 1) ////////
-        int removedScale = value.Scale & ~1;
-        int newScale = value.Scale - removedScale;
-
-        ////////// Use double's hardware to get the first 53-bits ////////
-        long mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.BinaryExponent + 1023;
-
-        // if exp is oversized for double we need to pull out some exp:
-        if (Math.Abs(value.BinaryExponent) > 1020) // future: using 1020(not 1021) to be safe
+        int shift = 0;
+        if (Math.Abs(valExp) > 1021)
         {
-            // new: (1)Pre: pre=(value>>preShift)  (2)Root: result=pre^(1/root) (3)post: result/(2^(-preShift/root)
-            //double finalDiv = Math.Pow(2,-value.Exponent/root);
-            exp = 0;
+            shift = valExp - (valExp % root) + root;
+            valExp -= shift;
         }
-        double dubVal = BitConverter.Int64BitsToDouble(mantissa | (exp << 52));
-        ///////////////////////////////////////////////////////////////////////////////////////////////
-        // future: what about just casting from BigFloat to double?
-        double tempRoot = Math.Pow(dubVal, 1.0 / root);  //Math.Pow(tempX, 1.0/root)
-        ulong bits = (ulong)BitConverter.DoubleToInt64Bits(tempRoot);
-        ulong tempVal = (bits & 0x1fffffffffffffL) | (1UL << 52);
-        int tempExp = (int)((bits >> 52) & 0x7ffL) - 1023 - 20;
-        newScale += tempExp;
+        long expBits = (long)(valExp + 1023);
 
-        ////////////////// BigFloat Version ////////////////////////////
-        BigFloat x = new((BigInteger)tempVal << 100, newScale - 100, true);
+        // build double, take root
+        double dubVal = BitConverter.Int64BitsToDouble(mantissa | (expBits << 52));
+        double tempRoot = Math.Pow(dubVal, 1.0 / root);
 
-        // get a proper sized "root" (only needed for BigFloat version)
+        // back to BigFloat
+        BigFloat x = (BigFloat)tempRoot;
+        if (shift != 0)
+            x <<= (shift / root);
+
+        //x = SetPrecision(x, x.Size + 100); //hack because precision runs out in while loop below because it loops too many times
+        // future: if value._size<53, we just use the 53 double value and return
+
+        //Future: we could use Newton Plus here to right size
+
+        // get a proper sized "root"
         BigFloat rt = new((BigInteger)root << value.Size, -value.Size);
         BigFloat t = Pow(x, root) - value;
         BigFloat b = rt * Pow(x, root - 1); // Init the "b" and "t" for "oldX - (t / b)"
-        while (t._size > 3) //(!t.OutOfPrecision)
+        int lastSize;
+        do
         {
             BigFloat tb = t / b;
             x -= tb;
             b = rt * Pow(x, root - 1);
+            lastSize = t._size;
             t = Pow(x, root) - value;
-        }
+        } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 5);
         return x;
     }
 
