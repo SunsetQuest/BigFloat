@@ -1738,10 +1738,10 @@ Other:                                         |   |         |         |        
     public static explicit operator double(BigFloat value)
     {
         // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
-        if (value.IsOutOfPrecision)
-        {
-            return value.IsZero ? 0.0 : double.NaN;
-        }
+        //if (value.IsOutOfPrecision) { return value.IsZero ? 0.0 : double.NaN; }
+        if (value.IsZero) { return 0.0; }
+        
+
         // Aline and move input.val to show top 53 bits then pre-append a "1" bit.
         // was: long mantissa = (long)(value.DataBits >> (value._size - 53)) ^ ((long)1 << 52);
 
