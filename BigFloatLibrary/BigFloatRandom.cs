@@ -8,9 +8,10 @@ using System;
 using System.Numerics;
 
 namespace BigFloatLibrary;
+#nullable enable
 
 
-public static class BigFloatRandom
+public readonly partial struct BigFloat
 {
     private const int _defaultFractionBits = 128;       // enough for most uses
 
@@ -19,7 +20,7 @@ public static class BigFloatRandom
      * ------------------------------------------------------------ */
 
     /// <summary>Uniform or logarithmic sample in [min,max] (inclusive of min, exclusive of max).</summary>
-    public static BigFloat InRange(
+    public static BigFloat RandomInRange(
         BigFloat min,
         BigFloat max,
         bool logarithmic = false,
@@ -42,9 +43,9 @@ public static class BigFloatRandom
             int minExp = min.BinaryExponent;
             int maxExp = max.BinaryExponent;
             if (minExp == maxExp)               // small gap ⇒ fall back to linear
-                return InRange(min, max, false, rand);
+                return RandomInRange(min, max, false, rand);
 
-            return WithMantissaBits(
+            return RandomWithMantissaBits(
                 mantissaBits: Math.Max(min.Size, max.Size),
                 minBinaryExponent: minExp,
                 maxBinaryExponent: maxExp,
@@ -57,14 +58,14 @@ public static class BigFloatRandom
     /// Random BigFloat with exactly <paramref name="mantissaBits"/> (incl. guard bits) and
     /// an exponent in [minBinaryExponent,maxBinaryExponent].
     /// </summary>
-    public static BigFloat WithMantissaBits(
+    public static BigFloat RandomWithMantissaBits(
         int mantissaBits,
         int minBinaryExponent,
         int maxBinaryExponent,
         bool logarithmic = false,
         Random? rand = null)
     {
-        if (mantissaBits <= 0) throw new ArgumentOutOfRangeException(nameof(mantissaBits));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(mantissaBits);
         if (minBinaryExponent > maxBinaryExponent)
             (minBinaryExponent, maxBinaryExponent) = (maxBinaryExponent, minBinaryExponent);
 
