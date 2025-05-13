@@ -14,36 +14,6 @@ namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
 {
-    //////////////////////////////// MATH FUNCTIONS ////////////////////////////////////////////
-
-    /// <summary>
-    /// Calculates the square root of a big floating point number.
-    /// </summary>
-    /// <param name="x">The input.</param>
-    /// <param name="wantedPrecision">(Optional) The number of in-precision bits to return.</param>
-    /// <returns>Returns the square root of x as a BigFloat.</returns>
-    public static BigFloat Sqrt(BigFloat x, int wantedPrecision = 0)
-    {
-        if (wantedPrecision == 0)
-        {
-            wantedPrecision = x._size - GuardBits;
-        }
-
-        if (x.Mantissa == 0)
-        {
-            return new BigFloat((BigInteger)0, wantedPrecision, 0);
-        }
-
-        // Output should be (DataBits.GetBitLength()/2)+16 
-        int totalLen = x.Scale + (x._size - GuardBits);
-        int needToShiftInputBy = (2 * wantedPrecision) - (x._size - GuardBits) - (totalLen & 1);
-        BigInteger intPart = NewtonPlusSqrt(x.Mantissa << (needToShiftInputBy + GuardBits));
-        int retShift = ((totalLen + (totalLen > 0 ? 1 : 0)) / 2) - wantedPrecision;
-
-        BigFloat result = new(intPart, retShift, (int)intPart.GetBitLength());
-        return result;
-    }
-
     /// <summary>
     /// Returns the inverse of a BigFloat.
     /// </summary>
@@ -147,6 +117,118 @@ public readonly partial struct BigFloat
         return product;
     }
 
+    /// <summary>
+    /// Calculates the square root of a big floating point number.
+    /// </summary>
+    /// <param name="x">The input.</param>
+    /// <param name="wantedPrecision">(Optional) The number of in-precision bits to return.</param>
+    /// <returns>Returns the square root of x as a BigFloat.</returns>
+    public static BigFloat Sqrt(BigFloat x, int wantedPrecision = 0)
+    {
+        if (wantedPrecision == 0)
+        {
+            wantedPrecision = x._size - GuardBits;
+        }
+
+        if (x.Mantissa == 0)
+        {
+            return new BigFloat((BigInteger)0, wantedPrecision, 0);
+        }
+
+        // Output should be (DataBits.GetBitLength()/2)+16 
+        int totalLen = x.Scale + (x._size - GuardBits);
+        int needToShiftInputBy = (2 * wantedPrecision) - (x._size - GuardBits) - (totalLen & 1);
+        BigInteger intPart = NewtonPlusSqrt(x.Mantissa << (needToShiftInputBy + GuardBits));
+        int retShift = ((totalLen + (totalLen > 0 ? 1 : 0)) / 2) - wantedPrecision;
+
+        BigFloat result = new(intPart, retShift, (int)intPart.GetBitLength());
+        return result;
+    }
+
+    public static BigFloat CubeRoot(BigFloat value)
+    {
+        // Similar to square root but optimized for cube root
+        int targetPrecision = value.Size + GuardBits;
+
+        // Get initial approximation 
+        BigFloat x = NthRootAprox(value, 3);
+        x = SetPrecision(x, targetPrecision);
+
+        // Newton's method for cube root: x_{n+1} = x_n * (2 + value/(x_n^3)) / 3
+        int maxIterations = 30;
+
+        for (int i = 0; i < maxIterations; i++)
+        {
+            BigFloat xCubed = x * x * x;
+            BigFloat error = (xCubed - value) / value;
+
+            // Check convergence
+            if (error._size <= 5 || Math.Abs(error.BinaryExponent) <= -targetPrecision / 2)
+            {
+                break;
+            }
+
+            // Efficient update formula for cube root
+            x *= ((BigFloat.One * 2) - (xCubed - value) / (3 * x * x * value));
+        }
+
+        return SetPrecision(x, targetPrecision - GuardBits);
+    }
+
+    /// <summary>
+    /// Gets an initial approximation for the nth root using double precision arithmetic.
+    /// </summary>
+    public static BigFloat NthRootAprox(BigFloat value, int root)
+    {
+        // Use the binary exponent to create a better initial estimate
+        int binaryExp = value.BinaryExponent;
+
+        // Handle large exponents safely by scaling
+        long mantissa;
+        int adjustedExp;
+
+        if (Math.Abs(binaryExp) > 1020)
+        {
+            // Scale exponent to avoid double precision overflow/underflow
+            int expQuotient = binaryExp / root;
+            int expRemainder = binaryExp % root;
+
+            // Adjust to keep mantissa in normalized range
+            if (expRemainder < 0)
+            {
+                expQuotient--;
+                expRemainder += root;
+            }
+
+            // Extract top 53 bits for double precision calculation
+            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52);
+
+            // Compute adjusted exponent for our scaled value
+            adjustedExp = expRemainder + 1023;
+        }
+        else
+        {
+            // No scaling needed for normal range
+            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52);
+            adjustedExp = binaryExp + 1023;
+        }
+
+        // Build double from components and take root
+        double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
+        double approxRoot = Math.Pow(doubleValue, 1.0 / root);
+
+        // Convert approximation to BigFloat with extra precision
+        BigFloat initialEstimate = (BigFloat)approxRoot;
+
+        // Apply exponent scaling adjustment if we decomposed the exponent earlier
+        if (Math.Abs(binaryExp) > 1020)
+        {
+            initialEstimate <<= binaryExp / root;
+        }
+
+        return initialEstimate;
+    }
+
     public static BigFloat NthRoot(BigFloat value, int root)
     {
         //future: add support for negative roots and values
@@ -156,11 +238,16 @@ public readonly partial struct BigFloat
             if (root == 0) { return OneWithAccuracy(value.Size); }
             if (root == 1) { return value; }
             if (root == 2) { return Sqrt(value); }
+            if (root == 3) { return CubeRoot(value); }
+            // if (root == 4) { return Sqrt(Sqrt(value)); }
         }
         //if (root > 20) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be below 22."); }
         if (value.Mantissa.Sign <= 0)
         {
-            if (value.Mantissa.Sign > 0) { throw new ArgumentOutOfRangeException(nameof(value), "Value must be positive."); }
+            bool isNegative = value.Mantissa.Sign < 0;
+            bool rootIsEven = (root & 1) == 0;
+            if (isNegative && rootIsEven) { throw new ArgumentOutOfRangeException(nameof(value), "Value must be non-negative for even roots."); }
+            if (isNegative && !rootIsEven) { return -NthRoot(-value, root); }
             // Check if Value is zero, and if so, return Zero with a precision of value.Size
             if (value.Mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }

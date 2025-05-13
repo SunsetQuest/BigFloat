@@ -43,10 +43,10 @@ public static class Showcase
 
 
 
+        // NthRoot_Stuff();
         // NewtonNthRootPerformance(); return;
         // InverseTesting();
         // FindAdjustmentsForMethodToResolveIssue(); return;
-        // NthRoot_DRAFT_Stuff(); return;
         // Constant_Stuff();
         // Constant_Stuff2();
         // Pow_Stuff();
@@ -63,7 +63,6 @@ public static class Showcase
         // TryParse_Stuff();
         // Sqrt_Stuff();
         // CastingFromFloatAndDouble_Stuff();
-        // NthRoot_DRAFT_Stuff();
 
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
         // Initialize BigFloat numbers
@@ -341,7 +340,6 @@ public static class Showcase
 
             //////// Let run our algorithm and benchmark it. ////////
             sw.Restart();
-            //BigInteger result = BigIntegerTools.NewtonNthRootV5_3_31(ref val, n);
             BigInteger result = BigIntegerTools.NewtonNthRoot(ref val, n);
             sw.Stop();
 
@@ -425,14 +423,14 @@ public static class Showcase
         return lowerbound;
     }
 
-    private static void NthRoot_DRAFT_Stuff()
+    private static void NthRoot_Stuff()
     {
         Stopwatch timer = Stopwatch.StartNew();
         BigFloat result = NthRoot(new BigFloat((ulong)3 << 60, -60), 3);
-        Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
+        Console.WriteLine($"NthRoot {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         result = NthRoot(new BigFloat((BigInteger)3 << 200, -200), 3);
-        Console.WriteLine($"NthRootDRAFT {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
+        Console.WriteLine($"NthRoot {result} (Correct: 3^(1/3) -> 1.4422495703074083823216383107801)");
 
         timer.Stop();
         timer.Reset();
