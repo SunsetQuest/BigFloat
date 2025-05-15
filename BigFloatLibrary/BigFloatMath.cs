@@ -117,33 +117,38 @@ public readonly partial struct BigFloat
         return product;
     }
 
-    /// <summary>
-    /// Calculates the square root of a big floating point number.
-    /// </summary>
-    /// <param name="x">The input.</param>
-    /// <param name="wantedPrecision">(Optional) The number of in-precision bits to return.</param>
-    /// <returns>Returns the square root of x as a BigFloat.</returns>
+    /// <summary>Returns √x with <paramref name="wantedPrecision"/> data‑bits (ex‑guard‑bits).</summary>
     public static BigFloat Sqrt(BigFloat x, int wantedPrecision = 0)
     {
-        if (wantedPrecision == 0)
-        {
-            wantedPrecision = x._size - GuardBits;
-        }
+        // ---- 0. Quick exits ----------------------------------------------------
+        if (x.Sign < 0)
+            throw new ArgumentException("Square‑root of a negative BigFloat is undefined.", nameof(x));
 
-        if (x.Mantissa == 0)
-        {
-            return new BigFloat((BigInteger)0, wantedPrecision, 0);
-        }
+        if (x.Mantissa.IsZero)
+            return new BigFloat(BigInteger.Zero, 0, 0);
 
-        // Output should be (DataBits.GetBitLength()/2)+16 
-        int totalLen = x.Scale + (x._size - GuardBits);
-        int needToShiftInputBy = (2 * wantedPrecision) - (x._size - GuardBits) - (totalLen & 1);
-        BigInteger intPart = NewtonPlusSqrt(x.Mantissa << (needToShiftInputBy + GuardBits));
-        int retShift = ((totalLen + (totalLen > 0 ? 1 : 0)) / 2) - wantedPrecision;
+        if (wantedPrecision <= 0)
+            wantedPrecision = x._size - GuardBits;  
 
-        BigFloat result = new(intPart, retShift, (int)intPart.GetBitLength());
-        return result;
+        // ---- 1. Normalize the radicand so that we can take an *integer* √ -------
+        // totalLen   = total useful bits of the radicand (ex‑guard)
+        // needShift  = shift that makes totalLen even and gives us exactly
+        //              2*wantedPrecision bits before we call the integer sqrt.
+        int totalLen = x.Scale + (x._size - BigFloat.GuardBits);
+        int needShift = (wantedPrecision << 1)                // 2·prec
+                            - (x._size - BigFloat.GuardBits)  // minus existing bits
+                            - (totalLen & 1);                 // make len even
+
+        BigInteger xx = x.Mantissa << (needShift + BigFloat.GuardBits);
+
+        // ---- 2. Fast integer √ via the original Newton+ algorithm ---------------
+        BigInteger root = NewtonPlusSqrt(xx);
+
+        // ---- 3. Undo the scaling we did in step 1 and pack into BigFloat --------
+        int retShift = ((totalLen + 1) >> 1) - wantedPrecision; // == ⌈totalLen/2⌉ – prec
+        return new BigFloat(root, retShift, (int)root.GetBitLength());
     }
+
 
     public static BigFloat CubeRoot(BigFloat value)
     {
@@ -169,7 +174,7 @@ public readonly partial struct BigFloat
             }
 
             // Efficient update formula for cube root
-            x *= ((BigFloat.One * 2) - (xCubed - value) / (3 * x * x * value));
+            x *= ((One * 2) - (xCubed - value) / (3 * x * x * value));
         }
 
         return SetPrecision(x, targetPrecision - GuardBits);
@@ -201,7 +206,7 @@ public readonly partial struct BigFloat
             }
 
             // Extract top 53 bits for double precision calculation
-            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52);
+            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
 
             // Compute adjusted exponent for our scaled value
             adjustedExp = expRemainder + 1023;
@@ -209,7 +214,9 @@ public readonly partial struct BigFloat
         else
         {
             // No scaling needed for normal range
-            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52);
+            // Use double's hardware to get the first 53-bits
+            //mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52); //Todo: "| (1L << 52)" should be "^ (1L << 52)" everywhere
+            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
             adjustedExp = binaryExp + 1023;
         }
 
@@ -224,6 +231,11 @@ public readonly partial struct BigFloat
         if (Math.Abs(binaryExp) > 1020)
         {
             initialEstimate <<= binaryExp / root;
+        }
+
+        if (value._size < 53)
+        {
+            initialEstimate = SetPrecision(initialEstimate, value._size);
         }
 
         return initialEstimate;
@@ -252,10 +264,16 @@ public readonly partial struct BigFloat
             if (value.Mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }
 
+        //if (value._size < 53)
+        //{
+        //    return NthRootAprox(value, root);
+        //}
+
+
         // Use double's hardware to get the first 53-bits
         long mantissa = (long)(BigInteger.Abs(value.Mantissa)
-                            >> (value._size - 53))
-                        | (1L << 52);
+                        >> (value._size - 53))
+                    | (1L << 52);
         int valExp = value.BinaryExponent;
 
         int shift = 0;

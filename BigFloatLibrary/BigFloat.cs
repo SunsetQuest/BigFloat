@@ -15,13 +15,14 @@ namespace BigFloatLibrary;
 // BigFloat.cs (this file) - contains the main BigFloat struct and its core properties and methods.
 // BigIntegerTools.cs - contains helper methods for working with BigIntegers.
 // optional: (contains additional methods that are not part of the core)
-//   BigFloatCompareTo.cs
-//   BigFloatExtended.cs 
-//   BigFloatMath.cs
-//   BigFloatParsing.cs
+//   BigFloat.cs: This core file that can run on its own.
+//   BigFloatCompareTo.cs: contains additional string functions as well as the IComparable, IEquatable, and IFormattable interfaces.
+//   BigFloatExtended.cs: contains additional functions that do not fall into the other categories.
+//   BigFloatMath.cs: contains extended math functions like Log, Sqrt, Exp, etc.
+//   BigFloatParsing.cs: contains parsing functions for converting strings to BigFloat.
 //   BigFloatRandom.cs
-//   BigFloatStringsAndSpans.cs
-//   Constants.cs
+//   BigFloatStringsAndSpans.cs: contains functions related to converting BigFloat to strings/spans
+//   Constants.cs,ConstantInfo.cs,ConstantsCatalog.cs,ConstantVisualization.cs: contains features for pulling up constants. 
 
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
@@ -33,7 +34,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// The number of extra hidden guard bits in the mantissa to aid in better precision. 
     /// GuardBits are a fixed amount of least-significant sub-precise bits.
-    /// These bits help guard against some nuisances such as "7" * "9" being 60. 
+    /// These bits help guard against some nuisances such as "7" * "9" being "60". 
     /// </summary>
     public const int GuardBits = 32;  // 0-62, must be even (for sqrt)
 
@@ -50,7 +51,7 @@ public readonly partial struct BigFloat
     /// _size is 0 only when 'DataBits==0'
     /// When BigFloat is Zero, the size is zero.
     /// </summary>
-    internal readonly int _size; // { get; init; }
+    internal readonly int _size; 
 
     //future: Possible future feature
     ///// <summary>
@@ -1841,6 +1842,11 @@ Other:                                         |   |         |         |        
 
     ///////////////////////// COMPARE FUNCTIONS /////////////////////////
 
+    // Examples (Assuming GuardBit Size Constant is 4)
+    // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
+    // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
+    // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
+
     /// <summary>Returns an input that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)
     {
@@ -1849,10 +1855,6 @@ Other:                                         |   |         |         |        
 
         if (BinaryExponent < -1) { return other == 0; }
 
-        // Example assuming GuardBits is 4...
-        //  11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-        //  111.|1000  Scale ==0 - when scale is 0, it is always an integer
-        //  111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
         if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) { return false; } // too large by 1
 
         if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
@@ -1864,16 +1866,15 @@ Other:                                         |   |         |         |        
     public bool Equals(ulong other)
     {
         if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
+
         if (BinaryExponent < -1) { return other == 0; }
 
-        // Assuming GuardBits is 4...
-        // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-        // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
-        // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
-
         if ((Mantissa >> (GuardBits - 1)).Sign < 0) { return false; }   // is negative
-        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) return false; // too large by 1
+
+        if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) { return false; }// too large by 1
+
         if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
+
         return (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits) == other;
     }
 
@@ -1897,7 +1898,6 @@ Other:                                         |   |         |         |        
 
     /// <summary>
     /// Returns true if the parent's BigFloat value has the same value of the object considering their precisions. 
-    /// Source: .Net 9, BigInteger.Equals
     /// </summary>
     public override bool Equals([NotNullWhen(true)] object obj)
     {
@@ -1930,9 +1930,6 @@ Other:                                         |   |         |         |        
         return valid;
     }
 
-    /// <summary>
-    /// Debug-only method to assert validity on an instance.
-    /// </summary>
     [Conditional("DEBUG")]
     private void AssertValid()
     {
@@ -1940,10 +1937,6 @@ Other:                                         |   |         |         |        
         _ = Validate();
     }
 
-    /// <summary>
-    /// Debug-only static method to assert validity on a given instance.
-    /// </summary>
-    /// <param name="val">BigFloat instance to validate.</param>
     [Conditional("DEBUG")]
     private static void AssertValid(BigFloat val)
     {
