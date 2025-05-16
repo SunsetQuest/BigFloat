@@ -452,6 +452,13 @@ public class BigFloatTests
 
             BigFloat toTest = BigFloat.Pow(answer, root);
             BigFloat result = BigFloat.NthRoot(toTest, root);
+            if (result!= answer)
+            {
+                result = BigFloat.NthRoot(toTest, root);
+                result = BigFloat.NthRoot(toTest, root);
+                result = BigFloat.NthRoot(toTest, root);
+
+            }
             AreEqual(answer, result, $"Failed with input({toTest}) and root({root}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}");
         }
 

@@ -195,18 +195,14 @@ public readonly partial struct BigFloat
         if (Math.Abs(binaryExp) > 1020)
         {
             // Scale exponent to avoid double precision overflow/underflow
-            int expQuotient = binaryExp / root;
             int expRemainder = binaryExp % root;
 
             // Adjust to keep mantissa in normalized range
             if (expRemainder < 0)
             {
-                expQuotient--;
+                binaryExp -= root;
                 expRemainder += root;
             }
-
-            // Extract top 53 bits for double precision calculation
-            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
 
             // Compute adjusted exponent for our scaled value
             adjustedExp = expRemainder + 1023;
@@ -214,11 +210,11 @@ public readonly partial struct BigFloat
         else
         {
             // No scaling needed for normal range
-            // Use double's hardware to get the first 53-bits
-            //mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) | (1L << 52); //Todo: "| (1L << 52)" should be "^ (1L << 52)" everywhere
-            mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
             adjustedExp = binaryExp + 1023;
         }
+
+        // Use double's hardware to get the top 53-bits
+        mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
 
         // Build double from components and take root
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
@@ -227,7 +223,7 @@ public readonly partial struct BigFloat
         // Convert approximation to BigFloat with extra precision
         BigFloat initialEstimate = (BigFloat)approxRoot;
 
-        // Apply exponent scaling adjustment if we decomposed the exponent earlier
+
         if (Math.Abs(binaryExp) > 1020)
         {
             initialEstimate <<= binaryExp / root;
@@ -264,10 +260,10 @@ public readonly partial struct BigFloat
             if (value.Mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }
 
-        //if (value._size < 53)
-        //{
-        //    return NthRootAprox(value, root);
-        //}
+        if (value._size < 53)
+        {
+            return NthRootAprox(value, root);
+        }
 
 
         // Use double's hardware to get the first 53-bits

@@ -216,11 +216,11 @@ public readonly partial struct BigFloat
         { //special values
             if (double.IsNaN(value))
             {
-                ThrowInvalidInitializationException("Value is infinity or NaN");
+                ThrowInvalidInitializationException("Value is NaN");
             }
             else if (double.IsInfinity(value))
             {
-                ThrowInvalidInitializationException("Value is infinity or NaN");
+                ThrowInvalidInitializationException("Value is infinity");
             }
         }
         else if (exp != 0)
