@@ -220,21 +220,18 @@ public readonly partial struct BigFloat
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
         double approxRoot = Math.Pow(doubleValue, 1.0 / root);
 
-        // Convert approximation to BigFloat with extra precision
-        BigFloat initialEstimate = (BigFloat)approxRoot;
+        // Apply exponent scaling adjustment if we decomposed the exponent earlier
+        int leftShift = (Math.Abs(binaryExp) > 1020) ? binaryExp / root : 0;
+        int shrinkBy = (value._size < 53) ? 53 - value._size - GuardBits : 0;
 
+        long bits = BitConverter.DoubleToInt64Bits(approxRoot);
+        long mantissa2 = (bits & 0xfffffffffffffL) | 0x10000000000000L;
+        int exp = (int)((bits >> 52) & 0x7ffL);
 
-        if (Math.Abs(binaryExp) > 1020)
-        {
-            initialEstimate <<= binaryExp / root;
-        }
-
-        if (value._size < 53)
-        {
-            initialEstimate = SetPrecision(initialEstimate, value._size);
-        }
-
-        return initialEstimate;
+        BigInteger mantissa3 = new BigInteger(mantissa2) << (GuardBits- shrinkBy);
+        int scale = exp - 1023 - 52 + shrinkBy + leftShift;
+        int size = 53 + GuardBits - shrinkBy;
+        return new(mantissa3, scale, size);
     }
 
     public static BigFloat NthRoot(BigFloat value, int root)

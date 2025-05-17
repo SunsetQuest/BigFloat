@@ -439,9 +439,8 @@ public class BigFloatTests
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000", 17, "1.740507691102227226657656336976234286162875709131500385023860882477");
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 17, "1.74050769110222722665765633697623428616287570913150038502386088247740340403658733159875598810534066889542420507076258417480");
 
-        // Todo: mantissaBits under size of 35 hangs
         Random r = new(0x12345678);
-        for (int i = 35; i < 3000; i+=7)
+        for (int i = BigFloat.GuardBits; i < 3000; i+=7)
         for (int root = 1; root < 35; root++)
         {
             BigFloat answer = BigFloat.RandomWithMantissaBits(
@@ -452,13 +451,6 @@ public class BigFloatTests
 
             BigFloat toTest = BigFloat.Pow(answer, root);
             BigFloat result = BigFloat.NthRoot(toTest, root);
-            if (result!= answer)
-            {
-                result = BigFloat.NthRoot(toTest, root);
-                result = BigFloat.NthRoot(toTest, root);
-                result = BigFloat.NthRoot(toTest, root);
-
-            }
             AreEqual(answer, result, $"Failed with input({toTest}) and root({root}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}");
         }
 
