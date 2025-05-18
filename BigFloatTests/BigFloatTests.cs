@@ -943,7 +943,7 @@ public class BigFloatTests
         AreEqual(a.Mantissa, (BigInteger)27 << (hb - 15));
         AreEqual(15, a.Scale);
     }
-
+    
     [TestMethod]
     public void Verify_Log2Int()
     {
