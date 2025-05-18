@@ -88,9 +88,7 @@ public readonly partial struct BigFloat
             }
         }
 
-        //Todo: can be improved without with using BigInteger.Pow(BigFloat,int)?
-
-        // the expectedFinalPrecision >= 53 bits and Power >= 3, so pretty big.
+        // At this point the expectedFinalPrecision >= 53 bits and Power >= 3
 
         // for each bit in the exponent, we need to multiply in 2^position
         int powerBitCount = BitOperations.Log2(pwr) + 1;
@@ -330,10 +328,8 @@ public readonly partial struct BigFloat
         return double.Log2(val) + n.BinaryExponent;
     }
 
-    //Todo: untested (or maybe better should be merged with exponent as that seems to be what most classes/structs use like BigInteger and Int)
     /// <summary>
     /// Returns the Log2 of a BigFloat number as an integer. Log2 is equivalent to the number of bits between the point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)
-    /// Sign is ignored. Negative values will return the same value as their positive counterpart. Negative exponents are not valid in non-complex math however when using log2 a user might be expecting the number of bits from the radix point to the top bit.
     /// A zero input will follow BigInteger and return a zero, technically however Log2(0) is undefined. Log2 is often used to indicate size in bits so returning 0 with Log2(0) is in-line with this.
     /// </summary>
     /// <param name="n">The BigFloat input argument.</param>
