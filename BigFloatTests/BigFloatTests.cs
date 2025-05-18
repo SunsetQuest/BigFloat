@@ -945,6 +945,57 @@ public class BigFloatTests
     }
 
     [TestMethod]
+    public void Verify_Log2Int()
+    {
+        BigFloat testValue;
+        testValue = new("0b10110.1010000010011110011001100111111100111011110011001001000");
+        AreEqual(5 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b10000.00000000000000000|00000000");
+        AreEqual(5 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b1111.11111111111111111|11111111");
+        AreEqual(4 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b1|0000.0000000000000000000000000");
+        AreEqual(5 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b1|111.1111111111111111111111111");
+        AreEqual(4 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b100");
+        AreEqual(3 - 1, BigFloat.Log2Int(testValue));
+
+        testValue = new("0b111");
+        AreEqual(3 - 1, BigFloat.Log2Int(testValue));
+
+#if !DEBUG
+        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigFloat.Log2Int(0));
+        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigFloat.Log2Int(-1));
+        _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => BigFloat.Log2Int(new("-0b100")));
+#endif
+    }
+
+    [TestMethod]
+    public void Verify_SignVsIsZero()
+    {
+        // when Sign is zero should equal IsZero
+        BigFloat testValue = new("0b1|");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b|1");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b|01");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b-1|");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b-|1");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b-|01");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        //Todo: add more tests
+    }
+
+    [TestMethod]
     public void Verify_Log2Double()
     {
         BigFloat aaa = new("0b101"); // Initialize by String  2^59.5

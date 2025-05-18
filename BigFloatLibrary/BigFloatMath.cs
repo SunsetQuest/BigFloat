@@ -340,6 +340,10 @@ public readonly partial struct BigFloat
     /// <returns>Returns the Log2 of the value (or exponent) as an integer.</returns>
     public static int Log2Int(BigFloat n)
     {
+        if (n.Sign <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(n), "Log2 is undefined for zero or negative values.");
+        }
         return n.BinaryExponent;
     }
 
