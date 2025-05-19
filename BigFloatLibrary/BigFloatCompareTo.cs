@@ -75,60 +75,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return c;
     }
 
-    private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result) //Todo: move to BigFloat.cs since CompareTo() uses it
-    {
-        if (IsOutOfPrecision)
-        {
-            result = other.IsOutOfPrecision ? 0 : -other.Mantissa.Sign;
-            return true;
-        }
-
-        if (other.IsOutOfPrecision)
-        {
-            result = IsOutOfPrecision ? 0 : Mantissa.Sign;
-            return true;
-        }
-
-        // Lets see if we can escape early by just looking at the Sign.
-        if (Mantissa.Sign != other.Mantissa.Sign)
-        {
-            result = Mantissa.Sign;
-            return true;
-        }
-
-        // Lets see if we can escape early by just looking at the Exponent.
-        int expDifference = BinaryExponent - other.BinaryExponent;
-        if (Math.Abs(expDifference) > 1)
-        {
-            result = BinaryExponent.CompareTo(other.BinaryExponent) * Mantissa.Sign;
-            return true;
-        }
-
-        // At this point, the sign is the same, and the exp are within 1 bit of each other.
-
-        //There are three special cases when the Exponent is off by just 1 bit:
-        // case 1:  The smaller of the two rounds up to match the size of the larger and, therefore, can be equal(11 : 111 == 100 : 000)
-        // case 2:  The smaller of the two rounds up, but the larger one also rounds up, so they are again not equal(depends on #1 happening first)
-        // case 3:  Both round-up and are, therefore, equal
-
-        //If "this" is larger by one bit AND "this" is not in the format 10000000..., THEN "this" must be larger(or smaller if neg)
-        if (expDifference == 1 && !IsOneBitFollowedByZeroBits)
-        {
-            result = Mantissa.Sign;
-            return true;
-        }
-
-        // If "other" is larger by one bit AND "other" is not in the format 10000000..., THEN "other" must be larger(or smaller if neg)
-        if (expDifference == -1 && !other.IsOneBitFollowedByZeroBits)
-        {
-            result = -Sign;
-            return true;
-        }
-
-        result = 0;
-        return false;
-    }
-
     /// <summary> 
     /// Compares two values, including the out-of-precision guard bits, and returns:
     ///   -1 when this instance is less than <paramref name="other"/>
