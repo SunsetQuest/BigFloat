@@ -591,7 +591,7 @@ public readonly partial struct BigFloat
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
     /// <param name="includedGuardBits">(optional)The number of sub-precision guard bits that are included.</param>
     /// <returns>A BigFloat result of the input binary string.</returns>
-    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue) //Todo: change "int includedGuardBits = -1" " to 0
+    public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue)
     {
         ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
         //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
