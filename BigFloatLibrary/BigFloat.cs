@@ -89,7 +89,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns true if the value is essentially zero.
     /// </summary>
-    public bool IsZero => _size == 0 || ((_size + Scale) < GuardBits && _size < GuardBits);
+    public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
     
     // What is considered Zero: any mantissa that is LESS then 0|10000000, and also the shift results is less then 0|10000000.
     //   Mantissa   Scale Size Sz+Sc Precision  Zero
