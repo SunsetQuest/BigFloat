@@ -313,7 +313,7 @@ public static class Showcase
 
         valToTest = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
         xInvAns = BigInteger.Parse("106320008476723");
-        xInvRes = BigIntegerTools.NewtonNthRoot(ref valToTest, 18);
+        xInvRes = BigIntegerTools.NewtonNthRoot_Draft(ref valToTest, 18);
         if (xInvRes != xInvAns)
         {
             Console.WriteLine($"Res: {xInvRes} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {xInvRes.GetBitLength()})");
@@ -340,7 +340,7 @@ public static class Showcase
 
             //////// Let run our algorithm and benchmark it. ////////
             sw.Restart();
-            BigInteger result = BigIntegerTools.NewtonNthRoot(ref val, n);
+            BigInteger result = BigIntegerTools.NewtonNthRoot_Draft(ref val, n);
             sw.Stop();
 
 

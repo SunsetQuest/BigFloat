@@ -368,7 +368,7 @@ public static class BigIntegerTools
     /// <param name="outputLen">The requested output length. If positive, then this number of bits will be returned. If negative(default), then proper size is returned. If 0, then an output will be returned with the same number of digits as the input. </param>
     /// <param name="xLen">If available, size in bits of input x. If negative, x.GetBitLength() is called to find the value.</param>
     /// <returns>Returns the nth root(or radical) or x^(1/n)</returns>
-    public static BigInteger NewtonNthRoot(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
+    public static BigInteger NewtonNthRoot_Draft(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
     {
         if (x == 0) return 0; // The n-th root of 0 is 0.
         if (n == 0) return 1; // The 1st  root of x is x itself.
@@ -378,6 +378,27 @@ public static class BigIntegerTools
         if (xLen < 0)
         {
             xLen = (int)x.GetBitLength();
+        }
+
+        if (xLen < 53)
+        {
+            // If x is small enough, we can use the built-in double type for the calculation.
+            long result = (long)Math.Pow((double)x, 1.0 / n);
+            long check = result;
+            for (int i = 1; i < n; i++) check *= result;
+            if (x < check)
+            {
+                // If the result is too large, we need to decrement it.
+                result--;
+            }
+            else if (x > (check * result-1))
+            {
+                // If the result is too small, we need to increment it.
+                result++;
+            }
+
+            // todo: set length using outputLen
+            return (BigInteger)result;
         }
 
         // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
