@@ -39,7 +39,7 @@ public readonly partial struct BigFloat
     /// <param name="value">The base of the exponent.</param>
     /// <param name="exponent">The number of times value should be multiplied.</param>
     /// <param name="outPrecisionMatchesInput">When true, output precision is matched to input precision. When false, precision uses exponent rules based on "value^exp ± exp*error^(n-1)".</param>
-    public static BigFloat Pow(BigFloat value, int exponent, bool outPrecisionMatchesInput = false)
+    public static BigFloat Pow(BigFloat value, int exponent)
     {
         uint pwr = (uint)Math.Abs(exponent);
 
@@ -57,10 +57,6 @@ public readonly partial struct BigFloat
 
         // Used a Genetic Algorithm in Excel to figure out the formulas below (2 options)
         int expectedFinalPrecision = value._size;
-        if (outPrecisionMatchesInput)
-        {
-            expectedFinalPrecision += /*(int)(power / (1 - value)) -*/ BitOperations.Log2(pwr); // the first part is only for smaller values with large exponents
-        }
 
         // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
         if (expectedFinalPrecision < 53)
