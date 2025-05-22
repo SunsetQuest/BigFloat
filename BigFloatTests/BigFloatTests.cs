@@ -473,6 +473,57 @@ public class BigFloatTests
         }
     }
 
+
+    [TestMethod]
+    public void Verify_PerfectSquare_ReturnsExactRoot()
+    {
+        BigInteger x, root;
+
+        // 16^(1/2) = 4
+        x = new(16);
+        root = BigIntegerTools.NewtonNthRoot(x, 2);
+        Assert.AreEqual(new BigInteger(4), root);
+
+        // 27^(1/3) = 3
+        x = new(27);
+        root = BigIntegerTools.NewtonNthRoot(x, 3);
+        Assert.AreEqual(new BigInteger(3), root);
+
+        // 20^(1/2) ≈ 4.472… → floor(4.472) = 4
+        x = new(20);
+        root = BigIntegerTools.NewtonNthRoot(x, 2);
+        Assert.AreEqual(new BigInteger(4), root);
+
+        // (2^100)^(1/10) = 2^(100/10) = 2^10 = 1024
+        x = BigInteger.Pow(2, 100);
+        root = BigIntegerTools.NewtonNthRoot(x, 10);
+        Assert.AreEqual(BigInteger.Pow(2, 10), root);
+
+        for (long answer = 2; answer < 5000; answer++)
+        for (int e = 1; e < 200; e++)
+        {
+            BigInteger lowerInclusive = BigInteger.Pow(answer, e);
+            BigInteger upperExclusive = BigInteger.Pow(answer+1, e);
+            x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
+            root = BigIntegerTools.NewtonNthRoot(x, e);
+            Assert.AreEqual(answer, root);
+        }
+    }
+
+    ///// <summary>
+    ///// Verify that passing an explicit outputLen still returns the correct root.
+    ///// Here we ask for a 5‐bit result, but since the true root of 81^(1/4)=3 fits in fewer bits,
+    ///// the implementation should still return 3.
+    ///// </summary>
+    //[TestMethod]
+    //public void Verify_ExplicitOutputLength_IgnoredWhenTooSmall()
+    //{
+    //    BigInteger x = new BigInteger(81);
+    //    // request 5‐bit output (0–31), root is 3
+    //    BigInteger root = BigIntegerTools.NewtonNthRoot_Draft(ref x, 4, outputLen: 5);
+    //    Assert.AreEqual(new BigInteger(3), root);
+    //}
+
     [TestMethod]
     public void Verify_IsZero()
     {
@@ -992,7 +1043,7 @@ public class BigFloatTests
         AreEqual(testValue.Sign == 0, testValue.IsZero);
         testValue = new("0b-|01");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
-        //Todo: add more tests
+        // Todo: add more tests
     }
 
     [TestMethod]

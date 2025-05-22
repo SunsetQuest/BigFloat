@@ -2,6 +2,852 @@
 Note: also see "BigFloatNthRootNotes.txt"
 
    
+       =============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+   
+   
+
+    /// <summary>
+    /// Floor n-th root of a non-negative BigInteger (n ≥ 1).
+    /// Returns r such that rⁿ ≤ x &lt; (r+1)ⁿ.
+    /// </summary>
+    public static BigInteger NewtonNthRoot(BigInteger x, int n)
+    {
+        if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n), "n ≥ 1");
+        if (x.IsZero || x.IsOne || n == 1) return x;
+
+        if (x.Sign < 0)
+        {
+            if ((n & 1) == 0)
+                throw new ArgumentException("Even root of a negative number.");
+            return -NewtonNthRoot(BigInteger.Negate(x), n);
+        }
+
+        // Use double's hardware to get the first approximation
+        int bitLen = (int)x.GetBitLength();
+
+        // Handle large inputs by scaling down first
+        int shift = 0;
+        double xDouble;
+        if (bitLen > 1022)
+        {
+            // Scale down to avoid overflow in double conversion
+            //shift = bitLen - (bitLen % n) + 0/*n*/;
+            shift = 1 + ((bitLen - 1022) / n );
+            xDouble = (double)(x >> ((shift * n) /*- 53*/));
+        }
+        else
+        {
+            xDouble = (double)x;
+        }
+
+        // Initial approximation using double's hardware
+        double initialGuess = Math.Pow(xDouble, 1.0 / n);
+
+        // Convert back to BigInteger, with adjustment for large inputs
+        BigInteger r = (BigInteger)initialGuess;
+        r += 1;
+        r <<= shift;
+
+
+        /* ---------- 2. integer Newton iterations --------------------------- *
+         * rₖ₊₁ = ((n-1)·rₖ + x / rₖⁿ⁻¹) / n                                  *
+         * Each step roughly doubles the correct bits.                        */
+        int mainLoops = 0;
+        while (true)
+        {
+            BigInteger rToNMinus1 = BigInteger.Pow(r, n - 1);    // fast power below
+            BigInteger next = ((n - 1) * (r << 0) + x / (rToNMinus1)) / n;
+            if (next == r)
+            {
+                return r;
+            }
+            if (BigInteger.Abs(next - r) == 1)
+            {
+                r = BigInteger.Min(r, next);             // stay ≤ true root
+                break;
+            }
+            r = next;
+            mainLoops++;
+        }
+
+        /* ---------- 3. final correction by at most one step ---------------- */
+        //    Debug.WriteLine($"{0}  r:{ToBinaryString(r, 0)}, n:{n}, xLen:{x.GetBitLength()} mainLoops:{mainLoops}");
+        //if (mainLoops>15)
+        //{ }
+        //while (PowInt(r + 1, n) <= x) ++r;
+        //int counter2 = 0;
+        while (BigInteger.Pow(r + 1, n) <= x)
+        {
+            ++r;
+            //counter2++;
+        }
+        //if (counter2 > 0)
+        //{
+        //    Console.WriteLine($"tooLowwBy{counter2}  r:{ToBinaryString(r, 0)}, n:{n}, xLen:{x.GetBitLength()} mainLoops:{mainLoops}");
+        //}
+
+        //int counter = 0;
+        //while (BigInteger.Pow(r, n) > x)
+        //{
+        //    --r;
+        //    counter++;
+        //}
+        //if (counter > 3)
+        //{
+        //    //Console.WriteLine($"tooHighBy{counter}  r:{ToBinaryString(r, 0)}, n:{n}, xLen:{x.GetBitLength()} mainLoops:{mainLoops}");
+        //}
+
+        return r;
+    }
+
+
+
+       =============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+	
+	
+    private readonly struct BI
+    {
+        public readonly BigInteger Mant;   // odd (except zero)
+        public readonly int Exp;    // unbiased power-of-two
+
+        public BI(BigInteger m, int e) => (Mant, Exp) = (m, e);
+
+        /* normalize: strip all trailing zeros from mantissa */
+        private static BI Norm(BigInteger m, int e)
+        {
+            if (m.IsZero)
+                return new BI(BigInteger.Zero, 0);
+
+            // Try the 32‐bit fast path
+            const ulong LOW32 = 0xFFFF_FFFFUL;
+            ulong low = (ulong)(m & LOW32);
+
+            int tz;
+            if (low != 0)
+            {
+                // only if there's at least one 1 in the low 32 bits
+                tz = BitOperations.TrailingZeroCount(low);
+            }
+            else
+            {
+                // skip this path entirely
+                tz = 0;
+            }
+
+            // If no zeros found in low‐32, do the full BigInteger‐wide scan
+            if (tz == 0)
+            {
+                Span<byte> tmp = stackalloc byte[32];
+                m.TryWriteBytes(tmp, out int len, isUnsigned: false, isBigEndian: false);
+                int i = 0;
+                // count whole‐byte zeros
+                while (i < len && tmp[i] == 0) { tz += 8; i++; }
+                // then the remaining bits in the first nonzero byte
+                if (i < len)
+                    tz += BitOperations.TrailingZeroCount(tmp[i]);
+            }
+
+            // apply shift only if we actually counted any zeros
+            if (tz > 0)
+            {
+                m >>= tz;
+                e += tz;
+            }
+            return new BI(m, e);
+        }
+
+        /* implicit conversions */
+        public static implicit operator BI(BigInteger v) => Norm(v, 0);
+        public static implicit operator BI(double d)
+        {
+            long bits = BitConverter.DoubleToInt64Bits(d);
+            long rawE = (bits >> 52) & 0x7FF;
+            long mant = bits & 0xFFFFFFFFFFFFFL;
+            if (rawE != 0) mant |= 1L << 52;          // restore hidden 1
+            int exp = (int)rawE - 1023 - 52;
+            if (d < 0) mant = -mant;
+            return Norm(mant, exp);
+        }
+
+        /* floor to BigInteger */
+        public BigInteger Floor() =>
+            Exp >= 0 ? Mant << Exp : Mant >> -Exp;
+
+        /* basic arithmetic (all normalised) */
+        public static BI operator +(BI a, BI b)
+        {
+            if (a.Mant.IsZero) return b;
+            if (b.Mant.IsZero) return a;
+            if (a.Exp > b.Exp)
+            {
+                int s = a.Exp - b.Exp;
+                return Norm((a.Mant << s) + b.Mant, b.Exp);
+            }
+            else
+            {
+                int s = b.Exp - a.Exp;
+                return Norm(a.Mant + (b.Mant << s), a.Exp);
+            }
+        }
+        public static BI operator -(BI a, BI b) => a + new BI(-b.Mant, b.Exp);
+        public static BI operator *(BI a, BI b) =>
+            Norm(a.Mant * b.Mant, checked(a.Exp + b.Exp));
+
+        public static BI operator /(BI a, BI b)
+        {
+            int shift = (int)Math.Max(0,
+                b.Mant.GetBitLength() - a.Mant.GetBitLength()) + 8;
+            BigInteger q = (a.Mant << shift) / b.Mant;
+            return Norm(q, a.Exp - b.Exp - shift);
+        }
+        public static BI Pow(BI v, int k) =>
+            k switch
+            {
+                0 => new BI(BigInteger.One, 0),
+                1 => v,
+                _ => Norm(BigInteger.Pow(v.Mant, k), v.Exp * k)
+            };
+
+        public static BI operator <<(BI x, int s) => new BI(x.Mant, x.Exp + s);
+    }
+
+
+    /* integer √ for n == 2 fast-path */
+    private static BigInteger IntSqrt(BigInteger a)
+    {
+        if (a <= 1) return a;
+        int bl = (int)a.GetBitLength();
+        BigInteger x = BigInteger.One << ((bl + 1) >> 1);
+        BigInteger last;
+        do { last = x; x = (x + a / x) >> 1; } while (x < last);
+        return last;
+    }
+
+    /*────────────────────────────────────────────────────────────*
+     *      Floor n-th root  (n ≥ 1,  x ≥ 0)                      *
+     *────────────────────────────────────────────────────────────*/
+    public static BigInteger NewtonNthRoot_Draft6(BigInteger val, int n)
+    {
+        if (val.IsZero || val.IsOne || n == 1) return val;
+
+        if (val.Sign < 0)
+        {
+            if ((n & 1) == 0)
+                throw new ArgumentException("Even root of negative number");
+            return -NewtonNthRoot_Draft6(-val, n);
+        }
+        if (n == 2) return IntSqrt(val);
+        if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n));
+
+        /* 1. IEEE-754 seed ----------------------------------------------*/
+        int bl = (int)val.GetBitLength();
+        int shift = Math.Max(0, bl - 53);
+        double head = (double)(val >> shift);
+        BI x = (BI)Math.Pow(head, 1.0 / n);
+        if (shift != 0) x = x << (shift / n);
+
+        /* 2. Newton iteration -------------------------------------------*/
+        BI V = (BI)val;
+        BI rt = new BI(n, 0);
+
+    //Debug.WriteLine($"Before loop: x: {x.Mant} exp:{x.Exp}, V: {V.Mant} exp:{V.Exp}, rt: {rt.Mant} exp:{rt.Exp}");
+        while (true)
+        {
+            BI t = BI.Pow(x, n) - V;        // x^n − V
+            BI b = rt * BI.Pow(x, n - 1);   // n·x^(n-1)
+            BI delta = t / b;                   // correction
+
+            if (delta.Exp < -5000 || delta.Mant.IsZero) 
+                break;        // nothing changes → done
+            x -= delta;
+            //Debug.WriteLine($"After a loop: x: {x.Mant} exp:{x.Exp}, V: {V.Mant} exp:{V.Exp}, rt: {rt.Mant} exp:{rt.Exp}, t: {t.Mant} exp:{t.Exp}, b: {b.Mant} exp:{b.Exp}");
+        }
+
+        /* 3. Exact floor correction -------------------------------------*/
+        BigInteger r = x.Floor();
+        //while (BigInteger.Pow(r, n) > val) --r;
+        //while (BigInteger.Pow(r + 1, n) <= val) ++r;
+        if (BigInteger.Pow(r, n) > val) --r;
+        if (BigInteger.Pow(r, n) > val) --r;
+        if (BigInteger.Pow(r + 1, n) <= val) ++r;
+        if (BigInteger.Pow(r + 1, n) <= val) ++r;
+        return r;
+    }
+
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+
+
+    public static BigInteger NewtonNthRoot_Draft5(BigInteger x, int n) // tried removing BigFloat reference from last using Claude 3.7
+    {
+        if (x.IsZero || x.IsOne || n == 1) return x;
+
+        if (x.Sign < 0)
+        {
+            if ((n & 1) == 0)              // even root of negative radicand
+                throw new ArgumentException("Even root of a negative number.");
+            // use identity: (-a)^(1/n) = - a^(1/n)     for odd n
+            return -NewtonNthRoot_Draft5(BigInteger.Negate(x), n);
+        }
+
+        if (n < 3)
+        {
+            if (n <= 0) { throw new ArgumentOutOfRangeException(nameof(n), "Root must be greater then zero"); }
+            if (n == 1) { return x; }
+            if (n == 2) { return NewtonPlusSqrt(x); }
+        }
+
+        // Use double's hardware to get the first approximation
+        int bitLen = (int)x.GetBitLength();
+
+        // Handle large inputs by scaling down first
+        int shift = 0;
+        double xDouble;
+        if (bitLen > 1022)
+        {
+            // Scale down to avoid overflow in double conversion
+            shift = bitLen - (bitLen % n) + n;
+            xDouble = (double)(x >> (shift - 53));
+        }
+        else
+        {
+            xDouble = (double)x;
+        }
+
+        // Initial approximation using double's hardware
+        double initialGuess = Math.Pow(xDouble, 1.0 / n);
+
+        // Convert back to BigInteger, with adjustment for large inputs
+        BigInteger r = (BigInteger)initialGuess;
+        if (shift > 0)
+        {
+            r <<= (shift / n);
+        }
+
+        // Ensure we don't start with zero
+        if (r.IsZero) r = BigInteger.One;
+
+        // Newton's method: r_{i+1} = r_i - f(r_i)/f'(r_i)
+        // For nth root: f(r) = r^n - x
+        // f'(r) = n*r^(n-1)
+        // So: r_{i+1} = r_i - (r_i^n - x)/(n*r_i^(n-1))
+        // Simplified: r_{i+1} = ((n-1)*r_i^n + x)/(n*r_i^(n-1))
+        // Further: r_{i+1} = ((n-1)*r_i + x/r_i^(n-1))/n
+
+        BigInteger prev;
+        do
+        {
+            prev = r;
+
+            // Calculate r^(n-1)
+            BigInteger rPowNMinus1 = BigInteger.Pow(r, n - 1);
+
+            // Calculate the next approximation
+            r = ((n - 1) * r + x / rPowNMinus1) / n;
+
+        } while (r < prev); // Continue until we converge or start oscillating
+
+        // Verify and adjust the result
+        while (BigInteger.Pow(r, n) > x) --r;
+        while (BigInteger.Pow(r + 1, n) <= x) ++r;
+
+        return r;
+    }
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+    public static BigInteger NewtonNthRoot_Draft4(BigInteger val, int n)
+    {
+        if (val.IsZero || val.IsOne || n == 1) return val;
+
+        if (val.Sign < 0)
+        {
+            if ((n & 1) == 0)              // even root of negative radicand
+                throw new ArgumentException("Even root of a negative number.");
+            // use identity: (-a)^(1/n) = - a^(1/n)     for odd n
+            return -NewtonNthRoot_Draft4(BigInteger.Negate(val), n);
+        }
+
+        if (n < 3)
+        {
+            if (n <= 0) { throw new ArgumentOutOfRangeException(nameof(n), "Root must be greater then zero"); }
+            if (n == 1) { return val; }
+            if (n == 2) { return NewtonPlusSqrt(val); }
+        }
+
+        BigFloat bfVal = (BigFloat)val;
+
+
+        // Use double's hardware to get the first 53-bits
+        long mantissa = (long)(BigInteger.Abs(bfVal.Mantissa)
+                        >> (bfVal._size - 53))
+                    | (1L << 52);
+        int valExp = bfVal.BinaryExponent;
+
+        int shift = 0;
+        if (Math.Abs(valExp) > 1021)
+        {
+            shift = valExp - (valExp % n) + n;
+            valExp -= shift;
+        }
+        long expBits = (long)(valExp + 1023);
+
+        // build double, take root
+        double dubVal = BitConverter.Int64BitsToDouble(mantissa | (expBits << 52));
+        double tempRoot = Math.Pow(dubVal, 1.0 / n);
+
+        // back to BigFloat
+        BigFloat x = (BigFloat)tempRoot;
+        if (shift != 0)
+            x <<= (shift / n);
+
+        //x = SetPrecision(x, x.Size + 100); //hack because precision runs out in while loop below because it loops too many times
+        // future: if value._size<53, we just use the 53 double value and return
+
+        //Future: we could use Newton Plus here to right size
+
+        // get a proper sized "root"
+        BigFloat rt = new((BigInteger)n << bfVal.Size, -bfVal.Size);
+        BigFloat t = BigFloat.Pow(x, n) - bfVal;
+        BigFloat b = rt * BigFloat.Pow(x, n - 1); // Init the "b" and "t" for "oldX - (t / b)"
+        int lastSize;
+        do
+        {
+            BigFloat tb = t / b;
+            x -= tb;
+            b = rt * BigFloat.Pow(x, n - 1);
+            lastSize = t._size;
+            t = BigFloat.Pow(x, n) - bfVal;
+        } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 5);
+        return (BigInteger)x.Floor();
+    }
+
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+
+
+    /// <summary>
+    /// Floor n-th root:  r = ⌊ x^(1/n) ⌋   (non-negative x, n ≥ 1)
+    /// </summary>
+    public static BigInteger NewtonNthRoot_Draft3(BigInteger x, int n)
+    {
+        if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n));
+        if (x.IsZero || x.IsOne || n == 1) return x;
+
+        // ---------- ✓ 1)  guaranteed *under-estimate* seed --------------------
+        //
+        //   rootBits = ⌊bitLen / n⌋   ⇒   2^rootBits ≤ x^(1/n) < 2^(rootBits+1)
+        //
+        //   Using the lower bound (= ‘1’ followed by rootBits zeros) avoids the
+        //   deadly  q = 0  case entirely, even for very large n.
+        // ---------------------------------------------------------------------
+        int bitLen = (int)x.GetBitLength();                  // .NET 8; helper below for 6/7
+        int rootBits = (bitLen - 1) / n;                  // floor
+        BigInteger r = BigInteger.One << rootBits;        // 2^rootBits  (seed)
+
+        // ---------- ✓ 2)  fast Newton with *truncated* power ------------------
+        //
+        //   guardBits = how many extra high bits of r^(n-1) to keep. 32 is very
+        //   safe; 16 is usually fine and a bit faster.
+        // ---------------------------------------------------------------------
+        const int GUARD_BITS = 32;
+        int targetBits = rootBits + 2;                     // root grows only a hair
+
+        while (true)
+        {
+            // ---- only the top (targetBits+GUARD_BITS) bits of r^(n-1) ------
+            BigInteger denomHi = PowMostSignificantBits(
+                                    r, n - 1,
+                                    out int shift,
+                                    (int)r.GetBitLength(),
+                                    targetBits + GUARD_BITS,
+                                    extraAccurate: false);
+
+            BigInteger q = (x >> shift) / denomHi;         // q ≥ 1 by construction
+            BigInteger next = ((n - 1) * r + q) / n;
+
+            if (next == r || BigInteger.Abs(next - r) <= 1) { r = next; break; }
+            r = next;
+        }
+
+        // ---------- ✓ 3)  make sure it really is the floor --------------------
+        while (BigInteger.Pow(r, n) > x) --r;
+        while (BigInteger.Pow(r + 1, n) <= x) ++r;
+        return r;
+    }
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+    /// <summary>
+    /// Floor-value integer n-th root of a (possibly huge) non-negative BigInteger.
+    /// Negative radicands are allowed *iff* n is odd; otherwise an exception is raised.
+    /// Returned r satisfies rⁿ ≤ x &lt; (r+1)ⁿ.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">n &lt; 1</exception>
+    /// <exception cref="ArgumentException">even root of a negative number</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigInteger NewtonNthRoot_Draft2(BigInteger x, int n)
+    {
+        if (n <= 0)                        // 0-th root is undefined
+            throw new ArgumentOutOfRangeException(nameof(n), "n must be > 0");
+
+        // ---------------------------------------------------------------------
+        // Trivial & sign handling
+        // ---------------------------------------------------------------------
+        if (x.IsZero || x.IsOne || n == 1) return x;
+        if (x.Sign < 0)
+        {
+            if ((n & 1) == 0)              // even root of negative radicand
+                throw new ArgumentException("Even root of a negative number.");
+            // use identity: (-a)^(1/n) = - a^(1/n)     for odd n
+            return -NewtonNthRoot_Draft2(BigInteger.Negate(x), n);
+        }
+
+        // ---------------------------------------------------------------------
+        // FAST PATH — everything that fits cleanly in an IEEE-754 double
+        // ---------------------------------------------------------------------
+        //   double's mantissa = 53 bits, exponent range ±1023.
+        //   We only enter the branch when x   ≤  2^1022  (well inside the range)
+        //   and log2(x)/n  ≤  52, so the root itself fits in 53 bits and is exact.
+        // ---------------------------------------------------------------------
+        int bitLen = (int)x.GetBitLength();                 // .NET 8 convenience API
+        if (bitLen <= 1022)
+        {
+            double dx = (double)x;
+            double root0 = Math.Pow(dx, 1.0 / n);
+
+            // Convert → integer, then correct by at most ±1 to guarantee floor.
+            double root1 = double.BitIncrement(root0);
+            ulong guess = (ulong)root1; //  Math.Floor(root1 + 0.5);       // nearest int
+            BigInteger r1 = guess;
+
+            // One step of paranoid correction (rarely needed, but free):
+            //if (BigInteger.Pow(r1, n) > x)                     // too large –—
+            //{
+            //    do { 
+            //        --r1; 
+            //    } while (BigInteger.Pow(r1, n) > x);
+            //}
+            //else                                              // maybe too small?
+            //{
+            //    while (BigInteger.Pow(r1 + 1, n) <= x) 
+            //        ++r1;
+            //}
+            return r1;
+        }
+
+        // ---------------------------------------------------------------------
+        // BIG INPUTS —  Stage 1: FPU-seed based on the top 53 bits of x
+        // ---------------------------------------------------------------------
+        // Pull the 53 most significant bits by shifting x right.
+        // Ensures we never overflow the double conversion.
+        // ---------------------------------------------------------------------
+        int shift = bitLen - 53;
+        BigInteger top = x >> shift;                  // 53-bit slice, 1 ≤ top &lt; 2^53
+        double dTop = (double)top;
+        double dSeed = Math.Pow(dTop, 1.0 / n);    // n-th root of the slice
+
+        // Scale the seed back:  root(x)  ≈  root(top) · 2^(shift/n)
+        // Math.ScaleB is .NET 7+ (same as scalbn / ldexp)
+#if NET7_0_OR_GREATER
+        double scaled = Math.ScaleB(dSeed, shift / n);
+#else
+        double scaled = dSeed * Math.Pow(2.0, shift / (double)n);
+#endif
+        BigInteger r0 = (BigInteger)scaled;
+        if (r0.IsZero) r0 = BigInteger.One;           // avoid degenerate start
+
+        // ---------------------------------------------------------------------
+        // Stage 2:  Quadratic Newton–Raphson in Z ——
+        // r_{k+1} = ((n-1)·r_k + ⌊x / r_k^{n-1}⌋) / n
+        // Each step roughly doubles the correct bits.
+        // ---------------------------------------------------------------------
+        BigInteger r = r0;
+        int xBits = (int)x.GetBitLength();                 // constant through the loop
+        int target = (xBits + n - 1) / n;              // root size in bits
+
+        while (true)
+        {
+            // --- compute only the top 'target+guardBits' bits of  r^(n-1) -----------
+            int rBits = (int)r.GetBitLength();
+            int wantedBits = target + 32; // 32 guardBits
+
+            BigInteger powHi = PowMostSignificantBits(
+                                    r, n - 1,
+                                    out int powShift,           // total bits removed
+                                    rBits,                      // input size
+                                    wantedBits,                 // keep only the top bits
+                                    extraAccurate: false);
+
+            // Instead of  x / (powHi << powShift)  do   (x >> powShift) / powHi.
+            // When powShift ≥ xBits the quotient is 0 and the root is 1; we can stop early,
+            // but that never happens once r is within a couple of iterations of the answer.
+            BigInteger xShr = x >> powShift;
+            BigInteger q = xShr / powHi;                 // ≈ x / r^(n-1)
+
+            if (q.IsZero) q = BigInteger.One;               // keep Newton well defined
+
+            BigInteger next = ((n - 1) * r + q) / n;        // Newton–Raphson step
+
+            // --- convergence test ( ±1 is enough ) -----------------------------------
+            if (BigInteger.Abs(next - r) <= 0)
+            {
+                r = next;
+                break;
+            }
+            r = next;
+        }
+
+        // ---------- single exact correction pass -------------------------------------
+        //if (BigInteger.Pow(r, n) > x)       // may happen if q was 1 too small
+        //    --r;
+        //else
+        //  while (BigInteger.Pow(r + 1, n) <= x) 
+        //    ++r;
+
+        if (BigInteger.Pow(r + 1, n) <= x)
+            ++r;
+
+        return r;
+    }
+
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+    /// <summary>
+    /// Calculates the nth root of a BigInteger. i.e. x^(1/n)
+    /// </summary>
+    /// <param name="x">The input value(or radicand) to find the nth root of.</param>
+    /// <param name="n">The input nth root(or index) that should be used.</param>
+    /// <param name="outputLen">The requested output length. If positive, then this number of bits will be returned. If negative(default), then proper size is returned. If 0, then an output will be returned with the same number of digits as the input. </param>
+    /// <param name="xLen">If available, size in bits of input x. If negative, x.GetBitLength() is called to find the value.</param>
+    /// <returns>Returns the nth root(or radical) or x^(1/n)</returns>
+    public static BigInteger NewtonNthRoot_Draft1(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 0) return 1; // The 1st  root of x is x itself.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        if (xLen < 0)
+        {
+            xLen = (int)x.GetBitLength();
+        }
+
+        // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
+        if (outputLen <= 0)
+        {
+            outputLen = (outputLen == 0) ? xLen : ((int)BigInteger.Log2(x) / n) + 1;
+        }
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = Math.Max(0, ((xLen+ n) - 1024) / n);
+        BigInteger scaledX = x >> (n * scaleDownCount);
+        
+        ////////// Use double's hardware to get the first 53-bits ////////
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+        ulong bits = BitConverter.DoubleToUInt64Bits(initialGuess);
+        ulong mantissa = (bits & 0xfffffffffffffL) | (1L << 52);
+
+        // Return if we have enough bits.
+        //if (outputLen < 48) return mantissa >> (53 - outputLen);
+        if (outputLen < 48 && scaleDownCount < 2) // && xLen < 53)
+        {
+            const int LOWEST_BITS_TO_IGNORE = 3;
+            ulong result = (ulong)initialGuess;
+            int bitsToCheck = 51- LOWEST_BITS_TO_IGNORE - (int)ulong.Log2(result);
+            ulong mask = ((1UL << bitsToCheck) - 1);
+            ulong maskVal = (bits >> LOWEST_BITS_TO_IGNORE) & mask;
+
+            result <<= scaleDownCount;
+
+            if (scaleDownCount > 0)
+            {
+                BigInteger check = BigInteger.Pow(result, n);
+                if (x > check)
+                {
+                    result++;
+                    check = BigInteger.Pow(result, n);
+                    if (x > check)
+                        result++;
+                }
+            }
+            else if ((maskVal- mask) == 0) // .1111111111
+            {
+                BigInteger check = BigInteger.Pow(result, n);
+                if (x > check)
+                    result++;
+            }
+            else if (maskVal == 0)
+            {
+                //result <<= scaleDownCount;
+                //UInt128 check = PowerLower128(result + 1, n);
+                //if (x >= check)
+                //    result--;
+            }
+
+            // todo: set length using outputLen
+            return result;// >> (53 - outputLen);
+        }
+
+        //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
+
+        /////////// Lets try 128 bit type ////////////
+        UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
+
+        UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
+        UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
+
+        // Todo: next line should use "pow4>>127"??
+        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen)); // 5-> 6 -?
+        Int128 denominator2 = n * (Int128)(pow3 >> 89);
+
+        BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
+        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
+        if (outputLen < 100) // 100?
+        {
+            return val >> (84 - outputLen); //scaleDownCount??
+        }
+
+        int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
+        if (UInt128.Log2(pow4) == 126)
+        {
+            tempShift++;
+        }
+        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
+        val <<= tempShift;        // should be 241 now
+
+        /////////// Lets use full BigInteger ////////////
+        BigInteger lastVal = 0;
+        int loops = 2;
+        int ballparkSize = (int)val.GetBitLength();//200;
+        while (val != lastVal) // Repeat until convergence
+        {
+            int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
+            lastVal = val;
+            int valSize = (int)val.GetBitLength();
+            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out _ /*int shifted*/, valSize, valSize - reduceBy);
+            BigInteger numerator = (pow * (val >> reduceBy)) - (x >> ((2 * reduceBy) - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
+            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
+            val = ((val >> (reduceBy +0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
+            loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
+            ballparkSize *= 2;
+        }
+        Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
+        Console.WriteLine("Grew by: " + (val.GetBitLength() - xLen));
+
+        return val;
+    }
+    
+	=============================== 5-21-2025 ========================================================
+	//  Source Helper: ChatGPT 3o 5/21/2025
+	
+    public static BigInteger NewtonNthRoot_Draft0(ref BigInteger x, int n, int outputLen = -1, int xLen = -1)
+    {
+        if (x == 0) return 0; // The n-th root of 0 is 0.
+        if (n == 0) return 1; // The 1st  root of x is x itself.
+        if (n == 1) return x; // The 1st  root of x is x itself.
+        //if (n == 2) return NewtonPlusSqrt(x); // Use the existing method for square root.
+
+        if (xLen < 0)
+        {
+            xLen = (int)x.GetBitLength();
+        }
+
+        // If requested outputLen is neg then set to proper size, if outputLen==0 then use maintain precision.
+        if (outputLen <= 0)
+        {
+            outputLen = (outputLen == 0) ? xLen : ((int)BigInteger.Log2(x) / n) + 1;
+        }
+
+        // If xLen is over 1023 bits, reduce the size of x to fit in a double
+        int scaleDownCount = Math.Max(0, ((xLen - 1024) / n) + 0);
+        BigInteger scaledX = x >> (n * scaleDownCount);
+
+        ////////// Use double's hardware to get the first 53-bits ////////
+        double initialGuess = Math.Pow((double)scaledX, 1.0 / n);
+        long bits = BitConverter.DoubleToInt64Bits(initialGuess);
+        long mantissa = (bits & 0xfffffffffffffL) | (1L << 52);
+
+        // Return if we have enough bits.
+        //if (outputLen < 48) return mantissa >> (53 - outputLen);
+        if (outputLen < 48)
+        {
+
+            int bitsToRemove = 53 - outputLen;
+            long mask = ((long)1 << (bitsToRemove + 1)) - 1;
+            long removedBits = (mantissa + 1) & mask;
+            if (removedBits == 0)
+            {
+                mantissa++;
+            }
+
+            return mantissa >> (53 - outputLen);
+            //(mantissa, 53 - outputLen); 
+        }
+
+        //BigInteger val = new BigInteger(initialGuess); Console.WriteLine(val.GetBitLength() + " + " + scaleDownCount + " = " + (val.GetBitLength() + scaleDownCount)); Console.WriteLine($"{BigIntegerToBinaryString(val)}[{val.GetBitLength()}] << {scaleDownCount} val1");
+
+        //////////////////////////////////////////////////////////////
+        UInt128 val2 = ((UInt128)mantissa) << (127 - 52);
+
+        UInt128 pow3 = Int128Tools.PowerFast(val2, n - 1);
+        UInt128 pow4 = Int128Tools.MultiplyHighApprox(pow3, val2);
+
+        // Todo: next line should use "pow4>>127"??
+        Int128 numerator2 = (Int128)(pow4 >> 5) - (Int128)(x << ((int)UInt128.Log2(pow4) - 4 - xLen));
+        Int128 denominator2 = n * (Int128)(pow3 >> 89);
+
+        BigInteger val = (Int128)(val2 >> 44) - (numerator2 / denominator2);
+        //Console.WriteLine((BigIntegerToBinaryString(val2) + " val1")); Console.WriteLine((BigIntegerToBinaryString(pow3) + " powNMinus1")); Console.WriteLine((BigIntegerToBinaryString(numerator2) + " numerator2")); Console.WriteLine((BigIntegerToBinaryString(denominator2)+ " denominator")); Console.WriteLine((BigIntegerToBinaryString(val) + " val2"));
+        if (outputLen < 100) // 100?
+        {
+            return val >> (84 - outputLen);
+        }
+
+        int tempShift = outputLen - (int)val.GetBitLength() + 0;  // FIX(for some): CHANGE +0 to +1
+        if (UInt128.Log2(pow4) == 126)
+        {
+            tempShift++;
+        }
+        //Console.WriteLine(val.GetBitLength()+ " << " + tempShift + " = " + ((int)val.GetBitLength() + tempShift));
+        val <<= tempShift;        // should be 241 now
+
+        //////////////////////////////////////////////////////////////
+        BigInteger lastVal = 0;
+        int loops = 2;
+        int ballparkSize = 200;
+        while (val != lastVal) // Repeat until convergence
+        {
+            int reduceBy = Math.Max(0, outputLen - ballparkSize) + 1;
+            lastVal = val;
+            int valSize = (int)val.GetBitLength();
+            BigInteger pow = BigIntegerTools.PowMostSignificantBits(val, n - 1, out _ /*int shifted*/, valSize, valSize - reduceBy);
+            BigInteger numerator = (pow * (val >> reduceBy)) - (x >> ((2 * reduceBy) - valSize)); // i: -200 j: 0  OR  i: -197 j: 2
+            //Console.WriteLine(BigIntegerToBinaryString(((pow * (val >> (reduceBy * 1)))))); Console.WriteLine(BigIntegerToBinaryString((x >> (0 + reduceBy * 1)))); Console.WriteLine(BigIntegerToBinaryString(numerator)); Console.WriteLine(BigIntegerToBinaryString(x >> shifted));
+            val = ((val >> (reduceBy + 0)) - (numerator / (n * pow))) << reduceBy; // FIX: CHANGE +0 to +2
+            loops++; // Console.WriteLine($"{BigIntegerToBinaryString(val)} loop:{loops}");
+            ballparkSize *= 2;
+        }
+        Console.WriteLine($"======== Loops:{loops} == ballparkSize{ballparkSize}/{val.GetBitLength()} =========");
+        Console.WriteLine("Grew by: " + (val.GetBitLength() - xLen));
+
+        return val;
+    }
+
+   
+======================= 2/1/2025? ==================================   
+   
     /// <summary>
     /// Calculates the nth root of a BigInteger. i.e. x^(1/n)
     /// </summary>
