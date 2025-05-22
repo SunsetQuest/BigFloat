@@ -365,8 +365,9 @@ public static class BigIntegerTools
 
     /// <summary>
     /// Floor n-th root of a non-negative BigInteger (n ≥ 1).
-    /// Returns r such that rⁿ ≤ x &lt; (r+1)ⁿ.
     /// </summary>
+	/// <param name="x">The input value(or radicand) to find the nth root of.</param>
+    /// <param name="n">The input nth root(or index) that should be used.</param>
     public static BigInteger NewtonNthRoot(BigInteger x, int n)
     {
         if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n), "n ≥ 1");
@@ -389,7 +390,7 @@ public static class BigIntegerTools
         {
             // Scale down to avoid overflow in double conversion
             //shift = bitLen - (bitLen % n) + 0/*n*/;
-            shift = 1 + ((bitLen - 1022) / n );
+            shift = 1 + ((bitLen - 1022) / n);
             xDouble = (double)(x >> ((shift * n) /*- 53*/));
         }
         else
@@ -433,22 +434,22 @@ public static class BigIntegerTools
         //{ }
         //while (PowInt(r + 1, n) <= x) ++r;
         //int counter2 = 0;
-        while (BigInteger.Pow(r + 1, n) <= x)
-        {
-            ++r;
-            //counter2++;
-        }
+        //while (BigInteger.Pow(r + 1, n) <= x)
+        //{
+        //    ++r;
+        //    counter2++;
+        //}
         //if (counter2 > 0)
         //{
         //    Console.WriteLine($"tooLowwBy{counter2}  r:{ToBinaryString(r, 0)}, n:{n}, xLen:{x.GetBitLength()} mainLoops:{mainLoops}");
         //}
 
         //int counter = 0;
-        //while (BigInteger.Pow(r, n) > x)
-        //{
-        //    --r;
-        //    counter++;
-        //}
+        while (BigInteger.Pow(r, n) > x)
+        {
+            --r;
+            //counter++;
+        }
         //if (counter > 3)
         //{
         //    //Console.WriteLine($"tooHighBy{counter}  r:{ToBinaryString(r, 0)}, n:{n}, xLen:{x.GetBitLength()} mainLoops:{mainLoops}");
@@ -457,7 +458,7 @@ public static class BigIntegerTools
         return r;
     }
 
-    
+
     //future: Create BigFloat version of PowMostSignificantBits()
 
     /// <summary>

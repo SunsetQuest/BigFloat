@@ -226,9 +226,9 @@ public static class Showcase
                     valToTest += 1 + (valToTest / 23); //(valToTest >> 5); //(valToTest / 100003); 23 127 251 503 997 7727  100003
                     int valLenth = (int)valToTest.GetBitLength();
                     if (valLenth < 0) continue;
-                    if (valLenth > 10000 && !stoppedAready) 
-                    { 
-                        DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy); 
+                    if (valLenth > 10000 && !stoppedAready)
+                    {
+                        DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy);
                         _ = Console.ReadKey();
                         stoppedAready = true;
                     }
@@ -351,13 +351,14 @@ public static class Showcase
                 BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
                 valToTest = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
                 root = BigIntegerTools.NewtonNthRoot(valToTest, e);
+                if (answer != root)
+                    root = BigIntegerTools.NewtonNthRoot(valToTest, e);
+
                 AreEqual(answer, root);
             }
     }
     private static void BenchmarkNthRootMethod()
     {
-
-
         Stopwatch sw = new();
         Stopwatch swBase = new();
         Random random = new(6);
@@ -406,7 +407,7 @@ public static class Showcase
             if (i % 1000 == 0 && totalTime > 0)
             {
                 if (i == 5000) { totalTime = 0; totalTimeBase = 0; runCount = 0; sw.Reset(); swBase.Reset(); Console.WriteLine("RESET"); }
-                Console.WriteLine($"i:{i} AvgTime:{(float)totalTime/runCount} Speed-up: {(float)totalTimeBase / totalTime}X");
+                Console.WriteLine($"i:{i} AvgTime:{(float)totalTime / runCount} Speed-up: {(float)totalTimeBase / totalTime}X");
             }
         }
         //);
