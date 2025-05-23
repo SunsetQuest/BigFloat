@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
 
@@ -294,8 +295,9 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     /// <param name="val">The BigFloat that should be converted to a string.</param>
     /// <param name="includeGuardBits">Include out-of-precision bits in result. This will include additional decimal places.</param>
+    /// <param name="digitMaskingForm">Allows for the format of 77XXXXX to be used. Trailing digits are replaced with placeholders indicating out-of-precision.</param>
     //[DebuggerHidden()]
-    public static string ToStringDecimal(BigFloat val, bool includeGuardBits = false, bool showGuard = false)
+    public static string ToStringDecimal(BigFloat val, bool includeGuardBits = false, bool digitMaskingForm = false)
     {
         BigInteger intVal = val.Mantissa;
         int scale = val.Scale;
@@ -341,7 +343,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             int decimalOffset = numberText.Length - decimalDigits;
             //int decimalOffset2 = ((int)((_size - GuardBits + scale2) / 3.32192809488736235)) - ((numberText[0] - '5') / 8.0);  //alternative
 
-            if (decimalOffset < -10)  // 0.0000000000xxxxx 
+            // 0.0000000000000000000#####
+            if (decimalOffset < -10) 
             {
                 return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}e-{decimalDigits}";
             }
@@ -386,34 +389,50 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             return new string(chars);
         }
 
-        // Check to see if we have an integer, if so no Pow(5) scaling required
-        if (scale == 0)
+        // #########.  - check to see if we have an integer, if so, no Pow(5) scaling required
+        if (scale < 1)
         {
-            return MantissaWithoutGuardBits(intVal).ToString();
+            return MantissaWithoutGuardBits(intVal << scale).ToString();
         }
 
-        // At this point we the number have a positive exponent. e.g 7XXXXX or 7e+10 (no decimal point)
-
+        // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
         int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
 
         // Applies the scale to the number and rounds from bottom bit
         BigInteger resScaled = RightShiftWithRound(resUnScaled, GuardBits);
+        
+        // #########e+NN   ->  want  D.DDDDDDe+MMM
+        // maskSize is your "raw" decimal exponent,
+        // resScaled is the integer part you’ve currently computed.
 
-        // Let put together the string. 
-        StringBuilder result = new();
-        _ = result.Append(resScaled);
-        if (maskSize > 10)
+        string number = resScaled.ToString();
+        // handle negative values
+        bool isNegative = number[0] == '-';
+        string digits = isNegative ? number[1..] : number;
+
+        // if we’re in the "use X placeholders" case, leave that untouched:
+        if (digitMaskingForm && maskSize <= 10)
         {
-            _ = result.Append("e+");
-            _ = result.Append(maskSize);
-        }
-        else
-        {
-            _ = result.Append(new string('X', maskSize));
+            // e.g. "12345XXXXX"
+            return (isNegative ? "-" : "") + digits + new string('X', maskSize);
         }
 
-        return result.ToString();
+        // otherwise, normalized scientific notation:
+        int numDigits = digits.Length;                   // total significant digits we have
+        int adjustedExponent = maskSize + (numDigits - 1);
+
+        // build mantissa: first digit, then "." + rest (if any)
+        string mantissa = digits[0]
+                         + (numDigits > 1
+                                ? string.Concat(".", digits.AsSpan(1))
+                                : "");
+
+        // final string: [−]D.ddddDe+EEE
+        return (isNegative ? "-" : "")
+             + mantissa
+             + "e+"
+             + adjustedExponent;
     }
 
     /// <summary>
