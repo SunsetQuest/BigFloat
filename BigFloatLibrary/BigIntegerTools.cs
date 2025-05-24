@@ -480,15 +480,15 @@ public static class BigIntegerTools
     /// <param name="extraAccurate">When false, about 1-in-4096 will round up when it shouldn't. When true, accuracy 
     /// is much better but performance is slower.</param>
     /// <returns>The top bits val raised to the power of exp.</returns>
-    public static BigInteger PowMostSignificantBits(BigInteger val, int exp, out int totalShift, int valSize = -1, int wantedBits = 0, bool extraAccurate = false, bool roundDown = false)
+    public static (BigInteger value, int totalShift) PowMostSignificantBitsApprox(BigInteger val, int exp, int valSize = -1, int wantedBits = 0, bool extraAccurate = false, bool roundDown = false)
     {
-        totalShift = 0;
+        int totalShift = 0;
 
         if (valSize <= 0)
         {
             if (val.IsZero)
             {
-                return BigInteger.Zero; // technically more of a "NA".
+                return (BigInteger.Zero, 0); // technically more of a "NA".
             }
 
             valSize = (int)val.GetBitLength();
@@ -531,35 +531,34 @@ public static class BigIntegerTools
             switch (exp)
             {
                 case 0:
-                    totalShift = wantedBits - 1;
-                    return BigInteger.One << (wantedBits - 1);
+                    return ( BigInteger.One << (wantedBits - 1), wantedBits - 1);
                 case 1:
                     totalShift = valSize - wantedBits;
                     if (roundDown)
                     {
-                        return val >> totalShift;
+                        return (val >> totalShift, totalShift);
                     }
                     if (RightShiftWithRoundWithCarryDownsize(out BigInteger result, val, totalShift, valSize))
                     {
                         totalShift++;
                     }
-                    return result;
+                    return (result, totalShift);
                 case 2:
                     BigInteger sqr = val * val;
                     int sqrSize = (2 * valSize) - ((sqr >> ((2 * valSize) - 1) > 0) ? 0 : 1);
                     totalShift = sqrSize - wantedBits;
                     if (roundDown)
                     {
-                        return sqr >> totalShift;
+                        return (sqr >> totalShift, totalShift);
                     }
                     if (RightShiftWithRoundWithCarryDownsize(out result, sqr, totalShift, sqrSize))
                     {
                         totalShift++;
                     }
-                    return result;
+                    return (result, totalShift);
 
                 default: // negative exp would be less then 1 (unless 1)
-                    return val != 1 ? BigInteger.Zero : val.Sign;
+                    return (val != 1 ? BigInteger.Zero : val.Sign, 0);
             }
         }
 
@@ -590,14 +589,14 @@ public static class BigIntegerTools
             if ((~(outMantissa & mask1)) >= 0 || val < 13511613)
             {
                 int outExp = (int)(bits >> 52) - 1023;
-                totalShift += ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;
+                totalShift = ((valSize - 1) * (exp - 1)) + outExp + (valSize - wantedBits)  /*+ (1<<(expSz-2))*/;
 
                 // outMantissa is 53 in size at this point
                 // we need to Right Shift With Round but if it rounds up to a larger number (e.g. 1111->10000) then we must increment totalShift.
                 bool roundsUp = ((outMantissa >> (bitsToDrop - 1)) & 0x1) > 0;
                 if (!roundsUp)
                 {
-                    return outMantissa >> bitsToDrop;
+                    return (outMantissa >> bitsToDrop, totalShift);
                 }
 
                 long withRoundUp = (outMantissa >> bitsToDrop) + 1;
@@ -609,7 +608,7 @@ public static class BigIntegerTools
                     totalShift++;
                 }
 
-                return withRoundUp;
+                return (withRoundUp, totalShift);
             }
         }
 
@@ -702,7 +701,7 @@ public static class BigIntegerTools
         {
             totalShift++;
         }
-        return res;
+        return (res, totalShift);
     }
 
     /// <summary>

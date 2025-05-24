@@ -41,8 +41,8 @@ public static class Showcase
         //// Get all constants at once with configured precision
         //var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 1000).GetAll();
 
-        TestNthRootMethod();
-        BenchmarkNthRootMethod(); return;
+        //TestNthRootMethod();
+        //BenchmarkNthRootMethod(); return;
         // NthRoot_Stuff();
         // NewtonNthRootPerformance(); return;
         // InverseTesting();
@@ -50,8 +50,8 @@ public static class Showcase
         // Constant_Stuff();
         // Constant_Stuff2();
         // Pow_Stuff();
-        // PowMostSignificantBits_Stuff();
-        // Pow_Stuff3();
+        //PowMostSignificantBits_Stuff();
+         Pow_Stuff3();
         // Pow_Stuff4();
         // ToStringHexScientific_Stuff();
         // Compare_Stuff();
@@ -63,6 +63,7 @@ public static class Showcase
         // TryParse_Stuff();
         // Sqrt_Stuff();
         // CastingFromFloatAndDouble_Stuff();
+        return;
 
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
         // Initialize BigFloat numbers
@@ -585,7 +586,7 @@ public static class Showcase
                     //    continue;
                     timer.Start();
                     //BigInteger res = BigFloat.PowAccurate(val, valSize, /*(int)*/exp, out int shifted);
-                    BigInteger res = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shifted, valSize);
+                    (BigInteger res, int shifted) = BigIntegerTools.PowMostSignificantBitsApprox(val, (int)exp, valSize,extraAccurate: false);
                     timer.Stop();
                     //BigInteger ans = 0; int shiftedAns =0;
                     //BigInteger ans = BigIntegerTools.PowMostSignificantBits(val, (int)exp, out int shiftedAns, valSize);
@@ -631,12 +632,12 @@ public static class Showcase
                         else if (res > ans)
                         {
                             wayHigh++;
-                            Console.WriteLine($"wayHigh:{wayHigh} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                            Console.WriteLine($"wayHigh({res - ans}):{wayHigh} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
                         }
                         else if (res < ans)
                         {
                             wayLow++;
-                            Console.WriteLine($"wayLow:{wayLow} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
+                            Console.WriteLine($"wayLow({res - ans}):{wayLow} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
                         }
                         else
                         {
@@ -679,7 +680,10 @@ public static class Showcase
             shifted = (int)(res.GetBitLength() - value.GetBitLength());
             if (value == 0) return BigInteger.One;
             if (exp == 0) return BigInteger.Zero;
-            return BigIntegerTools.RightShiftWithRound(res, shifted);
+            //return BigIntegerTools.RightShiftWithRound(res, shifted);
+            if (BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out BigInteger result, res, in shifted))
+                shifted++;
+            return result;
         }
     }
 
@@ -742,7 +746,7 @@ public static class Showcase
 
                         // Result Setup
                         timer.Restart();
-                        BigInteger res = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedRes, valSize, wantedBits, false);
+                        (BigInteger res,int shiftedRes) = BigIntegerTools.PowMostSignificantBitsApprox(val, exp, valSize, wantedBits, false);
                         timer.Stop();
                         //int needToShiftAgainBy2 = (int)(res.GetBitLength() - wantedBits);
                         //res = BigFloat.RightShiftWithRound(res, needToShiftAgainBy2); shifted += needToShiftAgainBy2;

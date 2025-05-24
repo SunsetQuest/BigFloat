@@ -43,7 +43,6 @@ public class BigFloatTests
     readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
     const long sqrtBruteForceStoppedAt = 524288;
     const long inverseBruteForceStoppedAt = 524288 * 1;
-
 #endif
 
     private const int RAND_SEED = 22;// new Random().Next();
@@ -122,14 +121,19 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_Constants_Pi()
     {
-        _ = TestTargetInMillseconds switch
+        int MAX_INT = TestTargetInMillseconds switch
         {
-            >= 141 => 8000,
-            >= 15 => 4000,
-            >= 8 => 3000,
+            >= 5000 => 24000,
+            >= 3400 => 20000,
+            >= 1500 => 17000,
+            >= 800 => 4000,
+            >= 600 => 15000,
+            >= 469 => 12000,
+            >= 175 => 8000,
+            >= 62 => 4000,
+            >= 58 => 3000,
             _ => 2000,
         };
-        int MAX_INT = 2000;
         Dictionary<string, BigFloat> bigConstants = BigFloat.Constants.WithConfig(precisionInBits: MAX_INT).GetAll();
         BigFloat pi200ref = bigConstants["Pi"];
         BigFloat pi200gen = BigFloat.Constants.GeneratePi(MAX_INT);
@@ -1691,8 +1695,8 @@ public class BigFloatTests
 
             bool roundDown = false;
             // Answer Setup using accurate version of PowMostSignificantBits
-            BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
-            BigInteger resApprx = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedApprx, valSize, wantedBits, extraAccurate: false, roundDown);
+            (BigInteger resAccur, int shiftedAccur) = BigIntegerTools.PowMostSignificantBitsApprox(val, exp, valSize, wantedBits, /*extraAccurate:*/ true, roundDown);
+            (BigInteger resApprx, int shiftedApprx) = BigIntegerTools.PowMostSignificantBitsApprox(val, exp, valSize, wantedBits, /*extraAccurate:*/ false, roundDown);
 
             if (val.IsZero)
             {
@@ -1770,7 +1774,7 @@ public class BigFloatTests
 
             bool roundDown = false;
             // Answer Setup using accurate version of PowMostSignificantBits
-            BigInteger resAccur = BigIntegerTools.PowMostSignificantBits(val, exp, out int shiftedAccur, valSize, wantedBits, extraAccurate: true, roundDown);
+            (BigInteger resAccur, int shiftedAccur) = BigIntegerTools.PowMostSignificantBitsApprox(val, exp, valSize, wantedBits, /*extraAccurate:*/ true, roundDown);
             BigInteger ansAnswr = PowAccurate(val, exp, out int shiftedAnswr, wantedBits, roundDown);
 
             if (val.IsZero)
@@ -5338,16 +5342,16 @@ public class BigFloatTests
     public void Verify_Zero()
     {
         string errorOutputFormat = "ParseString({0,10}) -> BigFloat -> String -> Expect: {2,10}, Got: {1}";
-        IsNotEqual(".0000", (string x) => BigFloat.Parse(x), "0.0000", errorOutputFormat);
-        IsNotEqual("0.000", (string x) => BigFloat.Parse(x), "0.000", errorOutputFormat);
-        IsNotEqual("00.00", (string x) => BigFloat.Parse(x), "0.00", errorOutputFormat);
-        IsNotEqual("-.0000", (string x) => BigFloat.Parse(x), "0.0000", errorOutputFormat);
-        IsNotEqual("-0.000", (string x) => BigFloat.Parse(x), "0.000", errorOutputFormat);
-        IsNotEqual("+.000000", (string x) => BigFloat.Parse(x), "0.000000", errorOutputFormat);
-        IsNotEqual("0", (string x) => BigFloat.Parse(x), "0", errorOutputFormat);
-        IsNotEqual("000", (string x) => BigFloat.Parse(x), "0", errorOutputFormat);
-        IsNotEqual("0.0000000000000000000", (string x) => BigFloat.Parse(x), "0.0000000000000000000", errorOutputFormat);
-        IsNotEqual("0.0000000000000000000000000000000000000", (string x) => BigFloat.Parse(x), "0.0000000000000000000000000000000000000", errorOutputFormat);
+        IsNotEqual(".0000", x => BigFloat.Parse(x), "0.0000", errorOutputFormat);
+        IsNotEqual("0.000", x => BigFloat.Parse(x), "0.000", errorOutputFormat);
+        IsNotEqual("00.00", x => BigFloat.Parse(x), "0.00", errorOutputFormat);
+        IsNotEqual("-.0000", x => BigFloat.Parse(x), "0.0000", errorOutputFormat);
+        IsNotEqual("-0.000", x => BigFloat.Parse(x), "0.000", errorOutputFormat);
+        IsNotEqual("+.000000", x => BigFloat.Parse(x), "0.000000", errorOutputFormat);
+        IsNotEqual("0", x => BigFloat.Parse(x), "0", errorOutputFormat);
+        IsNotEqual("000", x => BigFloat.Parse(x), "0", errorOutputFormat);
+        IsNotEqual("0.0000000000000000000", x => BigFloat.Parse(x), "0.0000000000000000000", errorOutputFormat);
+        IsNotEqual("0.0000000000000000000000000000000000000", x => BigFloat.Parse(x), "0.0000000000000000000000000000000000000", errorOutputFormat);
     }
 
     [TestMethod]
