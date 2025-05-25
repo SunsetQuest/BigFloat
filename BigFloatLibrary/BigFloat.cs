@@ -1312,7 +1312,7 @@ Other:                                         |   |         |         |        
     /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Example: 11.11 with 1 bit removed would result in 100.0 (the same size)
     /// This function uses the internal BigInteger RightShiftWithRound().
-    /// Also see: ReducePrecision, RightShiftWithRoundWithCarryDownsize, RightShiftWithRound
+    /// Also see: ReducePrecision, RightShiftWithRoundWithCarry, RightShiftWithRound
     /// </summary>
     /// <param name="targetBitsToRemove">Specifies the target number of least-significant bits to remove.</param>
     public static BigFloat TruncateByAndRound(BigFloat x, int targetBitsToRemove)
@@ -1361,7 +1361,7 @@ Other:                                         |   |         |         |        
     /// i.e. Down-shifts the value but and increases the scale. 
     /// Example: ReducePrecision(0b1101.1101, 3) --> 0b1101.1; 
     /// No rounding is performed.
-    /// Also see: TruncateByAndRound, RightShiftWithRoundWithCarryDownsize, RightShiftWithRound
+    /// Also see: TruncateByAndRound, RightShiftWithRoundWithCarry, RightShiftWithRound
     /// </summary>
     public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
     {

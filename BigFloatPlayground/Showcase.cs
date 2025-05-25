@@ -6,13 +6,14 @@
 
 using BigFloatLibrary;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
-using System.Collections.Generic;
 using static BigFloatLibrary.BigFloat;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 #pragma warning disable IDE0051  // Ignore unused private members
 //#pragma warning disable CS0162 // Ignore unreachable code
@@ -569,7 +570,7 @@ public static class Showcase
         //int b = 0;
         for (int b = 0; b < 99999999; b += 7)
         {
-            timer.Reset();
+            //timer.Reset();
             for (BigInteger val = BigInteger.One << b; val < BigInteger.One << (b + 1); val += BigInteger.Max(BigInteger.One, BigInteger.One << (b - 6 + 1)))
             //for (int v = b * 1000; v < (b + 1) * 1000; v ++)
             //Parallel.For(b * 1000, (b + 1) * 1000, v =>
@@ -605,7 +606,7 @@ public static class Showcase
                             Console.WriteLine("resolved !!!!!!!!!!!!!!!!!!!!");
                         }
                         else if (res - 1 == ans)
-                        {
+                        { 
                             plus1++;
                             Console.WriteLine($"plus1:{plus1} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
                         }
@@ -639,9 +640,13 @@ public static class Showcase
                             wayLow++;
                             Console.WriteLine($"wayLow({res - ans}):{wayLow} m= val={val} exp={exp}!!!!!!!!!!!!!!!!!!!!");
                         }
+                        else if (shifted != shiftedAns)
+                        {
+                            Console.WriteLine($"shifted({shifted}) != shiftedAns({shiftedAns}) ?????????????? m= val={val} pow={exp}");
+                        }
                         else
                         {
-                            Console.WriteLine($"??????????? shifted({shifted}) != shiftedAns({shiftedAns}) ?????????????? m= val={val} pow={exp}");
+                            Console.WriteLine($"???????????????????????? m= val={val} pow={exp}");
                         }
                         countNotExact++;
                     }
@@ -681,7 +686,8 @@ public static class Showcase
             if (value == 0) return BigInteger.One;
             if (exp == 0) return BigInteger.Zero;
             //return BigIntegerTools.RightShiftWithRound(res, shifted);
-            if (BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out BigInteger result, res, in shifted))
+            (BigInteger result, bool carry) = (BigIntegerTools.RightShiftWithRoundAndCarry(res, shifted));
+            if (carry)
                 shifted++;
             return result;
         }
@@ -733,7 +739,7 @@ public static class Showcase
                         // Answer Setup version 2
                         BigInteger p = BigInteger.Pow(val, exp);
                         int shiftedAns = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits, valSize)));
-                        bool overflowed = BigIntegerTools.RightShiftWithRoundWithCarryDownsize(out ans, p, shiftedAns);
+                        (ans, bool overflowed) = BigIntegerTools.RightShiftWithRoundAndCarry(p, shiftedAns);
                         if (overflowed)
                         {
                             shiftedAns++;

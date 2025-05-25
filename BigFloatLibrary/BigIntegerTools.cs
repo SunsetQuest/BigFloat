@@ -7,6 +7,7 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -538,7 +539,8 @@ public static class BigIntegerTools
                     {
                         return (val >> totalShift, totalShift);
                     }
-                    if (RightShiftWithRoundWithCarryDownsize(out BigInteger result, val, totalShift, valSize))
+                    (BigInteger result, bool carried) = RightShiftWithRoundAndCarry(val, totalShift, valSize);
+                    if (carried)
                     {
                         totalShift++;
                     }
@@ -551,7 +553,8 @@ public static class BigIntegerTools
                     {
                         return (sqr >> totalShift, totalShift);
                     }
-                    if (RightShiftWithRoundWithCarryDownsize(out result, sqr, totalShift, sqrSize))
+                    (result, carried) = RightShiftWithRoundAndCarry(sqr, totalShift, sqrSize);
+                    if (carried)
                     {
                         totalShift++;
                     }
@@ -696,7 +699,7 @@ public static class BigIntegerTools
 
         BigInteger res0 = product >> bitsToRemove;
 
-        bool carry = RightShiftWithRoundWithCarryDownsize(out BigInteger res, product, bitsToRemove, productSize);
+        (BigInteger res, bool carry) = RightShiftWithRoundAndCarry(product, bitsToRemove, productSize);
         if (carry)
         {
             totalShift++;
@@ -967,7 +970,7 @@ public static class BigIntegerTools
     /// e.g. 1010010 << 2 = 10101
     /// Caution: Round-ups may percolate to the most significate bit. This function will automaticlly remove that extra bit. 
     /// e.g. 1111111 << 2 = 10000
-    /// Also see: ReducePrecision, TruncateByAndRound, RightShiftWithRoundWithCarryDownsize
+    /// Also see: ReducePrecision, TruncateByAndRound, RightShiftWithRoundWithCarry
     /// </summary>
     /// <param name="result">The result of val being right shifted and rounded. The size will be "size-bitsToRemove".</param>
     /// <param name="val">The source BigInteger we would like right-shift.</param>
@@ -975,8 +978,10 @@ public static class BigIntegerTools
     /// <param name="size">The size of the input value if available. If negative number then val.GetBitLength() is called.</param>
     /// <returns>Returns True if an additional bit needed to be removed to achieve the desired size because of a round up. 
     /// e.g. 1111111 << 2 = 10000</returns>
-    public static bool RightShiftWithRoundWithCarryDownsize(out BigInteger result, BigInteger val, in int bitsToRemove, int size = -1)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (BigInteger result, bool carry) RightShiftWithRoundAndCarry(BigInteger val, int bitsToRemove, int size = -1)
     {
+        BigInteger result;
         if (size < 0)
         {
             size = (int)val.GetBitLength();
@@ -996,9 +1001,9 @@ public static class BigIntegerTools
                 {
                     //rounded up to larger size so remove zero to keep it same size.
                     result >>= 1;
-                    return true;
+                    return (result, true);
                 }
-                return false;
+                return (result, false);
             }
         }
         else // is Neg
@@ -1012,7 +1017,7 @@ public static class BigIntegerTools
                 if (((result - 1) >> size).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
                 {
                     result >>= 1;
-                    return true;
+                    return (result, true);
                 }
             }
             else
@@ -1021,8 +1026,9 @@ public static class BigIntegerTools
             }
         }
 
-        return false;
+        return (result, false);
     }
+
 
     ///////////////////////////////////////////////////
     ////      Set/Reduce Precision for BigFloat    ////
