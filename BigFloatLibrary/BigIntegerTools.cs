@@ -539,7 +539,7 @@ public static class BigIntegerTools
                     {
                         return (val >> totalShift, totalShift);
                     }
-                    (BigInteger result, bool carried) = RightShiftWithRoundAndCarry(val, totalShift, valSize);
+                    (BigInteger result, bool carried) = RightShiftWithRoundAndCarry(val, totalShift);
                     if (carried)
                     {
                         totalShift++;
@@ -553,7 +553,7 @@ public static class BigIntegerTools
                     {
                         return (sqr >> totalShift, totalShift);
                     }
-                    (result, carried) = RightShiftWithRoundAndCarry(sqr, totalShift, sqrSize);
+                    (result, carried) = RightShiftWithRoundAndCarry(sqr, totalShift);
                     if (carried)
                     {
                         totalShift++;
@@ -699,7 +699,7 @@ public static class BigIntegerTools
 
         BigInteger res0 = product >> bitsToRemove;
 
-        (BigInteger res, bool carry) = RightShiftWithRoundAndCarry(product, bitsToRemove, productSize);
+        (BigInteger res, bool carry) = RightShiftWithRoundAndCarry(product, bitsToRemove);
         if (carry)
         {
             totalShift++;
@@ -973,60 +973,25 @@ public static class BigIntegerTools
     /// Also see: ReducePrecision, TruncateByAndRound, RightShiftWithRoundWithCarry
     /// </summary>
     /// <param name="result">The result of val being right shifted and rounded. The size will be "size-bitsToRemove".</param>
-    /// <param name="val">The source BigInteger we would like right-shift.</param>
+    /// <param name="value">The source BigInteger we would like right-shift.</param>
     /// <param name="bitsToRemove">The number of bits that will be removed.</param>
-    /// <param name="size">The size of the input value if available. If negative number then val.GetBitLength() is called.</param>
-    /// <returns>Returns True if an additional bit needed to be removed to achieve the desired size because of a round up. 
-    /// e.g. 1111111 << 2 = 10000</returns>
+    /// <returns>Returns the result and if a carry took place.  e.g. 1111111 << 2 = (10000, true)</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (BigInteger result, bool carry) RightShiftWithRoundAndCarry(BigInteger val, int bitsToRemove, int size = -1)
+    public static (BigInteger result, bool carry) RightShiftWithRoundAndCarry(BigInteger value, int bitsToRemove)
     {
-        BigInteger result;
-        if (size < 0)
+        if (bitsToRemove <= 0) { return (value, false); }
+
+        bool isNegative = value.Sign < 0;
+        value = BigInteger.Abs(value);
+
+        BigInteger result = (value >> bitsToRemove) + ((value >> (bitsToRemove - 1)) & 1);
+
+        if (!result.IsPowerOfTwo)
         {
-            size = (int)val.GetBitLength();
+            return (isNegative ? -result : result, false);
         }
 
-        size = Math.Max(0, size - bitsToRemove);
-
-        if (val.Sign >= 0)
-        {
-            result = val >> bitsToRemove; // on .net 7 and later use >>> instead of >> for a slight performance boost
-
-            if (!(val >> (bitsToRemove - 1)).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
-            {
-                result++;
-
-                if ((result >> size).IsOne)
-                {
-                    //rounded up to larger size so remove zero to keep it same size.
-                    result >>= 1;
-                    return (result, true);
-                }
-                return (result, false);
-            }
-        }
-        else // is Neg
-        {
-            val--;
-
-            result = val >> bitsToRemove;
-
-            if ((val >> (bitsToRemove - 1)).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
-            {
-                if (((result - 1) >> size).IsEven) // on .net 7 and later use >>> instead of >> for a slight performance boost
-                {
-                    result >>= 1;
-                    return (result, true);
-                }
-            }
-            else
-            {
-                result++;
-            }
-        }
-
-        return (result, false);
+        return ((isNegative ? -result : result) >> 1, true);
     }
 
 
