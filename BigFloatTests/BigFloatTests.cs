@@ -723,43 +723,62 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_IsPositive()
     {
-        int hb = BigFloat.GuardBits;
-        //public bool IsPositive => Sign > 0;
+        int gb = BigFloat.GuardBits;
         IsTrue(BigFloat.ParseBinary("100.01").IsPositive);
-        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).IsPositive);
-        IsTrue(BigFloat.ParseBinary("10000000000000000000000000000000", 0, 0, hb).IsPositive);
-        IsTrue(BigFloat.ParseBinary("1000000000000000000000000000000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("-100.01").IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).IsPositive);
-        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("1|00000000", 0, 0).IsPositive);
+        IsTrue(BigFloat.ParseBinary("|100000000", 0, 0).IsPositive);
+        IsTrue(BigFloat.ParseBinary("|0100000000", 0, 0).IsPositive);
+        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("10000000000000000000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("100000000000000000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("10000000000000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("100000000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("10000", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("100", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("1", 0, 0, gb).IsPositive);
+        IsTrue(BigFloat.ParseBinary("0.1", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.01", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, gb).IsPositive);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000000").IsPositive);
         IsFalse(BigFloat.ParseBinary("-0.00000000000000000000001").IsPositive);
-        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, hb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("-100.01").IsPositive);
+        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("-1|00000000", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("-|100000000", 0, 0, gb).IsPositive);
+        IsFalse(BigFloat.ParseBinary("-|0100000000", 0, 0, gb).IsPositive);
     }
 
     [TestMethod]
     public void Verify_IsNegative()
     {
-        int hb = BigFloat.GuardBits;
-        //public bool IsNegative => Sign < 0;
+        int gb = BigFloat.GuardBits;
+        IsTrue(BigFloat.ParseBinary("-1|00000000", 0, 0).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-|100000000", 0, 0).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-|0100000000", 0, 0).IsNegative);
         IsTrue(BigFloat.ParseBinary("-0.00000000000000000000001").IsNegative);
-        IsTrue(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, hb).IsNegative);
-        IsTrue(BigFloat.ParseBinary("-10000000000000000000000000000000", 0, 0, hb).IsNegative);
-        IsTrue(BigFloat.ParseBinary("-1000000000000000000000000000000", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("-100000000000000000000000000000", 0, 0, hb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-100000000000000000000000000000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-10000000000000000000000000000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-1000000000000000000000000000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-100000000000000000000000000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-10000000000000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-1000000", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-1", 0, 0, gb).IsNegative);
+        IsTrue(BigFloat.ParseBinary("-.1", 0, 0, gb).IsNegative);
         IsFalse(BigFloat.ParseBinary("100.01").IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).IsNegative);
-        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.00000000000000000000001", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.00001", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("0.000000000000001000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("100000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("1|00000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("|100000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("|0100000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("10000000000000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("1000000000000000000000000", 0, 0, gb).IsNegative);
+        IsFalse(BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, gb).IsNegative);
         IsFalse(BigFloat.ParseBinary("0.00000000000000000000000").IsNegative);
     }
 
@@ -1034,20 +1053,31 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_SignVsIsZero()
     {
+        BigFloat testValue;
         // when Sign is zero should equal IsZero
-        BigFloat testValue = new("0b1|");
+        testValue = new("0b10|");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b1|");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
         testValue = new("0b|1");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
         testValue = new("0b|01");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b|00111111");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b|0");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+
         testValue = new("0b-1|");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
         testValue = new("0b-|1");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
         testValue = new("0b-|01");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
-        // Todo: add more tests
+        testValue = new("0b-|00111111");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
+        testValue = new("0b-|0");
+        AreEqual(testValue.Sign == 0, testValue.IsZero);
     }
 
     [TestMethod]

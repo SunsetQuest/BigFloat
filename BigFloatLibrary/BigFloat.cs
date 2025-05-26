@@ -112,21 +112,20 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool IsOutOfPrecision => _size < GuardBits;
 
-
     /// <summary>
     /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in GuardBits is counted.
     /// </summary>
-    public bool IsPositive => Sign > 0;
+    public bool IsPositive => Mantissa.Sign > 0 && !IsZero;
 
     /// <summary>
     /// Rounds and returns true if this value is negative. Only the top bit in GuardBits is counted.
     /// </summary>
-    public bool IsNegative => Sign < 0;
+    public bool IsNegative => Mantissa.Sign < 0 && !IsZero;
 
     /// <summary>
     /// Rounds with GuardBits and returns -1 if negative, 0 if zero, and +1 if positive.
     /// </summary>
-    public int Sign => (_size >= GuardBits - 1) ? Mantissa.Sign : 0;
+    public int Sign => !IsZero ? Mantissa.Sign : 0;
 
     /// <summary>
     /// Returns the default zero with with a zero size, precision, scale, and accuracy.
