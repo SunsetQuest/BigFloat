@@ -258,34 +258,30 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <c>bigFloat.ToString("X", someProvider)</c>, etc.
     /// </summary>
     /// <param name="format">
-    ///   The .NET format string, e.g. "G", "R", "X", "B", or a custom pattern.
+    ///   The .NET format string, e.g. "G", "R", "X", "B", "E".
     /// </param>
     /// <param name="formatProvider">
-    ///   Culture or number-format info (ignored in this simple example).
+    ///   Culture or number-format info (ignored in this implementation).
     /// </param>
     /// <returns>A string representation of this BigFloat.</returns>
     public string ToString(string? format, IFormatProvider? formatProvider)
     {
         // For the simplest usage, treat a null/empty format as "G".
-        // You might also treat "R" and "G" similarly. .NET double does that.
         // "R" often implies round-trip decimal format, "G" is general, etc.
         if (string.IsNullOrEmpty(format)) { format = "G"; }
 
-        // You can do a simple switch:
         return format.ToUpperInvariant() switch
         {
-            // Typically "R" means Round-trip, so you might want
-            // maximum decimal digits. For now, call your existing
-            // decimal version:
+            // Typically "R" means Round-trip, "G" is general - both use decimal representation
             "G" or "R" => ToStringDecimal(this, includeGuardBits: false),
 
             "X" => ToHexString(),
 
             "B" => ToBinaryString(),
 
-            // Future: "N", "F", "E"...
+            "E" => ToStringExponential(this, includeGuardBits: false),
 
-            // Future: For truly custom numeric format strings, you'd parse `format`.
+            // Default to decimal representation for unknown specifiers
             _ => ToStringDecimal(this, includeGuardBits: false),
         };
     }
@@ -417,6 +413,88 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // e.g. "12345XXXXX"
             return (isNegative ? "-" : "") + digits + new string('X', maskSize);
         }
+
+        // otherwise, normalized scientific notation:
+        int numDigits = digits.Length;                   // total significant digits we have
+        int adjustedExponent = maskSize + (numDigits - 1);
+
+        // build mantissa: first digit, then "." + rest (if any)
+        string mantissa = digits[0]
+                         + (numDigits > 1
+                                ? string.Concat(".", digits.AsSpan(1))
+                                : "");
+
+        // final string: [−]D.ddddDe+EEE
+        return (isNegative ? "-" : "")
+             + mantissa
+             + "e+"
+             + adjustedExponent;
+    }
+
+    /// <summary>
+    /// Converts this BigFloat to exponential (scientific) notation.
+    /// Forces exponential representation regardless of magnitude.
+    /// </summary>
+    /// <param name="val">The BigFloat that should be converted to a string.</param>
+    /// <param name="includeGuardBits">Include out-of-precision bits in result. This will include additional decimal places.</param>
+    //[DebuggerHidden()]
+    public static string ToStringExponential(BigFloat val, bool includeGuardBits = false)
+    {
+        BigInteger intVal = val.Mantissa;
+        int scale = val.Scale;
+
+        if (includeGuardBits)
+        {
+            intVal <<= GuardBits;
+            scale -= GuardBits;
+        }
+
+        // 0.##### or ####.######
+        if (scale < -1)
+        {
+            // Number will have a decimal point. (e.g. 222.22, 0.01, 3.1)
+            // -1 is not enough to form a full decimal digit.
+
+            // Get the number of places that should be returned after the decimal point.
+            int decimalDigits = -(int)((scale - 1.5) / 3.32192809488736235);
+
+            BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
+
+            // Applies the scale to the number and rounds from bottom bit
+            BigInteger power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+
+            // If zero, then special handling required. Add as many precision zeros based on scale.
+            if (power5Scaled.IsZero)
+            {
+
+                // future: The below should not be needed.
+                //// solves an issue when a "BigFloat(1, -8)" being 0.000
+                decimalDigits++;
+                power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
+                power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+            }
+
+            string numberText = power5Scaled.ToString();
+
+            
+            return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}e-{decimalDigits}";
+        }
+
+        // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
+        int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
+        BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+
+        // Applies the scale to the number and rounds from bottom bit
+        BigInteger resScaled = RightShiftWithRound(resUnScaled, GuardBits);
+
+        // #########e+NN   ->  want  D.DDDDDDe+MMM
+        // maskSize is your "raw" decimal exponent,
+        // resScaled is the integer part you’ve currently computed.
+
+        string number = resScaled.ToString();
+        // handle negative values
+        bool isNegative = number[0] == '-';
+        string digits = isNegative ? number[1..] : number;
 
         // otherwise, normalized scientific notation:
         int numDigits = digits.Length;                   // total significant digits we have
