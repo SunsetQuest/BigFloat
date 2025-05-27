@@ -49,15 +49,22 @@ public readonly partial struct BigFloat
         public readonly string BitsInBase64 = bitsInBase64;
 
         /// <summary>
-        /// Returns the number of decimal digits. 
-        /// e.g. 12.3 is 3
+        /// Returns the number bits available in the Base64 string, minus the guard bits.
         /// </summary>
-        public int GetDecimalPrecision()
+        public int SizeAvailable
         {
-            string displayPart = BitsInBase64.Split('|')[0];
-            int decimalPoint = displayPart.IndexOf('.');
+            get 
+            {
+                byte[] first = new byte[3]; // Base64 decoding requires at least 4 bytes
+                if (!Convert.TryFromBase64Chars(BitsInBase64.AsSpan()[0..4], first, out _))
+        {
+                    throw new Exception("Unable to decode 'BitsInBase64'.");
+                }
+                return (BitsInBase64.Length - 1) * 6 + (byte.Log2(first[0]) - 1) - GuardBits;
 
-            return decimalPoint < 0 ? 0 : displayPart.Length - decimalPoint - 1;
+                // This should work if first bit is always the top bit.
+                //return (BitsInBase64.Length) * 6;   
+            }
         }
 
         /// <summary>
