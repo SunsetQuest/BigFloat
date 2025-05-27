@@ -556,6 +556,7 @@ public readonly partial struct BigFloat
         // return a.CompareTo(b);
     }
 
+
     /// <summary>
     /// Rounds to the next integer towards positive infinity. Any fractional bits are removed, negative scales are set
     /// to zero, and the precision(size) will be resized to just the integer part.
@@ -1598,6 +1599,7 @@ Other:                                         |   |         |         |        
         return b * a; // use the other overload
     }
 
+    // Todo: move to math?
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
         //future: add powerOf2 on dividend to see if we can do a fast shift divide

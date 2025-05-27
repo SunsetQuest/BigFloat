@@ -117,6 +117,7 @@ public readonly partial struct BigFloat
             return table.ToString();
         }
 
+        // Todo: Fix or Remove (also move to visual.cs?)
         /// <summary>
         /// Creates a visual representation of the continued fraction expansion of a constant.
         /// </summary>
@@ -143,7 +144,7 @@ public readonly partial struct BigFloat
                 if (remaining.IsZero) break;
 
                 // Take reciprocal and continue
-                remaining = One / remaining;
+                remaining = Inverse(remaining);
 
                 // Extract next integer term
                 integerPart = (BigInteger)remaining;
