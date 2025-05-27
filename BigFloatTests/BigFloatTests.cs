@@ -266,6 +266,62 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_NthRoot()
     {
+        Random r = new(0x12345678);
+        for (int i = BigFloat.GuardBits; i < 3000; i+=7)
+        for (int root = 1; root < 35; root++)
+        {
+            BigFloat answer = BigFloat.RandomWithMantissaBits(
+                mantissaBits: i,
+                minBinaryExponent: -300,
+                maxBinaryExponent: 300,
+                logarithmic: true, r);
+
+            BigFloat toTest = BigFloat.Pow(answer, root);
+            BigFloat result = BigFloat.NthRoot(toTest, root);
+            AreEqual(answer, result, $"Failed with input({toTest}) and root({root}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}");
+        }
+    }
+
+
+    [TestMethod]
+    public void Verify_NthRoot2()
+    {
+        for (long answer = 2; answer < 5000; answer++)
+            for (int e = 1; e < 200; e++)
+            {
+                BigInteger lowerInclusive = BigInteger.Pow(answer, e);
+                BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
+                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
+                BigInteger root = BigIntegerTools.NewtonNthRoot(x, e);
+                Assert.AreEqual(answer, root);
+            }
+    }
+
+    [TestMethod]
+    public void Verify_NthRoot_With_Specific_Values()
+    {
+        BigInteger x, xInvAns, root;
+
+        // 16^(1/2) = 4
+        x = new(16);
+        root = BigIntegerTools.NewtonNthRoot(x, 2);
+        Assert.AreEqual(new BigInteger(4), root);
+
+        // 27^(1/3) = 3
+        x = new(27);
+        root = BigIntegerTools.NewtonNthRoot(x, 3);
+        Assert.AreEqual(new BigInteger(3), root);
+
+        // 20^(1/2) ≈ 4.472… → floor(4.472) = 4
+        x = new(20);
+        root = BigIntegerTools.NewtonNthRoot(x, 2);
+        Assert.AreEqual(new BigInteger(4), root);
+
+        // (2^100)^(1/10) = 2^(100/10) = 2^10 = 1024
+        x = BigInteger.Pow(2, 100);
+        root = BigIntegerTools.NewtonNthRoot(x, 10);
+        Assert.AreEqual(BigInteger.Pow(2, 10), root);
+
         CheckBigFloatIsNRootMatch(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 7, "1340494621.514214278463413501222825825662100997195024832765760458|23859");
         CheckBigFloatIsNRootMatch(BigFloat.Parse("7777777777777777777777777777777777777777777777777777777777777777"), 4, "9391044157537525.1959197514993855569279258848560570718590387|82766889699549582798593");
         CheckBigFloatIsNRootMatch(BigFloat.Parse("77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777"), 7, "1862611236825425192.5326420663234462718496133629936707812842460267769993007449764005342755106890750175013920585641604590068868740|51982282");
@@ -443,20 +499,21 @@ public class BigFloatTests
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000", 17, "1.740507691102227226657656336976234286162875709131500385023860882477");
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 17, "1.74050769110222722665765633697623428616287570913150038502386088247740340403658733159875598810534066889542420507076258417480");
 
-        Random r = new(0x12345678);
-        for (int i = BigFloat.GuardBits; i < 3000; i+=7)
-        for (int root = 1; root < 35; root++)
-        {
-            BigFloat answer = BigFloat.RandomWithMantissaBits(
-                mantissaBits: i,
-                minBinaryExponent: -300,
-                maxBinaryExponent: 300,
-                logarithmic: true, r);
 
-            BigFloat toTest = BigFloat.Pow(answer, root);
-            BigFloat result = BigFloat.NthRoot(toTest, root);
-            AreEqual(answer, result, $"Failed with input({toTest}) and root({root}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}");
-        }
+        x = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
+        xInvAns = BigInteger.Parse("106320008476723");
+        root = BigIntegerTools.NewtonNthRoot(x, 18);
+        Assert.AreEqual(root, xInvAns, $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
+
+        x = BigInteger.Parse("8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974");
+        xInvAns = BigInteger.Parse("76708292649963");
+        root = BigIntegerTools.NewtonNthRoot(x, 18);
+        Assert.AreEqual(root, xInvAns, $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
+
+        x = BigInteger.Parse("70571123296489793781553712027899927780558056179673160447087318248032678626371547461506359424365874164665583058856159466155131437409959528764720285534060900017062263715144437342933055107384635613858949910104986257450521976082018068091106642658583149207845696158337073888727304442");
+        xInvAns = BigInteger.Parse("78060504093987");
+        root = BigIntegerTools.NewtonNthRoot(x, 20);
+        Assert.AreEqual(root, xInvAns, $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
 
         static void CheckStringIsNRoot(string stringInput, int inputRoot, string answerString)
         {
@@ -477,42 +534,6 @@ public class BigFloatTests
         }
     }
 
-
-    [TestMethod]
-    public void Verify_PerfectSquare_ReturnsExactRoot()
-    {
-        BigInteger x, root;
-
-        // 16^(1/2) = 4
-        x = new(16);
-        root = BigIntegerTools.NewtonNthRoot(x, 2);
-        Assert.AreEqual(new BigInteger(4), root);
-
-        // 27^(1/3) = 3
-        x = new(27);
-        root = BigIntegerTools.NewtonNthRoot(x, 3);
-        Assert.AreEqual(new BigInteger(3), root);
-
-        // 20^(1/2) ≈ 4.472… → floor(4.472) = 4
-        x = new(20);
-        root = BigIntegerTools.NewtonNthRoot(x, 2);
-        Assert.AreEqual(new BigInteger(4), root);
-
-        // (2^100)^(1/10) = 2^(100/10) = 2^10 = 1024
-        x = BigInteger.Pow(2, 100);
-        root = BigIntegerTools.NewtonNthRoot(x, 10);
-        Assert.AreEqual(BigInteger.Pow(2, 10), root);
-
-        for (long answer = 2; answer < 5000; answer++)
-        for (int e = 1; e < 200; e++)
-        {
-            BigInteger lowerInclusive = BigInteger.Pow(answer, e);
-            BigInteger upperExclusive = BigInteger.Pow(answer+1, e);
-            x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
-            root = BigIntegerTools.NewtonNthRoot(x, e);
-            Assert.AreEqual(answer, root);
-        }
-    }
 
     ///// <summary>
     ///// Verify that passing an explicit outputLen still returns the correct root.
