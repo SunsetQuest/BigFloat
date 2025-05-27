@@ -22,49 +22,30 @@ namespace PlaygroundAndShowCase;
 
 public static class Showcase
 {
-    //////////////  Big Constants Play Area & Examples //////////////
+    ////////////// Play Area & Examples //////////////
     public static void Main()
     {
         //////////////////// TEST AREA ////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
 
-        //BigFloat pi = Constants.test;
-        // Default constants with standard precision
+        //CastingFromFloatAndDouble_Stuff(); return;
+        //Constant_Stuff(); return;
+        //Inverse_Benchmark(); return;
+        //NthRoot_Benchmark(); return;
+        //NthRoot_Benchmark2(); return;
+        //Pow_Stuff(); return;
+        //Pow_Benchmark(); return;
+        //Pow_Stuff4(); return;
+        //PowMostSignificantBits_Benchmark(); return;
+        //ToStringHexScientific_Stuff(); return;
+        //Compare_Stuff(); return;
+        //GeneratePi_Benchmark(); return;
+        //Parse_Stuff(); return;
+        //TryParse_Stuff(); return;
+        //TruncateToAndRound_Stuff(); return;
+        //Remainder_Stuff(); return;
+        //Sqrt_Stuff(); return;
 
-        //var Pi = BigFloat.Constants.Fundamental.Pi;
-
-        //// Constants with custom precision
-        //var customPi = BigFloat.Constants.WithConfig(precisionInBits: 4096).Pi;
-
-        //// Direct access by name
-        //var omega = BigFloat.Constants.Get("Omega");
-
-        //// Get all constants at once with configured precision
-        //var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 1000).GetAll();
-
-        //TestNthRootMethod();
-        //BenchmarkNthRootMethod(); return;
-        // NthRoot_Stuff();
-        // NewtonNthRootPerformance(); return;
-        // InverseTesting();
-        // FindAdjustmentsForMethodToResolveIssue(); return;
-        // Constant_Stuff();
-        // Constant_Stuff2();
-        // Pow_Stuff();
-        //PowMostSignificantBits_Stuff();
-         Pow_Stuff3();
-        // Pow_Stuff4();
-        // ToStringHexScientific_Stuff();
-        // Compare_Stuff();
-        // Unknown_Stuff();
-        // GeneratePi_Stuff();
-        // Parse_Stuff();
-        // TruncateToAndRound_Stuff();
-        // Remainder_Stuff();
-        // TryParse_Stuff();
-        // Sqrt_Stuff();
-        // CastingFromFloatAndDouble_Stuff();
-        return;
 
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
         // Initialize BigFloat numbers
@@ -201,9 +182,32 @@ public static class Showcase
         // Output: GetPrecision: 21
     }
 
+    static void Constant_Stuff()
+    {
+        BigFloat PiFromGenerated = Constants.GeneratePi(20000);
+        Console.WriteLine($"Pi(generated): {PiFromGenerated}");
 
+        // Default constants with standard precision
+        BigFloat PiFromDefault = BigFloat.Constants.Fundamental.Pi;
+        Console.WriteLine($"Pi(default): {PiFromDefault}");
 
-    private static void InverseTesting()
+        // Get all constants at once with configured precision
+        var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 20000).GetAll();
+        allConstants.TryGetValue("Pi", out BigFloat piFromConfig);
+        Console.WriteLine($"Pi(using configured precision): {piFromConfig}");
+
+        // Default constants by name
+        var PiFromConstantName = BigFloat.Constants.Get("Pi");
+        Console.WriteLine($"Pi(by name): {PiFromConstantName}");
+
+        // Other constants with default precision
+        Console.WriteLine($"Pi: {allConstants["Pi"]}");
+        Console.WriteLine($"E: {allConstants["E"]}");
+        Console.WriteLine($"Sqrt2: {allConstants["Sqrt2"]}");
+        Console.WriteLine($"Golden Ratio: {allConstants["GoldenRatio"]}");
+    }
+
+    private static void Inverse_Benchmark()
     {
         Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.RealTime;
         Thread.CurrentThread.Priority = ThreadPriority.Highest;
@@ -235,131 +239,74 @@ public static class Showcase
                         stoppedAready = true;
                     }
 
-                    BenchmarkInverseMethod(valToTest, perfTimerClassic, perfTimerNew, k, valLenth);
+                    BenchmarkInverseHelper(valToTest, perfTimerClassic, perfTimerNew, k, valLenth);
                 }
                 //perfTimerTotal1 += perfTimerClassic.ElapsedTicks; perfTimerTotal2 += perfTimerNew.ElapsedTicks;
                 DisplayStatus(valToTest, perfTimerClassic, perfTimerNew, ref totalSpeedup, ref totalCount, divideBy);
             }
+
+            static void DisplayStatus(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, ref double totalSpeedup, ref int totalCount, long divideBy)
+            {
+                double thisTotal = (double)perfTimerClassic.ElapsedTicks / perfTimerNew.ElapsedTicks;
+                totalSpeedup += thisTotal;
+                totalCount++;
+                Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} " +
+                    $"-> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) " +
+                    $"(Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
+            }
         }
 
-        static void DisplayStatus(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, ref double totalSpeedup, ref int totalCount, long divideBy)
+        static void BenchmarkInverseHelper(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, int k, int valLen)
         {
-            double thisTotal = (double)perfTimerClassic.ElapsedTicks / perfTimerNew.ElapsedTicks;
-            totalSpeedup += thisTotal;
-            totalCount++;
-            Console.WriteLine($"[{valToTest.GetBitLength(),4}] Ticks: {perfTimerClassic.ElapsedTicks / divideBy,4} " +
-                $"-> {perfTimerNew.ElapsedTicks / divideBy,4} ({(float)thisTotal,-12}) " +
-                $"(Total: {totalSpeedup}/{totalCount} -> {(float)totalSpeedup / totalCount,-12})");
+            BigInteger xInvTst = 0, xInvRes = 0;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            if (k % 2 == 0)
+            {
+                perfTimerClassic.Start();
+                //xInvTst = BigIntegerTools.InverseOther(valToTest, valLen);
+                perfTimerClassic.Stop();
+
+                perfTimerNew.Start();
+                xInvRes = BigIntegerTools.Inverse(valToTest, valLen);
+                perfTimerNew.Stop();
+            }
+            else
+            {
+                perfTimerNew.Start();
+                xInvRes = BigIntegerTools.Inverse(-valToTest, valLen);
+                perfTimerNew.Stop();
+
+                perfTimerClassic.Start();
+                //xInvTst = BigIntegerTools.InverseOther(-valToTest, valLen);
+                perfTimerClassic.Stop();
+            }
+
+            if (xInvRes != xInvTst)
+            {
+                Console.WriteLine($"{xInvRes} != \r\n{xInvTst} with input {valToTest}");
+
+                if (xInvRes.GetBitLength() != valLen)
+                {
+                    Console.WriteLine($"Result:  [{xInvRes.GetBitLength()}] != [{valLen,-4}]");
+                }
+
+                if (xInvTst.GetBitLength() != valLen)
+                {
+                    Console.WriteLine($"Other: [{xInvTst.GetBitLength()}] != [{valLen,-4}]");
+                }
+
+                int correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
+                if (xInvRes.GetBitLength() - correctBits > 0)
+                {
+                    Console.WriteLine($"CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}] x:{valToTest}");
+                }
+            }
         }
     }
 
-    private static void BenchmarkInverseMethod(BigInteger valToTest, Stopwatch perfTimerClassic, Stopwatch perfTimerNew, int k, int valLen)
-    {
-        BigInteger xInvTst = 0, xInvRes = 0;
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        if (k % 2 == 0)
-        {
-            perfTimerClassic.Start();
-            //xInvTst = BigIntegerTools.InverseOther(valToTest, valLen);
-            perfTimerClassic.Stop();
-
-            perfTimerNew.Start();
-            xInvRes = BigIntegerTools.Inverse(valToTest, valLen);
-            perfTimerNew.Stop();
-        }
-        else
-        {
-            perfTimerNew.Start();
-            xInvRes = BigIntegerTools.Inverse(-valToTest, valLen);
-            perfTimerNew.Stop();
-
-            perfTimerClassic.Start();
-            //xInvTst = BigIntegerTools.InverseOther(-valToTest, valLen);
-            perfTimerClassic.Stop();
-        }
-
-        if (xInvRes != xInvTst)
-        {
-            Console.WriteLine($"{xInvRes} != \r\n{xInvTst} with input {valToTest}");
-
-            if (xInvRes.GetBitLength() != valLen)
-            {
-                Console.WriteLine($"Result:  [{xInvRes.GetBitLength()}] != [{valLen,-4}]");
-            }
-
-            if (xInvTst.GetBitLength() != valLen)
-            {
-                Console.WriteLine($"Other: [{xInvTst.GetBitLength()}] != [{valLen,-4}]");
-            }
-
-            int correctBits = BigIntegerTools.ToBinaryString(xInvRes).Zip(BigIntegerTools.ToBinaryString(xInvTst), (c1, c2) => c1 == c2).TakeWhile(b => b).Count();
-            if (xInvRes.GetBitLength() - correctBits > 0)
-            {
-                Console.WriteLine($"CorrectBits:[{correctBits}] of [{xInvRes.GetBitLength()}] x:{valToTest}");
-            }
-        }
-    }
-
-
-    //////////////  NthRoot Play Area & Examples //////////////
-
-    private static void TestNthRootMethod()
-    {
-        BigInteger valToTest, xInvAns, root;
-
-        valToTest = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
-        xInvAns = BigInteger.Parse("106320008476723");
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 18);
-        if (root != xInvAns) Console.WriteLine($"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
-
-        valToTest = BigInteger.Parse("8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974");
-        xInvAns = BigInteger.Parse("76708292649963");
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 18);
-        if (root != xInvAns) Console.WriteLine($"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
-
-
-        valToTest = BigInteger.Parse("70571123296489793781553712027899927780558056179673160447087318248032678626371547461506359424365874164665583058856159466155131437409959528764720285534060900017062263715144437342933055107384635613858949910104986257450521976082018068091106642658583149207845696158337073888727304442");
-        xInvAns = BigInteger.Parse("78060504093987");
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 20);
-        if (root != xInvAns) Console.WriteLine($"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
-
-
-        // 16^(1/2) = 4
-        valToTest = new(16);
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 2);
-        AreEqual(new BigInteger(4), root);
-
-        // 27^(1/3) = 3
-        valToTest = new(27);
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 3);
-        AreEqual(new BigInteger(3), root);
-
-        // 20^(1/2) ≈ 4.472… → floor(4.472) = 4
-        valToTest = new(20);
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 2);
-        AreEqual(new BigInteger(4), root);
-
-        // (2^100)^(1/10) = 2^(100/10) = 2^10 = 1024
-        valToTest = BigInteger.Pow(2, 100);
-        root = BigIntegerTools.NewtonNthRoot(valToTest, 10);
-        AreEqual(BigInteger.Pow(2, 10), root);
-
-        for (long answer = 2; answer < 5000; answer++)
-            for (int e = 1; e < 200; e++)
-            {
-                BigInteger lowerInclusive = BigInteger.Pow(answer, e);
-                BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
-                valToTest = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
-                root = BigIntegerTools.NewtonNthRoot(valToTest, e);
-                if (answer != root)
-                    root = BigIntegerTools.NewtonNthRoot(valToTest, e);
-
-                AreEqual(answer, root);
-            }
-    }
-    private static void BenchmarkNthRootMethod()
+    private static void NthRoot_Benchmark()
     {
         Stopwatch sw = new();
         Stopwatch swBase = new();
@@ -412,67 +359,67 @@ public static class Showcase
                 Console.WriteLine($"i:{i} AvgTime:{(float)totalTime / runCount} Speed-up: {(float)totalTimeBase / totalTime}X");
             }
         }
-        //);
+        //); // Parallel.For ends here
+
+        // Verify nthRoot by Bisection
+        // source: https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, Cryptonite, 2014
+        static BigInteger NthRootBisection(BigInteger value, int root, out BigInteger remainder)
+        {
+            //special conditions
+            if (value < 2)
+            {
+                if (value < 0)
+                {
+                    throw new Exception("value must be a positive integer");
+                }
+
+                remainder = 0;
+                return value;
+            }
+            if (root < 2)
+            {
+                if (root < 1)
+                {
+                    throw new Exception("root must be greater than or equal to 1");
+                }
+
+                remainder = 0;
+                return value;
+            }
+
+            //set the upper and lower limits
+            BigInteger upperbound = value;
+            BigInteger lowerbound = 0;
+
+            while (true)
+            {
+                BigInteger nval = (upperbound + lowerbound) / 2;
+                BigInteger tstsq = BigInteger.Pow(nval, root);
+                if (tstsq > value)
+                {
+                    upperbound = nval;
+                }
+
+                if (tstsq < value)
+                {
+                    lowerbound = nval;
+                }
+                if (tstsq == value)
+                {
+                    lowerbound = nval;
+                    break;
+                }
+                if (lowerbound == upperbound - 1)
+                {
+                    break;
+                }
+            }
+            remainder = value - BigInteger.Pow(lowerbound, root);
+            return lowerbound;
+        }
     }
 
-    // Verify nthRoot by Bisection
-    // source: https://www.codeproject.com/Tips/831816/The--Method-and-Calculating-Nth-Roots, Cryptonite, 2014
-    public static BigInteger NthRootBisection(BigInteger value, int root, out BigInteger remainder)
-    {
-        //special conditions
-        if (value < 2)
-        {
-            if (value < 0)
-            {
-                throw new Exception("value must be a positive integer");
-            }
-
-            remainder = 0;
-            return value;
-        }
-        if (root < 2)
-        {
-            if (root < 1)
-            {
-                throw new Exception("root must be greater than or equal to 1");
-            }
-
-            remainder = 0;
-            return value;
-        }
-
-        //set the upper and lower limits
-        BigInteger upperbound = value;
-        BigInteger lowerbound = 0;
-
-        while (true)
-        {
-            BigInteger nval = (upperbound + lowerbound) / 2;
-            BigInteger tstsq = BigInteger.Pow(nval, root);
-            if (tstsq > value)
-            {
-                upperbound = nval;
-            }
-
-            if (tstsq < value)
-            {
-                lowerbound = nval;
-            }
-            if (tstsq == value)
-            {
-                lowerbound = nval;
-                break;
-            }
-            if (lowerbound == upperbound - 1)
-            {
-                break;
-            }
-        }
-        remainder = value - BigInteger.Pow(lowerbound, root);
-        return lowerbound;
-    }
-
-    private static void NthRoot_Stuff()
+    private static void NthRoot_Benchmark2()
     {
         Stopwatch timer = Stopwatch.StartNew();
         BigFloat result = NthRoot(new BigFloat((ulong)3 << 60, -60), 3);
@@ -560,7 +507,7 @@ public static class Showcase
         _ = Pow(tbf, 3);
     }
 
-    private static void Pow_Stuff3()
+    private static void Pow_Benchmark()
     {
         Stopwatch timer = new();
         timer.Start();
@@ -693,8 +640,20 @@ public static class Showcase
         }
     }
 
+    private static void Pow_Stuff4()
+    {
+        for (BigFloat val = 777; val < 778; val++)
+        {
+            for (int exp = 5; exp < 6; exp++)
+            {
+                BigFloat res = Pow(val, exp);
+                double correct = Math.Pow((double)val, exp);
+                Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.MantissaWithGuardBitsRoundedOff,4} << {res.Scale,2})  Correct: {correct,8}");
+            }
+        }
+    }
 
-    private static void PowMostSignificantBits_Stuff()
+    private static void PowMostSignificantBits_Benchmark()
     {
         Stopwatch timer = Stopwatch.StartNew();
         long errorTotal = 0; // too high or low by 2 or more
@@ -829,19 +788,6 @@ public static class Showcase
         }
     }
 
-    private static void Pow_Stuff4()
-    {
-        for (BigFloat val = 777; val < 778; val++)
-        {
-            for (int exp = 5; exp < 6; exp++)
-            {
-                BigFloat res = Pow(val, exp);
-                double correct = Math.Pow((double)val, exp);
-                Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.MantissaWithGuardBitsRoundedOff,4} << {res.Scale,2})  Correct: {correct,8}");
-            }
-        }
-    }
-
     private static void ToStringHexScientific_Stuff()
     {
         new BigFloat("1.8814224e11").DebugPrint("1.8814224e11"); //18814224____
@@ -889,7 +835,7 @@ public static class Showcase
         AreEqual(new BigFloat("10000e4").ToStringHexScientific(), "17D7 << 14");
     }
 
-    private static void GeneratePi_Stuff()
+    private static void GeneratePi_Benchmark()
     {
         for (int i = 400000; i <= 400000; i += 4)
         {
@@ -944,6 +890,19 @@ public static class Showcase
         Console.WriteLine($"[{aa.Size,2}] + [{bb.Size,2}] = {rr,8} {Math.Min(aa.Size, bb.Size)}={rr.Size}");
     }
 
+    private static void TryParse_Stuff()
+    {
+        _ = BigInteger.TryParse("15.0",
+                NumberStyles.AllowDecimalPoint,
+                null, out BigInteger number);
+
+        Console.WriteLine(number.ToString());
+
+        //BigFloat bf0 = new BigFloat("1.1"); Console.WriteLine(bf0.DebuggerDisplay);
+        BigFloat bf0 = new("-1.1"); bf0.DebugPrint("");
+        //BigFloat bf0 = new BigFloat("-1.1"); Console.WriteLine(bf0.DebuggerDisplay);
+    }
+
     private static void TruncateToAndRound_Stuff()
     {
         Console.WriteLine(BigIntegerTools.TruncateToAndRound((BigInteger)0b111, 1));
@@ -986,19 +945,6 @@ public static class Showcase
         IsFalse(res == new BigFloat("0.003907"), "0.003907");   // values that are a smudge to large
         IsFalse(res == new BigFloat("0.0039064"), "0.0039064");   // values that are a smudge to large
         IsFalse(res == new BigFloat("0.00390626"), "0.00390626");   // values that are a smudge to large
-    }
-
-    private static void TryParse_Stuff()
-    {
-        _ = BigInteger.TryParse("15.0",
-                NumberStyles.AllowDecimalPoint,
-                null, out BigInteger number);
-
-        Console.WriteLine(number.ToString());
-
-        //BigFloat bf0 = new BigFloat("1.1"); Console.WriteLine(bf0.DebuggerDisplay);
-        BigFloat bf0 = new("-1.1"); bf0.DebugPrint("");
-        //BigFloat bf0 = new BigFloat("-1.1"); Console.WriteLine(bf0.DebuggerDisplay);
     }
 
     private static void Sqrt_Stuff()
