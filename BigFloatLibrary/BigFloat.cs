@@ -1828,18 +1828,6 @@ Other:                                         |   |         |         |        
         return result;
     }
 
-    /// <summary>
-    /// Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.
-    /// </summary>
-    /// <param name="value">The BigFloat to cast as a BigInteger.</param>
-    public static explicit operator BigInteger(BigFloat value)
-    {
-        int shift = value.Scale - GuardBits;
-        return shift >= GuardBits ? 
-            value.Mantissa << shift : 
-            RightShiftWithRound(value.Mantissa, -shift);
-    }
-
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
     /// Caution: Precision is not preserved since float is hard coded with 26 bits of precision.</summary>
     public static explicit operator float(BigFloat value)
@@ -1879,13 +1867,19 @@ Other:                                         |   |         |         |        
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     public static explicit operator int(BigFloat value)
     {
-        return (int)(value.Mantissa << (value.Scale - GuardBits));
+        return (int)RightShiftWithRound(value.Mantissa, GuardBits - value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
-        return (uint)(value.Mantissa << (value.Scale - GuardBits));
+        return (uint)RightShiftWithRound(value.Mantissa, GuardBits - value.Scale);
+    }
+
+    /// <summary>Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.</summary>
+    public static explicit operator BigInteger(BigFloat value)
+    {
+        return RightShiftWithRound(value.Mantissa, GuardBits - value.Scale);
     }
 
     /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
@@ -1893,7 +1887,6 @@ Other:                                         |   |         |         |        
     public bool FitsInADouble()
     {
         // future (possibly): add denormalized support 
-        //return (Exponent + 1023 - 1) is not (<= 0 or > 2046);
         return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
 
