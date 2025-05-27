@@ -255,7 +255,7 @@ public readonly partial struct BigFloat
                         string numberStr = numSpan.ToString();
 
                         // Calculate how many decimal digits we need for the requested bits
-                        int requiredDecimalDigits = (int)Math.Ceiling(minAccuracyInBits / 3.32192809488736235);
+                        int requiredDecimalDigits = (int)Math.Ceiling(minAccuracyInBits / LOG2_OF_10);
 
                         int decimalPoint = numberStr.IndexOf('.');
 

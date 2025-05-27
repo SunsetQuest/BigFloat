@@ -317,7 +317,7 @@ public readonly partial struct BigFloat
 
         if (val.IsZero)
         {
-            int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * 3.32192809488736235) - guardBits;
+            int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * LOG2_OF_10) - guardBits;
             result = new BigFloat(BigInteger.Zero, scaleAmt, 0); //future: create a ZeroWithSpecificAccuracy(int prec) method.
             return true;
         }

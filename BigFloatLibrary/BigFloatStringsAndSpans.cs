@@ -312,7 +312,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // -1 is not enough to form a full decimal digit.
 
             // Get the number of places that should be returned after the decimal point.
-            int decimalDigits = -(int)((scale - 1.5) / 3.32192809488736235);
+            int decimalDigits = -(int)((scale - 1.5) / LOG2_OF_10);
 
             BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
 
@@ -337,7 +337,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             string numberText = power5Scaled.ToString();
 
             int decimalOffset = numberText.Length - decimalDigits;
-            //int decimalOffset2 = ((int)((_size - GuardBits + scale2) / 3.32192809488736235)) - ((numberText[0] - '5') / 8.0);  //alternative
+            //int decimalOffset2 = ((int)((_size - GuardBits + scale2) / LOG2_OF_10)) - ((numberText[0] - '5') / 8.0);  //alternative
 
             // 0.0000000000000000000#####
             if (decimalOffset < -10) 
@@ -392,7 +392,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
 
         // Applies the scale to the number and rounds from bottom bit
@@ -456,7 +456,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // -1 is not enough to form a full decimal digit.
 
             // Get the number of places that should be returned after the decimal point.
-            int decimalDigits = -(int)((scale - 1.5) / 3.32192809488736235);
+            int decimalDigits = -(int)((scale - 1.5) / LOG2_OF_10);
 
             BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
 
@@ -481,7 +481,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / 3.32192809488736235); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
 
         // Applies the scale to the number and rounds from bottom bit

@@ -231,7 +231,7 @@ public readonly partial struct BigFloat
 
             // Add precision information
             _ = result.AppendLine($"\nPrecision Available:");
-            _ = result.AppendLine($"- In Memory: {Math.Round(info.BitsInBase64.Length * 6 / 3.32192809489, 0)} decimal digits");
+            _ = result.AppendLine($"- In Memory: {Math.Round(info.BitsInBase64.Length * 6 / LOG2_OF_10, 0)} decimal digits");
 
             if (info.SizeAvailableInFile > 0)
             {

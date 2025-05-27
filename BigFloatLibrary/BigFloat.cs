@@ -137,6 +137,8 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat One => new(BigInteger.One << GuardBits, 0, GuardBits + 1);
 
+    const double LOG2_OF_10 = 3.32192809488736235;
+
     /// <summary>
     /// Returns a "1" with a specific accuracy. 
     /// </summary>
@@ -146,7 +148,6 @@ public readonly partial struct BigFloat
         ArgumentOutOfRangeException.ThrowIfLessThan(accuracy, -32);
         return new(BigInteger.One << (GuardBits + accuracy), -accuracy, GuardBits + 1 + accuracy);
     }
-
 
     /////////////////////////    CONVERSION  FUNCTIONS     /////////////////////////
 
