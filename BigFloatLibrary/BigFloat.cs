@@ -650,7 +650,7 @@ public readonly partial struct BigFloat
             return new BigFloat(intPart);
         }
     }
-    
+
     private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
     {
         if (IsOutOfPrecision)

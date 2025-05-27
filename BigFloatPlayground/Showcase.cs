@@ -28,23 +28,23 @@ public static class Showcase
         //////////////////// TEST AREA ////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
 
-        //CastingFromFloatAndDouble_Stuff(); return;
-        //Constant_Stuff(); return;
-        //Inverse_Benchmark(); return;
-        //NthRoot_Benchmark(); return;
-        //NthRoot_Benchmark2(); return;
-        //Pow_Stuff(); return;
-        //Pow_Benchmark(); return;
-        //Pow_Stuff4(); return;
-        //PowMostSignificantBits_Benchmark(); return;
-        //ToStringHexScientific_Stuff(); return;
-        //Compare_Stuff(); return;
-        //GeneratePi_Benchmark(); return;
-        //Parse_Stuff(); return;
-        //TryParse_Stuff(); return;
-        //TruncateToAndRound_Stuff(); return;
-        //Remainder_Stuff(); return;
-        //Sqrt_Stuff(); return;
+        // CastingFromFloatAndDouble_Stuff(); return;
+        // Constant_Stuff(); return;
+        // Inverse_Benchmark(); return;
+        // NthRoot_Benchmark(); return;
+        // NthRoot_Benchmark2(); return;
+        // Pow_Stuff(); return;
+        // Pow_Benchmark(); return;
+        // Pow_Stuff4(); return;
+        // PowMostSignificantBits_Benchmark(); return;
+        // ToStringHexScientific_Stuff(); return;
+        // Compare_Stuff(); return;
+        // GeneratePi_Benchmark(); return;
+        // Parse_Stuff(); return;
+        // TryParse_Stuff(); return;
+        // TruncateToAndRound_Stuff(); return;
+        // Remainder_Stuff(); return;
+        // Sqrt_Stuff(); return;
 
 
         //////////////////// Initializing and Basic Arithmetic: ////////////////////
