@@ -7,7 +7,6 @@
 using System;
 using System.IO;
 using System.Numerics;
-using System.Text.RegularExpressions;
 
 namespace BigFloatLibrary;
 
@@ -213,25 +212,51 @@ public readonly partial struct BigFloat
 
             try
             {
-                // The built-in constant in the code was not long enough. Check if constant exists in external file.
-                string fileName = Name ?? BitsInBase64.Split('|')[0];
-                if (fileName.Length > 14) fileName = fileName[..14];
+                // Generate a filename based on the decimal representation of the number
+                string fileName;
 
+                // Try to get a decimal representation with modest precision for the filename
+                if (TryGetAsBigFloat(out BigFloat tempValue, 64)) // 64 bits is enough for filename
+                {
+                    // Convert to string and take first 14 characters
+                    fileName = tempValue.ToString();
+                if (fileName.Length > 14) fileName = fileName[..14];
+                }
+                else
+                {
+                    // Fallback to Name if available, or use first part of BitsInBase64
+                    fileName = Name ?? BitsInBase64[..Math.Min(14, BitsInBase64.Length)];
+                }
 
                 string fileToTryAndLoad = Path.Combine("Values", fileName + ".txt");
 
                 if (File.Exists(fileToTryAndLoad))
                 {
                     string fileContent = File.ReadAllText(fileToTryAndLoad);
+                    ReadOnlySpan<char> span = fileContent;
 
-                    // Extract the number from the file
-                    Match match = Regex.Match(fileContent, @"Number:\s*([0-9.]+)", RegexOptions.IgnoreCase);
-                    if (match.Success)
+                    var prefix = "Number:".AsSpan();
+                    int start = span.IndexOf(prefix);
+                    if (start >= 0)
                     {
+                        // Move past "Number:" itself
+                        start += prefix.Length;
+
+                        // Skip any spaces/tabs after the colon
+                        while (start < span.Length && char.IsWhiteSpace(span[start]))
+                            start++;
+
+                        // Find end of line
+                        int end = span[start..].IndexOfAny('\r', '\n');
+                        if (end < 0) end = span.Length - start;  // last line, no newline
+
+                        // Extract the number substring
+                        var numSpan = span.Slice(start, end).Trim();
+                        string numberStr = numSpan.ToString();
+
                         // Calculate how many decimal digits we need for the requested bits
                         int requiredDecimalDigits = (int)Math.Ceiling(minAccuracyInBits / 3.32192809488736235);
 
-                        string numberStr = match.Groups[1].Value;
                         int decimalPoint = numberStr.IndexOf('.');
 
                         // Make sure we have enough digits in the file
