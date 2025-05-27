@@ -351,7 +351,15 @@ public readonly partial struct BigFloat
                 // Use parallel processing for better performance with large sets
                 ConcurrentDictionary<string, BigFloat> result = new();
 
-                _ = Parallel.ForEach(Catalog.AllConstants, constantId =>
+                int MaxParallelism =
+#if DEBUG
+            1; // Single-threaded in debug mode
+#else
+            System.Environment.ProcessorCount; // Use all cores in release mode
+
+#endif
+                ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxParallelism };
+                _ = Parallel.ForEach(Catalog.AllConstants, parallelOptions, constantId =>
                 {
 
                     BigFloat value = GetConstant(constantId, precisionInBits, cutOnTrailingZero, useExternalFiles);
