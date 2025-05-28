@@ -46,7 +46,7 @@ public class BigFloatTests
 #endif
 
     private const int RAND_SEED = 22;// new Random().Next();
-
+    private static readonly Random _rand = new(RAND_SEED);
 
     [TestMethod]
     public void Verify_Misc()
@@ -266,7 +266,6 @@ public class BigFloatTests
     [TestMethod]
     public void Verify_NthRoot()
     {
-        Random r = new(0x12345678);
         for (int i = BigFloat.GuardBits; i < 3000; i+=7)
         for (int root = 1; root < 35; root++)
         {
@@ -274,14 +273,13 @@ public class BigFloatTests
                 mantissaBits: i,
                 minBinaryExponent: -300,
                 maxBinaryExponent: 300,
-                logarithmic: true, r);
+                logarithmic: true, _rand);
 
             BigFloat toTest = BigFloat.Pow(answer, root);
             BigFloat result = BigFloat.NthRoot(toTest, root);
             AreEqual(answer, result, $"Failed with input({toTest}) and root({root}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}");
         }
     }
-
 
     [TestMethod]
     public void Verify_NthRoot2()
@@ -291,7 +289,7 @@ public class BigFloatTests
             {
                 BigInteger lowerInclusive = BigInteger.Pow(answer, e);
                 BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
-                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive);
+                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, _rand);
                 BigInteger root = BigIntegerTools.NewtonNthRoot(x, e);
                 Assert.AreEqual(answer, root);
             }
@@ -1737,7 +1735,7 @@ public class BigFloatTests
         ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
         _ = Parallel.For(2, runCount, parallelOptions, x =>
         {
-            int wantedBits = 1 + Random.Shared.Next(1, maxWantedBitSize);
+            int wantedBits = 1 + _rand.Next(1, maxWantedBitSize);
             BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
             int exp = GenerateLogUniformRandomInt(maxExpSize);
 
@@ -1816,7 +1814,7 @@ public class BigFloatTests
         ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
         _ = Parallel.For(2, runCount, parallelOptions, x =>
         {
-            int wantedBits = 1 + Random.Shared.Next(1, maxWantedBitSize);
+            int wantedBits = 1 + _rand.Next(1, maxWantedBitSize);
             BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
             int exp = GenerateLogUniformRandomInt(maxExpSize);
 
@@ -1941,14 +1939,14 @@ public class BigFloatTests
     private static BigInteger GenerateLogUniformRandomBigInteger(int maxNumberOfBits)
     {
         byte[] data = new byte[(maxNumberOfBits / 8) + 1];
-        Random.Shared.NextBytes(data);
+        _rand.NextBytes(data);
         data[^1] >>= 8 - (maxNumberOfBits % 8);
         return new(data, true);
     }
 
     private static int GenerateLogUniformRandomInt(int maxLengthInBits)
     {
-        return (int)Random.Shared.NextInt64(0, maxValue: (long)1 << Random.Shared.Next(Math.Min(31, maxLengthInBits)));
+        return (int)_rand.NextInt64(0, maxValue: (long)1 << _rand.Next(Math.Min(31, maxLengthInBits)));
     }
 
     [TestMethod]
