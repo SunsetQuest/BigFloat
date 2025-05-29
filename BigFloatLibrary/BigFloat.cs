@@ -207,7 +207,8 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    public BigFloat(double value, int binaryScaler = 0)
+    // Todo: consider changing 32 to 16(or 24 or 8 or 0) since a double is not exact. 
+    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 32)
     {
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
@@ -231,9 +232,9 @@ public readonly partial struct BigFloat
             {
                 mantissa = -mantissa;
             }
-            Mantissa = new BigInteger(mantissa) << GuardBits;
-            Scale = exp - 1023 - 52 + binaryScaler;
-            _size = 53 + GuardBits; //_size = BitOperations.Log2((ulong)Int);
+            Mantissa = new BigInteger(mantissa) << addedBinaryPrecision;
+            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - addedBinaryPrecision;
+            _size = 53 + addedBinaryPrecision; //_size = BitOperations.Log2((ulong)Int);
         }
         else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
         {
@@ -243,7 +244,7 @@ public readonly partial struct BigFloat
             if (mantissa == 0)
             {
                 Mantissa = 0;
-                Scale = binaryScaler;
+                Scale = binaryScaler + GuardBits - addedBinaryPrecision;
                 _size = 0;
             }
             else
@@ -253,9 +254,9 @@ public readonly partial struct BigFloat
                 {
                     mantissa = -mantissa;
                 }
-                Mantissa = (new BigInteger(mantissa)) << (GuardBits);
-                Scale = -1023 - 52 + 1 + binaryScaler;
-                _size = size + GuardBits;
+                Mantissa = (new BigInteger(mantissa)) << addedBinaryPrecision;
+                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - addedBinaryPrecision;
+                _size = size + addedBinaryPrecision;
             }
         }
 
