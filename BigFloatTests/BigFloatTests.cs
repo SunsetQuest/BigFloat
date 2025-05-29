@@ -33,7 +33,7 @@ public class BigFloatTests
     /// <summary>
     /// Target time for each test. Time based on release mode on 16 core x64 CPU.
     /// </summary>
-    private readonly int TestTargetInMillseconds = 1000;
+    private readonly int TestTargetInMillseconds = 100;
 
 #if DEBUG
     private const int MaxDegreeOfParallelism = 1;
@@ -1070,33 +1070,45 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Verify_SignVsIsZero()
+    public void Verify_Sign_vs_IsZero_vs_IsInteger()
     {
+        // IsZero should only be true when Sign is zero.
+        // Also, when IsZero, IsInteger should be true.
         BigFloat testValue;
-        // when Sign is zero should equal IsZero
         testValue = new("0b10|");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b1|");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b|1");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b|01");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b|00111111");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b|0");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
 
         testValue = new("0b-1|");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b-|1");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b-|01");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b-|00111111");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
         testValue = new("0b-|0");
         AreEqual(testValue.Sign == 0, testValue.IsZero);
+        IsTrue(!testValue.IsZero || testValue.IsInteger);
     }
 
     [TestMethod]
@@ -1552,7 +1564,6 @@ public class BigFloatTests
 
 
         BigFloat val, res, ans;
-
         AreEqual(BigFloat.Pow(BigFloat.Zero, 0), 1, $"Failed on: 0^0");
         AreEqual(BigFloat.Pow(BigFloat.One, 0), 1, $"Failed on: 1^0");
         AreEqual(BigFloat.Pow(0, 0), 1, $"Failed on: 0^0");
