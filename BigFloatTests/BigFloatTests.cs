@@ -1381,169 +1381,174 @@ public class BigFloatTests
                     $"should be in the range {POWToBigFloatLo} to {POWToBigFloatHi}.");
             }
         }
-        { }
-        //// The below TEST has several exceptions from the few that were spot checked the issue was actually with the POW function. 
-        //// e.g. 0.31832553782759071^2 is 0.10133114803322488, not 0.10133114803322489
-        //// (note: 97 out of 46300 failed)
-        //for (int jj = 0; jj < 20; jj++)
-        //    for (double ii = 0.00001; ii < 100000; ii *= 1.01)
-        //    {
-        //        switch (jj)
-        //        {
-        //            case 2:
-        //                // Spot check: Failure okay because "Double->POW" is the one that is incorrect.
-        //                // 0.10133114803322488404... (Calculator)
-        //                // 0.10133114803322489   Double->POW          ->String
-        //                // 0.10133114803322488   Double->BigFloat->POW->String
-        //                // 0.10133114803322489   Double->POW->BigFloat->String
-        //                if (ii == 0.31832553782759071) continue; 
-        //                if (ii == 3.7922202536323169) continue;                                            
-        //                if (ii == 1266.4144068422818) continue;
-        //                if (ii == 10650.005497109047) continue;
-        //                if (ii == 74875.389283707336) continue;
-        //                break;
-        //            case 3:
-        //                if (ii == 0.00015126381262911304) continue;
-        //                if (ii == 0.0002207736543748362) continue;
-        //                if (ii == 12487.969014230068) continue;
-        //                break;
-        //            case 4:
-        //                if (ii == 0.00018641630355034525) continue;
-        //                if (ii == 0.00045194559600055971) continue;
-        //                if (ii == 0.32797111994930456) continue;
-        //                if (ii == 340.5293137191391) continue;
-        //                break;
-        //            case 5:
-        //                if (ii == 1.6604260161149265) continue;
-        //                if (ii == 5980.123493474643) continue;
-        //                break;
-        //            case 6:
-        //                if (ii == 0.0016641256869016213) continue;
-        //                if (ii == 0.0065045062076691754) continue;
-        //                if (ii == 0.06414019892333388) continue;
-        //                // Spot check: Failure okay because "Double->POW" is the one that is incorrect.
-        //                // 58462000269625.56645480... (Calculator)
-        //                // 58462000269625.563   Double->POW          ->String
-        //                // 58462000269625.57    Double->BigFloat->POW->String
-        //                // 58462000269625.56    Double->POW->BigFloat->String
-        //                if (ii == 197.00576951306914) continue;
-        //                if (ii == 9173.376641854227) continue;
-        //                if (ii == 41627.280567151014) continue;
-        //                break;
-        //            case 7:
-        //                if (ii == 0.7342887581157852) continue;
-        //                if (ii == 1706.935284624335) continue;
-        //                if (ii == 69146.16578033564) continue;
-        //                if (ii == 88675.25532946823) continue;
-        //                break;
-        //            case 8:
-        //                if (ii == 0.000447470887129267) continue;
-        //                if (ii == 0.4981192227105844) continue;
-        //                if (ii == 46.54571935386443) continue;
-        //                break;
-        //            case 9:
-        //                if (ii == 4.190615593600832E-05) continue;
-        //                if (ii == 0.00037038951409555193) continue;
-        //                if (ii == 0.4981192227105844) continue;
-        //                if (ii == 1.333979962661673) continue;
-        //                if (ii == 8.159045117086201) continue;
-        //                if (ii == 9357.761512355497) continue;
-        //                if (ii == 15086.827138952829) continue;
-        //                break;
-        //            case 10:
-        //                if (ii == 0.0008890774106083161) continue;
-        //                if (ii == 0.028648311229272454) continue;
-        //                if (ii == 4056.734402316945) continue;
-        //                break;
-        //            case 11:
-        //                if (ii == 0.0035449534097784898) continue;
-        //                if (ii == 0.29105771630835503) continue;
-        //                if (ii == 2.67698212324289) continue;
-        //                if (ii == 5862.291435618707) continue;
-        //                break;
-        //            case 12:
-        //                if (ii == 1.2824319950172336E-05) continue;
-        //                if (ii == 9.106363450393602E-05) continue;
-        //                if (ii == 0.0005092636098313419) continue;
-        //                if (ii == 5.010626365612976) continue;
-        //                if (ii == 116.26423399731596) continue;
-        //                if (ii == 350.8476924541427) continue;
-        //                if (ii == 1304.7880297840097) continue;
-        //                break;
-        //            case 13:
-        //                if (ii == 0.000568169289597344) continue;
-        //                if (ii == 0.019824771765173547) continue;
-        //                if (ii == 1.5956367649543521) continue;
-        //                if (ii == 1.7802014314350167) continue;
-        //                if (ii == 968.0521421510657) continue;
-        //                break;
-        //            case 14:
-        //                if (ii == 7.689208288984288E-05) continue;
-        //                if (ii == 8.926932114884425E-05) continue;
-        //                if (ii == 0.0003594964132768501) continue;
-        //                if (ii == 0.0010634677003891738) continue;
-        //                if (ii == 0.003241292077635545) continue;
-        //                if (ii == 19.19895010555303) continue;
-        //                if (ii == 1848.3663190286366) continue;
-        //                if (ii == 63223.09306645596) continue;
-        //                break;
-        //            case 15:
-        //                if (ii == 0.00021215914243386032) continue;
-        //                if (ii == 0.00023203532954525665) continue;
-        //                if (ii == 0.0027918852288367625) continue;
-        //                if (ii == 0.004456584328541685) continue;
-        //                if (ii == 0.18233689278491932) continue;
-        //                if (ii == 0.3345633394602856) continue;
-        //                if (ii == 0.9606030724686354) continue;
-        //                if (ii == 12.64095196668918) continue;
-        //                if (ii == 27.469258488757564) continue;
-        //                if (ii == 403.29037524996096) continue;
-        //                if (ii == 28806.282151995834) continue;
-        //                break;
-        //            case 16:
-        //                if (ii == 2.088246008273344E-05) continue;
-        //                if (ii == 0.0016476491949521004) continue;
-        //                if (ii == 0.006188814471422317) continue;
-        //                if (ii == 1.4020263473894414) continue;
-        //                if (ii == 3.90712831953763) continue;
-        //                if (ii == 11.218203029452331) continue;
-        //                if (ii == 22.51227889872708) continue;
-        //                if (ii == 26868.139452154428) continue;
-        //                break;
-        //            case 17:
-        //                if (ii == 0.006188814471422317) continue;
-        //                if (ii == 0.04139900050355379) continue;
-        //                if (ii == 1371.3453325531723) continue;
-        //                break;
-        //            case 18:
-        //                if (ii == 2.814640117199497E-05) continue;
-        //                if (ii == 0.0009723708702586616) continue;
-        //                if (ii == 0.23617301183120165) continue;
-        //                if (ii == 0.7717448644551382) continue;
-        //                if (ii == 7.3862771072496205) continue;
-        //                if (ii == 284.6884022588047) continue;
-        //                if (ii == 785.5067129683955) continue;
-        //                if (ii == 18226.530900363294) continue;
-        //                if (ii == 88675.25532946823) continue;
-        //                break;
-        //            case 19:
-        //                if (ii == 0.0001005909054934069) continue;
-        //                if (ii == 8.40627234317903) continue;
-        //                if (ii == 16.7023756465811) continue;
-        //                if (ii == 32.85728420031187) continue;
-        //                if (ii == 22913.720600721652) continue;
-        //                break;
-        //        }
-        //        //0.0004343108345321096
-        //        //    6 7112587273365439443839758e-46 // BigFloat.Pow
-        //        //    6 7112587273365443207877540e-46 //double.Pow
-        //        //    6.7112587273365461884310371466766e-21 //exact
-        //        BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, jj);  // Double->BigFloat->POW->String
-        //        BigFloat POWToBigFloat = (BigFloat)double.Pow(ii, jj);    // Double->POW->BigFloat->String
-        //        if (BigFloatToPOW != POWToBigFloat) Debug.WriteLine($"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
-        //        AreEqual(BigFloatToPOW, POWToBigFloat, $"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
-        //    }
-
+        {
+            // The below TEST has several exceptions from the few that were spot checked the issue was actually with the POW function. 
+            // e.g. 0.31832553782759071^2 is 0.10133114803322488, not 0.10133114803322489
+            // (note: 97 out of 46300 failed)
+            for (int jj = 0; jj < 20; jj++)
+                for (double ii = 0.00001; ii < 100000; ii *= 1.01)
+                {
+                    switch (jj)
+                    {
+                        case 2:
+                            // Spot check: Failure okay because "Double->POW" is the one that is incorrect.
+                            // 0.10133114803322488404... (Calculator)
+                            // 0.10133114803322489   Double->POW          ->String
+                            // 0.10133114803322488   Double->BigFloat->POW->String
+                            // 0.10133114803322489   Double->POW->BigFloat->String
+                            if (ii == 0.31832553782759071) continue;
+                            if (ii == 3.7922202536323169) continue;
+                            if (ii == 1266.4144068422818) continue;
+                            if (ii == 10650.005497109047) continue;
+                            if (ii == 74875.389283707336) continue;
+                            break;
+                        case 3:
+                            if (ii == 0.00015126381262911304) continue;
+                            if (ii == 0.0002207736543748362) continue;
+                            if (ii == 12487.969014230068) continue;
+                            break;
+                        case 4:
+                            if (ii == 0.00018641630355034525) continue;
+                            if (ii == 0.00045194559600055971) continue;
+                            if (ii == 0.32797111994930456) continue;
+                            if (ii == 340.5293137191391) continue;
+                            break;
+                        case 5:
+                            if (ii == 1.6604260161149265) continue;
+                            if (ii == 5980.123493474643) continue;
+                            break;
+                        case 6:
+                            if (ii == 0.0016641256869016213) continue;
+                            if (ii == 0.0065045062076691754) continue;
+                            if (ii == 0.06414019892333388) continue;
+                            // Spot check: Failure okay because "Double->POW" is the one that is incorrect.
+                            // 58462000269625.56645480... (Calculator)
+                            // 58462000269625.563   Double->POW          ->String
+                            // 58462000269625.57    Double->BigFloat->POW->String
+                            // 58462000269625.56    Double->POW->BigFloat->String
+                            if (ii == 197.00576951306914) continue;
+                            if (ii == 9173.376641854227) continue;
+                            if (ii == 41627.280567151014) continue;
+                            break;
+                        case 7:
+                            if (ii == 0.7342887581157852) continue;
+                            if (ii == 1706.935284624335) continue;
+                            if (ii == 69146.16578033564) continue;
+                            if (ii == 88675.25532946823) continue;
+                            break;
+                        case 8:
+                            if (ii == 0.000447470887129267) continue;
+                            if (ii == 0.4981192227105844) continue;
+                            if (ii == 46.54571935386443) continue;
+                            break;
+                        case 9:
+                            if (ii == 4.190615593600832E-05) continue;
+                            if (ii == 0.00037038951409555193) continue;
+                            if (ii == 0.4981192227105844) continue;
+                            if (ii == 1.333979962661673) continue;
+                            if (ii == 8.159045117086201) continue;
+                            if (ii == 9357.761512355497) continue;
+                            if (ii == 15086.827138952829) continue;
+                            break;
+                        case 10:
+                            if (ii == 0.0008890774106083161) continue;
+                            if (ii == 0.028648311229272454) continue;
+                            if (ii == 4056.734402316945) continue;
+                            break;
+                        case 11:
+                            if (ii == 0.0035449534097784898) continue;
+                            if (ii == 0.29105771630835503) continue;
+                            if (ii == 2.67698212324289) continue;
+                            if (ii == 5862.291435618707) continue;
+                            break;
+                        case 12:
+                            if (ii == 1.2824319950172336E-05) continue;
+                            if (ii == 9.106363450393602E-05) continue;
+                            if (ii == 0.0005092636098313419) continue;
+                            if (ii == 5.010626365612976) continue;
+                            if (ii == 116.26423399731596) continue;
+                            if (ii == 350.8476924541427) continue;
+                            if (ii == 1304.7880297840097) continue;
+                            break;
+                        case 13:
+                            if (ii == 0.000568169289597344) continue;
+                            if (ii == 0.019824771765173547) continue;
+                            if (ii == 1.5956367649543521) continue;
+                            if (ii == 1.7802014314350167) continue;
+                            if (ii == 968.0521421510657) continue;
+                            break;
+                        case 14:
+                            if (ii == 7.689208288984288E-05) continue;
+                            if (ii == 8.926932114884425E-05) continue;
+                            if (ii == 0.0003594964132768501) continue;
+                            if (ii == 0.0010634677003891738) continue;
+                            if (ii == 0.003241292077635545) continue;
+                            if (ii == 19.19895010555303) continue;
+                            if (ii == 1848.3663190286366) continue;
+                            if (ii == 63223.09306645596) continue;
+                            break;
+                        case 15:
+                            if (ii == 0.00021215914243386032) continue;
+                            if (ii == 0.00023203532954525665) continue;
+                            if (ii == 0.0027918852288367625) continue;
+                            if (ii == 0.004456584328541685) continue;
+                            if (ii == 0.18233689278491932) continue;
+                            if (ii == 0.3345633394602856) continue;
+                            if (ii == 0.9606030724686354) continue;
+                            if (ii == 12.64095196668918) continue;
+                            if (ii == 27.469258488757564) continue;
+                            if (ii == 403.29037524996096) continue;
+                            if (ii == 28806.282151995834) continue;
+                            break;
+                        case 16:
+                            if (ii == 2.088246008273344E-05) continue;
+                            if (ii == 0.0016476491949521004) continue;
+                            if (ii == 0.006188814471422317) continue;
+                            if (ii == 1.4020263473894414) continue;
+                            if (ii == 3.90712831953763) continue;
+                            if (ii == 11.218203029452331) continue;
+                            if (ii == 22.51227889872708) continue;
+                            if (ii == 26868.139452154428) continue;
+                            break;
+                        case 17:
+                            if (ii == 0.006188814471422317) continue;
+                            if (ii == 0.04139900050355379) continue;
+                            if (ii == 1371.3453325531723) continue;
+                            break;
+                        case 18:
+                            if (ii == 2.814640117199497E-05) continue;
+                            if (ii == 0.0009723708702586616) continue;
+                            if (ii == 0.23617301183120165) continue;
+                            if (ii == 0.7717448644551382) continue;
+                            if (ii == 7.3862771072496205) continue;
+                            if (ii == 284.6884022588047) continue;
+                            if (ii == 785.5067129683955) continue;
+                            if (ii == 18226.530900363294) continue;
+                            if (ii == 88675.25532946823) continue;
+                            break;
+                        case 19:
+                            if (ii == 0.0001005909054934069) continue;
+                            if (ii == 8.40627234317903) continue;
+                            if (ii == 16.7023756465811) continue;
+                            if (ii == 32.85728420031187) continue;
+                            if (ii == 22913.720600721652) continue;
+                            break;
+                    }
+                    //0.0004343108345321096
+                    //    6 7112587273365439443839758e-46 // BigFloat.Pow
+                    //    6 7112587273365443207877540e-46 //double.Pow
+                    //    6.7112587273365461884310371466766e-21 //exact
+                    BigFloat iiAsBF = new BigFloat(ii,0);
+                    BigFloat BigFloatToPOW = BigFloat.Pow(iiAsBF, jj);  // Double->BigFloat->POW->String
+                    BigFloat POWToBigFloat = (BigFloat)double.Pow(ii, jj);    // Double->POW->BigFloat->String
+                    if (BigFloatToPOW != POWToBigFloat) Debug.WriteLine($"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
+                    AreEqual(BigFloatToPOW, POWToBigFloat, $"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}");
+                    // Expected: 6711258727336544e-36
+                    // Actual:   6711258727336544e-36
+                    //           67112587273365439443839758e-46
+                    //           67112587273365443207877540e-46
+                }
+        }
 
 
         BigFloat val, res, ans;
