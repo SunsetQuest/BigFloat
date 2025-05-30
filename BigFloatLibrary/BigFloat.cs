@@ -207,8 +207,8 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    // Todo: consider changing 32 to 16(or 24 or 8 or 0) since a double is not exact. 
-    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 32)
+    // Note: changed the default 32(GuardBits) to 24 since double is not exact. There is no great solution to this but moving 8 bits of the mantissa into the GuardBit area is a good compromise. In the past we had zero mantissa bits stored in the GuardBit area and this created some issues.  If we move all 32 bits into the GuardBit area then we would just be left with 53-32 GuardBits= 21 bits. A balance of 8 bits was selected but it is best if the user selects the value.
+    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)
     {
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
