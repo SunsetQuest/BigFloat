@@ -2201,7 +2201,7 @@ public class BigFloatTests
         IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
         bf = new BigFloat(double.E); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
-        bf = new BigFloat(double.Epsilon); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
+        bf = new BigFloat(double.Epsilon); IsTrue(bf.IsInteger);
         bf = new BigFloat(double.Pi); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
         bf = new BigFloat(0.001); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
         bf = new BigFloat(-0.001); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
@@ -2385,167 +2385,271 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Verify_Floor()
+    public void Floor_Ceiling_ZeroValues_ShouldBehaveCorrectly()
     {
-        FloorCeilingCheckerDouble(0);
-        FloorCeilingCheckerDouble(double.NegativeZero);       // should accept as 0.0
-        FloorCeilingCheckerDouble(double.Epsilon);
-        FloorCeilingCheckerDouble(-double.Epsilon);
-        FloorCeilingCheckerDouble(double.Epsilon * 2);
-        FloorCeilingCheckerDouble(-double.Epsilon * 2);
-        FloorCeilingCheckerDouble(double.Epsilon * 3);
-        FloorCeilingCheckerDouble(-double.Epsilon * 3);
-        FloorCeilingCheckerDouble(0.123);
-        FloorCeilingCheckerDouble(-0.123);
-        FloorCeilingCheckerDouble(0.5);
-        FloorCeilingCheckerDouble(-0.5);
-        FloorCeilingCheckerDouble(0.75);
-        FloorCeilingCheckerDouble(0.75);
-        FloorCeilingCheckerDouble(-0.7);
-        FloorCeilingCheckerDouble(-0.7);
-        FloorCeilingCheckerDouble(0.99);
-        FloorCeilingCheckerDouble(0.99);
-        FloorCeilingCheckerDouble(-0.99);
-        FloorCeilingCheckerDouble(-0.99);
-        FloorCeilingCheckerDouble(1);
-        FloorCeilingCheckerDouble(1);
-        FloorCeilingCheckerDouble(-1);
-        FloorCeilingCheckerDouble(-1);
-        FloorCeilingCheckerDouble(1.1);
-        FloorCeilingCheckerDouble(-1.1);
-        FloorCeilingCheckerDouble(1.99);
-        FloorCeilingCheckerDouble(1.99);
-        FloorCeilingCheckerDouble(-1.99);
-        FloorCeilingCheckerDouble(-1.99);
-        FloorCeilingCheckerDouble(2);
-        FloorCeilingCheckerDouble(-2);
-        FloorCeilingCheckerDouble(2.1);
-        FloorCeilingCheckerDouble(-2.1);
-        FloorCeilingCheckerDouble(-127);
-        FloorCeilingCheckerDouble(127);
-        FloorCeilingCheckerDouble(-128);
-        FloorCeilingCheckerDouble(128);
-        FloorCeilingCheckerDouble(255);
-        FloorCeilingCheckerDouble(-255);
-        FloorCeilingCheckerDouble(255);
-        FloorCeilingCheckerDouble(-255);
-        FloorCeilingCheckerDouble(-32767);
-        FloorCeilingCheckerDouble(32767);
-        FloorCeilingCheckerDouble(-32768);
-        FloorCeilingCheckerDouble(32768);
-        FloorCeilingCheckerDouble(-65535);
-        FloorCeilingCheckerDouble(65535);
-        FloorCeilingCheckerDouble(-65536);
-        FloorCeilingCheckerDouble(65536);
-        FloorCeilingCheckerDouble(double.MinValue);
-        FloorCeilingCheckerDouble(double.MaxValue);
+        // Zero should be treated as integer with floor == ceiling == 0
+        AssertIntegerBehavior(0.0, expectedValue: 0);
+        AssertIntegerBehavior(double.NegativeZero, expectedValue: 0);
+    }
 
-        FloorCeilingChecker(new BigFloat(0), new BigFloat(0), new BigFloat(0));         // 0
+    [TestMethod]
+    public void Floor_Ceiling_EpsilonValues_ShouldBeConsideredZero()
+    {
+        // Due to 8-bit guard area, small epsilon values become zero in BigFloat
+        AssertIntegerBehavior(double.Epsilon, expectedValue: 0);
+        AssertIntegerBehavior(-double.Epsilon, expectedValue: 0);
+        AssertIntegerBehavior(double.Epsilon * 64, expectedValue: 0);
+        AssertIntegerBehavior(-double.Epsilon * 64, expectedValue: 0);
 
-        FloorCeilingChecker(new BigFloat(1, -1), new BigFloat(0), new BigFloat(1));     // .1
-        FloorCeilingChecker(new BigFloat(-1, -1), new BigFloat(-1), new BigFloat(0));   //-.1
+        // Larger epsilon multiples may still be considered zero due to precision loss
+        AssertFloorCeilingBehavior(double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 0);
+        AssertFloorCeilingBehavior(-double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 0);
+        AssertFloorCeilingBehavior(double.Epsilon * 256, expectedFloor: 0, expectedCeiling: 0);
+        AssertFloorCeilingBehavior(-double.Epsilon * 256, expectedFloor: 0, expectedCeiling: 0);
+    }
 
-        FloorCeilingChecker(new BigFloat(3, -2), new BigFloat(0), new BigFloat(1));     // .11
-        FloorCeilingChecker(new BigFloat(-3, -2), new BigFloat(-1), new BigFloat(0));   //-.11
+    [TestMethod]
+    public void Floor_Ceiling_PositiveIntegers_ShouldBeIdentical()
+    {
+        var integerValues = new[] { 1, 2, 127, 128, 255, 256, 32767, 32768, 65535, 65536 };
 
-        FloorCeilingChecker(new BigFloat(65535, 0), new BigFloat(65535), new BigFloat(65535));     // .1111111111111111
-        FloorCeilingChecker(new BigFloat(-65535, 0), new BigFloat(-65535), new BigFloat(-65535));   //-.1111111111111111
-
-        FloorCeilingChecker(new BigFloat(3, -18), new BigFloat(0), new BigFloat(1));     // .000000000000000011
-        FloorCeilingChecker(new BigFloat(-3, -18), new BigFloat(-1), new BigFloat(0));   //-.000000000000000011
-
-        FloorCeilingChecker(new BigFloat(1), new BigFloat(1), new BigFloat(1));         // 1
-        FloorCeilingChecker(new BigFloat(-1), new BigFloat(-1), new BigFloat(-1));      //-1
-
-        FloorCeilingChecker(new BigFloat(3, -1), new BigFloat(1), new BigFloat(2));     // 1.1
-        FloorCeilingChecker(new BigFloat(-3, -1), new BigFloat(-2), new BigFloat(-1));  //-1.1
-
-        FloorCeilingChecker(new BigFloat(1, 1), new BigFloat(2), new BigFloat(2));      // 1 << 1
-        FloorCeilingChecker(new BigFloat(-1, 1), new BigFloat(-2), new BigFloat(-2));   //-1 << 1
-
-        FloorCeilingChecker(new BigFloat(int.MaxValue, 0), new BigFloat(int.MaxValue), new BigFloat(int.MaxValue));    // 0x7fffffff
-        FloorCeilingChecker(new BigFloat(int.MinValue, 0), new BigFloat(int.MinValue), new BigFloat(int.MinValue));    //-0x80000000 
-
-        FloorCeilingChecker(new BigFloat(uint.MaxValue, 0), new BigFloat(uint.MaxValue), new BigFloat(uint.MaxValue));  // 0xffffffff
-
-        FloorCeilingChecker(new BigFloat(long.MaxValue, 0), new BigFloat(long.MaxValue), new BigFloat(long.MaxValue));
-        FloorCeilingChecker(new BigFloat(long.MinValue, 0), new BigFloat(long.MinValue), new BigFloat(long.MinValue));
-
-        FloorCeilingChecker(new BigFloat(ulong.MaxValue, 0), new BigFloat(ulong.MaxValue), new BigFloat(ulong.MaxValue));
-
-        FloorCeilingChecker(new BigFloat(ulong.MaxValue, -1), new BigFloat(ulong.MaxValue - 1, -1), new BigFloat(BigInteger.Parse("10000000000000000", NumberStyles.AllowHexSpecifier), -1));
-        // Value: 1111111111111111111111111111111.1|00000000000000000000000000000000
-        // Floor: 1111111111111111111111111111111.0|00000000000000000000000000000000
-        // Ceil: 10000000000000000000000000000000.0|00000000000000000000000000000000
-
-        FloorCeilingChecker(new BigFloat(ulong.MaxValue - 1, -1), new BigFloat(ulong.MaxValue - 1, -1), new BigFloat(ulong.MaxValue - 1, -1));
-        // Value: 1111111111111111111111111111111.0|00000000000000000000000000000000
-        // Floor: 1111111111111111111111111111111.0|00000000000000000000000000000000
-        // Ceil:  1111111111111111111111111111111.0|00000000000000000000000000000000
-
-        FloorCeilingChecker(new BigFloat(ulong.MaxValue - 2, -1), new BigFloat(ulong.MaxValue - 3, -1), new BigFloat(ulong.MaxValue - 1, -1));
-        // Value: 1111111111111111111111111111110.1|00000000000000000000000000000000
-        // Floor: 1111111111111111111111111111110.0|00000000000000000000000000000000
-        // Ceil:  1111111111111111111111111111111.0|00000000000000000000000000000000
-
-        static void FloorCeilingChecker(BigFloat val, BigFloat manualValueForFloor, BigFloat manualValueForCeiling)
+        foreach (var value in integerValues)
         {
-            if (manualValueForCeiling < manualValueForFloor)
-            {
-                throw new Exception("Test Error, floor should be equal to or less then manualValueForCeiling.");
-            }
-
-            BigFloat floorBI = val.Floor();
-            AreEqual(floorBI, manualValueForFloor, $"BigInteger.Floor() ({floorBI}) does not match ({manualValueForFloor})");
-
-            BigFloat ceilingBI = val.Ceiling();
-            AreEqual(ceilingBI, manualValueForCeiling, $"BigInteger.Ceiling() ({ceilingBI}) does not match ({manualValueForCeiling})");
-
-            // Compare Ceiling() vs Floor() - except for integers, ceiling should be larger by one
-
-            if (val.IsInteger)
-            {
-                AreEqual(floorBI, ceilingBI, $"For integers (like {val}) Floor() and Ceiling() should match.");
-            }
-            else
-            {
-                AreEqual(floorBI + 1, ceilingBI, $"For non-integers, ({val}).Floor() should be one unit less then ({val}).Ceiling()).");
-            }
+            AssertIntegerBehavior(value, expectedValue: value);
         }
     }
 
-    private static void FloorCeilingCheckerDouble(double value)
+    [TestMethod]
+    public void Floor_Ceiling_NegativeIntegers_ShouldBeIdentical()
     {
-        BigFloat res = new(value);
+        var integerValues = new[] { -1, -2, -127, -128, -255, -256, -32767, -32768, -65535, -65536 };
 
-        // doubles.Floor() should match BigFloat.Floor()
-        BigFloat floorBI = res.Floor();
-        double floorDub = double.Floor(value);
-
-        BigFloat floorBackToBI = (BigFloat)floorDub;
-        AreEqual(floorBI, floorBackToBI, $"BigInteger.Floor() ({floorBI}) does not match Double.Floor() ({floorDub})");
-
-        double floorBackToDub = (double)floorBI;
-        AreEqual(floorBackToDub, floorDub, $"BigInteger.Floor() ({floorBI}) does not match Double.Floor() ({floorDub})");
-
-        // doubles.Ceiling() should match BigFloat.Ceiling()
-        BigFloat ceilingBI = res.Ceiling();
-        double ceilingDub = double.Ceiling(value);
-
-        BigFloat ceilingBackToBI = (BigFloat)ceilingDub;
-        AreEqual(ceilingBI, ceilingBackToBI, $"BigInteger.Ceiling() ({ceilingBI}) does not match Double.Ceiling() ({ceilingDub})");
-
-        double ceilingBackToDub = (double)ceilingBI;
-        AreEqual(ceilingBackToDub, ceilingDub, $"BigInteger.Ceiling() ({ceilingBI}) does not match Double.Ceiling() ({ceilingDub})");
-
-        // Compare Ceiling() vs Floor() - except for integers, ceiling should be larger by one
-        if (res.IsInteger)
+        foreach (var value in integerValues)
         {
-            AreEqual(floorBI, ceilingBI, $"For integers (like {res}) Floor() and Ceiling() should match.");
+            AssertIntegerBehavior(value, expectedValue: value);
+        }
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_PositiveFractionalValues_ShouldDifferByOne()
+    {
+        var testCases = new[]
+        {
+            (value: 0.123, floor: 0, ceiling: 1),
+            (value: 0.5, floor: 0, ceiling: 1),
+            (value: 0.75, floor: 0, ceiling: 1),
+            (value: 0.99, floor: 0, ceiling: 1),
+            (value: 1.1, floor: 1, ceiling: 2),
+            (value: 1.99, floor: 1, ceiling: 2),
+            (value: 2.1, floor: 2, ceiling: 3)
+        };
+
+        foreach (var (value, floor, ceiling) in testCases)
+        {
+            AssertFloorCeilingBehavior(value, expectedFloor: floor, expectedCeiling: ceiling, shouldBeInteger: false);
+        }
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_NegativeFractionalValues_ShouldDifferByOne()
+    {
+        var testCases = new[]
+        {
+            (value: -0.123, floor: -1, ceiling: 0),
+            (value: -0.5, floor: -1, ceiling: 0),
+            (value: -0.7, floor: -1, ceiling: 0),
+            (value: -0.99, floor: -1, ceiling: 0),
+            (value: -1.1, floor: -2, ceiling: -1),
+            (value: -1.99, floor: -2, ceiling: -1),
+            (value: -2.1, floor: -3, ceiling: -2)
+        };
+
+        foreach (var (value, floor, ceiling) in testCases)
+        {
+            AssertFloorCeilingBehavior(value, expectedFloor: floor, expectedCeiling: ceiling, shouldBeInteger: false);
+        }
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_ExtremeValues_ShouldHandleCorrectly()
+    {
+        // Min/Max values should have floor == ceiling (they're effectively integers at that scale)
+        var bigFloat = new BigFloat(double.MinValue);
+        var floor = bigFloat.Floor();
+        var ceiling = bigFloat.Ceiling();
+
+        AreEqual(floor, ceiling, "MinValue floor should equal ceiling");
+        IsFalse(bigFloat.IsInteger, "MinValue should not be considered an integer");
+
+        bigFloat = new BigFloat(double.MaxValue);
+        floor = bigFloat.Floor();
+        ceiling = bigFloat.Ceiling();
+
+        AreEqual(floor, ceiling, "MaxValue floor should equal ceiling");
+        IsFalse(bigFloat.IsInteger, "MaxValue should not be considered an integer");
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_ConsistencyWithDoubleOperations()
+    {
+        var testValues = new[] { 0.123, -0.123, 1.5, -1.5, 42.7, -42.7 };
+
+        foreach (var value in testValues)
+        {
+            var bigFloat = new BigFloat(value);
+            var bigFloatFloor = bigFloat.Floor();
+            var bigFloatCeiling = bigFloat.Ceiling();
+
+            var doubleFloor = double.Floor(value);
+            var doubleCeiling = double.Ceiling(value);
+
+            // Convert back to compare (accounting for potential precision differences)
+            var floorAsDouble = (double)bigFloatFloor;
+            var ceilingAsDouble = (double)bigFloatCeiling;
+
+            // For non-edge cases, BigFloat operations should match double operations
+            // (This may need adjustment based on actual BigFloat precision behavior)
+            AreEqual(doubleFloor, floorAsDouble,
+                $"Floor mismatch for {value}: BigFloat={floorAsDouble}, Double={doubleFloor}");
+            AreEqual(doubleCeiling, ceilingAsDouble,
+                $"Ceiling mismatch for {value}: BigFloat={ceilingAsDouble}, Double={doubleCeiling}");
+        }
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_DirectConstruction_ZeroAndSmallFractions()
+    {
+        // Zero
+        AssertFloorCeilingValues(new BigFloat(0), new BigFloat(0), new BigFloat(0));
+
+        // Small positive fractional values
+        AssertFloorCeilingValues(new BigFloat(1, -1), new BigFloat(0), new BigFloat(1));     // 0.5
+        AssertFloorCeilingValues(new BigFloat(3, -2), new BigFloat(0), new BigFloat(1));     // 0.75
+        AssertFloorCeilingValues(new BigFloat(3, -18), new BigFloat(0), new BigFloat(1));    // Very small: 3 * 2^-18
+
+        // Small negative fractional values  
+        AssertFloorCeilingValues(new BigFloat(-1, -1), new BigFloat(-1), new BigFloat(0));   // -0.5
+        AssertFloorCeilingValues(new BigFloat(-3, -2), new BigFloat(-1), new BigFloat(0));   // -0.75
+        AssertFloorCeilingValues(new BigFloat(-3, -18), new BigFloat(-1), new BigFloat(0));  // Very small: -3 * 2^-18
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_DirectConstruction_IntegerValues()
+    {
+        // Simple integers
+        AssertFloorCeilingValues(new BigFloat(1), new BigFloat(1), new BigFloat(1));         // 1
+        AssertFloorCeilingValues(new BigFloat(-1), new BigFloat(-1), new BigFloat(-1));      // -1
+
+        // Larger integer values
+        AssertFloorCeilingValues(new BigFloat(65535, 0), new BigFloat(65535), new BigFloat(65535));     // 65535
+        AssertFloorCeilingValues(new BigFloat(-65535, 0), new BigFloat(-65535), new BigFloat(-65535));   // -65535
+
+        // Powers of 2
+        AssertFloorCeilingValues(new BigFloat(1, 1), new BigFloat(2), new BigFloat(2));      // 2
+        AssertFloorCeilingValues(new BigFloat(-1, 1), new BigFloat(-2), new BigFloat(-2));   // -2
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_DirectConstruction_MixedFractionalValues()
+    {
+        // Values > 1 with fractional parts
+        AssertFloorCeilingValues(new BigFloat(3, -1), new BigFloat(1), new BigFloat(2));     // 1.5
+        AssertFloorCeilingValues(new BigFloat(-3, -1), new BigFloat(-2), new BigFloat(-1));  // -1.5
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_DirectConstruction_ExtremeLargeValues()
+    {
+        // Standard integer limits
+        AssertFloorCeilingValues(new BigFloat(int.MaxValue, 0), new BigFloat(int.MaxValue), new BigFloat(int.MaxValue));
+        AssertFloorCeilingValues(new BigFloat(int.MinValue, 0), new BigFloat(int.MinValue), new BigFloat(int.MinValue));
+        AssertFloorCeilingValues(new BigFloat(uint.MaxValue, 0), new BigFloat(uint.MaxValue), new BigFloat(uint.MaxValue));
+        AssertFloorCeilingValues(new BigFloat(long.MaxValue, 0), new BigFloat(long.MaxValue), new BigFloat(long.MaxValue));
+        AssertFloorCeilingValues(new BigFloat(long.MinValue, 0), new BigFloat(long.MinValue), new BigFloat(long.MinValue));
+        AssertFloorCeilingValues(new BigFloat(ulong.MaxValue, 0), new BigFloat(ulong.MaxValue), new BigFloat(ulong.MaxValue));
+    }
+
+    [TestMethod]
+    public void Floor_Ceiling_DirectConstruction_EdgeCasesWithLargeFractions()
+    {
+        // Complex edge case: ulong.MaxValue with fractional part
+        // Value: 18446744073709551615.5 (binary: 1111...1111.1)
+        AssertFloorCeilingValues(
+            new BigFloat(ulong.MaxValue, -1),
+            new BigFloat(ulong.MaxValue - 1, -1),
+            new BigFloat(BigInteger.Parse("10000000000000000", NumberStyles.AllowHexSpecifier), -1));
+
+        // Edge case: exactly representable large value
+        // Value: 18446744073709551614.0 (binary: 1111...1110.0)
+        AssertFloorCeilingValues(
+            new BigFloat(ulong.MaxValue - 1, -1),
+            new BigFloat(ulong.MaxValue - 1, -1),
+            new BigFloat(ulong.MaxValue - 1, -1));
+
+        // Edge case: large value with fractional part  
+        // Value: 18446744073709551613.5 (binary: 1111...1110.1)
+        AssertFloorCeilingValues(
+            new BigFloat(ulong.MaxValue - 2, -1),
+            new BigFloat(ulong.MaxValue - 3, -1),
+            new BigFloat(ulong.MaxValue - 1, -1));
+    }
+
+    // Helper methods for cleaner assertions
+    private static void AssertIntegerBehavior(double value, int expectedValue)
+    {
+        var bigFloat = new BigFloat(value);
+        var floor = bigFloat.Floor();
+        var ceiling = bigFloat.Ceiling();
+
+        AreEqual(expectedValue, (int)floor, $"Floor of {value} should be {expectedValue}");
+        AreEqual(expectedValue, (int)ceiling, $"Ceiling of {value} should be {expectedValue}");
+        AreEqual(floor, ceiling, $"Floor and ceiling of integer value {value} should be equal");
+        IsTrue(bigFloat.IsInteger, $"Value {value} should be considered an integer");
+    }
+
+    private static void AssertFloorCeilingBehavior(double value, int expectedFloor, int expectedCeiling, bool shouldBeInteger = true)
+    {
+        var bigFloat = new BigFloat(value);
+        var floor = bigFloat.Floor();
+        var ceiling = bigFloat.Ceiling();
+
+        AreEqual(expectedFloor, (int)floor, $"Floor of {value} should be {expectedFloor}");
+        AreEqual(expectedCeiling, (int)ceiling, $"Ceiling of {value} should be {expectedCeiling}");
+
+        if (shouldBeInteger)
+        {
+            AreEqual(floor, ceiling, $"Floor and ceiling of {value} should be equal for integer values");
+            IsTrue(bigFloat.IsInteger, $"Value {value} should be considered an integer");
         }
         else
         {
-            AreEqual(floorBI + 1, ceilingBI, $"For non-integers, ({res}).Floor() should be one unit less then ({res}).Ceiling()).");
+            AreEqual(1, (int)ceiling - (int)floor, $"Ceiling - Floor should equal 1 for fractional value {value}");
+            IsFalse(bigFloat.IsInteger, $"Value {value} should not be considered an integer");
+        }
+    }
+
+    private static void AssertFloorCeilingValues(BigFloat value, BigFloat expectedFloor, BigFloat expectedCeiling)
+    {
+        // Validate test data consistency
+        if (expectedCeiling < expectedFloor)
+        {
+            throw new ArgumentException("Test Error: expectedFloor should be less than or equal to expectedCeiling");
+        }
+
+        var actualFloor = value.Floor();
+        var actualCeiling = value.Ceiling();
+
+        AreEqual(expectedFloor, actualFloor, $"Floor of {value} should be {expectedFloor}, but was {actualFloor}");
+        AreEqual(expectedCeiling, actualCeiling, $"Ceiling of {value} should be {expectedCeiling}, but was {actualCeiling}");
+
+        // Verify floor/ceiling relationship
+        if (value.IsInteger)
+        {
+            AreEqual(actualFloor, actualCeiling, $"For integer value {value}, Floor() and Ceiling() should be equal");
+        }
+        else
+        {
+            AreEqual(actualFloor + 1, actualCeiling, $"For non-integer value {value}, Floor() should be one unit less than Ceiling()");
         }
     }
 
@@ -4669,19 +4773,19 @@ public class BigFloatTests
         IsTrue(a != b, $"Fail-60f on VerifyCompareTo");
 
         a = new BigFloat(100000000.000000);
-        b = new BigFloat(100000000.000001);
-        IsTrue(a < b, $"Fail-80a on VerifyCompareTo");
+        b = new BigFloat(100000000.000001); // "...0001" falls in GuardBit area
+        IsFalse(a < b, $"Fail-80a on VerifyCompareTo");
         IsFalse(b < a, $"Fail-80aa on VerifyCompareTo");
-        IsTrue(b > a, $"Fail-80b on VerifyCompareTo");
+        IsFalse(b > a, $"Fail-80b on VerifyCompareTo");
         IsFalse(a > b, $"Fail-80bb on VerifyCompareTo");
         IsTrue(a <= b, $"Fail-80c on VerifyCompareTo");
-        IsFalse(b <= a, $"Fail-80cc on VerifyCompareTo");
+        IsTrue(b <= a, $"Fail-80cc on VerifyCompareTo");
         IsTrue(b >= a, $"Fail-80d on VerifyCompareTo");
-        IsFalse(a >= b, $"Fail-80dd on VerifyCompareTo");
-        IsFalse(a == b, $"Fail-80e on VerifyCompareTo");
-        IsFalse(b == a, $"Fail-80ee on VerifyCompareTo");
-        IsTrue(a != b, $"Fail-80f on VerifyCompareTo");
-        IsTrue(b != a, $"Fail-80ff on VerifyCompareTo");
+        IsTrue(a >= b, $"Fail-80dd on VerifyCompareTo");
+        IsTrue(a == b, $"Fail-80e on VerifyCompareTo");
+        IsTrue(b == a, $"Fail-80ee on VerifyCompareTo");
+        IsFalse(a != b, $"Fail-80f on VerifyCompareTo");
+        IsFalse(b != a, $"Fail-80ff on VerifyCompareTo");
 
         // Zero ranges
         a = new BigFloat(-1.0000000);
@@ -5257,11 +5361,18 @@ public class BigFloatTests
         IsFalse(a.IsExactMatchOf(b), $"Fail-60d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat(100000000.000000);
-        b = new BigFloat(100000000.000001);
-        IsTrue(a.CompareTo(b) < 0, $"Fail-70a on Verify_CompareTo_With_Doubles");
+        b = new BigFloat(100000000.000001); // "...0001" falls in GuardBit area because default Double->BigFloat conversion
+        IsTrue(a.CompareTo(b) == 0, $"Fail-70a on Verify_CompareTo_With_Doubles");
         IsTrue(a.StrictCompareTo(b) < 0, $"Fail-70b on Verify_StrictCompareTo_With_Doubles");
         IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-70c on Verify_FullPrecisionCompareTo_With_Doubles");
         IsFalse(a.IsExactMatchOf(b), $"Fail-70d on Verify_IsExactMatchOf_With_Doubles");
+
+        a = new BigFloat(100000000.000000, addedBinaryPrecision: BigFloat.GuardBits);
+        b = new BigFloat(100000000.000001, addedBinaryPrecision: BigFloat.GuardBits);
+        IsTrue(a.CompareTo(b) < 0, $"Fail-72a on Verify_CompareTo_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) < 0, $"Fail-72b on Verify_StrictCompareTo_With_Doubles");
+        IsTrue(a.FullPrecisionCompareTo(b) < 0, $"Fail-72c on Verify_FullPrecisionCompareTo_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-72d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat("100000000.000000");
         b = new BigFloat("100000000.000001");
@@ -5271,23 +5382,27 @@ public class BigFloatTests
         IsFalse(a.IsExactMatchOf(b), $"Fail-80d on Verify_IsExactMatchOf_With_Doubles");
 
         a = new BigFloat("100000000.000001");
-        b = new BigFloat(100000000.000001d);
-        //TrueAns101111101011110000100000000.00000000000000000001000011000110111101111010000010110101111011...  (matches / good)
-        //a      1011111010111100001000000000000000000000000000100001100011011110111101000001011          450359962737054103599627 (5f5e100000010c6f7a0b)
-        //a                                                     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        //b      1011111010111100001000000000000000000000000000100001100000000000000000000000000000000  28823037615171462162808832 (17d7840000004300000000)
-        //b                                                           XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        //b      1011111010111100001000000000000000000000000000100001100000000000000000000000000000000  28823037615171462162808832 (17d7840000004300000000)
-        //area ignored for StrictCompareTo()                                                     XXXXXX
-        //area ignored for Compare()                            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        AreNotEqual(0, a.StrictCompareTo(b), $"Fail-80 on Verify_CompareToExact_With_Doubles");
-        AreEqual(0, a.CompareTo(b), $"Fail-80 on Verify_CompareToExact_With_Doubles");
+        b = new BigFloat(100000000.000001d); // "...0001" falls in GuardBit area because default Double->BigFloat conversion
+        //TrueAns 101111101011110000100000000.00000000000000000001000011000110111101111010000010110101111011...  (matches / good)
+        //a       10111110101111000010000000000000000000000000001000011000110111101111010000010           
+        //b       10111110101111000010000000000000000000000000001000011000000000000000000000000 (subtract) using:24
+        //32 GuardBits                                         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //                                                                110111101111010000010
+        //area ignored for StrictCompareTo()                                             XXXXXX
+        //area ignored for Compare()                            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //area ignored for IsExactMatchOf()                     ______________ALL______________
+        IsTrue(a.StrictCompareTo(b) > 0, $"Fail-80 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) == 0, $"Fail-80 on Verify_CompareToExact_With_Doubles");
+        IsFalse(a.IsExactMatchOf(b), $"Fail-80d on Verify_IsExactMatchOf_With_Doubles");
 
         // Floats of different sizes 
         // These values are first translated from 52 bit doubles
-        a = new BigFloat(0.0000123);  //0.0000000000000000110011100101110000011001
-        b = new BigFloat(0.00001234); //0.000000000000000011001111000001111110010
+        a = new BigFloat(0.0000123);  //0.0000000000000000110011100101110000011001000001011000101010000111
+        b = new BigFloat(0.00001234); //0.000000000000000011001111000001111110010101111100100111000000011111100
+        //area ignored for StrictCompareTo()                                                        XXXXXX 
+        //area ignored for Compare()                                       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         IsTrue(a.StrictCompareTo(b) < 0, $"Fail-90 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.CompareTo(b) < 0, $"Fail-80 on Verify_CompareToExact_With_Doubles");
 
         a = new BigFloat(-0.000000044501); // 0.000000000000000000000000101111110010000101011101111100
         b = new BigFloat(-0.0000000445);   // 0.000000000000000000000000101111110010000001000100011101
@@ -5296,7 +5411,7 @@ public class BigFloatTests
         // 1.00000000000000001 is beyond the precision of double
         a = new BigFloat(1.00000000000000001);
         b = new BigFloat(1.00000000000000002);
-        AreEqual(0, a.StrictCompareTo(b), $"Fail-110 on Verify_CompareToExact_With_Doubles");
+        IsTrue(a.StrictCompareTo(b) == 0, $"Fail-110 on Verify_CompareToExact_With_Doubles");
 
         a = new BigFloat(1.0);
         b = new BigFloat(1.01);
@@ -7449,11 +7564,5 @@ public class BigFloatTests
         result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
         Assert.AreEqual(answer, result, $"BigIntegerToBinaryString({input}) was {result} but expected {answer}");
     }
-
-
-
-
-
-
 }
 

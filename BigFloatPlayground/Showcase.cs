@@ -13,7 +13,6 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using static BigFloatLibrary.BigFloat;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 #pragma warning disable IDE0051  // Ignore unused private members
 //#pragma warning disable CS0162 // Ignore unreachable code
@@ -27,6 +26,15 @@ public static class Showcase
     {
         //////////////////// TEST AREA ////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
+
+        BigFloat x = new("1.1234567890123456");
+        Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));
+
+        Console.WriteLine(ConstantVisualization.GetConstantInfo("Pi"));
+
+        var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 20000).GetAll();
+        Console.WriteLine(ConstantVisualization.CreateComparisonTable(allConstants));
+
 
         // CastingFromFloatAndDouble_Stuff(); return;
         // Constant_Stuff(); return;
