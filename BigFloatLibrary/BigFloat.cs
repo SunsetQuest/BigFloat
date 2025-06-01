@@ -462,13 +462,18 @@ public readonly partial struct BigFloat
             return this;
         }
 
+        int sign = Sign;
+
         // If less then zero, we can just return 0 for positive numbers and -1 for negative.
         //   Example: Scale = -11, int=45, size=6+32=38  -> bitsToClear=32+11   -.00000 101101[10101010010...00010]
         if (bitsToClear >= _size)
         {
-            return Mantissa.Sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.MinusOne << GuardBits, 0, 1 + GuardBits);
+            return sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.MinusOne << GuardBits, 0, 1 + GuardBits);
         }
-
+        if (sign == 0)
+        {
+            return new BigFloat(0, 0, 0);// BigFloat.ZeroWithSpecifiedLeastPrecision(Scale);
+        }
         if (Mantissa.Sign > 0)
         {
             // If Positive and Floor, the size should always remain the same.
@@ -485,7 +490,7 @@ public readonly partial struct BigFloat
             //return new BigFloat((DataBits >> bitsToClear) +  (IsInteger?0:1));
             return new BigFloat(Mantissa >> bitsToClear);
         }
-        else  // if (DataBits.Sign <= 0)
+        else  // if (sign <= 0)
         {
             //   If Negative and Flooring, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
             // Lets just remove the bits and clear GuardBits
@@ -522,43 +527,6 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the GuardBits, 
-    /// then they are considered not equal. 
-    ///   Returns negative => this instance is less than other
-    ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
-    ///     i.e. Sub-Precision bits rounded and removed. 
-    ///     e.g. 1.11==1.1,  1.00==1.0,  1.11!=1.10)
-    ///   Returns Positive => this instance is greater than other
-    /// </summary>
-    public int CompareTo(BigFloat other)
-    {
-        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
-
-        // At this point, the exponent is equal or off by one because of a rollover.
-
-        int sizeDiff = other.Scale - Scale;
-
-        BigInteger diff = ((sizeDiff < 0) ? (other.Mantissa << sizeDiff) : other.Mantissa)
-            - ((sizeDiff > 0) ? (Mantissa >> sizeDiff) : Mantissa);
-
-
-        return diff.Sign >= 0 ? 
-            -(diff >> (GuardBits - 1)).Sign : 
-            (-diff >> (GuardBits - 1)).Sign;
-        // Alternative Method - this method rounds off the GuardBits and then compares the numbers. 
-        // The drawback to this method are...
-        //   - the two numbers can be one tick apart in the guard bits but considered not equal.
-        //   - the two numbers can be very near 1 apart but considered not equal..
-        // The advantage to this method are...
-        //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
-        //   - may have slightly better performance.
-        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + GuardBits);
-        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + GuardBits);
-        // return a.CompareTo(b);
-    }
-
-
-    /// <summary>
     /// Rounds to the next integer towards positive infinity. Any fractional bits are removed, negative scales are set
     /// to zero, and the precision(size) will be resized to just the integer part.
     /// </summary>
@@ -577,21 +545,28 @@ public readonly partial struct BigFloat
             return this;
         }
 
+        int sign = Sign;
+
         // If less then zero, we can just return 1 for positive numbers and 0 for negative.
         //   Example: Scale = -11, int=45, size=6+32=38  -> bitsToClear=32+11   -.00000 101101[10101010010...00010]
         if (bitsToClear >= _size)
         {
-            return Mantissa.Sign <= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits);
+            return (sign <= 0) ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits);
         }
 
         // Radix point is in the GuardBits area
         //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
         if (Scale < GuardBits) // SCALE >= 0 and SCALE<GuardBits
         {
-            // optimization here?
+            // Future: optimization here?
         }
 
-        if (Mantissa.Sign > 0)
+        if (sign == 0)
+        {
+            return new BigFloat(0, 0, 0);// BigFloat.ZeroWithSpecifiedLeastPrecision(Scale);
+        }
+
+        if (sign > 0)
         {
             //   If Positive and Ceiling, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
             // Lets just remove the bits and clear GuardBits
@@ -632,7 +607,7 @@ public readonly partial struct BigFloat
                 return new BigFloat(intPart, 0, newSize);
             }
         }
-        else  // if (DataBits.Sign <= 0)
+        else  // if (sign < 0)
         {
             // If Negative and Ceiling, the size should always remain the same.
             // If Scale is between 0 and GuardBits..
@@ -650,6 +625,42 @@ public readonly partial struct BigFloat
 
             return new BigFloat(intPart);
         }
+    }
+
+    /// <summary>
+    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the GuardBits, 
+    /// then they are considered not equal. 
+    ///   Returns negative => this instance is less than other
+    ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
+    ///     i.e. Sub-Precision bits rounded and removed. 
+    ///     e.g. 1.11==1.1,  1.00==1.0,  1.11!=1.10)
+    ///   Returns Positive => this instance is greater than other
+    /// </summary>
+    public int CompareTo(BigFloat other)
+    {
+        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
+
+        // At this point, the exponent is equal or off by one because of a rollover.
+
+        int sizeDiff = other.Scale - Scale;
+
+        BigInteger diff = ((sizeDiff < 0) ? (other.Mantissa << sizeDiff) : other.Mantissa)
+            - ((sizeDiff > 0) ? (Mantissa >> sizeDiff) : Mantissa);
+
+
+        return diff.Sign >= 0 ? 
+            -(diff >> (GuardBits - 1)).Sign : 
+            (-diff >> (GuardBits - 1)).Sign;
+        // Alternative Method - this method rounds off the GuardBits and then compares the numbers. 
+        // The drawback to this method are...
+        //   - the two numbers can be one tick apart in the guard bits but considered not equal.
+        //   - the two numbers can be very near 1 apart but considered not equal..
+        // The advantage to this method are...
+        //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
+        //   - may have slightly better performance.
+        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + GuardBits);
+        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + GuardBits);
+        // return a.CompareTo(b);
     }
 
     private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
