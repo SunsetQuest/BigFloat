@@ -979,6 +979,40 @@ public readonly partial struct BigFloat
         return new BigFloat(left).CompareTo(right) >= 0;
     }
 
+    public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
+    {
+        //future: add powerOf2 on dividend to see if we can do a fast shift divide
+        // find the size of the smaller input to determine output size
+        int outputSize = Math.Min(divisor.Size, dividend.Size);
+
+        // If we right-shift divisor to align it with dividend and then divisor < dividend, then we need to decrement the output size.
+        // This is because we would only have a partial bit of precision on the last bit, and it could introduce error.
+        // note: We could also left shift dividend so it is left aligned with divisor but that would be more expensive. (but could be more accurate)
+        // note: We can maybe speed this up by just checking the top 32 or 64 bits of each.
+        if (divisor.Mantissa >> (divisor.Size - dividend.Size) <= dividend.Mantissa)
+        {
+            outputSize--;
+        }
+
+        // We need to oversize T (using left shift) so when we divide, it is the correct size.
+        int wantedSizeForT = (1 * dividend.Size) + outputSize + GuardBits;
+
+        int leftShiftTBy = wantedSizeForT - divisor.Size;
+
+        BigInteger leftShiftedT = divisor.Mantissa << leftShiftTBy; // rightShift used here instead of SetPrecisionWithRound for performance
+
+        // Now we can just divide, and we should have the correct size
+        BigInteger resIntPart = leftShiftedT / dividend.Mantissa;
+
+        int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
+
+        int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
+
+        BigFloat result = new(resIntPart, resScalePart, sizePart);
+
+        return result;
+    }
+
     /// <summary>
     /// Performs a modulus operation. For negative numbers there are two approaches, a math and programmers version. For negative numbers this version uses the programmers version.
     /// see: https://github.com/microsoft/calculator/issues/111
@@ -1609,41 +1643,6 @@ Other:                                         |   |         |         |        
     public static BigFloat operator *(int a, BigFloat b) //ChatGPT o4-mini-high
     {
         return b * a; // use the other overload
-    }
-
-    // Todo: move to math?
-    public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
-    {
-        //future: add powerOf2 on dividend to see if we can do a fast shift divide
-        // find the size of the smaller input to determine output size
-        int outputSize = Math.Min(divisor.Size, dividend.Size);
-
-        // If we right-shift divisor to align it with dividend and then divisor < dividend, then we need to decrement the output size.
-        // This is because we would only have a partial bit of precision on the last bit, and it could introduce error.
-        // note: We could also left shift dividend so it is left aligned with divisor but that would be more expensive. (but could be more accurate)
-        // note: We can maybe speed this up by just checking the top 32 or 64 bits of each.
-        if (divisor.Mantissa >> (divisor.Size - dividend.Size) <= dividend.Mantissa)
-        {
-            outputSize--;
-        }
-
-        // We need to oversize T (using left shift) so when we divide, it is the correct size.
-        int wantedSizeForT = (1 * dividend.Size) + outputSize + GuardBits;
-
-        int leftShiftTBy = wantedSizeForT - divisor.Size;
-
-        BigInteger leftShiftedT = divisor.Mantissa << leftShiftTBy; // rightShift used here instead of SetPrecisionWithRound for performance
-
-        // Now we can just divide, and we should have the correct size
-        BigInteger resIntPart = leftShiftedT / dividend.Mantissa;
-
-        int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
-
-        int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
-
-        BigFloat result = new(resIntPart, resScalePart, sizePart);
-
-        return result;
     }
 
     public static BigFloat operator /(BigFloat divisor, int dividend) //ChatGPT o4-mini-high AND Claude 3.7
