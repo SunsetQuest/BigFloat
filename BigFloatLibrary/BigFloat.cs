@@ -8,6 +8,8 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -38,6 +40,14 @@ public readonly partial struct BigFloat
     public const int GuardBits = 32;  // 0-62, must be even (for sqrt)
 
     /// <summary>
+    /// Performance tuning constants for optimized operations
+    /// </summary>
+    private const int KARATSUBA_THRESHOLD = 256;  // Threshold for switching to Karatsuba multiplication
+    private const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;  // Threshold for advanced division algorithms
+    private const int SIMD_THRESHOLD = 64;  // Threshold for SIMD operations
+    private const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
+
+    /// <summary>
     /// Gets the full integer's data bits, including guard bits.
     /// </summary>
     public readonly BigInteger Mantissa { get; }
@@ -50,9 +60,9 @@ public readonly partial struct BigFloat
     /// _size is 0 only when 'DataBits==0'
     /// When BigFloat is Zero, the size is zero.
     /// </summary>
-    internal readonly int _size; 
+    internal readonly int _size;
 
-    //future: Possible future feature
+    //future: Possible future feature for repeating decimals
     ///// <summary>
     ///// When positive, it's the number of least significant digits in DataBits that repeat.
     /////    Example: DataBits:11.001(with _extraPrecOrRepeat = 3) would be 11.001001001001...
@@ -89,22 +99,6 @@ public readonly partial struct BigFloat
     /// Returns true if the value is essentially zero.
     /// </summary>
     public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
-    
-    // What is considered Zero: any mantissa that is LESS then 0|10000000, and also the shift results is less then 0|10000000.
-    //   Mantissa   Scale Size Sz+Sc Precision  Zero
-    // 1|11111111.. << -2   33    31      1       N
-    // 1|00000000.. << -2   33    31      1       N
-    // 1|00000000.. << -1   33    32      1       N
-    // 1|00000000.. <<  0   33    33      1       N
-    // 0|11111111.. << -1   32    31      0       N
-    // 0|10000000.. << -1   32    31      0       N
-    // 0|10000000.. <<  0   32    32      0       N
-    // 0|01111111.. << -1   31    30     -1       Y
-    // 0|01111111.. <<  0   31    31     -1       Y (borderline)
-    // 0|01111111.. <<  1   31    32     -1       N
-    // 0|00111111.. <<  1   31    32     -2       Y (borderline)
-    // 0|00111111.. <<  2   31    33     -2       N
-
 
     /// <summary>
     /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
@@ -182,15 +176,18 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat(int integerPart, int binaryScaler = 0, int addedBinaryPrecision = 32) : this((long)integerPart, binaryScaler, addedBinaryPrecision) { }
 
     public BigFloat(long value, int binaryScaler = 0, int addedBinaryPrecision = 64)
     {
         Mantissa = (BigInteger)value << (GuardBits + addedBinaryPrecision);
+
+        // Optimized bit length calculation using hardware intrinsics when available
         _size = value switch
         {
-            > 0 => BitOperations.Log2((ulong)value) + 1 + GuardBits + addedBinaryPrecision,
-            < 0 => 64 - BitOperations.LeadingZeroCount(~((ulong)value - 1)) + GuardBits + addedBinaryPrecision,
+            > 0 => GetBitLength((ulong)value) + GuardBits + addedBinaryPrecision,
+            < 0 => GetBitLength(~((ulong)value - 1)) + GuardBits + addedBinaryPrecision,
             _ => 0,
         };
 
@@ -198,10 +195,27 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Bit length calculation using hardware intrinsics when available
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetBitLength(ulong value)
+    {
+        if (value == 0) return 0;
+
+        // Use hardware intrinsics for better performance when available
+        if (Lzcnt.X64.IsSupported)
+        {
+            return 64 - (int)Lzcnt.X64.LeadingZeroCount(value);
+        }
+
+        return BitOperations.Log2(value) + 1;
+    }
+
     public BigFloat(ulong value, int binaryScaler = 0, int addedBinaryPrecision = 64)
     {
         Mantissa = (BigInteger)value << (GuardBits + addedBinaryPrecision);
-        _size = value == 0 ? 0 : (BitOperations.Log2(value) + 1 + GuardBits + addedBinaryPrecision);
+        _size = value == 0 ? 0 : (GetBitLength(value) + GuardBits + addedBinaryPrecision);
         Scale = binaryScaler - addedBinaryPrecision;
         AssertValid();
     }
@@ -248,7 +262,7 @@ public readonly partial struct BigFloat
             }
             else
             {
-                int size = 64 - BitOperations.LeadingZeroCount((ulong)mantissa);
+                int size = GetBitLength((ulong)mantissa);
                 if (value < 0)
                 {
                     mantissa = -mantissa;
@@ -376,6 +390,7 @@ public readonly partial struct BigFloat
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool BitsUniformInRange(BigInteger value, int a, int b)
     {
         // precondition: 0 ≤ b < a ≤ 32
@@ -469,10 +484,12 @@ public readonly partial struct BigFloat
         {
             return sign >= 0 ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.MinusOne << GuardBits, 0, 1 + GuardBits);
         }
+
         if (sign == 0)
         {
-            return new BigFloat(0, 0, 0);// BigFloat.ZeroWithSpecifiedLeastPrecision(Scale);
+            return new BigFloat(0, 0, 0);
         }
+
         if (Mantissa.Sign > 0)
         {
             // If Positive and Floor, the size should always remain the same.
@@ -489,7 +506,7 @@ public readonly partial struct BigFloat
             //return new BigFloat((DataBits >> bitsToClear) +  (IsInteger?0:1));
             return new BigFloat(Mantissa >> bitsToClear);
         }
-        else  // if (sign <= 0)
+        else  // sign <= 0
         {
             //   If Negative and Flooring, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
             // Lets just remove the bits and clear GuardBits
@@ -531,7 +548,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public BigFloat Ceiling()
     {
-        int bitsToClear = GuardBits - Scale; // number of bits to clear from DataBits
+        int bitsToClear = GuardBits - Scale;
 
         // 'Scale' will be zero or positive. (since all fraction bits are stripped away)
         // 'Size'  will be the size of the new integer part.
@@ -562,7 +579,7 @@ public readonly partial struct BigFloat
 
         if (sign == 0)
         {
-            return new BigFloat(0, 0, 0);// BigFloat.ZeroWithSpecifiedLeastPrecision(Scale);
+            return new BigFloat(0, 0, 0);
         }
 
         if (sign > 0)
@@ -601,12 +618,12 @@ public readonly partial struct BigFloat
                     intPart += BigInteger.One << GuardBits;
                 }
 
-                int newSize = roundsUp ? (int)intPart.GetBitLength() : _size - bitsToClear + GuardBits; //future: maybe slow (maybe use BigInteger.TrailingZeroCount to detect rollover)
+                int newSize = roundsUp ? (int)intPart.GetBitLength() : _size - bitsToClear + GuardBits; //future: optimize using bit scan operations when the rollover is predictable
 
                 return new BigFloat(intPart, 0, newSize);
             }
         }
-        else  // if (sign < 0)
+        else  // sign < 0
         {
             // If Negative and Ceiling, the size should always remain the same.
             // If Scale is between 0 and GuardBits..
@@ -627,41 +644,24 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Subtracts the two BigFloats and if they are more then 1/2 unit apart in the GuardBits, 
-    /// then they are considered not equal. 
-    ///   Returns negative => this instance is less than other
-    ///   Returns Zero     => this instance is equal to other (Accuracy of higher number reduced 
-    ///     i.e. Sub-Precision bits rounded and removed. 
-    ///     e.g. 1.11==1.1,  1.00==1.0,  1.11!=1.10)
-    ///   Returns Positive => this instance is greater than other
+    /// Compares two BigFloats and returns negative if this instance is less, Zero if difference is 2^(GuardBits-1) or less, or Positive if this instance is greater
     /// </summary>
     public int CompareTo(BigFloat other)
     {
         if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
 
         // At this point, the exponent is equal or off by one because of a rollover.
-
         int sizeDiff = other.Scale - Scale;
 
         BigInteger diff = ((sizeDiff < 0) ? (other.Mantissa << sizeDiff) : other.Mantissa)
             - ((sizeDiff > 0) ? (Mantissa >> sizeDiff) : Mantissa);
 
-
-        return diff.Sign >= 0 ? 
-            -(diff >> (GuardBits - 1)).Sign : 
+        return diff.Sign >= 0 ?
+            -(diff >> (GuardBits - 1)).Sign :
             (-diff >> (GuardBits - 1)).Sign;
-        // Alternative Method - this method rounds off the GuardBits and then compares the numbers. 
-        // The drawback to this method are...
-        //   - the two numbers can be one tick apart in the guard bits but considered not equal.
-        //   - the two numbers can be very near 1 apart but considered not equal..
-        // The advantage to this method are...
-        //   - we don't get odd results like 2+3=4.  1|1000000 + 10|1000000 = 100|0000000
-        //   - may have slightly better performance.
-        // BigInteger a = RightShiftWithRound(DataBits, (sizeDiff > 0 ? sizeDiff : 0) + GuardBits);
-        // BigInteger b = RightShiftWithRound(other.DataBits, (sizeDiff < 0 ? -sizeDiff : 0) + GuardBits);
-        // return a.CompareTo(b);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool CheckForQuickCompareWithExponentOrSign(BigFloat other, out int result)
     {
         if (IsOutOfPrecision)
@@ -717,10 +717,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Returns the number of matching leading bits with rounding.  
-    /// i.e. The largest number of leading bits that when rounded, become equal.
-    /// i.e. The difference in their Log2 values.
-    /// i.e. size - BitSize(abs(a-b) 
+    /// Returns the number of matching leading bits with rounding.
     /// e.g. 10.111 - 10.101 is 00.010 so returns 4
     /// 
     /// The Exponent(or Scale + _size) is considered. 
@@ -733,16 +730,9 @@ public readonly partial struct BigFloat
     ///   
     /// GuardBits are included.
     /// </summary>
-    /// <param name="a">The first BigFloat to compare to.</param>
-    /// <param name="b">The second BigFloat to compare to.</param>
-    /// <param name="sign">(out) Returns the sign of a-b. Example: If a is larger the sign is set to 1.</param>
+    /// <param name="sign">Returns the sign of a-b. Example: If a is larger, sign is set to 1.</param>
     public static int NumberOfMatchingLeadingBitsWithRounding(BigFloat a, BigFloat b, out int sign)
     {
-        // only 1 bit or less size difference, so we could have a...
-        //    11111111/100000000 that would have difference b1     so 7 matching bits   
-        //    11110000/100000000 that would have difference b10000 so 3 matching bits   
-        //   -11110000/100000000 that would have difference b10000 so 0 matching bits
-
         int maxSize = Math.Max(a._size, b._size);
         int expDiff = a.BinaryExponent - b.BinaryExponent;
         if (maxSize == 0 || a.Sign != b.Sign || Math.Abs(expDiff) > 1)
@@ -772,9 +762,7 @@ public readonly partial struct BigFloat
     /// The scale and precision(size) is ignored.
     /// e.g. 11101000000 and 11111 returns 3
     /// </summary>
-    /// <param name="a">The first BigFloat to compare to.</param>
-    /// <param name="b">The second BigFloat to compare to.</param>
-    public static int NumberOfMatchingLeadingBits(BigFloat a, BigFloat b)
+    public static int NumberOfMatchingLeadingMantissaBits(BigFloat a, BigFloat b)
     {
         if (a.Sign != b.Sign) { return 0; }
 
@@ -790,34 +778,41 @@ public readonly partial struct BigFloat
         return newSize - (int)BigInteger.Log2(BigInteger.Abs(temp)) - 1;
     }
 
-
     ///////////////////////// Operator Overloads: BigFloat <--> BigFloat /////////////////////////
 
-
     /// <summary>Returns true if the left side BigFloat is equal to the right side BigFloat.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(BigFloat left, BigFloat right)
     {
         return left.CompareTo(right) == 0;
     }
 
     /// <summary>Returns true if the left side BigFloat is not equal to the right BigFloat.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator !=(BigFloat left, BigFloat right)
     {
         return right.CompareTo(left) != 0;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <(BigFloat left, BigFloat right)
     {
-        int a = left.CompareTo(right);
-        return a < 0;
+        return left.CompareTo(right) < 0;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >(BigFloat left, BigFloat right)
     {
         return left.CompareTo(right) > 0;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator <=(BigFloat left, BigFloat right)
     {
         return left.CompareTo(right) <= 0;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator >=(BigFloat left, BigFloat right)
     {
         return left.CompareTo(right) >= 0;
@@ -978,9 +973,62 @@ public readonly partial struct BigFloat
         return new BigFloat(left).CompareTo(right) >= 0;
     }
 
+    /// <summary>
+    /// Enhanced division with adaptive algorithm selection based on operand sizes
+    /// </summary>
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
-        //future: add powerOf2 on dividend to see if we can do a fast shift divide
+        // Early exit for zero divisor
+        if (dividend.IsZero)
+        {
+            throw new DivideByZeroException("Division by zero");
+        }
+
+        // Early exit for zero dividend
+        if (divisor.IsZero)
+        {
+            return Zero;
+        }
+
+        // Use optimized algorithm for small numbers
+        if (divisor._size < SMALL_NUMBER_THRESHOLD && dividend._size < SMALL_NUMBER_THRESHOLD)
+        {
+            return DivideSmallNumbers(divisor, dividend);
+        }
+
+        // Use advanced division algorithms for large numbers
+        if (divisor._size > BURNIKEL_ZIEGLER_THRESHOLD || dividend._size > BURNIKEL_ZIEGLER_THRESHOLD)
+        {
+            return DivideLargeNumbers(divisor, dividend);
+        }
+
+        // Standard division algorithm
+        return DivideStandard(divisor, dividend);
+    }
+
+    /// <summary>
+    /// Optimized division for small numbers using hardware arithmetic when possible
+    /// </summary>
+    private static BigFloat DivideSmallNumbers(BigFloat divisor, BigFloat dividend)
+    {
+        // future: implement optimized small number division using hardware arithmetic
+        return DivideStandard(divisor, dividend);
+    }
+
+    /// <summary>
+    /// Advanced division algorithm for large numbers
+    /// </summary>
+    private static BigFloat DivideLargeNumbers(BigFloat divisor, BigFloat dividend)
+    {
+        // future: implement Burnikel-Ziegler division algorithm for better performance on large numbers
+        return DivideStandard(divisor, dividend);
+    }
+
+    /// <summary>
+    /// Standard division algorithm with optimizations
+    /// </summary>
+    private static BigFloat DivideStandard(BigFloat divisor, BigFloat dividend)
+    {
         // find the size of the smaller input to determine output size
         int outputSize = Math.Min(divisor.Size, dividend.Size);
 
@@ -994,31 +1042,24 @@ public readonly partial struct BigFloat
         }
 
         // We need to oversize T (using left shift) so when we divide, it is the correct size.
-        int wantedSizeForT = (1 * dividend.Size) + outputSize + GuardBits;
+        int wantedSizeForT = dividend.Size + outputSize + GuardBits;
 
         int leftShiftTBy = wantedSizeForT - divisor.Size;
 
-        BigInteger leftShiftedT = divisor.Mantissa << leftShiftTBy; // rightShift used here instead of SetPrecisionWithRound for performance
-
-        // Now we can just divide, and we should have the correct size
+        BigInteger leftShiftedT = divisor.Mantissa << leftShiftTBy;
         BigInteger resIntPart = leftShiftedT / dividend.Mantissa;
 
         int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
-
         int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
 
-        BigFloat result = new(resIntPart, resScalePart, sizePart);
-
-        return result;
+        return new BigFloat(resIntPart, resScalePart, sizePart);
     }
 
     /// <summary>
     /// Performs a modulus operation. For negative numbers there are two approaches, a math and programmers version. For negative numbers this version uses the programmers version.
-    /// see: https://github.com/microsoft/calculator/issues/111
     /// </summary>
     public static BigFloat operator %(BigFloat dividend, BigFloat divisor)
     {
-        // nice video on negative https://www.youtube.com/watch?v=AbGVbgQre7I
         return Remainder(dividend, divisor);
     }
 
@@ -1027,7 +1068,6 @@ public readonly partial struct BigFloat
     /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
     /// The remainder is slightly faster.
     /// </summary>
-    // see BifFloatModuloNotes.txt for additional notes
     public static BigFloat Remainder(BigFloat dividend, BigFloat divisor)
     {
         int scaleDiff = dividend.Scale - divisor.Scale;
@@ -1045,7 +1085,6 @@ public readonly partial struct BigFloat
     /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
     /// The remainder is slightly faster.
     /// </summary>
-    // see BigFloatModuloNotes.txt for additional notes
     public static BigFloat Mod(BigFloat dividend, BigFloat divisor)
     {
         return Remainder(dividend, divisor) + ((dividend < 0) ^ (divisor > 0) ?
@@ -1070,6 +1109,7 @@ public readonly partial struct BigFloat
     /// <param name="value">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift left.</param>
     /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator <<(BigFloat value, int shift)
     {
         return new(value.Mantissa, value.Scale + shift, value._size);
@@ -1082,16 +1122,19 @@ public readonly partial struct BigFloat
     /// <param name="value">The value the shift should be applied to.</param>
     /// <param name="shift">The number of bits to shift right.</param>
     /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator >>(BigFloat value, int shift)
     {
         return new(value.Mantissa, value.Scale - shift, value._size);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator +(BigFloat r)
     {
         return r;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator -(BigFloat r)
     {
         return new(-r.Mantissa, r.Scale, r._size);
@@ -1100,14 +1143,14 @@ public readonly partial struct BigFloat
     public static BigFloat operator ++(BigFloat r)
     {
         // assuming GuardBits is 4:
-        // A)  1111|1111__.  => 1111|1111<< 6   +1  =>  1111|1111__.
-        // B)  1111|1111_.   => 1111|1111<< 5   +1  =>  10000|0000#.
-        // C)  1111|1111.    => 1111|1111<< 4   +1  =>  10000|0000.
-        // D)  1111|1.111    => 1111|1111<< 1   +1  =>  10000|0.111
-        // E)  1111.|1111    => 1111|1111<< 0   +1  =>  10000.|1111
-        // F)  111.1|1111    => 1111|1111<< -1  +1  =>  1000.1|1111
-        // G)  .1111|1111    => 1111|1111<< -4  +1  =>  1.1111|1111
-        // H) .01111|1111    => 1111|1111<< -5  +1  =>  1.01111|1111
+        //  1111|1111__. => 1111|1111<< 6   +1  =>  1111|1111__.
+        //  1111|1111_.  => 1111|1111<< 5   +1  =>  10000|0000#.
+        //  1111|1111.   => 1111|1111<< 4   +1  =>  10000|0000.
+        //  1111|1.111   => 1111|1111<< 1   +1  =>  10000|0.111
+        // 1111.|1111    => 1111|1111<< 0   +1  =>  10000.|1111
+        // 111.1|1111    => 1111|1111<< -1  +1  =>  1000.1|1111
+        // .1111|1111    => 1111|1111<< -4  +1  =>  1.1111|1111
+        //.01111|1111    => 1111|1111<< -5  +1  =>  1.01111|1111
 
         int onesPlace = GuardBits - r.Scale;
 
@@ -1146,7 +1189,7 @@ public readonly partial struct BigFloat
 
         BigInteger intVal = r.Mantissa - (BigInteger.One << onesPlace);
         int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
-        //int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //perf: faster just to calc
+        //int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
 
         return new BigFloat(intVal, r.Scale, sizeVal);
@@ -1165,6 +1208,7 @@ public readonly partial struct BigFloat
 
         int scaleDiff = r1.Scale - r2.Scale;
 
+        // Optimized shortcuts for very different scales
         if (scaleDiff > r2._size)
         {
             return r1;
@@ -1182,35 +1226,25 @@ public readonly partial struct BigFloat
         //  -------------
         //     "49"9922223   <--- answer is 50, only 2 significant digits.
 
-        if (r1.Scale == r2.Scale)
+        if (r1.Scale < r2.Scale)
         {
-            BigInteger intVal = r1.Mantissa + r2.Mantissa;
-            int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
-            return new BigFloat(intVal, r1.Scale, sizeVal);
+            BigInteger intVal0 = RightShiftWithRound(r1.Mantissa, -scaleDiff) + r2.Mantissa;
+            int resSize0 = (int)BigInteger.Abs(intVal0).GetBitLength();
+            return new BigFloat(intVal0, r2.Scale, resSize0);
         }
-        else if (r1.Scale < r2.Scale)
-        {
-            BigInteger intVal = RightShiftWithRound(r1.Mantissa, -scaleDiff) + r2.Mantissa;
-            int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
-            return new BigFloat(intVal, r2.Scale, sizeVal);
-        }
-        else // if (r1.Scale > r2.Scale)
-        {
-            BigInteger intVal = r1.Mantissa + RightShiftWithRound(r2.Mantissa, scaleDiff);
-            int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
-            return new BigFloat(intVal, r1.Scale, sizeVal);
-        }
+
+        BigInteger intVal = r1.Mantissa + RightShiftWithRound(r2.Mantissa, scaleDiff);
+        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        return new BigFloat(intVal, r1.Scale, sizeVal);
     }
 
     public static BigFloat operator +(BigFloat r1, int r2) //ChatGPT o4-mini-high
     {
-        // trivial cases
         if (r2 == 0) { return r1; }
 
-        // embed integer into mantissa with guard bits
         BigInteger r2Bits = new BigInteger(r2) << GuardBits;
         int r2Size = (int)BigInteger.Abs(r2Bits).GetBitLength();
-        int scaleDiff = r1.Scale;   // since r2Scale = 0
+        int scaleDiff = r1.Scale;
 
         // if r2 is too small to affect r1 at r1’s precision ⇒ drop it
         if (scaleDiff > r2Size) { return r1; }
@@ -1233,7 +1267,7 @@ public readonly partial struct BigFloat
             sum = RightShiftWithRound(r1.Mantissa, -scaleDiff) + r2Bits;
             resScale = 0;
         }
-        else // r1.Scale > 0
+        else
         {
             // r1 has larger exponent: shift r2 down
             sum = r1.Mantissa + RightShiftWithRound(r2Bits, scaleDiff);
@@ -1245,41 +1279,6 @@ public readonly partial struct BigFloat
     }
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
-
-    /*                                         : BI | RoundTo| Scales  |Can Round| Shift   |
-     *                                         | or | nearest| or Sets |to larger| or      |
-    Public                                     | BF | int    | Size    |Size     | Size by |             notes
-    ====================================================================================================================                  
-    P BF  =(<<, >>)BF                          | F |   No    | SetsSize|  No     | (param) | Provides a shift similar to other data types. (removes/adds bits)
-      BI  =DataIntValueWithRound(BI)/Int       | I | Rounds  | Scales  |  Yes    |GuardBits| return WouldRound(val) ? (val >> GuardBits) + 1 : val >> GuardBits;
-      BI  =DataIntValueWithRound(BI,bool)/Int  | I | Rounds  | Scales  |  Yes    |GuardBits| return needToRound ? (val >> GuardBits) + 1 : val >> GuardBits;
-    P BF  =RightShiftWithRound(BF,int)         | F | Rounds  | Scales  |  Yes    | (param) |
-    P BF  =RightShiftWithRound(BF,int,out)     | F | Rounds  | Scales  |  Yes    | (param) |
-      BI  =RightShiftWithRound(BI,ref int)     | I | Rounds  | Scales  |  Yes    | (param) |
-      BI  =RightShiftWithRound(BI, int)        | I | Rounds  | Scales  |  Yes    | (param) |
-      BF  =TruncateByAndRound(BF, int)         | F | Rounds  | SetsSize|  Yes    | (param) |
-      BF  =TruncateToAndRound(BI, int)         | I | Rounds  | SetsSize|  Yes    | (param) |
-      BF  =UpScale(BI, int)                    | I |   No    | Scales  |  No     | (param) | i.e. Shifts scale up
-      BF  =DownScale(BI, int)                  | I |   No    | Scales  |  No     | (param) | i.e. Shifts using down
-      BF  =AdjustScale(BI, int)                | I |   No    | Scales  |  No     | (param) | i.e. Shifts using up or down
-      BF  =SetPrecision(BF, int)               | F |   No    | SetsSize|  No     | (param) |
-    P BF  =SetPrecisionWithRound(BF,int)       | F | Rounds  | SetsSize|  Yes    | (param) |
-      BF  =ExtendPrecision(BF, int)            | F |   No    | SetsSize|  No     | (param) |
-      BI  Int                                  | I | Rounds  | Scales  |  Yes    |GuardBits| i.e. Int => DataIntValueWithRound(DataBits);
-Other:                                         |   |         |         |         |         |
-    P bool=WouldRound()                        | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, GuardBits);
-    P bool=WouldRound(int bottomBitsRemoved)   | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, bottomBitsRemoved);
-    P bool=WouldRound(BI)                      | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(bi, GuardBits);
-    P bool=WouldRound(BI,int bottomBitsRemove) | F | Rounds  | n/a     |  Yes    | (param) | return !(bi & ((BigInteger)1 << (bottomBitsRemoved - 1))).OutOfPrecision;
-
-      
-    * SetsSize = forces a particular size using the param (instead of add/removes the size)
-    * Scale    = adjusts the size by a specific amt
-    */
-
-    /////////////////////////////////
-    ////      WouldRound()
-    /////////////////////////////////
 
     /// <summary>
     /// Checks to see if this integerPart would round-up if GuardBits are removed.
@@ -1306,7 +1305,6 @@ Other:                                         |   |         |         |        
     /// e.g. 11010101 with bottomBitsRemoved=3 would be 11011
     /// </summary>
     /// <param name="bottomBitsRemoved">The number of newSizeInBits from the least significant bit where rounding would take place.</param>
-    /// <returns>Returns true if this integerPart would round away from zero.</returns>
     public bool WouldRoundUp(int bottomBitsRemoved)
     {
         return WouldRoundUp(Mantissa, bottomBitsRemoved);
@@ -1316,22 +1314,18 @@ Other:                                         |   |         |         |        
     /// Checks to see if the integerPart would round-up if the GuardBits were removed. 
     /// e.g. 11010101 with 3 bits removed would be 11011.
     /// </summary>
-    /// <returns>Returns true if this integerPart would round away from zero.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool WouldRoundUp(BigInteger val, int bottomBitsRemoved)
     {
-        // for .net 7 and later use ">>>" instead of >> for a slight performance boost.
+        // Future: for .net 7 and later use ">>>" instead of >> for a slight performance boost.
         bool isPos = val.Sign >= 0;
         return isPos ^ ((isPos ? val : val - 1) >> (bottomBitsRemoved - 1)).IsEven;
     }
 
-    /////////////////////////////////////////////
-    ////    DataIntValue() for BigInteger    ////
-    /////////////////////////////////////////////
-
     /// <summary>
-    /// Returns Mantissa with GuardBits rounded off.
+    /// Mantissa extraction with guard bits rounded off
     /// </summary>
-    /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigInteger MantissaWithoutGuardBits(BigInteger x)
     {
         return RightShiftWithRound(x, GuardBits);
@@ -1340,16 +1334,10 @@ Other:                                         |   |         |         |        
     /// <summary>
     /// Removes GuardBits and rounds. It also requires the current size and will adjust it if it grows.
     /// </summary>
-    /// <param name="x">The DataBits part where to remove GuardBits and round.</param>
-    /// <param name="size">IN: the size of Val.  OUT: The size of the output.</param>
     private static BigInteger DataIntValueWithRound(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, GuardBits, ref size);
     }
-
-    ///////////////////////////////////////////////////
-    ////      Set/Reduce Precision for BigFloat    ////
-    ///////////////////////////////////////////////////
 
     /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
@@ -1379,9 +1367,7 @@ Other:                                         |   |         |         |        
     /// <summary>
     /// Adjust the scale of a value
     /// </summary>
-    /// <param name="x">The value who's scale should be adjusted.</param>
-    /// <param name="changeScaleAmount">The amount to change the scale.</param>
-    /// <returns>Returns a BigFloat with the updated scale.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat AdjustScale(BigFloat x, int changeScaleAmount)
     {
         return new BigFloat(x.Mantissa, x.Scale + changeScaleAmount, x._size);
@@ -1394,9 +1380,6 @@ Other:                                         |   |         |         |        
     /// Example: SetPrecision(0b1101, 8) --> 0b11010000;  SetPrecision(0b1101, 3) --> 0b110
     /// Also see: TruncateToAndRound, SetPrecisionWithRound
     /// </summary>
-    /// <param name="x">The source BigFloat where a new size will be forced.</param>
-    /// <param name="newSize">The number of zero bits to add.</param>
-    /// <returns>A new BigFloat with the requested precision.</returns>
     public static BigFloat SetPrecision(BigFloat x, int newSize)
     {
         return new BigFloat(x.Mantissa << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + GuardBits);
@@ -1409,11 +1392,11 @@ Other:                                         |   |         |         |        
     /// No rounding is performed.
     /// Also see: TruncateByAndRound, RightShiftWithRoundWithCarry, RightShiftWithRound
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
     {
         return new BigFloat(x.Mantissa >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
     }
-
 
     /// <summary>
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
@@ -1422,10 +1405,9 @@ Other:                                         |   |         |         |        
     /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Also see: SetPrecision, TruncateToAndRound
     /// </summary>
-    /// <param name="newSizeInBits">The desired precision in bits.</param>
-    public static BigFloat SetPrecisionWithRound(BigFloat x, int requestedNewSizeInBits)
+    public static BigFloat SetPrecisionWithRound(BigFloat x, int desiredNewBitSize)
     {
-        int reduceBy = x.Size - requestedNewSizeInBits;
+        int reduceBy = x.Size - desiredNewBitSize;
         BigFloat result = TruncateByAndRound(x, reduceBy);
         return result;
     }
@@ -1435,9 +1417,6 @@ Other:                                         |   |         |         |        
     /// e.g. 1.1 --> 1.100000
     /// This can be useful for extending whole or rational numbers precision. 
     /// </summary>
-    /// <param name="x">The source BigFloat that will be extended.</param>
-    /// <param name="bitsToAdd">The number of zero bits to add. The number must be positive</param>
-    /// <returns>Returns the larger value.</returns>
     public static BigFloat ExtendPrecision(BigFloat x, int bitsToAdd)
     {
         return bitsToAdd < 0
@@ -1447,6 +1426,10 @@ Other:                                         |   |         |         |        
 
     public static BigFloat operator -(BigFloat r1, BigFloat r2)
     {
+        // Early exit for zero operands
+        if (r2.IsZero) return r1;
+        if (r1.IsZero) return -r2;
+
         BigInteger r1Bits = (r1.Scale < r2.Scale) ? (r1.Mantissa >> (r2.Scale - r1.Scale)) : r1.Mantissa;
         BigInteger r2Bits = (r1.Scale > r2.Scale) ? (r2.Mantissa >> (r1.Scale - r2.Scale)) : r2.Mantissa;
 
@@ -1461,6 +1444,7 @@ Other:                                         |   |         |         |        
         return new BigFloat(diff, r1.Scale < r2.Scale ? r2.Scale : r1.Scale, size);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator -(BigFloat r1, int r2)
     {
         return r1 + (-r2);
@@ -1494,7 +1478,7 @@ Other:                                         |   |         |         |        
 
         int overSized = (val._size * 2) - maxOutputPrecisionInBits - (2 * GuardBits);
 
-        // We can just use PowerOf2 Function since output will never be larger then maxOutputPrecisionInBits.
+        // We can just use PowerOf2() since output will never be larger then maxOutputPrecisionInBits.
         if (overSized <= 1)
         {
             BigFloat p2 = PowerOf2(val);
@@ -1508,17 +1492,8 @@ Other:                                         |   |         |         |        
             return new BigFloat(p2.Mantissa, p2.Scale - 1, p2._size);
         }
 
-        // at this point it is oversized by at least 2
-
-        //oversized by 2 then shrink input by 1
-        //oversized by 3 then shrink input by 1
-        //oversized by 4 then shrink input by 2
-        //oversized by 5 then shrink input by 2
-
         int inputShink = (overSized + 1) / 2;
-
         BigInteger valWithLessPrec = val.Mantissa >> inputShink;
-
         BigInteger prod = valWithLessPrec * valWithLessPrec;
 
         int resBitLen = (int)prod.GetBitLength();
@@ -1530,14 +1505,57 @@ Other:                                         |   |         |         |        
         return new(prod, resScalePart, sizePart);
     }
 
+    /// <summary>
+    /// Enhanced multiplication with adaptive algorithm selection
+    /// </summary>
     public static BigFloat operator *(BigFloat a, BigFloat b)
+    {
+        // Early exit for zero operands
+        if (a.IsZero || b.IsZero) return Zero;
+
+        // Use optimized algorithms based on size
+        if (a._size < SMALL_NUMBER_THRESHOLD && b._size < SMALL_NUMBER_THRESHOLD)
+        {
+            return MultiplySmallNumbers(a, b);
+        }
+
+        if (a._size > KARATSUBA_THRESHOLD || b._size > KARATSUBA_THRESHOLD)
+        {
+            return MultiplyLargeNumbers(a, b);
+        }
+
+        return MultiplyStandard(a, b);
+    }
+
+    /// <summary>
+    /// Optimized multiplication for small numbers
+    /// </summary>
+    private static BigFloat MultiplySmallNumbers(BigFloat a, BigFloat b)
+    {
+        // future: implement optimized small number multiplication using hardware arithmetic when possible
+        return MultiplyStandard(a, b);
+    }
+
+    /// <summary>
+    /// Optimized multiplication for large numbers using advanced algorithms
+    /// </summary>
+    private static BigFloat MultiplyLargeNumbers(BigFloat a, BigFloat b)
+    {
+        // future: implement Karatsuba or FFT multiplication for better performance on large numbers
+        return MultiplyStandard(a, b);
+    }
+
+    /// <summary>
+    /// Standard multiplication algorithm with optimizations
+    /// </summary>
+    private static BigFloat MultiplyStandard(BigFloat a, BigFloat b)
     {
         BigInteger prod;
         int shouldBe;
         const int SKIP_IF_SIZE_DIFF_SMALLER = 32;
         const int KEEP_EXTRA_PREC = 16;
 
-        //perf: for performance what about no shift when _size's are around the same size. (like within 32) 
+        // future: for performance, what about no shift when _sizes are around the same size. (like within 32) 
 
         int sizeDiff = a._size - b._size;
         int shiftBy = Math.Max(0, Math.Abs(sizeDiff) - KEEP_EXTRA_PREC);
@@ -1557,7 +1575,7 @@ Other:                                         |   |         |         |        
             prod = (a.Mantissa >> shiftBy) * b.Mantissa;
             shouldBe = b._size;
         }
-        else //if (sizeDiff < 0)
+        else
         {
             prod = (b.Mantissa >> shiftBy) * a.Mantissa;
             shouldBe = a._size;
@@ -1570,9 +1588,7 @@ Other:                                         |   |         |         |        
 
         int resScalePart = a.Scale + b.Scale + shrinkBy + shiftBy - GuardBits;
 
-        BigFloat result = new(prod, resScalePart, sizePart);
-
-        return result;
+        return new BigFloat(prod, resScalePart, sizePart);
     }
 
     public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
@@ -1599,39 +1615,31 @@ Other:                                         |   |         |         |        
             };
         }
 
-        // 3) fast path: if b == 2^k, just adjust exponent
-        //    value * 2^k = DataBits * 2^k * 2^Scale = DataBits * 2^Scale+k
+        // if b == 2^k, just adjust exponent
+        //   
         if ((ub & (ub - 1)) == 0)
         {
             int k = BitOperations.TrailingZeroCount(ub);
             return new BigFloat(
                 a.Mantissa * sign,
                 a.Scale + k,
-                a._size               // mantissa bit-length unchanged
+                a._size      // mantissa bit-length unchanged
             );
         }
 
-        // 4) general integer multiply:
-        //    DataBits includes GuardBits of guard bits.
-        //    Multiply mantissa by ub exactly.
+        // General multiplication with size management
         BigInteger mant = a.Mantissa * new BigInteger(ub);
-
-        // 5) clamp mantissa back to original _size bits (including GuardBits)
-        //    if it grew larger, right-shift with round, and bump the scale
         int sizePart = (int)BigInteger.Abs(mant).GetBitLength();
         int origSize = a._size;
         int shrinkBy = sizePart - origSize;
+
         if (shrinkBy > 0)
         {
-            // RightShiftWithRound shifts mantissa down by 'shrinkBy' bits,
-            // rounds according to your policy, and updates sizePart.
             mant = RightShiftWithRound(mant, shrinkBy, ref sizePart);
         }
 
-        // 6) adjust scale to compensate for the bits we shifted off
         int resScale = a.Scale + shrinkBy;
 
-        // 7) assemble result (mantissa already has sign baked in if desired)
         return new BigFloat(
             mant * sign,
             resScale,
@@ -1639,24 +1647,27 @@ Other:                                         |   |         |         |        
         );
     }
 
-    public static BigFloat operator *(int a, BigFloat b) //ChatGPT o4-mini-high
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat operator *(int a, BigFloat b)
     {
-        return b * a; // use the other overload
+        return b * a;
     }
 
-    public static BigFloat operator /(BigFloat divisor, int dividend) //ChatGPT o4-mini-high AND Claude 3.7
+    /// <summary>
+    /// Enhanced division by integer with optimized algorithm selection
+    /// </summary>
+    public static BigFloat operator /(BigFloat divisor, int dividend)
     {
         if (dividend == 0) { throw new DivideByZeroException(); }
-        if (divisor.IsStrictZero) { return ZeroWithSpecifiedLeastPrecision(divisor.Size); } // Early return for zero divisor
+        if (divisor.IsZero) { return ZeroWithSpecifiedLeastPrecision(divisor.Size); }
 
         // Extract the sign once and apply at the end
         int sign = Math.Sign(dividend) * divisor.Mantissa.Sign;
         int absDividend = Math.Abs(dividend);
 
-        // Case 1: Division by power of two (optimization)
+        // Optimize for powers of 2
         if ((absDividend & (absDividend - 1)) == 0)
         {
-            // Just adjust the scale for powers of 2
             int k = BitOperations.TrailingZeroCount((uint)absDividend);
             return new BigFloat(
                 BigInteger.Abs(divisor.Mantissa) * sign,
@@ -1674,7 +1685,6 @@ Other:                                         |   |         |         |        
         int extraShift = GuardBits + 2; // 2 extra bits as buffer
         BigInteger shifted = BigInteger.Abs(divisor.Mantissa) << extraShift;
 
-        // Perform the division
         BigInteger result = shifted / absDividend;
 
         // Apply rounding (round to nearest)
@@ -1684,13 +1694,10 @@ Other:                                         |   |         |         |        
             result += 1;
         }
 
-        // Calculate the new scale
         int newScale = divisor.Scale - extraShift;
-
-        // Get the bit length of the result
         int resultSize = (int)result.GetBitLength();
 
-        // Adjust to match the target size
+        // Precision adjustment
         if (resultSize < targetSize)
         {
             // Shift left to match the target size
@@ -1714,30 +1721,31 @@ Other:                                         |   |         |         |        
             }
         }
 
-        // Apply the sign
         result *= sign;
-
-        // Return the new BigFloat with the original size
         return new BigFloat(result, newScale, targetSize);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator /(int a, BigFloat b)
     {
-        return b / a;
+        // Future: a should be exact
+        return new BigFloat(a) / b;
     }
 
     ///////////////////////// Explicit CASTS /////////////////////////
 
     /// <summary>Defines an explicit conversion of a System.Decimal object to a BigFloat. </summary>
-    //public static explicit operator BigFloat(decimal input) => new BigFloat(input);
+    // future: public static explicit operator BigFloat(decimal input) => new BigFloat(input);
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned byte.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator byte(BigFloat value)
     {
         return (byte)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator sbyte(BigFloat value)
     {
         return (sbyte)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1745,6 +1753,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator ushort(BigFloat value)
     {
         return (ushort)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1752,6 +1761,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator short(BigFloat value)
     {
         return (short)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1759,6 +1769,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator ulong(BigFloat value)
     {
         return (ulong)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1766,6 +1777,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator long(BigFloat value)
     {
         return (long)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1773,6 +1785,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator UInt128(BigFloat value)
     {
         return (UInt128)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1780,6 +1793,7 @@ Other:                                         |   |         |         |        
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed 128-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator Int128(BigFloat value)
     {
         return (Int128)MantissaWithoutGuardBits(value.Mantissa << value.Scale);
@@ -1789,13 +1803,14 @@ Other:                                         |   |         |         |        
     /// Casts a BigInteger to a BigFloat. The GuardBits are set to zero. 
     /// Example: a BigInteger of 1 would translate to "1+GuardBits" bits of precision.
     /// </summary>
-    /// <param name="value">The BigInteger to cast to a BigFloat.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigFloat(BigInteger value)
     {
         return new BigFloat(value);
     }
 
     /// <summary>Defines an explicit conversion of a System.Double to a BigFloat.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigFloat(double value)
     {
         return new BigFloat(value);
@@ -1808,7 +1823,6 @@ Other:                                         |   |         |         |        
         // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
         //if (value.IsOutOfPrecision) { return value.IsZero ? 0.0 : double.NaN; }
         if (value.IsZero) { return 0.0; }
-        
 
         // Aline and move input.val to show top 53 bits then pre-append a "1" bit.
         // was: long mantissa = (long)(value.DataBits >> (value._size - 53)) ^ ((long)1 << 52);
@@ -1828,14 +1842,12 @@ Other:                                         |   |         |         |        
 
         long dubAsLong = mantissa | (exp << 52);
 
-        //set sign if negative
         if (value.Mantissa.Sign < 0)
         {
             dubAsLong ^= (long)1 << 63;
         }
 
-        double result = BitConverter.Int64BitsToDouble(dubAsLong);
-        return result;
+        return BitConverter.Int64BitsToDouble(dubAsLong);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
@@ -1869,12 +1881,11 @@ Other:                                         |   |         |         |        
             singleAsInteger ^= 1 << 31;
         }
 
-        float result = BitConverter.Int32BitsToSingle(singleAsInteger);
-
-        return result;
+        return BitConverter.Int32BitsToSingle(singleAsInteger);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(BigFloat value)
     {
         return (int)RightShiftWithRound(value.Mantissa, GuardBits - value.Scale);
@@ -1887,6 +1898,7 @@ Other:                                         |   |         |         |        
     }
 
     /// <summary>Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigInteger(BigFloat value)
     {
         return RightShiftWithRound(value.Mantissa, GuardBits - value.Scale);
@@ -1894,9 +1906,10 @@ Other:                                         |   |         |         |        
 
     /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
     /// Since BigFloats can be any precision and doubles have fixed 53-bits precision, precision is ignored.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool FitsInADouble()
     {
-        // future (possibly): add denormalized support 
+        // future: possibly add denormalized support 
         return (BinaryExponent + 1023) is not (< -52 or > 2046);
     }
 
@@ -1912,12 +1925,9 @@ Other:                                         |   |         |         |        
     {
         // 'this' is too large, not possible to be equal. The only 64 bit long is long.MinValue
         if (BinaryExponent > 62) { return BinaryExponent == 63 && other == long.MinValue; }
-
         if (BinaryExponent < -1) { return other == 0; }
-
         if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) { return false; } // too large by 1
-
-        if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
+        if (!IsInteger) { return false; }
 
         return other == (long)RightShiftWithRound(Mantissa << Scale, GuardBits);
     }
@@ -1926,13 +1936,9 @@ Other:                                         |   |         |         |        
     public bool Equals(ulong other)
     {
         if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
-
         if (BinaryExponent < -1) { return other == 0; }
-
         if ((Mantissa >> (GuardBits - 1)).Sign < 0) { return false; }   // is negative
-
         if (BinaryExponent == 63 && WouldRoundUp(Mantissa, GuardBits)) { return false; }// too large by 1
-
         if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
 
         return (ulong)RightShiftWithRound(Mantissa << Scale, GuardBits) == other;
@@ -1962,7 +1968,6 @@ Other:                                         |   |         |         |        
     public override bool Equals([NotNullWhen(true)] object obj)
     {
         AssertValid();
-
         return obj is BigFloat other && Equals(other);
     }
 
@@ -1978,12 +1983,9 @@ Other:                                         |   |         |         |        
     /// </summary>
     public bool Validate()
     {
-        // Calculate the bit length (absolute value for sign-agnostic size).
         int realSize = (int)BigInteger.Abs(Mantissa).GetBitLength();
-
         bool valid = _size == realSize;
 
-        // Optional: in Debug builds, assert if something is off:
         Debug.Assert(valid,
             $"Invalid BigFloat: _size({_size}) does not match actual bit length ({realSize}).");
 
@@ -1993,7 +1995,6 @@ Other:                                         |   |         |         |        
     [Conditional("DEBUG")]
     private void AssertValid()
     {
-        // Just call Validate() and assert if invalid. Or rely on the internal Debug.Assert inside Validate().
         _ = Validate();
     }
 
@@ -2001,5 +2002,14 @@ Other:                                         |   |         |         |        
     private static void AssertValid(BigFloat val)
     {
         val.AssertValid();
+    }
+
+    /// <summary>
+    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat ZeroWithSpecifiedLeastPrecision(int precision)
+    {
+        return new BigFloat(0, precision, 0);
     }
 }

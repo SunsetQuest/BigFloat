@@ -3,6 +3,24 @@ Created 2023
 Updated 2/2024-RSW
 Updated 1/2025-RSW
 
+
+ What is considered Zero: any mantissa that is LESS then 0|10000000, and also the shift results is less then 0|10000000.
+   Mantissa   Scale Size Sz+Sc Precision  Zero
+ 1|11111111.. << -2   33    31      1       N
+ 1|00000000.. << -2   33    31      1       N
+ 1|00000000.. << -1   33    32      1       N
+ 1|00000000.. <<  0   33    33      1       N
+ 0|11111111.. << -1   32    31      0       N
+ 0|10000000.. << -1   32    31      0       N
+ 0|10000000.. <<  0   32    32      0       N
+ 0|01111111.. << -1   31    30     -1       Y
+ 0|01111111.. <<  0   31    31     -1       Y (borderline)
+ 0|01111111.. <<  1   31    32     -1       N
+ 0|00111111.. <<  1   31    32     -2       Y (borderline)
+ 0|00111111.. <<  2   31    33     -2       N
+
+------------------------------------------------------------------
+
 Zero = any dataInt that is LESS than 0:100000000 AND also the shift results in a 0:100000000.
 
 Current: 

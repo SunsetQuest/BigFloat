@@ -891,8 +891,14 @@ public static class BigIntegerTools
     /// <param name="val">The source BigInteger we would like right-shift.</param>
     /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
     /// <returns>The rounded result of shifting val to the right by bitsToRemove.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove)
     {
+        if (targetBitsToRemove == 0)
+        {
+            return val; // no change
+        }
+
         // if bitsToRemove is negative, we would up-shift and no rounding is needed.
         if (targetBitsToRemove < 0)
         {

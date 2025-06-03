@@ -1,0 +1,30 @@
+    /*                                         : BI | RoundTo| Scales  |Can Round| Shift   |
+     *                                         | or | nearest| or Sets |to larger| or      |
+    Public                                     | BF | int    | Size    |Size     | Size by |             notes
+    ====================================================================================================================                  
+    P BF  =(<<, >>)BF                          | F |   No    | SetsSize|  No     | (param) | Provides a shift similar to other data types. (removes/adds bits)
+      BI  =DataIntValueWithRound(BI)/Int       | I | Rounds  | Scales  |  Yes    |GuardBits| return WouldRound(val) ? (val >> GuardBits) + 1 : val >> GuardBits;
+      BI  =DataIntValueWithRound(BI,bool)/Int  | I | Rounds  | Scales  |  Yes    |GuardBits| return needToRound ? (val >> GuardBits) + 1 : val >> GuardBits;
+    P BF  =RightShiftWithRound(BF,int)         | F | Rounds  | Scales  |  Yes    | (param) |
+    P BF  =RightShiftWithRound(BF,int,out)     | F | Rounds  | Scales  |  Yes    | (param) |
+      BI  =RightShiftWithRound(BI,ref int)     | I | Rounds  | Scales  |  Yes    | (param) |
+      BI  =RightShiftWithRound(BI, int)        | I | Rounds  | Scales  |  Yes    | (param) |
+      BF  =TruncateByAndRound(BF, int)         | F | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =TruncateToAndRound(BI, int)         | I | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =UpScale(BI, int)                    | I |   No    | Scales  |  No     | (param) | i.e. Shifts scale up
+      BF  =DownScale(BI, int)                  | I |   No    | Scales  |  No     | (param) | i.e. Shifts using down
+      BF  =AdjustScale(BI, int)                | I |   No    | Scales  |  No     | (param) | i.e. Shifts using up or down
+      BF  =SetPrecision(BF, int)               | F |   No    | SetsSize|  No     | (param) |
+    P BF  =SetPrecisionWithRound(BF,int)       | F | Rounds  | SetsSize|  Yes    | (param) |
+      BF  =ExtendPrecision(BF, int)            | F |   No    | SetsSize|  No     | (param) |
+      BI  Int                                  | I | Rounds  | Scales  |  Yes    |GuardBits| i.e. Int => DataIntValueWithRound(DataBits);
+Other:                                         |   |         |         |         |         |
+    P bool=WouldRound()                        | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, GuardBits);
+    P bool=WouldRound(int bottomBitsRemoved)   | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(DataBits, bottomBitsRemoved);
+    P bool=WouldRound(BI)                      | F | Rounds  | n/a     |  Yes    |GuardBits| return WouldRound(bi, GuardBits);
+    P bool=WouldRound(BI,int bottomBitsRemove) | F | Rounds  | n/a     |  Yes    | (param) | return !(bi & ((BigInteger)1 << (bottomBitsRemoved - 1))).OutOfPrecision;
+
+      
+    * SetsSize = forces a particular size using the param (instead of add/removes the size)
+    * Scale    = adjusts the size by a specific amt
+    */

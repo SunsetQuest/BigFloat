@@ -38,15 +38,15 @@ public readonly partial struct BigFloat
     /// </summary>
     public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(Mantissa, GuardBits);
 
-    //future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
-    /// <summary>
-    /// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). GuardBits will be appended as well.
-    /// </summary>
-    /// <param name="pointOfLeastPrecision">The precision can be positive or negative.</param>
-    public static BigFloat ZeroWithSpecifiedLeastPrecision(int pointOfLeastPrecision)
-    {
-        return new(BigInteger.Zero, pointOfLeastPrecision, 0);
-    }
+    ////future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
+    ///// <summary>
+    ///// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). GuardBits will be appended as well.
+    ///// </summary>
+    ///// <param name="pointOfLeastPrecision">The precision can be positive or negative.</param>
+    //public static BigFloat ZeroWithSpecifiedLeastPrecision(int pointOfLeastPrecision)
+    //{
+    //    return new(BigInteger.Zero, pointOfLeastPrecision, 0);
+    //}
 
     /// <summary>
     /// Returns an integer with additional accuracy. This is beyond the GuardBits.

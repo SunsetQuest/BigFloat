@@ -5182,32 +5182,32 @@ public class BigFloatTests
     {
         _ = BigFloat.TryParseBinary("10.111", out BigFloat a);
         _ = BigFloat.TryParseBinary("10.101", out BigFloat b);
-        int result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        int result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(3, result, $"Fail-10 on Verify_NumberOfMatchingLeadingBits");
 
         _ = BigFloat.TryParseBinary("1111100", out a);
         _ = BigFloat.TryParseBinary("10000000", out b);
-        result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(1, result, $"Fail-20 on Verify_NumberOfMatchingLeadingBits");
 
         _ = BigFloat.TryParseBinary("10001000", out a);
         _ = BigFloat.TryParseBinary("10000000", out b);
-        result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(4, result, $"Fail-30 on Verify_NumberOfMatchingLeadingBits");
 
         _ = BigFloat.TryParseBinary("10001000", out a);
         _ = BigFloat.TryParseBinary("1000000000", out b);
-        result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(4, result, $"Fail-40 on Verify_NumberOfMatchingLeadingBits");
 
         a = new BigFloat(-1);
         b = new BigFloat(0);
-        result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(0, result, $"Fail-50 on Verify_NumberOfMatchingLeadingBits");
 
         a = new BigFloat(-3);
         b = new BigFloat(3);
-        result = BigFloat.NumberOfMatchingLeadingBits(a, b);
+        result = BigFloat.NumberOfMatchingLeadingMantissaBits(a, b);
         AreEqual(0, result, $"Fail-60 on Verify_NumberOfMatchingLeadingBits");
     }
 
