@@ -990,14 +990,15 @@ public static class BigIntegerTools
         bool isNegative = value.Sign < 0;
         value = BigInteger.Abs(value);
 
-        BigInteger result = (value >> bitsToRemove) + ((value >> (bitsToRemove - 1)) & 1);
+        int increment = (value >> (bitsToRemove - 1)).IsEven ? 0 : 1;
+        BigInteger result = (value >> bitsToRemove) + increment;
 
-        if (!result.IsPowerOfTwo)
+        if (increment > 0 && result.IsPowerOfTwo)
         {
-            return (isNegative ? -result : result, false);
+            return ((isNegative ? -result : result) >> 1, true);
         }
 
-        return ((isNegative ? -result : result) >> 1, true);
+        return (isNegative ? -result : result, false);
     }
 
 
