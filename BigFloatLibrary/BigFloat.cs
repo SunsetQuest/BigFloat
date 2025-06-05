@@ -1816,72 +1816,191 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
-    /// <summary>Defines an explicit conversion of a BigFloat to a Double.
+
+    /// <summary>
+    /// Defines an explicit conversion of a BigFloat to a Double with full IEEE 754 compliance.
+    /// Handles normal numbers, subnormal numbers, and special values with optimal performance.
     /// Caution: Precision is not preserved since double is hard coded with 53 bits of precision.</summary>
+    /// </summary>
     public static explicit operator double(BigFloat value)
     {
-        // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
-        //if (value.IsOutOfPrecision) { return value.IsZero ? 0.0 : double.NaN; }
         if (value.IsZero) { return 0.0; }
 
-        // Aline and move input.val to show top 53 bits then pre-append a "1" bit.
-        // was: long mantissa = (long)(value.DataBits >> (value._size - 53)) ^ ((long)1 << 52);
+        bool isNegative = value.Mantissa.Sign < 0;
+        long biasedExp = value.BinaryExponent + 1023L;
 
-        long mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ ((long)1 << 52);
-        long exp = value.BinaryExponent + 1023;
-
-        // Check to see if it fits in a normalized double (untested)
-        if (exp <= 0)
+        // Fast path: Handle overflow to infinity
+        if (biasedExp > 2046L)
         {
-            return value.IsPositive ? 0 : double.NegativeZero;
-        }
-        if (exp > 2046)
-        {
-            return value.IsPositive ? double.PositiveInfinity : double.NegativeInfinity;
+            return isNegative ? double.NegativeInfinity : double.PositiveInfinity;
         }
 
-        long dubAsLong = mantissa | (exp << 52);
-
-        if (value.Mantissa.Sign < 0)
+        // Fast path: Handle normal numbers (most common case)
+        if (biasedExp >= 1L)
         {
-            dubAsLong ^= (long)1 << 63;
+            // Extract top 53 bits from mantissa
+            long mantissaBits = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53));
+
+            // Remove the implicit leading bit for IEEE 754 format
+            mantissaBits &= (1L << 52) - 1;
+
+            // Construct the double bits: sign(1) + exponent(11) + mantissa(52)
+            long doubleBits2 = (biasedExp << 52) | mantissaBits;
+            if (isNegative)
+                doubleBits2 |= 1L << 63;
+
+            return BitConverter.Int64BitsToDouble(doubleBits2);
         }
 
-        return BitConverter.Int64BitsToDouble(dubAsLong);
+        // Handle subnormal numbers and underflow
+        // Subnormal range: 2^(-1074) ≤ |value| < 2^(-1022)
+        // IEEE 754 subnormal: value = (-1)^sign × 2^(-1022) × (mantissa/2^52)
+
+        // Check if value is too small even for subnormals
+        if (value.BinaryExponent < -1074)
+        {
+            return isNegative ? double.NegativeZero : 0.0;
+        }
+
+        // Calculate the subnormal mantissa field
+        // We need: BigFloat_value = 2^(-1022) × (result_mantissa / 2^52)
+        // Therefore: result_mantissa = BigFloat_value × 2^(1022 + 52) = BigFloat_value × 2^1074
+
+        int mantissaShift = 1074 + value.BinaryExponent;
+
+        // Validate shift amount for subnormal range
+        if (mantissaShift < 1 || mantissaShift > 52)
+        {
+            return isNegative ? double.NegativeZero : 0.0;
+        }
+
+        // Extract the appropriate bits for subnormal mantissa
+        BigInteger absMantissa = BigInteger.Abs(value.Mantissa);
+        long subnormalMantissa;
+
+        if (mantissaShift <= value._size)
+        {
+            // Right shift to extract the relevant bits
+            subnormalMantissa = (long)(absMantissa >> (value._size - mantissaShift));
+        }
+        else
+        {
+            // Left shift needed - check bounds to prevent overflow
+            int leftShift = mantissaShift - value._size;
+            if (leftShift > 64 - value._size)
+        {
+                return isNegative ? double.NegativeZero : 0.0;
+            }
+            subnormalMantissa = (long)(absMantissa << leftShift);
+        }
+
+        // Ensure mantissa fits in 52-bit field and handle rounding
+        subnormalMantissa = Math.Min(subnormalMantissa, (1L << 52) - 1);
+
+        if (subnormalMantissa == 0L)
+        {
+            return isNegative ? double.NegativeZero : 0.0;
+        }
+
+        // Construct subnormal double (exponent field = 0)
+        long doubleBits = subnormalMantissa;
+        if (isNegative)
+            doubleBits |= 1L << 63;
+
+        return BitConverter.Int64BitsToDouble(doubleBits);
     }
 
-    /// <summary>Defines an explicit conversion of a BigFloat to a single floating-point.
+    /// <summary>
+    /// Defines an explicit conversion of a BigFloat to a Single (float) with full IEEE 754 compliance.
+    /// Handles normal numbers, subnormal numbers, and special values with optimal performance.
     /// Caution: Precision is not preserved since float is hard coded with 26 bits of precision.</summary>
+    /// </summary>
     public static explicit operator float(BigFloat value)
     {
-        // Future: handle Subnormal numbers (when the exponent field contains all 0's) for anything from 2.2250738585072014 × 10−308 up to 4.9406564584124654E-324.
-        if (value.IsOutOfPrecision)
+        if (value.IsZero) { return 0.0f; }
+
+        bool isNegative = value.Mantissa.Sign < 0;
+        int biasedExp = value.BinaryExponent + 127;
+
+        // Fast path: Handle overflow to infinity
+        if (biasedExp > 254)
         {
-            return value.IsZero ? 0.0f : float.NaN;
+            return isNegative ? float.NegativeInfinity : float.PositiveInfinity;
         }
 
-        int mantissa = (int)(BigInteger.Abs(value.Mantissa) >> (value._size - 24)) ^ (1 << 23);
-        int exp = value.BinaryExponent + 127;
-
-        // Check to see if it fits in a normalized double (untested)
-        if (exp <= 0)
+        // Fast path: Handle normal numbers (most common case)
+        if (biasedExp >= 1)
         {
-            return value.IsPositive ? 0 : float.NegativeZero;
-        }
-        if (exp > 254)
-        {
-            return value.IsPositive ? float.PositiveInfinity : float.NegativeInfinity;
-        }
+            // Extract top 24 bits from mantissa, then remove implicit leading bit
+            int mantissaBits = (int)(BigInteger.Abs(value.Mantissa) >> (value._size - 24));
 
-        int singleAsInteger = mantissa | (exp << 23);
+            // Remove the implicit leading bit for IEEE 754 format (keep only 23 bits)
+            mantissaBits &= (1 << 23) - 1;
 
-        //set sign if negative
-        if (value.Mantissa.Sign < 0)
-        {
-            singleAsInteger ^= 1 << 31;
+            // Construct the float bits: sign(1) + exponent(8) + mantissa(23)
+            int floatBits2 = (biasedExp << 23) | mantissaBits;
+            if (isNegative)
+                floatBits2 |= 1 << 31;
+
+            return BitConverter.Int32BitsToSingle(floatBits2);
         }
 
-        return BitConverter.Int32BitsToSingle(singleAsInteger);
+        // Handle subnormal numbers and underflow
+        // Subnormal range: 2^(-149) ≤ |value| < 2^(-126)
+        // IEEE 754 subnormal: value = (-1)^sign × 2^(-126) × (mantissa/2^23)
+
+        // Check if value is too small even for subnormals
+        if (value.BinaryExponent < -149)
+        {
+            return isNegative ? float.NegativeZero : 0.0f;
+        }
+
+        // Calculate the subnormal mantissa field
+        // We need: BigFloat_value = 2^(-126) × (result_mantissa / 2^23)
+        // Therefore: result_mantissa = BigFloat_value × 2^(126 + 23) = BigFloat_value × 2^149
+
+        int mantissaShift = 149 + value.BinaryExponent;
+
+        // Validate shift amount for subnormal range
+        if (mantissaShift < 1 || mantissaShift > 23)
+        {
+            return isNegative ? float.NegativeZero : 0.0f;
+        }
+
+        // Extract the appropriate bits for subnormal mantissa
+        BigInteger absMantissa = BigInteger.Abs(value.Mantissa);
+        int subnormalMantissa;
+
+        if (mantissaShift <= value._size)
+        {
+            // Right shift to extract the relevant bits
+            subnormalMantissa = (int)(absMantissa >> (value._size - mantissaShift));
+        }
+        else
+        {
+            // Left shift needed - check bounds to prevent overflow
+            int leftShift = mantissaShift - value._size;
+            if (leftShift > 32 - value._size)
+        {
+                return isNegative ? float.NegativeZero : 0.0f;
+            }
+            subnormalMantissa = (int)(absMantissa << leftShift);
+        }
+
+        // Ensure mantissa fits in 23-bit field
+        subnormalMantissa = Math.Min(subnormalMantissa, (1 << 23) - 1);
+
+        if (subnormalMantissa == 0)
+        {
+            return isNegative ? float.NegativeZero : 0.0f;
+        }
+
+        // Construct subnormal float (exponent field = 0)
+        int floatBits = subnormalMantissa;
+        if (isNegative)
+            floatBits |= 1 << 31;
+
+        return BitConverter.Int32BitsToSingle(floatBits);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
