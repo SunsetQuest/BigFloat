@@ -352,7 +352,7 @@ public readonly partial struct BigFloat
     ///   it should not round up based on GuardBits
     ///   Ceiling would round up (and Floor down for negative)
     /// </summary>
-    public bool IsInteger  //v4 - check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
+    public bool IsInteger  //v4 - check to see if all the bits between the point and top guard bit are zero (111.??|?)
     {
         get
         {
@@ -366,7 +366,7 @@ public readonly partial struct BigFloat
                 // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
                 //BigInteger val3 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
                 //return (val3 & (val3 + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                return BitsUniformInRange(Mantissa, GuardBits - Scale - 0, GuardBits - 1);
+                return BitsUniformInRange(Mantissa, GuardBits - Scale, GuardBits - 1);
             }
 
             if (Scale == 0)

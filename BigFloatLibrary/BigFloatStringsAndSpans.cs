@@ -61,7 +61,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Converts this BigFloat to a hexadecimal string.
     /// </summary>
-    private string ToHexString()
+    public string ToHexString()
     {
         // When Scale is non-negative, shift off the extra guard bits and format.
         if (Scale >= 0)
@@ -83,7 +83,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Converts this BigFloat to a binary string.
     /// </summary>
-    private string ToBinaryString()
+    public string ToBinaryString()
     {
         // Allocate exactly as much space as needed.
         Span<char> buffer = stackalloc char[CalculateBinaryStringLength()];
