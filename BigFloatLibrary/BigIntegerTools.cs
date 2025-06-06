@@ -7,7 +7,6 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -894,13 +893,8 @@ public static class BigIntegerTools
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove)
     {
-        if (targetBitsToRemove == 0)
-        {
-            return val; // no change
-        }
-
         // if bitsToRemove is negative, we would up-shift and no rounding is needed.
-        if (targetBitsToRemove < 0)
+        if (targetBitsToRemove <= 0)
         {
             return val >> targetBitsToRemove;
         }

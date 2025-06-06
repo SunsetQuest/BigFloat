@@ -2560,6 +2560,9 @@ public class BigFloatTests
     [TestMethod]
     public void Floor_Ceiling_DirectConstruction_ExtremeLargeValues()
     {
+        //for (int i = 0; i < 100000; i++)
+        {
+
         // Standard integer limits
         AssertFloorCeilingValues(new BigFloat(int.MaxValue, 0), new BigFloat(int.MaxValue), new BigFloat(int.MaxValue));
         AssertFloorCeilingValues(new BigFloat(int.MinValue, 0), new BigFloat(int.MinValue), new BigFloat(int.MinValue));
@@ -2567,6 +2570,15 @@ public class BigFloatTests
         AssertFloorCeilingValues(new BigFloat(long.MaxValue, 0), new BigFloat(long.MaxValue), new BigFloat(long.MaxValue));
         AssertFloorCeilingValues(new BigFloat(long.MinValue, 0), new BigFloat(long.MinValue), new BigFloat(long.MinValue));
         AssertFloorCeilingValues(new BigFloat(ulong.MaxValue, 0), new BigFloat(ulong.MaxValue), new BigFloat(ulong.MaxValue));
+
+        AssertFloorCeilingValues(new BigFloat("0b111.11|111"), new BigFloat("0b111.00|000"), new BigFloat("0b1000.00|000"));
+        AssertFloorCeilingValues(new BigFloat("0b11111111|"), new BigFloat(255), new BigFloat(255));
+        AssertFloorCeilingValues(new BigFloat("0b11111|111"), new BigFloat(255), new BigFloat(255));
+        AssertFloorCeilingValues(new BigFloat("0b11111|1.11"), new BigFloat("0b11111|1.00"), new BigFloat("0b100000|0"));
+        AssertFloorCeilingValues(new BigFloat("0b11111111",2), new BigFloat("0b11111111",2), new BigFloat("0b11111111", 2));
+        AssertFloorCeilingValues(new BigFloat("0b111111|11",3), new BigFloat("0b111111|11",3), new BigFloat("0b111111|11", 3));
+        }
+
     }
 
     [TestMethod]
@@ -2626,20 +2638,20 @@ public class BigFloatTests
             throw new ArgumentException("Test Error: expectedFloor should be less than or equal to expectedCeiling");
         }
 
-        var actualFloor = value.Floor();
-        var actualCeiling = value.Ceiling();
+        var floorOutput = value.Floor();
+        var ceilingOutput = value.Ceiling();
 
-        AreEqual(expectedFloor, actualFloor, $"Floor of {value} should be {expectedFloor}, but was {actualFloor}");
-        AreEqual(expectedCeiling, actualCeiling, $"Ceiling of {value} should be {expectedCeiling}, but was {actualCeiling}");
+        AreEqual(expectedFloor, floorOutput, $"Floor of {value} should be {expectedFloor}, but was {floorOutput}");
+        AreEqual(expectedCeiling, ceilingOutput, $"Ceiling of {value} should be {expectedCeiling}, but was {ceilingOutput}");
 
         // Verify floor/ceiling relationship
         if (value.IsInteger)
         {
-            AreEqual(actualFloor, actualCeiling, $"For integer value {value}, Floor() and Ceiling() should be equal");
+            AreEqual(floorOutput, ceilingOutput, $"For integer value {value}, Floor() and Ceiling() should be equal");
         }
         else
         {
-            AreEqual(actualFloor + 1, actualCeiling, $"For non-integer value {value}, Floor() should be one unit less than Ceiling()");
+            AreEqual(floorOutput + 1, ceilingOutput, $"For non-integer value {value}, Floor() should be one unit less than Ceiling()");
         }
     }
 

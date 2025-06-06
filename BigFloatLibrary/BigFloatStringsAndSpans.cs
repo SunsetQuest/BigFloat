@@ -5,6 +5,7 @@
 // Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
@@ -152,11 +153,15 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     private int CalculateBinaryStringLength()
     {
-        return _size - GuardBits
-            + Math.Max(Math.Max(Scale, -(_size - GuardBits) - Scale), 0) // out-of-precision zeros in the output.
-            + (Mantissa.Sign < 0 ? 1 : 0)       // add one if a leading '-' sign (-0.1)
-            + (Scale < 0 ? 1 : 0)               // add one if it has a point like (1.1)
-            + (BinaryExponent <= 0 ? 1 : 0);    // add one if <1 for leading Zero (0.1) 
+        // Future: what if we just add a few instead of calculating. Also with last update it is now Aprox size.
+        bool isNeg = Mantissa.Sign < 0;
+        int size = _size - GuardBits
+            + Math.Max(Math.Max(Scale, -(_size - GuardBits) - Scale), 0)// out-of-precision zeros in the output.
+            + (Scale < 0 ? 1 : 0)                                       // add one if it has a point like (1.1)
+            + (isNeg ? 1 : 0)                                           // add one if a leading '-' sign (-0.1)
+            + 1                                                         // add one in case rollover
+            + (BinaryExponent <= 0 ? 1 : 0);                            // add one if <1 for leading Zero (0.1) 
+        return size;
     }
 
     /// <summary>

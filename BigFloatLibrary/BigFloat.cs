@@ -389,10 +389,11 @@ public readonly partial struct BigFloat
             return BitsUniformInRange(Mantissa, GuardBits - Scale, GuardBits - 8 - Scale);
         }
     }
-
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool BitsUniformInRange(BigInteger value, int a, int b)
     {
+        bool isPositive = value > 0;
         // precondition: 0 ≤ b < a ≤ 32
         int width = a - b;
         // mask == (1<<width)-1, i.e. width low bits = 1, the rest = 0
@@ -400,7 +401,9 @@ public readonly partial struct BigFloat
         // extract the [b..a) bits down into the low bits of 'bits'
         BigInteger bits = (BigInteger.Abs(value) >> b) & mask;
         // true iff all those bits are 0, or all are 1
-        return bits == 0u || bits == mask;
+        return bits == 0u; // (isPositive ? 0u : mask);
+
+        //return ((BigInteger.Abs(value) >> b) & mask) == (isPositive ? 0u : mask); //future: benchmark
     }
 
     /// <summary>
@@ -463,6 +466,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public BigFloat Floor()
     {
+        BigFloat test = -(-this).Ceiling();
         int bitsToClear = GuardBits - Scale; // number of bits to clear from DataBits
 
         // 'Scale' will be zero or positive. (since all fraction bits are stripped away)
@@ -492,53 +496,18 @@ public readonly partial struct BigFloat
 
         if (Mantissa.Sign > 0)
         {
-            // If Positive and Floor, the size should always remain the same.
-            // If Scale is between 0 and GuardBits..
-            //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
-            if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
-            {
-                return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
-            }
-
-            // If Scale is between -size and 0..
-            //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  10.1101[10101010010...00010]  -> 10.[00000000000...00000]
-            //BigInteger intPart = ((DataBits >> bitsToClear) + 1) << GuardBits;
-            //return new BigFloat((DataBits >> bitsToClear) +  (IsInteger?0:1));
-            return new BigFloat(Mantissa >> bitsToClear);
+            return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
         }
         else  // sign <= 0
         {
-            //   If Negative and Flooring, and the abs(result) is a PowerOfTwo the size will grow by 1.  -1111.1 -> -10000, -10000 -> -10000
-            // Lets just remove the bits and clear GuardBits
-            //   Example: Scale =  4, int=45, size=8+32=40  -> bitsToClear=32-4  11101101[1010.1010010...00010]  -> 11101101[1010.0000000...00000]
-
-            // clear bitToClear bits 
-
-            _ = GuardBits - Math.Max(0, Scale);
-
-            // If Scale is between 0 and GuardBits..
-            //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-            if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
+            BigInteger intPart = (-Mantissa) >> (bitsToClear - 1); // clear the bits (less one for rounding)
+            int newSize = _size;
+            if (!intPart.IsEven)
             {
-                bool roundsUp = (Mantissa & ((1 << bitsToClear) - 1)) > 0;
-                BigInteger intPart = Mantissa >> bitsToClear << bitsToClear;
-                int newSize = _size;
-
-                if (roundsUp)
-                {
-                    intPart += 1 << (bitsToClear);
-                    newSize = (int)intPart.GetBitLength(); //future: maybe slow (maybe use BigInteger.TrailingZeroCount to detect rollover)
-
-                }
-                return new BigFloat(intPart, Scale, newSize);
+                intPart++;
+                if (intPart.IsPowerOfTwo) { newSize++; }
             }
-
-            // If Scale is between -size and 0..
-            //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  -11.1101[10101010010...00010]  -> -100.[00000000000...00000]
-            else //if (Scale < 0)
-            {
-                return new BigFloat(Mantissa >> bitsToClear);
-            }
+            return new BigFloat(-(intPart << (bitsToClear - 1)), Scale, newSize);
         }
     }
 
@@ -589,19 +558,39 @@ public readonly partial struct BigFloat
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
             //   Example: Scale = -4, int=45, size=6+32=38  -> bitsToClear=32+4  10.1101[10101010010...00010]  -> 10.[00000000000...00000]
 
-            if (Scale >= 0) // Scale is between 0 and GuardBits
-            {
-                //  Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-                bool roundsUp = (Mantissa & ((1 << bitsToClear) - 1)) > 0;
-                BigInteger intPart = Mantissa >> bitsToClear << bitsToClear;
-                int newSize = _size;
+            //if (Scale >= 0) // Scale is between 0 and GuardBits
+            //{
+            //    //  Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
+            //    bool roundsUp = (Mantissa & (BigInteger.One << (bitsToClear - 1))) > 0;
+            //    BigInteger intPart = Mantissa >> bitsToClear << bitsToClear;
+            //    int newSize = _size;
 
-                if (roundsUp)
+            //    if (roundsUp)
+            //    {
+            //        intPart += BigInteger.One << (bitsToClear);
+            //        newSize = (int)intPart.GetBitLength(); //future: maybe slow (maybe use BigInteger.IsPowerOf2 to detect rollover)
+            //    }
+            //    return new BigFloat(intPart, Scale, newSize);
+            //}
+
+            //if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
+            //{
+            //    int newSize = _size;
+            //    BigInteger intPart2 = RightShiftWithRound(Mantissa, bitsToClear, ref newSize); // clear the bits (less one for rounding)
+            //    return new BigFloat(intPart2 << (bitsToClear - 1), Scale, newSize);
+            //}
+
+            if (Scale >= 0) // SCALE >= 0 and SCALE < GuardBits
+            {
+                BigInteger intPart = Mantissa >> (bitsToClear - 1); // clear the bits (less one for rounding)
+                int newSize = _size;
+                if (!intPart.IsEven )
                 {
-                    intPart += 1 << (bitsToClear);
-                    newSize = (int)intPart.GetBitLength(); //future: maybe slow (maybe use BigInteger.TrailingZeroCount to detect rollover)
+                    intPart++;
+                    if (intPart.IsPowerOfTwo) { newSize++; }
                 }
-                return new BigFloat(intPart, Scale, newSize);
+
+                return new BigFloat(intPart << (bitsToClear - 1), Scale, newSize);
             }
 
             // If Scale is between -size and 0..
@@ -620,7 +609,7 @@ public readonly partial struct BigFloat
 
                 int newSize = roundsUp ? (int)intPart.GetBitLength() : _size - bitsToClear + GuardBits; //future: optimize using bit scan operations when the rollover is predictable
 
-                return new BigFloat(intPart, 0, newSize);
+                return new BigFloat(intPart >> Scale , Scale, newSize - Scale);
             }
         }
         else  // sign < 0
@@ -628,6 +617,9 @@ public readonly partial struct BigFloat
             // If Negative and Ceiling, the size should always remain the same.
             // If Scale is between 0 and GuardBits..
             //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  101101[1010.1010010...00010]  -> 101101[1010.0000000...00000]
+            // Pre-compute width (single method call)
+            return new BigFloat(-(((-Mantissa) >> bitsToClear) << bitsToClear), Scale, _size);
+
             if (Scale >= 0)
             {
                 return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
@@ -638,8 +630,9 @@ public readonly partial struct BigFloat
             {
                 intPart++;
             }
+            var t = new BigFloat((Mantissa >> bitsToClear) >> (Scale - GuardBits), -GuardBits, _size + Scale + GuardBits);
 
-            return new BigFloat(intPart);
+            return new BigFloat(intPart << bitsToClear, Scale, _size);
         }
     }
 
@@ -1888,7 +1881,7 @@ public readonly partial struct BigFloat
             // Left shift needed - check bounds to prevent overflow
             int leftShift = mantissaShift - value._size;
             if (leftShift > 64 - value._size)
-        {
+            {
                 return isNegative ? double.NegativeZero : 0.0;
             }
             subnormalMantissa = (long)(absMantissa << leftShift);
@@ -1981,7 +1974,7 @@ public readonly partial struct BigFloat
             // Left shift needed - check bounds to prevent overflow
             int leftShift = mantissaShift - value._size;
             if (leftShift > 32 - value._size)
-        {
+            {
                 return isNegative ? float.NegativeZero : 0.0f;
             }
             subnormalMantissa = (int)(absMantissa << leftShift);
