@@ -386,18 +386,9 @@ public readonly partial struct BigFloat
                 return false;
             }
 
-            int end2 = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
-            bool test = BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end2);
-
             // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
             // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
-            bool result = BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck - Scale, GuardBits - Scale);
-
-            if (test != result)
-            {
-
-            }
-            return result;
+            return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck - Scale, GuardBits - Scale);
         }
     }
 
