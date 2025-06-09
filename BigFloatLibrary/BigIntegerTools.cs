@@ -868,6 +868,39 @@ public static class BigIntegerTools
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool BitsAreUniformInRange(BigInteger value, int lowerInclusive, int upperExclusive)
+    {
+        int width = upperExclusive - lowerInclusive;
+        BigInteger mask = (BigInteger.One << width) - 1;
+        BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
+        return bits == 0u || bits== mask;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool BitsAreZeroInRange(BigInteger value, int lowerInclusive, int upperExclusive)
+    {
+        return ExtractBitRange(value, lowerInclusive, upperExclusive) == 0u;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool BitsAreSetInRange(BigInteger value, int lowerInclusive, int upperExclusive)
+    {
+        int width = upperExclusive - lowerInclusive;
+        BigInteger mask = (BigInteger.One << width) - 1;
+        BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
+        return bits == mask;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigInteger ExtractBitRange(BigInteger value, int lowerInclusive, int upperExclusive)
+    {
+        int width = upperExclusive - lowerInclusive;
+        BigInteger mask = (BigInteger.One << width) - 1;
+        BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
+        return bits;
+    }
+
 
     /////////////////////////////////////////////
     ////      RightShift() for BigInteger    ////
