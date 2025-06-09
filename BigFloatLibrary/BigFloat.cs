@@ -361,20 +361,8 @@ public readonly partial struct BigFloat
             // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
             // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
             const int topBitsToCheck = 8;
-            if (Scale < 0)
+            if (Scale <= 0)
             {
-                // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
-                //BigInteger val3 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
-                //return (val3 & (val3 + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
-                return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck/*1*/, end);
-            }
-
-            if (Scale == 0)
-            {
-                // The radix point and guard are in the same place. This is typically an integer however lets verify the top 1/4 the guard are 0 or 1.
-                //int topBits = (int)(Mantissa >> (GuardBits - topBitsToCheck)) & ((1 << topBitsToCheck) - 1);
-                //return (topBits & (topBits + 1)) == 0; //return true if top 2 bits are all 0 or 1
                 int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
                 return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end);
             }
@@ -382,7 +370,7 @@ public readonly partial struct BigFloat
             if (Scale > topBitsToCheck)
             {
                 // The radix point is at least 8 bits into the guard area so it is very inconclusive at this point.
-                // Update: after conversing with 
+                // todo: after conversing with ChatGPT/Claude, this should be true
                 return false;
             }
 
@@ -482,13 +470,6 @@ public readonly partial struct BigFloat
         if (bitsToClear >= _size)
         {
             return (sign <= 0) ? new BigFloat(0, 0, 0) : new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits);
-        }
-
-        // Radix point is in the GuardBits area
-        //   Example: Scale =  4, int=45, size=6+32=38  -> bitsToClear=32-4  -101101[1010.1010010...00010]  -> -101101[1011.0000000...00000]
-        if (Scale < GuardBits) // SCALE >= 0 and SCALE<GuardBits
-        {
-            // Future: optimization here?
         }
 
         if (sign == 0)

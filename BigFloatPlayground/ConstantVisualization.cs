@@ -116,7 +116,6 @@ public static class ConstantVisualization
         return table.ToString();
     }
 
-    // Todo: Fix or Remove (also move to visual.cs?)
     /// <summary>
     /// Creates a visual representation of the continued fraction expansion of a constant.
     /// </summary>
