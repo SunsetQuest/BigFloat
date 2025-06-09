@@ -2178,7 +2178,7 @@ public class BigFloatTests
     {
         BigFloat bf;
         bf = new BigFloat(0);
-        IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
+        IsTrue(bf.IsInteger, $"{bf}.IsInteger is true - zero is considered an integer.");
         bf = new BigFloat(1);
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
         bf = new BigFloat(-1);
@@ -2200,8 +2200,8 @@ public class BigFloatTests
         bf = new BigFloat(double.MinValue);
         IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
 
+        bf = new BigFloat(double.Epsilon); IsFalse(bf.IsInteger, $"{bf}.IsInteger is false because all top 8 Guardbits are not uniform.");
         bf = new BigFloat(double.E); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
-        bf = new BigFloat(double.Epsilon); IsTrue(bf.IsInteger);
         bf = new BigFloat(double.Pi); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
         bf = new BigFloat(0.001); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
         bf = new BigFloat(-0.001); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
@@ -2395,11 +2395,11 @@ public class BigFloatTests
     [TestMethod]
     public void Floor_Ceiling_EpsilonValues_ShouldBeConsideredZero()
     {
-        // Due to 8-bit guard area, small epsilon values become zero in BigFloat
-        AssertIntegerBehavior(double.Epsilon, expectedValue: 0);
-        AssertIntegerBehavior(-double.Epsilon, expectedValue: 0);
-        AssertIntegerBehavior(double.Epsilon * 64, expectedValue: 0);
-        AssertIntegerBehavior(-double.Epsilon * 64, expectedValue: 0);
+        // Because the 8-bit guard area, small epsilon values become zero in BigFloat
+        AssertIntegerBehavior(double.Epsilon, expectedValue: 0, isInteger: false);
+        AssertIntegerBehavior(-double.Epsilon, expectedValue: 0, isInteger: false);
+        AssertIntegerBehavior(double.Epsilon * 64, expectedValue: 0, isInteger: false);
+        AssertIntegerBehavior(-double.Epsilon * 64, expectedValue: 0, isInteger: false);
 
         // Larger epsilon multiples may still be considered zero due to precision loss
         AssertFloorCeilingBehavior(double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
@@ -2607,7 +2607,7 @@ public class BigFloatTests
     }
 
     // Helper methods for cleaner assertions
-    private static void AssertIntegerBehavior(double value, int expectedValue)
+    private static void AssertIntegerBehavior(double value, int expectedValue, bool isInteger = true)
     {
         var bigFloat = new BigFloat(value);
         var floor = bigFloat.Floor();
@@ -2616,7 +2616,8 @@ public class BigFloatTests
         AreEqual(expectedValue, (int)floor, $"Floor of {value} should be {expectedValue}");
         AreEqual(expectedValue, (int)ceiling, $"Ceiling of {value} should be {expectedValue}");
         AreEqual(floor, ceiling, $"Floor and ceiling of integer value {value} should be equal");
-        IsTrue(bigFloat.IsInteger, $"Value {value} should be considered an integer");
+        // The top 8 bits in the Mantissa must be uniform to be considered an Integer.
+        IsTrue(!bigFloat.IsInteger ^ isInteger, $"Value {value} should {(isInteger ? "":"not")} be considered an integer");
     }
 
     private static void AssertFloorCeilingBehavior(double value, int expectedFloor, int expectedCeiling, bool shouldBeInteger = true)

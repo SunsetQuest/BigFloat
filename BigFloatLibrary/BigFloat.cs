@@ -366,7 +366,8 @@ public readonly partial struct BigFloat
                 // check to see if all the bits between the radix and one bit into the guard are zero (111.??|?)
                 //BigInteger val3 = (Mantissa >> (GuardBits - 1)) & ((BigInteger.One << (-Scale + 1)) - 1);
                 //return (val3 & (val3 + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                return BitsUniformInRange(Mantissa, GuardBits - Scale, GuardBits - 1);
+                int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
+                return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck/*1*/, end);
             }
 
             if (Scale == 0)
@@ -374,37 +375,32 @@ public readonly partial struct BigFloat
                 // The radix point and guard are in the same place. This is typically an integer however lets verify the top 1/4 the guard are 0 or 1.
                 //int topBits = (int)(Mantissa >> (GuardBits - topBitsToCheck)) & ((1 << topBitsToCheck) - 1);
                 //return (topBits & (topBits + 1)) == 0; //return true if top 2 bits are all 0 or 1
-                return BitsUniformInRange(Mantissa, GuardBits, GuardBits - topBitsToCheck);
+                int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
+                return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end);
             }
 
             if (Scale > topBitsToCheck)
             {
                 // The radix point is at least 8 bits into the guard area so it is very inconclusive at this point.
-                // If someone says, I have around 1000 kg of rocks, is that an integer? not really
+                // Update: after conversing with 
                 return false;
             }
 
+            int end2 = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
+            bool test = BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end2);
+
             // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
             // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
-            return BitsUniformInRange(Mantissa, GuardBits - Scale, GuardBits - 8 - Scale);
+            bool result = BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck - Scale, GuardBits - Scale);
+
+            if (test != result)
+            {
+
+            }
+            return result;
         }
     }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool BitsUniformInRange(BigInteger value, int a, int b)
-    {
-        bool isPositive = value > 0;
-        // precondition: 0 ≤ b < a ≤ 32
-        int width = a - b;
-        // mask == (1<<width)-1, i.e. width low bits = 1, the rest = 0
-        BigInteger mask = (BigInteger.One << width) - 1;
-        // extract the [b..a) bits down into the low bits of 'bits'
-        BigInteger bits = (BigInteger.Abs(value) >> b) & mask;
-        // true iff all those bits are 0, or all are 1
-        return bits == 0u; // (isPositive ? 0u : mask);
 
-        //return ((BigInteger.Abs(value) >> b) & mask) == (isPositive ? 0u : mask); //future: benchmark
-    }
 
     /// <summary>
     /// Tests to see if the number is in the format of "10000000..." after rounding.

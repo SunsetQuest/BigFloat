@@ -195,7 +195,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
         // Special cases: '0.999' - like 0.123 above, however because of rounding, has leading '1.' or '-1.'
 
-        if (binaryExponent < 0)
+        if (binaryExponent < 0) // Type '0.110'
         {
             // For numbers less than one, prepend "0." and any extra zeros.
             destination[pos++] = '0';
@@ -208,16 +208,16 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             }
             pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
         }
-        else if (Scale >= 0) // Type '12300'
+        else if (Scale >= 0) // Type '11010'
         {
             // For integer numbers (no radix point) write the bits...
             pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
             // ...and then append any trailing zeros.
             int trailingZeros = Math.Max(0, Scale);
-            destination.Slice(destination.Length - trailingZeros, trailingZeros).Fill('0');
+            destination.Slice(pos, trailingZeros).Fill('0');
             pos += trailingZeros;
         }
-        else // Type '12.30'
+        else // Type '11.01'
         {
             // For numbers with a fractional part, split the bits before and after the radix point.
             int bitsBeforePoint = size + Scale; // Scale is negative
