@@ -78,6 +78,10 @@ public readonly partial struct BigFloat
     /// When Scale is Zero, the value is equal to the DataBits with the GuardBits removed. (i.e. DataBits >> GuardBits)
     /// When BigFloat is Zero, scale is the point of least accuracy.
     /// note: _scale = Scale-GuardBits (or Scale = _scale + GuardBits)
+    /// 11|1.1000  Scale < 0
+    /// 111.|1000  Scale ==0
+    /// 111.10|00  Scale > 0
+
     /// </summary>
     public readonly int Scale { get; init; }
 
@@ -344,39 +348,28 @@ public readonly partial struct BigFloat
     ///////////////////////// [END] INIT / CONVERSION  FUNCTIONS [END] /////////////////////////
 
     /// <summary>
-    /// Checks to see if the value is an integer. Returns true if all the bits between the radix point and the middle of GuardBits are all 0 or all 1.
-    ///   for scale <= 0, if all bits are 0 or 1 between radix and half-way through the GuardBits
-    ///   for scale >= (GuardBits/2), is always true.
+    /// Checks to see if the value is an integer. Returns true if all the bits between the  point and 8 bits into the GuardBits are all 0 or all 1.
+    /// True if...
+    ///   all bits are 0 or 1 between point and half-way through the GuardBits
+    ///   or, the scale >= 8(GuardBits/4), is always true.
     /// 
-    /// if we call it an integer then it should follow that ...
-    ///   it should not round up based on GuardBits
-    ///   Ceiling would round up (and Floor down for negative)
+    /// If an integer then it should follow that ...
+    ///   it should not round-up based on GuardBits
+    ///   Ceiling would round-up (and Floor down for negative)
     /// </summary>
-    public bool IsInteger  //v4 - check to see if all the bits between the point and top guard bit are zero (111.??|?)
+    public bool IsInteger  //v6 - check to see if all the bits between the point and the 8 most significate guard bits are uniform. (111.??|?)
     {
         get
         {
-            // Assuming GuardBits is 4...
-            // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-            // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
-            // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
             const int topBitsToCheck = 8;
-            if (Scale <= 0)
+            if (Scale >= topBitsToCheck)
             {
-                int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
-                return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end);
+                // The radix point is at least 8 bits into the guard area so it is very inconclusive, however these cases are considered integers.
+                return true;
             }
 
-            if (Scale > topBitsToCheck)
-            {
-                // The radix point is at least 8 bits into the guard area so it is very inconclusive at this point.
-                // todo: after conversing with ChatGPT/Claude, this should be true
-                return false;
-            }
-
-            // If here then Scale > 0 and the decimal is right shifted. This results in the radix is in the guard area.
-            // This area is technically "inconclusive" so false, but to be more conforming to expectations, we use the 8 bits just below the guard up future more we only allow the radix to go 8 deep into the radix. So up to the top 8-8 bits are used in the guard area.
-            return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck - Scale, GuardBits - Scale);
+            int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
+            return BitsAreUniformInRange(Mantissa, GuardBits - topBitsToCheck, end);
         }
     }
 

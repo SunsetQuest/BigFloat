@@ -2196,9 +2196,22 @@ public class BigFloatTests
         bf = new BigFloat(int.MinValue);
         IsTrue(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
         bf = new BigFloat(double.MaxValue);
-        IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
+        IsTrue(bf.IsInteger, $"MaxValue should be considered an integer");
         bf = new BigFloat(double.MinValue);
-        IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as false but should be true.");
+        IsTrue(bf.IsInteger, $"MinValue should be considered an integer");
+        // 
+        bf = new BigFloat("0b101010101|10101010.010");  // |8.
+        IsTrue(bf.IsInteger, $"only the top 8 bits are considered in the guard bits and all of these are above the point."); 
+        bf = new BigFloat("0b101010101|10101010.1010"); // |8.
+        IsTrue(bf.IsInteger, $"Only the top 8 bits are considered in the guard bits and all of these are above the point.");
+        bf = new BigFloat("0b101010101|1010101.01010"); // |7.0
+        IsTrue(bf.IsInteger, $"Only the top 8 bits are considered in the guard bits and only one bit after the decimal. If this one bit is all one or zero it is true.");
+        bf = new BigFloat("0b101010101|1010101.1010");  // |7.1 - 
+        IsTrue(bf.IsInteger, $"Only the top 8 bits are considered in the guard bits and only one bit after the decimal. If this one bit is all one or zero it is true.");
+        bf = new BigFloat("0b101010101|101010.101010"); // |6.10
+        IsFalse(bf.IsInteger, $"The 2 bits after the point (10) are not uniform so false.");
+        bf = new BigFloat("0b101010101|101010.001010"); // |6.00
+        IsTrue(bf.IsInteger, $"The 2 bits after the point (10) are not uniform so true.");
 
         bf = new BigFloat(double.Epsilon); IsFalse(bf.IsInteger, $"{bf}.IsInteger is false because all top 8 Guardbits are not uniform.");
         bf = new BigFloat(double.E); IsFalse(bf.IsInteger, $"{bf}.IsInteger reported as true but should be false.");
@@ -2479,14 +2492,12 @@ public class BigFloatTests
         var ceiling = bigFloat.Ceiling();
 
         AreEqual(floor, ceiling, "MinValue floor should equal ceiling");
-        IsFalse(bigFloat.IsInteger, "MinValue should not be considered an integer");
 
         bigFloat = new BigFloat(double.MaxValue);
         floor = bigFloat.Floor();
         ceiling = bigFloat.Ceiling();
-
+        
         AreEqual(floor, ceiling, "MaxValue floor should equal ceiling");
-        IsFalse(bigFloat.IsInteger, "MaxValue should not be considered an integer");
     }
 
     [TestMethod]
@@ -4184,9 +4195,9 @@ public class BigFloatTests
         IsFalse((-one).Equals((ulong)0));
 
         BigFloat val7 = BigFloat.Parse("0b0|1111111111111111111111111");
-        IsFalse(val7.Equals(33554431));
-        IsFalse(val7.Equals((ulong)33554431));
-        IsFalse((-val7).Equals(-33554431));
+        IsTrue(val7.Equals(33554431));
+        IsTrue(val7.Equals((ulong)33554431));
+        IsTrue((-val7).Equals(-33554431));
         IsFalse(val7.Equals(-33554431));
         IsFalse((-val7).Equals(33554431));
         IsFalse(val7.Equals(33554430));
