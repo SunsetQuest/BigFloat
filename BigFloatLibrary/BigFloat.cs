@@ -432,16 +432,15 @@ public readonly partial struct BigFloat
     /// Rounds to the next integer towards negative infinity. Any fractional bits are removed, negative scales are set
     /// to zero, and the precision(size) will be resized to just the integer part.
     /// </summary>
-    public BigFloat Floor()
+    public BigFloat FloorWithScale()
     {
-        return -(-this).Ceiling();
+        return -(-this).CeilingWithScale();
     }
 
     /// <summary>
-    /// Rounds to the next integer towards positive infinity. Any fractional bits are removed, negative scales are set
-    /// to zero, and the precision(size) will be resized to just the integer part.
+    /// Rounds to the next integer towards positive infinity setting any fractional bits to zero.
     /// </summary>
-    public BigFloat Ceiling()
+    public BigFloat CeilingWithScale()
     {
         int bitsToClear = GuardBits - Scale;
 
