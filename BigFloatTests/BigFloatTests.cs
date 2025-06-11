@@ -2406,15 +2406,12 @@ public class BigFloatTests
     }
 
     [TestMethod]
-    public void Floor_Ceiling_EpsilonValues_ShouldBeConsideredZero()
+    public void Floor_Ceiling_EpsilonValues()
     {
-        // Because the 8-bit guard area, small epsilon values become zero in BigFloat
-        AssertIntegerBehavior(double.Epsilon, expectedValue: 0, isInteger: false);
-        AssertIntegerBehavior(-double.Epsilon, expectedValue: 0, isInteger: false);
-        AssertIntegerBehavior(double.Epsilon * 64, expectedValue: 0, isInteger: false);
-        AssertIntegerBehavior(-double.Epsilon * 64, expectedValue: 0, isInteger: false);
-
-        // Larger epsilon multiples may still be considered zero due to precision loss
+        AssertFloorCeilingBehavior(double.Epsilon, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(-double.Epsilon, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(double.Epsilon * 64, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(-double.Epsilon * 64, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
         AssertFloorCeilingBehavior(double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
         AssertFloorCeilingBehavior(-double.Epsilon * 128, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
         AssertFloorCeilingBehavior(double.Epsilon * 256, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);

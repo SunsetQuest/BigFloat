@@ -437,10 +437,177 @@ public readonly partial struct BigFloat
         return -(-this).CeilingWithScale();
     }
 
+
+
+
+
+    /// <summary>
+    /// Rounds towards positive infinity while preserving the scale (accuracy).
+    /// Fractional bits are set to zero but the scale remains unchanged.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat CeilingWithScale()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        // Fast path: no fractional bits to clear
+        if (bitsToClear <= 0) return this;
+
+        // Fast path: entire value is fractional
+        if (bitsToClear >= _size)
+        {
+            // For positive values, ceiling of 0.xxx is 1
+            // For negative/zero values, ceiling is 0
+            return Mantissa.Sign > 0
+                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
+                : new BigFloat(BigInteger.Zero, Scale, 0); // Preserve scale for zero
+        }
+
+        // Fast path: zero value
+        if (Mantissa.IsZero) return this;
+
+        // Negative values: ceiling just clears fractional bits (rounds toward zero)
+        if (Mantissa.Sign < 0)
+        {
+            // For negative numbers, use shift operations to avoid two's complement issues
+            BigInteger truncated = -(-Mantissa >> bitsToClear) << bitsToClear;
+            return new BigFloat(truncated, Scale, _size);
+        }
+
+        // Positive values: need to check if rounding up is required
+        return Scale >= 0
+            ? CeilingPositiveNormalScale(bitsToClear)
+            : CeilingPositiveNegativeScale(bitsToClear);
+    }
+
+    /// <summary>
+    /// Helper for positive values with Scale >= 0
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private BigFloat CeilingPositiveNormalScale(int bitsToClear)
+    {
+        // Check if any fractional bits are set
+        BigInteger fractionalMask = (BigInteger.One << bitsToClear) - 1;
+        bool hasFractionalBits = (Mantissa & fractionalMask) != 0;
+
+        if (!hasFractionalBits) return this;
+
+        // Clear fractional bits and add 1 at the appropriate position
+        BigInteger result = (Mantissa & ~fractionalMask) + (BigInteger.One << bitsToClear);
+
+        // Check if we carried into a new bit (size increased)
+        int newSize = _size;
+        if (result.GetBitLength() > _size)
+        {
+            newSize++;
+        }
+
+        return new BigFloat(result, Scale, newSize);
+    }
+
+    /// <summary>
+    /// Helper for positive values with Scale < 0
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private BigFloat CeilingPositiveNegativeScale(int bitsToClear)
+    {
+        // For negative scales, we need to check sub-guardbit precision
+        int halfGuard = GuardBits / 2;
+        BigInteger checkMask = ((BigInteger.One << (halfGuard - Scale)) - 1) << halfGuard;
+        bool roundsUp = (Mantissa & checkMask) > 0;
+
+        if (!roundsUp)
+        {
+            // Just clear the bits
+            BigInteger mask = BigInteger.MinusOne << bitsToClear;
+            return new BigFloat(Mantissa & mask, Scale, _size);
+        }
+
+        // Round up: clear bits and add at guard position
+        BigInteger clearedBits = (Mantissa >> bitsToClear) << bitsToClear;
+        BigInteger result = clearedBits + (BigInteger.One << (bitsToClear /*GuardBits*/)); 
+
+        // Use bit scan to efficiently determine new size
+        int newSize = (int)result.GetBitLength();
+
+        return new BigFloat(result, Scale, newSize);
+    }
+
+    /// <summary>
+    /// Rounds to the next integer towards positive infinity. 
+    /// Removes all fractional bits, sets negative scales to zero, 
+    /// and resizes precision to just the integer part.
+    /// </summary>
+    public BigFloat Ceiling()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        // Fast path: already an integer with no fractional bits
+        if (bitsToClear <= 0) return this;
+
+        int sign = Mantissa.Sign;
+
+        // Fast path: entire value is fractional
+        if (bitsToClear >= _size)
+        {
+            return sign > 0
+                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
+                : Zero;
+        }
+
+        // Fast path: zero
+        if (sign == 0) return Zero;
+
+        // Negative values: just truncate (round toward zero)
+        if (sign < 0)
+        {
+            BigInteger truncated = (Mantissa >> bitsToClear) << bitsToClear;
+            return new BigFloat(truncated, Scale, _size);
+        }
+
+        // Positive values: check for rounding
+        return CeilingPositive(bitsToClear);
+    }
+
+    /// <summary>
+    /// Optimized ceiling for positive values
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private BigFloat CeilingPositive(int bitsToClear)
+    {
+        // Extract integer part with one extra bit for rounding decision
+        BigInteger shifted = Mantissa >> (bitsToClear - 1);
+        bool roundUp = !shifted.IsEven;
+
+        if (roundUp)
+        {
+            shifted++;
+            // Check for power of 2 overflow using single bit test
+            if (shifted.IsPowerOfTwo)
+            {
+                // Size increased by 1
+                return new BigFloat(shifted << (bitsToClear - 1), Scale, _size + 1);
+            }
+        }
+
+        return new BigFloat(shifted << (bitsToClear - 1), Scale, _size);
+    }
+
+    /// <summary>
+    /// Rounds towards negative infinity (complement of Ceiling).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat Floor()
+    {
+        // Elegant implementation using ceiling
+        return Mantissa.Sign >= 0 ? -(-this).Ceiling() : -(-this).Ceiling();
+    }
+
+    //todo: remove in the future
     /// <summary>
     /// Rounds to the next integer towards positive infinity setting any fractional bits to zero.
     /// </summary>
-    public BigFloat CeilingWithScale()
+    private BigFloat CeilingWithScale0()
     {
         int bitsToClear = GuardBits - Scale;
 
@@ -514,6 +681,10 @@ public readonly partial struct BigFloat
             return new BigFloat(-(((-Mantissa) >> bitsToClear) << bitsToClear), Scale, _size);
         }
     }
+
+
+
+
 
     /// <summary>
     /// Compares two BigFloats and returns negative if this instance is less, Zero if difference is 2^(GuardBits-1) or less, or Positive if this instance is greater
