@@ -470,43 +470,12 @@ public readonly partial struct BigFloat
         }
 
         // Positive values: need to check if rounding up is required
-        return Scale >= 0
-            ? CeilingPositiveNormalScale(bitsToClear)
-            : CeilingPositiveNegativeScale(bitsToClear);
-    }
-
-    /// <summary>
-    /// Helper for positive values with Scale >= 0
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private BigFloat CeilingPositiveNormalScale(int bitsToClear)
+        if (Scale >= GuardBits)
     {
-        // Check if any fractional bits are set
-        BigInteger fractionalMask = (BigInteger.One << bitsToClear) - 1;
-        bool hasFractionalBits = (Mantissa & fractionalMask) != 0;
-
-        if (!hasFractionalBits) return this;
-
-        // Clear fractional bits and add 1 at the appropriate position
-        BigInteger result = (Mantissa & ~fractionalMask) + (BigInteger.One << bitsToClear);
-
-        // Check if we carried into a new bit (size increased)
-        int newSize = _size;
-        if (result.GetBitLength() > _size)
-        {
-            newSize++;
+            return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
         }
 
-        return new BigFloat(result, Scale, newSize);
-    }
-
-    /// <summary>
-    /// Helper for positive values with Scale < 0
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private BigFloat CeilingPositiveNegativeScale(int bitsToClear)
-    {
-        // For negative scales, we need to check sub-guardbit precision
+        // At this point Scale < 0 and positive sign, we need to check sub-guardbit precision
         int halfGuard = GuardBits / 2;
         BigInteger checkMask = ((BigInteger.One << (halfGuard - Scale)) - 1) << halfGuard;
         bool roundsUp = (Mantissa & checkMask) > 0;
@@ -514,13 +483,12 @@ public readonly partial struct BigFloat
         if (!roundsUp)
         {
             // Just clear the bits
-            BigInteger mask = BigInteger.MinusOne << bitsToClear;
-            return new BigFloat(Mantissa & mask, Scale, _size);
+            return new BigFloat((Mantissa >> bitsToClear) << bitsToClear, Scale, _size);
         }
 
         // Round up: clear bits and add at guard position
         BigInteger clearedBits = (Mantissa >> bitsToClear) << bitsToClear;
-        BigInteger result = clearedBits + (BigInteger.One << (bitsToClear /*GuardBits*/)); 
+        BigInteger result = clearedBits + (BigInteger.One << bitsToClear);
 
         // Use bit scan to efficiently determine new size
         int newSize = (int)result.GetBitLength();
@@ -537,8 +505,8 @@ public readonly partial struct BigFloat
     {
         int bitsToClear = GuardBits - Scale;
 
-        // Fast path: already an integer with no fractional bits
-        if (bitsToClear <= 0) return this;
+        // Fast path: already an integer with no fractional bits (Scale >= 16, 1010|1010101010101010.1010101010101010)
+        if (bitsToClear <= 16) return this;
 
         int sign = Mantissa.Sign;
 
@@ -556,20 +524,31 @@ public readonly partial struct BigFloat
         // Negative values: just truncate (round toward zero)
         if (sign < 0)
         {
-            BigInteger truncated = (Mantissa >> bitsToClear) << bitsToClear;
-            return new BigFloat(truncated, Scale, _size);
+            BigInteger truncated = -(-Mantissa >> bitsToClear);
+            return new BigFloat(truncated<< GuardBits, 0, _size + Scale);
         }
 
-        // Positive values: check for rounding
-        return CeilingPositive(bitsToClear);
-    }
+        // At this point Sign is positive AND Scale >= 0 (decimal is at in the in the GuardBits. i.e. 11|1.1000)
+        if (Scale < 0)
+        {
+            //round up if any bits set between halfway through the GuardBits(GuardBits / 2) and the point(GuardBits - Scale)
+            bool roundsUp = (Mantissa & (((BigInteger.One << ((GuardBits / 2) - Scale)) - 1) << (GuardBits / 2))) > 0;
 
-    /// <summary>
-    /// Optimized ceiling for positive values
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private BigFloat CeilingPositive(int bitsToClear)
+            BigInteger intPart = Mantissa >> bitsToClear << GuardBits;
+
+            if (roundsUp)
     {
+                intPart += BigInteger.One << GuardBits;
+            }
+
+            int newSize = roundsUp ? (int)intPart.GetBitLength() : _size - bitsToClear + GuardBits; //future: optimize using bit scan operations when the rollover is predictable
+
+            return new BigFloat(intPart >> Scale, Scale, newSize - Scale);
+        }
+
+
+        // At this point Sign is positive AND Scale >= 0; i.e. 111.10|0001...
+
         // Extract integer part with one extra bit for rounding decision
         BigInteger shifted = Mantissa >> (bitsToClear - 1);
         bool roundUp = !shifted.IsEven;
