@@ -81,7 +81,6 @@ public readonly partial struct BigFloat
     /// 11|1.1000  Scale < 0
     /// 111.|1000  Scale ==0
     /// 111.10|00  Scale > 0
-
     /// </summary>
     public readonly int Scale { get; init; }
 
@@ -436,10 +435,6 @@ public readonly partial struct BigFloat
     {
         return -(-this).CeilingWithScale();
     }
-
-
-
-
 
     /// <summary>
     /// Rounds towards positive infinity while preserving the scale (accuracy).

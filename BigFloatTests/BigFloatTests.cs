@@ -2568,9 +2568,6 @@ public class BigFloatTests
     [TestMethod]
     public void Floor_Ceiling_DirectConstruction_ExtremeLargeValues()
     {
-        //for (int i = 0; i < 100000; i++)
-        {
-
         // Standard integer limits
         AssertFloorCeilingValues(new BigFloat(int.MaxValue, 0), new BigFloat(int.MaxValue), new BigFloat(int.MaxValue));
         AssertFloorCeilingValues(new BigFloat(int.MinValue, 0), new BigFloat(int.MinValue), new BigFloat(int.MinValue));
@@ -2585,8 +2582,6 @@ public class BigFloatTests
         AssertFloorCeilingValues(new BigFloat("0b11111|1.11"), new BigFloat("0b11111|1.00"), new BigFloat("0b100000|0"));
         AssertFloorCeilingValues(new BigFloat("0b11111111",2), new BigFloat("0b11111111",2), new BigFloat("0b11111111", 2));
         AssertFloorCeilingValues(new BigFloat("0b111111|11",3), new BigFloat("0b111111|11",3), new BigFloat("0b111111|11", 3));
-        }
-
     }
 
     [TestMethod]
