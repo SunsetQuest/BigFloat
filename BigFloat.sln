@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BigFloatLibrary", "BigFloat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlaygroundAndShowCase", "BigFloatPlayground\PlaygroundAndShowCase.csproj", "{1EC1B239-6746-427B-A1E0-89BBEB4104D2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigFloat.Tests", "BigFloat.Tests\BigFloat.Tests.csproj", "{90D0A568-0E16-4236-8892-D39E1B74E370}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Benchmark|Any CPU = Benchmark|Any CPU
@@ -55,6 +57,18 @@ Global
 		{1EC1B239-6746-427B-A1E0-89BBEB4104D2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1EC1B239-6746-427B-A1E0-89BBEB4104D2}.Release|x64.ActiveCfg = Release|x64
 		{1EC1B239-6746-427B-A1E0-89BBEB4104D2}.Release|x64.Build.0 = Release|x64
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Benchmark|Any CPU.ActiveCfg = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Benchmark|Any CPU.Build.0 = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Benchmark|x64.ActiveCfg = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Benchmark|x64.Build.0 = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Debug|x64.Build.0 = Debug|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Release|x64.ActiveCfg = Release|Any CPU
+		{90D0A568-0E16-4236-8892-D39E1B74E370}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
