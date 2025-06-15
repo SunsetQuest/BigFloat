@@ -900,7 +900,13 @@ public static class BigIntegerTools
         BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
         return bits;
     }
-
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigInteger ClearLowerNBits(BigInteger x, int n)
+    {
+        var shifted = (x.Sign >= 0) ? (x >> n) : -((-x) >> n);
+        return shifted << n;
+    }
 
     /////////////////////////////////////////////
     ////      RightShift() for BigInteger    ////
