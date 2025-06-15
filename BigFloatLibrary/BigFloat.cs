@@ -1131,6 +1131,26 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Splits the BigFloat into integer and fractional parts.
+    /// </summary>
+    public (BigFloat integer, BigFloat fraction) ModF()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        if (bitsToClear <= 0) return (this, Zero);
+        if (bitsToClear >= _size) return (Zero, this);
+
+        // For integer part, use shift operations to avoid two's complement issues
+        BigInteger intPart = ClearLowerNBits(Mantissa, bitsToClear);
+        BigInteger fracPart = Mantissa - intPart;
+
+        return (
+            new BigFloat(intPart, Scale, _size),
+            fracPart.IsZero ? Zero : new BigFloat(fracPart, Scale, (int)fracPart.GetBitLength())
+        );
+    }
+
+    /// <summary>
     /// Bitwise Complement Operator - Reverses each bit in the data bits. Scale is not changed.
     /// The size is reduced by at least 1 bit. This is because the leading bit is flipped to a zero.
     /// </summary>
