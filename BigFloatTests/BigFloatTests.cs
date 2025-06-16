@@ -2485,14 +2485,14 @@ public class BigFloatTests
     {
         // Min/Max values should have floor == ceiling (they're effectively integers at that scale)
         var bigFloat = new BigFloat(double.MinValue);
-        var floor = bigFloat.FloorWithScale();
-        var ceiling = bigFloat.CeilingWithScale();
+        var floor = bigFloat.FloorPreservingAccuracy();
+        var ceiling = bigFloat.CeilingPreservingAccuracy();
 
         AreEqual(floor, ceiling, "MinValue floor should equal ceiling");
 
         bigFloat = new BigFloat(double.MaxValue);
-        floor = bigFloat.FloorWithScale();
-        ceiling = bigFloat.CeilingWithScale();
+        floor = bigFloat.FloorPreservingAccuracy();
+        ceiling = bigFloat.CeilingPreservingAccuracy();
         
         AreEqual(floor, ceiling, "MaxValue floor should equal ceiling");
     }
@@ -2505,8 +2505,8 @@ public class BigFloatTests
         foreach (var value in testValues)
         {
             var bigFloat = new BigFloat(value);
-            var bigFloatFloor = bigFloat.FloorWithScale();
-            var bigFloatCeiling = bigFloat.CeilingWithScale();
+            var bigFloatFloor = bigFloat.FloorPreservingAccuracy();
+            var bigFloatCeiling = bigFloat.CeilingPreservingAccuracy();
 
             var doubleFloor = double.Floor(value);
             var doubleCeiling = double.Ceiling(value);
@@ -2613,8 +2613,8 @@ public class BigFloatTests
     private static void AssertIntegerBehavior(double value, int expectedValue, bool isInteger = true)
     {
         var bigFloat = new BigFloat(value);
-        var floor = bigFloat.FloorWithScale();
-        var ceiling = bigFloat.CeilingWithScale();
+        var floor = bigFloat.FloorPreservingAccuracy();
+        var ceiling = bigFloat.CeilingPreservingAccuracy();
 
         AreEqual(expectedValue, (int)floor, $"Floor of {value} should be {expectedValue}");
         AreEqual(expectedValue, (int)ceiling, $"Ceiling of {value} should be {expectedValue}");
@@ -2626,8 +2626,8 @@ public class BigFloatTests
     private static void AssertFloorCeilingBehavior(double value, int expectedFloor, int expectedCeiling, bool shouldBeInteger = true)
     {
         var bigFloat = new BigFloat(value);
-        var floor = bigFloat.FloorWithScale();
-        var ceiling = bigFloat.CeilingWithScale();
+        var floor = bigFloat.FloorPreservingAccuracy();
+        var ceiling = bigFloat.CeilingPreservingAccuracy();
 
         AreEqual(expectedFloor, (int)floor, $"Floor of {value} should be {expectedFloor}");
         AreEqual(expectedCeiling, (int)ceiling, $"Ceiling of {value} should be {expectedCeiling}");
@@ -2642,8 +2642,8 @@ public class BigFloatTests
             throw new ArgumentException("Test Error: expectedFloor should be less than or equal to expectedCeiling");
         }
 
-        var floorOutput = value.FloorWithScale();
-        var ceilingOutput = value.CeilingWithScale();
+        var floorOutput = value.FloorPreservingAccuracy();
+        var ceilingOutput = value.CeilingPreservingAccuracy();
 
         AreEqual(expectedFloor, floorOutput, $"Floor of {value} should be {expectedFloor}, but was {floorOutput}");
         AreEqual(expectedCeiling, ceilingOutput, $"Ceiling of {value} should be {expectedCeiling}, but was {ceilingOutput}");

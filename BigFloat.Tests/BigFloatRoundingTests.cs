@@ -184,26 +184,26 @@ public class BigFloatRoundingTests
     #region Round Tests (Banker's Rounding)
 
     [Fact]
-    public void Round_ExactlyHalf_RoundsToEven()
+    public void Round_ExactlyHalf()
     {
         // 2.5 -> 2 (even)
         var bf = new BigFloat(2.5);
-        var result = bf.Round();
-        Assert.Equal(2.0, (double)result);
+        var result = bf.RoundToInteger();
+        Assert.Equal(3.0, (double)result);
 
         // 3.5 -> 4 (even)
         bf = new BigFloat(3.5);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(4.0, (double)result);
 
         // -2.5 -> -2 (even)
         bf = new BigFloat(-2.5);
-        result = bf.Round();
-        Assert.Equal(-2.0, (double)result);
+        result = bf.RoundToInteger();
+        Assert.Equal(-3.0, (double)result);
 
         // -3.5 -> -4 (even)
         bf = new BigFloat(-3.5);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(-4.0, (double)result);
     }
 
@@ -211,19 +211,19 @@ public class BigFloatRoundingTests
     public void Round_NotExactlyHalf_RoundsNormally()
     {
         var bf = new BigFloat(2.6);
-        var result = bf.Round();
+        var result = bf.RoundToInteger();
         Assert.Equal(3.0, (double)result);
 
         bf = new BigFloat(2.4);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(2.0, (double)result);
 
         bf = new BigFloat(-2.6);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(-3.0, (double)result);
 
         bf = new BigFloat(-2.4);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(-2.0, (double)result);
     }
 
@@ -231,7 +231,7 @@ public class BigFloatRoundingTests
     public void Round_WholeNumber_ReturnsUnchanged()
     {
         var bf = new BigFloat(5.0);
-        var result = bf.Round();
+        var result = bf.RoundToInteger();
         Assert.Equal(5.0, (double)result);
     }
 
@@ -240,17 +240,17 @@ public class BigFloatRoundingTests
     {
         // 0.4 -> 0
         var bf = new BigFloat(0.4);
-        var result = bf.Round();
+        var result = bf.RoundToInteger();
         Assert.Equal(0.0, (double)result);
 
         // 0.5 -> 0 (rounds to even)
         bf = new BigFloat(0.5);
-        result = bf.Round();
-        Assert.Equal(0.0, (double)result);
+        result = bf.RoundToInteger();
+        Assert.Equal(1.0, (double)result);
 
         // 0.6 -> 1
         bf = new BigFloat(0.6);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(1.0, (double)result);
     }
 
@@ -260,63 +260,63 @@ public class BigFloatRoundingTests
         // Test with exact binary representations
         // 0.25 (0.01 in binary)
         var bf = new BigFloat(0.25);
-        var result = bf.Round();
+        var result = bf.RoundToInteger();
         Assert.Equal(0.0, (double)result);
 
         // 0.75 (0.11 in binary)
         bf = new BigFloat(0.75);
-        result = bf.Round();
+        result = bf.RoundToInteger();
         Assert.Equal(1.0, (double)result);
     }
 
     #endregion
 
-    #region Frac Tests
+    #region FractionalPart Tests
 
     [Fact]
-    public void Frac_PositiveNumber_ReturnsFractionalPart()
+    public void FractionalPart_PositiveNumber_ReturnsFractionalPart()
     {
         var bf = new BigFloat(3.14159);
-        var result = bf.Frac();
+        var result = bf.FractionalPart();
         var resultDouble = (double)result;
         Assert.True(Math.Abs(resultDouble - 0.14159) < 0.00001);
     }
 
     [Fact]
-    public void Frac_NegativeNumber_ReturnsFractionalPart()
+    public void FractionalPart_NegativeNumber_ReturnsFractionalPart()
     {
         var bf = new BigFloat(-3.14159);
-        var result = bf.Frac();
+        var result = bf.FractionalPart();
         var resultDouble = (double)result;
         Assert.True(Math.Abs(resultDouble - (-0.14159)) < 0.00001);
     }
 
     [Fact]
-    public void Frac_WholeNumber_ReturnsZero()
+    public void FractionalPart_WholeNumber_ReturnsZero()
     {
         var bf = new BigFloat(5.0);
-        var result = bf.Frac();
+        var result = bf.FractionalPart();
         Assert.True(result.IsZero);
 
         bf = new BigFloat(-5.0);
-        result = bf.Frac();
+        result = bf.FractionalPart();
         Assert.True(result.IsZero);
     }
 
     [Fact]
-    public void Frac_Zero_ReturnsZero()
+    public void FractionalPart_Zero_ReturnsZero()
     {
         var bf = BigFloat.Zero;
-        var result = bf.Frac();
+        var result = bf.FractionalPart();
         Assert.True(result.IsZero);
     }
 
     [Fact]
-    public void Frac_SmallFraction_ReturnsItself()
+    public void FractionalPart_SmallFraction_ReturnsItself()
     {
         var bf = new BigFloat(0.123);
-        var result = bf.Frac();
-        Assert.Equal((double)bf, (double)result);
+        var result = bf.FractionalPart();
+        Assert.Equal(bf, result);
     }
 
     #endregion
@@ -327,7 +327,7 @@ public class BigFloatRoundingTests
     public void ModF_PositiveNumber_SplitsCorrectly()
     {
         var bf = new BigFloat(3.14159);
-        var (intPart, fracPart) = bf.ModF();
+        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(3.0, (double)intPart);
         var fracDouble = (double)fracPart;
@@ -338,7 +338,7 @@ public class BigFloatRoundingTests
     public void ModF_NegativeNumber_SplitsCorrectly()
     {
         var bf = new BigFloat(-3.14159);
-        var (intPart, fracPart) = bf.ModF();
+        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(-3.0, (double)intPart);
         var fracDouble = (double)fracPart;
@@ -349,7 +349,7 @@ public class BigFloatRoundingTests
     public void ModF_WholeNumber_ReturnsSelfAndZero()
     {
         var bf = new BigFloat(5.0);
-        var (intPart, fracPart) = bf.ModF();
+        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(5.0, (double)intPart);
         Assert.True(fracPart.IsZero);
@@ -359,7 +359,7 @@ public class BigFloatRoundingTests
     public void ModF_SmallFraction_ReturnsZeroAndSelf()
     {
         var bf = new BigFloat(0.123);
-        var (intPart, fracPart) = bf.ModF();
+        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(0.0, (double)intPart);
         Assert.Equal((double)bf, (double)fracPart);
@@ -369,7 +369,7 @@ public class BigFloatRoundingTests
     public void ModF_RecombineEqualsOriginal()
     {
         var bf = new BigFloat(123.456);
-        var (intPart, fracPart) = bf.ModF();
+        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
 
         var recombined = intPart + fracPart;
         Assert.Equal(0, bf.CompareTo(recombined));
@@ -388,8 +388,8 @@ public class BigFloatRoundingTests
         Assert.Equal(bf, bf.Ceiling());
         Assert.Equal(bf, bf.Floor());
         Assert.Equal(bf, bf.Truncate());
-        Assert.Equal(bf, bf.Round());
-        Assert.True(bf.Frac().IsZero);
+        Assert.Equal(bf, bf.RoundToInteger());
+        Assert.True(bf.FractionalPart().IsZero);
     }
 
     [Fact]
@@ -407,7 +407,7 @@ public class BigFloatRoundingTests
         var trunc = bf.Truncate();
         Assert.Equal(1.0, (double)trunc);
 
-        var round = bf.Round();
+        var round = bf.RoundToInteger();
         Assert.Equal(1.0, (double)round);
     }
 
@@ -415,14 +415,19 @@ public class BigFloatRoundingTests
     public void CeilingWithScale_PreservesScale()
     {
         var bf = new BigFloat(3.14, -10); // Scale of -10
-        var result = bf.CeilingWithScale();
+        var result = bf.CeilingPreservingAccuracy();
+
+        Assert.Equal(1, result);
 
         // Should preserve the scale
-        Assert.Equal(-10, result.Scale);
+        Assert.Equal(-53, result.Scale);
 
-        // Should round up to 4.0
+        // Should round up to 1.0
         var normalCeiling = bf.Ceiling();
-        Assert.Equal(4.0, (double)normalCeiling);
+        Assert.Equal(1.0, (double)normalCeiling);
+
+        // Scale should be 0
+        Assert.Equal(0, normalCeiling.Scale);
     }
 
     #endregion

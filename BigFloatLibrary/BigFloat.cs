@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
@@ -428,20 +429,11 @@ public readonly partial struct BigFloat
     public UInt128 Highest128Bits => (UInt128)((BigInteger.IsPositive(Mantissa) ? Mantissa : -Mantissa) >> (_size - 128));
 
     /// <summary>
-    /// Rounds to the next integer towards negative infinity. Any fractional bits are removed, negative scales are set
-    /// to zero, and the precision(size) will be resized to just the integer part.
-    /// </summary>
-    public BigFloat FloorWithScale()
-    {
-        return -(-this).CeilingWithScale();
-    }
-
-    /// <summary>
     /// Rounds towards positive infinity while preserving the scale (accuracy).
-    /// Fractional bits are set to zero but the scale remains unchanged.
+    /// Fractional bits are set to zero but the scale and precision remain unchanged.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat CeilingWithScale()
+    public BigFloat CeilingPreservingAccuracy()
     {
         int bitsToClear = GuardBits - Scale;
 
@@ -454,7 +446,7 @@ public readonly partial struct BigFloat
             // For positive values, ceiling of 0.xxx is 1
             // For negative/zero values, ceiling is 0
             return Mantissa.Sign > 0
-                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
+                ? new BigFloat(BigInteger.One << (GuardBits - Scale), Scale, 1 + GuardBits - Scale)
                 : new BigFloat(BigInteger.Zero, Scale, 0); // Preserve scale for zero
         }
 
@@ -541,7 +533,7 @@ public readonly partial struct BigFloat
                 intPart += BigInteger.One << GuardBits;
             }
 
-            int newSize = roundsUp ? (int)intPart.GetBitLength() : _size - bitsToClear + GuardBits; //future: optimize using bit scan operations when the rollover is predictable
+            int newSize = roundsUp ? (int)intPart.GetBitLength() : _size + Scale; //future: optimize using bit scan operations when the rollover is predictable
 
             return new BigFloat(intPart >> Scale, Scale, newSize - Scale);
         }
@@ -560,15 +552,26 @@ public readonly partial struct BigFloat
             if (shifted.IsPowerOfTwo)
             {
                 // Size increased by 1
-                return new BigFloat(shifted, Scale + 1 + (bitsToClear - 2), _size - (bitsToClear - 2));
+                return new BigFloat(shifted, GuardBits - 1, _size - bitsToClear + 2);
             }
         }
 
-        return new BigFloat(shifted >> 1, Scale+ bitsToClear, _size- bitsToClear);
+        return new BigFloat(shifted >> 1, GuardBits, _size - bitsToClear);
+    }
+
+    /// <summary>
+    /// Rounds to the next integer towards negative infinity. Any fractional bits are removed, negative scales are set
+    /// to zero, and the precision(size) will be resized to just the integer part.
+    /// </summary>
+    public BigFloat FloorPreservingAccuracy()
+    {
+        return -(-this).CeilingPreservingAccuracy();
     }
 
     /// <summary>
     /// Rounds towards negative infinity (complement of Ceiling).
+    /// Removes all fractional bits, sets negative scales to zero, 
+    /// and resizes precision to just the integer part.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat Floor()
@@ -576,87 +579,12 @@ public readonly partial struct BigFloat
         // Elegant implementation using ceiling
         return Mantissa.Sign >= 0 ? -(-this).Ceiling() : -(-this).Ceiling();
     }
-
-    /// <summary>
-    /// Truncates towards zero, removing fractional parts.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat Truncate()
-    {
-        int bitsToClear = GuardBits - Scale;
-
-        if (bitsToClear <= 0) return this;
-        if (bitsToClear >= _size) return Zero;
-
-        // Use shift operations to avoid two's complement issues with negative numbers
-        BigInteger truncated1 = Mantissa & ~((BigInteger.One << bitsToClear) - 1);
-        BigInteger truncated2 = (Mantissa >> bitsToClear) << bitsToClear;
-        BigInteger truncated3 = ClearLowerNBits(Mantissa, bitsToClear);
-        BigInteger truncated4 = -((-Mantissa >> bitsToClear) << bitsToClear);
-        BigInteger truncated5 = Mantissa - ((Mantissa >> bitsToClear) << bitsToClear);
-        Console.WriteLine($"Truncate: Mantissa={Mantissa}, bitsToClear={bitsToClear}, truncated1={truncated1}, truncated2={truncated2}, truncated3={truncated3}, Scale={Scale}, _size={_size}");
-        return new BigFloat(ClearLowerNBits(Mantissa, bitsToClear), Scale, _size);
-    }
-
-    /// <summary>
-    /// Rounds to nearest integer (banker's rounding / round half to even).
-    /// </summary>
-    public BigFloat Round()
-    {
-        int bitsToClear = GuardBits - Scale;
-
-        if (bitsToClear <= 0) return this;
-        if (bitsToClear >= _size)
-        {
-            // For values < 0.5, round to 0
-            // For values >= 0.5, round away from zero
-            return _size == bitsToClear && Mantissa.Sign > 0
-                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
-                : Zero;
-        }
-
-        // Get the rounding bit and check if exactly at midpoint
-        BigInteger shifted = Mantissa >> (bitsToClear - 1);
-        bool roundBit = !shifted.IsEven;
-
-        if (!roundBit)
-        {
-            // No rounding needed
-            var orig = new BigFloat((shifted >> 1) << bitsToClear, Scale, _size);
-            var better = new BigFloat(shifted << (bitsToClear-1), Scale, _size);
-            return orig;
-        }
-
-        // Check if exactly at midpoint (0.5)
-        BigInteger lowerMask = (BigInteger.One << (bitsToClear - 1)) - 1;
-        bool exactlyHalf = (Mantissa & lowerMask) == 0;
-
-        if (exactlyHalf)
-        {
-            // Banker's rounding: round to even
-            shifted >>= 1;
-            if (!shifted.IsEven) shifted++;
-        }
-        else
-        {
-            // Round away from zero
-            shifted = (shifted >> 1) + 1;
-        }
-
-        // Check for size increase
-        if (shifted.IsPowerOfTwo && (Mantissa & (BigInteger.One << _size)) == 0)
-        {
-            bitsToClear--;
-        }
-
-        return new BigFloat(shifted << bitsToClear, Scale, _size);
-    }
-
+    
     /// <summary>
     /// Returns the fractional part of the BigFloat.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat Frac()
+    public BigFloat FractionalPart()
     {
         int bitsToClear = GuardBits - Scale;
 
@@ -665,9 +593,17 @@ public readonly partial struct BigFloat
 
         BigInteger mask = (BigInteger.One << (bitsToClear - 1)) - 1;
 
-        // Calculate fractional part using subtraction to avoid masking issues
-        BigInteger frac = Mantissa.Sign >= 0 ? Mantissa & mask : -(-Mantissa & mask);
-        return new BigFloat(frac, Scale, (int)frac.GetBitLength());
+        //  fractional part using subtraction to avoid masking issues
+        if (Mantissa.Sign >= 0)
+        {
+            BigInteger frac = Mantissa & mask;
+            return new BigFloat(frac, Scale, (int)frac.GetBitLength());
+        }
+        else
+        {
+            BigInteger frac = -(-Mantissa & mask);
+            return new BigFloat(frac, Scale, (int)(-frac).GetBitLength());
+        }
     }
 
     /// <summary>
@@ -744,17 +680,10 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Returns the number of matching leading bits with rounding.
-    /// e.g. 10.111 - 10.101 is 00.010 so returns 4
-    /// 
-    /// The Exponent(or Scale + _size) is considered. 
-    ///   e.g. 100. and 1000. would return 0
-    /// 
+    /// Returns the number of matching leading bits with rounding. e.g. 10.111 - 10.101 is 00.010 so returns 4
+    /// The Exponent(or Scale + _size) is considered. e.g. 100. and 1000. would return 0
     /// If the signs do not match then 0 is returned. 
-    ///   
-    /// When a rollover is near these bits are included. 
-    ///   e.g. 11110 and 100000 returns 3
-    ///   
+    /// When a rollover is near these bits are included. e.g. 11110 and 100000 returns 3
     /// GuardBits are included.
     /// </summary>
     /// <param name="sign">Returns the sign of a-b. Example: If a is larger, sign is set to 1.</param>
@@ -785,9 +714,7 @@ public readonly partial struct BigFloat
     /// e.g. 11010 and 11111 returns 2
     /// e.g. 100000 and 111111 returns 1
     /// If the signs do not match then 0 is returned.
-    /// 
-    /// The scale and precision(size) is ignored.
-    /// e.g. 11101000000 and 11111 returns 3
+    /// The scale and precision(size) is ignored. e.g. 11101000000 and 11111 returns 3
     /// </summary>
     public static int NumberOfMatchingLeadingMantissaBits(BigFloat a, BigFloat b)
     {
@@ -1083,14 +1010,6 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Performs a modulus operation. For negative numbers there are two approaches, a math and programmers version. For negative numbers this version uses the programmers version.
-    /// </summary>
-    public static BigFloat operator %(BigFloat dividend, BigFloat divisor)
-    {
-        return Remainder(dividend, divisor);
-    }
-
-    /// <summary>
     /// Performs a Modulus operation. 
     /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
     /// The remainder is slightly faster.
@@ -1108,6 +1027,14 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Performs a modulus operation. For negative numbers there are two approaches, a math and programmers version. For negative numbers this version uses the programmers version.
+    /// </summary>
+    public static BigFloat operator %(BigFloat dividend, BigFloat divisor)
+    {
+        return Remainder(dividend, divisor);
+    }
+
+    /// <summary>
     /// Performs a Modulus operation. 
     /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
     /// The remainder is slightly faster.
@@ -1120,9 +1047,9 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Splits the BigFloat into integer and fractional parts.
+    /// Splits the BigFloat into integer and fractional parts. (i.e. ModF)
     /// </summary>
-    public (BigFloat integer, BigFloat fraction) ModF()
+    public (BigFloat integer, BigFloat fraction) SplitIntegerAndFractionalParts()
     {
         int bitsToClear = GuardBits - Scale;
 
@@ -1150,7 +1077,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Left shift - Increases the scale by the amount left shift amount. 
+    /// Left shifts by increasing the scale by the amount left shift amount. 
     /// The precision is unchanged.
     /// </summary>
     /// <param name="value">The value the shift should be applied to.</param>
@@ -1163,7 +1090,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Right shift - Decreases the scale by the amount right shift amount. 
+    /// Right shifts by decreasing the scale by the amount right shift amount. 
     /// The precision is unchanged.
     /// </summary>
     /// <param name="value">The value the shift should be applied to.</param>
@@ -1328,7 +1255,7 @@ public readonly partial struct BigFloat
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
 
     /// <summary>
-    /// Checks to see if this integerPart would round-up if GuardBits are removed.
+    /// Checks to see if this integerPart would round away from zero.
     /// </summary>
     /// <param name="bi">The BigInteger we would like check if it would round up.</param>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
@@ -1338,7 +1265,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Checks to see if the integerPart would round-up if the GuardBits were removed. 
+    /// Checks to see if the integerPart would round away from zero.
     /// e.g. 11010101 with 3 bits removed would be 11011.
     /// </summary>
     /// <returns>Returns true if this integerPart would round away from zero.</returns>
@@ -1348,7 +1275,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Checks to see if this integerPart would round-up given bottomBitsRemoved. 
+    /// Checks to see if this integerPart would round away from zero. 
     /// e.g. 11010101 with bottomBitsRemoved=3 would be 11011
     /// </summary>
     /// <param name="bottomBitsRemoved">The number of newSizeInBits from the least significant bit where rounding would take place.</param>
@@ -1398,6 +1325,8 @@ public readonly partial struct BigFloat
     /// <param name="targetBitsToRemove">Specifies the target number of least-significant bits to remove.</param>
     public static BigFloat TruncateByAndRound(BigFloat x, int targetBitsToRemove)
     {
+        // future: if (bitsToClear <= 0) return this;
+        // future: if (bitsToClear > _size) return Zero;
         if (targetBitsToRemove < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(targetBitsToRemove), $"Param {nameof(targetBitsToRemove)}({targetBitsToRemove}) be 0 or greater.");
@@ -1409,6 +1338,56 @@ public readonly partial struct BigFloat
         BigInteger b = RightShiftWithRound(x.Mantissa, targetBitsToRemove, ref size);
 
         return new(b, newScale, size);
+    }
+
+    /// <summary>
+    /// Rounds to nearest integer, preserving precision.
+    /// </summary>
+    public BigFloat RoundToInteger()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        if (bitsToClear <= 0) return this;
+        if (bitsToClear > _size) 
+            return ZeroWithSpecifiedLeastPrecision(-Accuracy);
+        if (bitsToClear == _size) 
+            return OneWithAccuracy(Accuracy);
+
+        //BigInteger result= RightShiftWithRound(Mantissa, bitsToClear) << bitsToClear;
+        //return new BigFloat(result, Scale, _size);
+
+        //// below keeps the same size (it does not rollover to 1 bit larger)
+        (BigInteger result, bool carry) = RightShiftWithRoundAndCarry(Mantissa, bitsToClear);
+        return new BigFloat(result << bitsToClear, Scale + (carry ? 1 : 0), _size);
+    }
+
+    /// <summary>
+    /// Truncates towards zero, preserving precision.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat TruncateToIntegerKeepingAccuracy()
+    {
+        int bitsToClear = GuardBits - Scale;
+        
+        if (bitsToClear <= 0) return this;
+        if (bitsToClear > _size) return ZeroWithSpecifiedLeastPrecision(Precision);
+
+        return new BigFloat(ClearLowerNBits(Mantissa, bitsToClear), Scale, _size);
+    }
+
+    /// <summary>
+    /// Truncates towards zero. Removes all fractional bits, sets negative scales to zero, 
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat Truncate()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        if (bitsToClear <= 0) return this;
+        if (bitsToClear >= _size) return Zero;
+
+        BigInteger newMantissa = (Mantissa.Sign >= 0) ? Mantissa >> bitsToClear : -(-Mantissa >> bitsToClear);
+        return new BigFloat(newMantissa, Scale + bitsToClear, _size - bitsToClear);
     }
 
     /// <summary>
