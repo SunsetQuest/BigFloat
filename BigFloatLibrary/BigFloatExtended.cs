@@ -48,56 +48,7 @@ public readonly partial struct BigFloat
     //    return new(BigInteger.Zero, pointOfLeastPrecision, 0);
     //}
 
-    /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the GuardBits.
-    /// </summary>
-    /// <param name="precisionInBits">The precision between (-GuardBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(BigInteger intVal, int precisionInBits)
-    {
-        int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
-        // if the precision is shrunk to a size of zero it cannot contain any data bits
-        return precisionInBits < -(GuardBits + intSize)
-            ? Zero
-            : new(intVal << (GuardBits + precisionInBits), -precisionInBits, GuardBits + intSize + precisionInBits);
-        // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
-    }
-
-    /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the GuardBits.
-    /// </summary>
-    /// <param name="precisionInBits">The precision between (-GuardBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(int intVal, int precisionInBits)
-    {
-        int size = int.Log2(int.Abs(intVal)) + 1 + GuardBits;
-        return precisionInBits < -size
-            ? Zero
-            : new(((BigInteger)intVal) << (GuardBits + precisionInBits), -precisionInBits, size + precisionInBits);
-    }
-
     public static BigFloat NegativeOne => new(BigInteger.MinusOne << GuardBits, 0, GuardBits + 1);
-
-    /// <summary>
-    /// Left shift - Increases the size by adding least-significant zero bits. 
-    /// i.e. The precision is artificially enhanced. 
-    /// </summary>
-    /// <param name="shift">The number of bits to shift left.</param>
-    /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
-    public BigFloat LeftShiftMantissa(int bits)
-    {
-        return BigFloat.CreateFromRawComponents(_mantissa << bits, Scale, _size + bits);
-    }
-
-    /// <summary>
-    /// Right shift - Decreases the size by removing the least-significant bits. 
-    /// i.e. The precision is reduced. 
-    /// No rounding is performed and Scale is unchanged. 
-    /// </summary>
-    /// <param name="bits">The number of bits to shift right.</param>
-    /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
-    public BigFloat RightShiftMantissa(int bits)
-    {
-        return BigFloat.CreateFromRawComponents(_mantissa >> bits, Scale, _size - bits);
-    }
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
