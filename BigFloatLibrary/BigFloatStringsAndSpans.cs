@@ -67,13 +67,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // When Scale is non-negative, shift off the extra guard bits and format.
         if (Scale >= 0)
         {
-            return (Mantissa >> (GuardBits - Scale)).ToString("X");
+            return (_mantissa >> (GuardBits - Scale)).ToString("X");
         }
         else
         {
             // For negative Scale, we must align to a 4‑bit boundary so that the radix point falls correctly.
             int rightShift = (GuardBits - Scale) & 0x03;
-            BigInteger rounded = RightShiftWithRound(Mantissa, rightShift);
+            BigInteger rounded = RightShiftWithRound(_mantissa, rightShift);
             string hex = rounded.ToString("X");
             // Insert the radix point at the appropriate position.
             int insertIndex = (-Scale / 4) - 1;
@@ -154,7 +154,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     private int CalculateBinaryStringLength()
     {
         // Future: what if we just add a few instead of calculating. Also with last update it is now Aprox size.
-        bool isNeg = Mantissa.Sign < 0;
+        bool isNeg = _mantissa.Sign < 0;
         int size = _size - GuardBits
             + Math.Max(Math.Max(Scale, -(_size - GuardBits) - Scale), 0)// out-of-precision zeros in the output.
             + (Scale < 0 ? 1 : 0)                                       // add one if it has a point like (1.1)
@@ -174,14 +174,14 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         int pos = 0;
 
         // Write a leading sign if needed.
-        if (Mantissa.Sign < 0)
+        if (_mantissa.Sign < 0)
         {
             destination[pos++] = '-';
         }
 
         // Get the absolute value as a byte array (after rounding off guard bits).
         int size = _size;
-        ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(Mantissa), GuardBits, ref size).ToByteArray();
+        ReadOnlySpan<byte> bytes = RightShiftWithRound(BigInteger.Abs(_mantissa), GuardBits, ref size).ToByteArray();
 
         // Compute the number of leading zeros in the most significant byte.
         int msbLeadingZeros = BitOperations.LeadingZeroCount(bytes[^1]) - 24;
@@ -300,7 +300,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     //[DebuggerHidden()]
     public static string ToStringDecimal(BigFloat val, bool includeGuardBits = false, bool digitMaskingForm = false)
     {
-        BigInteger intVal = val.Mantissa;
+        BigInteger intVal = val._mantissa;
         int scale = val.Scale;
         int valSize = val._size;
 
@@ -445,7 +445,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     //[DebuggerHidden()]
     public static string ToStringExponential(BigFloat val, bool includeGuardBits = false)
     {
-        BigInteger intVal = val.Mantissa;
+        BigInteger intVal = val._mantissa;
         int scale = val.Scale;
 
         if (includeGuardBits)
@@ -528,8 +528,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     {
         StringBuilder sb = new();
 
-        BigInteger intVal = Mantissa;
-        if (!showInTwosComplement && Mantissa.Sign < 0)
+        BigInteger intVal = _mantissa;
+        if (!showInTwosComplement && _mantissa.Sign < 0)
         {
             _ = sb.Append('-');
             intVal = -intVal;
@@ -553,7 +553,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetMostSignificantBits(int numberOfBits)
     {
-        BigInteger abs = BigInteger.Abs(Mantissa);
+        BigInteger abs = BigInteger.Abs(_mantissa);
         int shiftAmount = _size - numberOfBits;
         return shiftAmount >= 0
             ? BigIntegerTools.ToBinaryString(abs >> shiftAmount)
@@ -566,7 +566,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetAllBitsAsString(bool twosComplement = false)
     {
-        return BigIntegerTools.ToBinaryString(Mantissa, twosComplement ? 
+        return BigIntegerTools.ToBinaryString(_mantissa, twosComplement ? 
             BinaryStringFormat.TwosComplement : 
             BinaryStringFormat.Standard);
     }
@@ -577,7 +577,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetBitsAsString()
     {
-        BigInteger shiftedMantissa = RightShiftWithRound(Mantissa, GuardBits);
+        BigInteger shiftedMantissa = RightShiftWithRound(_mantissa, GuardBits);
         return BigIntegerTools.ToBinaryString(shiftedMantissa);
     }
 
@@ -585,10 +585,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     {
         get
         {
-            string bottom8HexChars = (BigInteger.Abs(Mantissa) & ((BigInteger.One << GuardBits) - 1)).ToString("X8").PadLeft(8)[^8..];
+            string bottom8HexChars = (BigInteger.Abs(_mantissa) & ((BigInteger.One << GuardBits) - 1)).ToString("X8").PadLeft(8)[^8..];
             StringBuilder sb = new(32);
             _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
-            _ = sb.Append($"{(Mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(Mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
+            _ = sb.Append($"{(_mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(_mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
             //_ = sb.Append($"{ToBinaryString()}"); // hex part
             if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits} GuardBits]"); }
             if (_size == GuardBits) { _ = sb.Append($"[{GuardBits}]"); }
@@ -617,14 +617,14 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         //Console.WriteLine($"  Int|hex: {DataBits >> GuardBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard-bits round {(WouldRound() ? "up" : "down")})");
         Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard-bits round {(WouldRoundUp() ? "up" : "down")})");
         Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
-        Console.WriteLine($"    |Dec : {Mantissa >> GuardBits}{((double)(Mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
-        Console.WriteLine($"    |Dec : {Mantissa >> GuardBits}:{Mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
-        if (Mantissa < 0)
+        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}{((double)(_mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
+        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}:{_mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
+        if (_mantissa < 0)
         {
-            Console.WriteLine($"   or -{-Mantissa >> GuardBits:X4}:{(-Mantissa & (((ulong)1 << GuardBits) - 1)).ToString("X8")[^8..]}");
+            Console.WriteLine($"   or -{-_mantissa >> GuardBits:X4}:{(-_mantissa & (((ulong)1 << GuardBits) - 1)).ToString("X8")[^8..]}");
         }
 
-        Console.WriteLine($"    |Bits: {Mantissa}");
+        Console.WriteLine($"    |Bits: {_mantissa}");
         Console.WriteLine($"   Scale : {Scale}");
         Console.WriteLine();
     }

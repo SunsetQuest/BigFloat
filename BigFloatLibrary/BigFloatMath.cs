@@ -20,7 +20,7 @@ public readonly partial struct BigFloat
     public static BigFloat Inverse(BigFloat x)
     {
         int resScalePart = -x.Scale - (2 * (x._size - 1)) + GuardBits + GuardBits;
-        BigInteger resIntPartNew = BigIntegerTools.Inverse(x.Mantissa, x._size);
+        BigInteger resIntPartNew = BigIntegerTools.Inverse(x._mantissa, x._size);
         BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithGuardBits);
         return resultNew;
     }
@@ -30,7 +30,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat ABS(BigFloat x)
     {
-        return new BigFloat(-x.Mantissa, x.Scale, x._size); //OR x.Sign < 0 ? -x : x;
+        return new BigFloat(-x._mantissa, x.Scale, x._size); //OR x.Sign < 0 ? -x : x;
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public readonly partial struct BigFloat
 
             int removedExp = value.BinaryExponent;
 
-            double valAsDouble = (double)new BigFloat(value.Mantissa, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
+            double valAsDouble = (double)new BigFloat(value._mantissa, value.Scale - removedExp, true);  //or just  "1-_size"?  (BigFloat should be between 1 and 2)
             //if (double.IsFinite(valAsDouble))
             {
                 // perform operation  
@@ -78,7 +78,7 @@ public readonly partial struct BigFloat
                 value = SetPrecision(tmp, expectedFinalPrecision - GuardBits);
 
                 // restore Scale
-                value = new BigFloat(value.Mantissa, value.Scale + (removedExp * exponent), true);
+                value = new BigFloat(value._mantissa, value.Scale + (removedExp * exponent), true);
 
                 return value;
             }
@@ -118,7 +118,7 @@ public readonly partial struct BigFloat
         if (x.Sign < 0)
             throw new ArgumentException("Square‑root of a negative BigFloat is undefined.", nameof(x));
 
-        if (x.Mantissa.IsZero)
+        if (x._mantissa.IsZero)
             return new BigFloat(BigInteger.Zero, 0, 0);
 
         if (wantedPrecision <= 0)
@@ -133,7 +133,7 @@ public readonly partial struct BigFloat
                             - (x._size - BigFloat.GuardBits)  // minus existing bits
                             - (totalLen & 1);                 // make len even
 
-        BigInteger xx = x.Mantissa << (needShift + BigFloat.GuardBits);
+        BigInteger xx = x._mantissa << (needShift + BigFloat.GuardBits);
 
         // ---- 2. Fast integer √ via the original Newton+ algorithm ---------------
         BigInteger root = NewtonPlusSqrt(xx);
@@ -208,7 +208,7 @@ public readonly partial struct BigFloat
         }
 
         // Use double's hardware to get the top 53-bits
-        mantissa = (long)(BigInteger.Abs(value.Mantissa) >> (value._size - 53)) ^ (1L << 52);
+        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) ^ (1L << 52);
 
         // Build double from components and take root
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
@@ -241,14 +241,14 @@ public readonly partial struct BigFloat
             // if (root == 4) { return Sqrt(Sqrt(value)); }
         }
         //if (root > 20) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be below 22."); }
-        if (value.Mantissa.Sign <= 0)
+        if (value._mantissa.Sign <= 0)
         {
-            bool isNegative = value.Mantissa.Sign < 0;
+            bool isNegative = value._mantissa.Sign < 0;
             bool rootIsEven = (root & 1) == 0;
             if (isNegative && rootIsEven) { throw new ArgumentOutOfRangeException(nameof(value), "Value must be non-negative for even roots."); }
             if (isNegative && !rootIsEven) { return -NthRoot(-value, root); }
             // Check if Value is zero, and if so, return Zero with a precision of value.Size
-            if (value.Mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
+            if (value._mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }
 
         if (value._size < 53)
@@ -258,7 +258,7 @@ public readonly partial struct BigFloat
 
 
         // Use double's hardware to get the first 53-bits
-        long mantissa = (long)(BigInteger.Abs(value.Mantissa)
+        long mantissa = (long)(BigInteger.Abs(value._mantissa)
                         >> (value._size - 53))
                     | (1L << 52);
         int valExp = value.BinaryExponent;
@@ -311,14 +311,14 @@ public readonly partial struct BigFloat
     public static double Log2(BigFloat n)
     {
         // Special case for zero and negative numbers.
-        if (((n._size >= GuardBits - 1) ? n.Mantissa.Sign : 0) <= 0)
+        if (((n._size >= GuardBits - 1) ? n._mantissa.Sign : 0) <= 0)
         {
             // if (!n.IsPositive)
             return double.NaN;
         }
 
         //The exponent is too large. We need to bring it closer to zero and then add it back in the log after.
-        long mantissa = (long)(n.Mantissa >> (n._size - 53));// ^ ((long)1 << 52);
+        long mantissa = (long)(n._mantissa >> (n._size - 53));// ^ ((long)1 << 52);
         long dubAsLong = (1023L << 52) | long.Abs(mantissa);
         double val = BitConverter.Int64BitsToDouble(dubAsLong);
         return double.Log2(val) + n.BinaryExponent;
@@ -382,7 +382,7 @@ public readonly partial struct BigFloat
         // now 0 ≤ r ≤ pi/2
 
         // when zero, return zero
-        if (r.Mantissa < 2) { return ZeroWithSpecifiedLeastPrecision(x.Accuracy); }
+        if (r._mantissa < 2) { return ZeroWithSpecifiedLeastPrecision(x.Accuracy); }
 
         // ----- ----- choose the core routine ----------
         BigFloat result = (r.BinaryExponent <= _taylorExpSwitch)

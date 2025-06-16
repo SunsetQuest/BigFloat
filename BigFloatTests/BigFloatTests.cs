@@ -1025,15 +1025,15 @@ public class BigFloatTests
         AreEqual(0, BigFloat.IntWithAccuracy(2, 10).StrictCompareTo(new BigFloat(2)));
 
         BigFloat a = BigFloat.IntWithAccuracy(2, 10);
-        AreEqual(a.Mantissa, (BigInteger)2 << (hb + 10));
+        AreEqual(a._mantissa, (BigInteger)2 << (hb + 10));
         AreEqual(-10, a.Scale);
 
         a = BigFloat.IntWithAccuracy(-32, 100);
-        AreEqual(a.Mantissa, -(BigInteger)32 << (hb + 100));
+        AreEqual(a._mantissa, -(BigInteger)32 << (hb + 100));
         AreEqual(-100, a.Scale);
 
         a = BigFloat.IntWithAccuracy(27, -15);
-        AreEqual(a.Mantissa, (BigInteger)27 << (hb - 15));
+        AreEqual(a._mantissa, (BigInteger)27 << (hb - 15));
         AreEqual(15, a.Scale);
     }
     

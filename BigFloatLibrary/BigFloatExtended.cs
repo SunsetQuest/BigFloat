@@ -21,7 +21,7 @@ public readonly partial struct BigFloat
     /// Returns true if the value is exactly zero. All data bits and GuardBits are zero.
     /// Example: IsStrictZero is true for "1.3 * (Int)0" and is false for "(1.3 * 2) - 2.6"
     /// </summary>
-    public bool IsStrictZero => Mantissa.IsZero;
+    public bool IsStrictZero => _mantissa.IsZero;
 
     /// <summary>
     /// Returns the precision of the BigFloat. This is the same as the size of the data bits. The precision can be zero or negative. A negative precision means the number is below the number of bits that are deemed precise(GuardBits).
@@ -36,7 +36,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
     /// </summary>
-    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(Mantissa, GuardBits);
+    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(_mantissa, GuardBits);
 
     ////future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
     ///// <summary>
@@ -84,7 +84,7 @@ public readonly partial struct BigFloat
     /// <returns>A new BigFloat with the internal 'int' up shifted.</returns>
     public BigFloat LeftShiftMantissa(int bits)
     {
-        return BigFloat.CreateFromRawComponents(Mantissa << bits, Scale, _size + bits);
+        return BigFloat.CreateFromRawComponents(_mantissa << bits, Scale, _size + bits);
     }
 
     /// <summary>
@@ -96,14 +96,14 @@ public readonly partial struct BigFloat
     /// <returns>A new BigFloat with the internal 'int' down shifted.</returns>
     public BigFloat RightShiftMantissa(int bits)
     {
-        return BigFloat.CreateFromRawComponents(Mantissa >> bits, Scale, _size - bits);
+        return BigFloat.CreateFromRawComponents(_mantissa >> bits, Scale, _size - bits);
     }
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
     public BigFloat(uint value, int scale = 0)
     {
-        Mantissa = (BigInteger)value << GuardBits;
+        _mantissa = (BigInteger)value << GuardBits;
         Scale = scale;
         _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + GuardBits;
         AssertValid();
@@ -111,7 +111,7 @@ public readonly partial struct BigFloat
 
     public BigFloat(char integerPart, int binaryScaler = 0)
     {
-        Mantissa = (BigInteger)integerPart << GuardBits;
+        _mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         // Special handling required for int.MinValue
@@ -126,7 +126,7 @@ public readonly partial struct BigFloat
 
     public BigFloat(byte integerPart, int binaryScaler = 0)
     {
-        Mantissa = (BigInteger)integerPart << GuardBits;
+        _mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
         _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + GuardBits;
         AssertValid();
@@ -134,7 +134,7 @@ public readonly partial struct BigFloat
 
     public BigFloat(Int128 integerPart, int binaryScaler = 0)
     {
-        Mantissa = (BigInteger)integerPart << GuardBits;
+        _mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
@@ -146,7 +146,7 @@ public readonly partial struct BigFloat
 
     public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesGuardBits)
     {
-        Mantissa = (BigInteger)integerPart << GuardBits;
+        _mantissa = (BigInteger)integerPart << GuardBits;
         Scale = binaryScaler;
 
         _size = integerPart > Int128.Zero
@@ -158,7 +158,7 @@ public readonly partial struct BigFloat
         int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
         // we need Abs() so items that are a negative power of 2 have the same size as the positive version.
         _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyGuardBits;
-        Mantissa = integerPart << applyGuardBits;
+        _mantissa = integerPart << applyGuardBits;
         Scale = binaryScaler; // DataBits of zero can have scale
         AssertValid();
     }

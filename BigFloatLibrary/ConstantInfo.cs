@@ -182,7 +182,7 @@ public readonly partial struct BigFloat
                 {
                     for (int i = overAccurateBy; i > 0; i--)
                     {
-                        if ((value.Mantissa & (BigInteger.One << (i - 1))) == 0)
+                        if ((value._mantissa & (BigInteger.One << (i - 1))) == 0)
                         {
                             // Found a zero bit, truncate here
                             value = ReducePrecision(value, i);
@@ -194,7 +194,7 @@ public readonly partial struct BigFloat
                 // If we didn't find a zero bit in backward search, look forward
                 for (int i = overAccurateBy + 1; i < value._size - 1; i++)
                 {
-                    if ((value.Mantissa & (BigInteger.One << i)) == 0)
+                    if ((value._mantissa & (BigInteger.One << i)) == 0)
                     {
                         value = ReducePrecision(value, i);
                         return true;
