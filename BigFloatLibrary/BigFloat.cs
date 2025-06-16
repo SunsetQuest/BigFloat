@@ -292,11 +292,11 @@ public readonly partial struct BigFloat
             { //special values
                 if (float.IsNaN(value))
                 {
-                    ThrowInvalidInitializationException("Value is infinity or NaN");
+                    ThrowInvalidInitializationException("Value is NaN");
                 }
                 else if (float.IsInfinity(value))
                 {
-                    ThrowInvalidInitializationException("Value is infinity or NaN");
+                    ThrowInvalidInitializationException("Value is infinity");
                 }
             }
             // Add leading 1 bit
@@ -357,7 +357,7 @@ public readonly partial struct BigFloat
     ///   it should not round-up based on GuardBits
     ///   Ceiling would round-up (and Floor down for negative)
     /// </summary>
-    public bool IsInteger  //v6 - check to see if all the bits between the point and the 8 most significate guard bits are uniform. (111.??|?)
+    public bool IsInteger  //v6 - check to see if all the bits between the point and the 8 most significant guard bits are uniform. (111.??|?)
     {
         get
         {
@@ -373,9 +373,10 @@ public readonly partial struct BigFloat
         }
     }
 
-
     /// <summary>
     /// Tests to see if the number is in the format of "10000000..." after rounding.
+    /// future: can we use BigInteger.IsPowerOfTwo here?
+    /// future: does this work with neg numbers, if not add to summary note
     /// </summary>
     public bool IsOneBitFollowedByZeroBits => BigInteger.TrailingZeroCount(_mantissa >> (GuardBits - 1)) == (_size - GuardBits);
 

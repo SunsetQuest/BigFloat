@@ -171,6 +171,7 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    //future: maybe use an unsigned BigFloat constructor for better performance. (using an unsigned BigInteger)
     /// <summary>Defines an implicit conversion of a 16-bit unsigned integer to a BigFloat.</summary>
     public static implicit operator BigFloat(ushort value)
     {
