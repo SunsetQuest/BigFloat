@@ -213,7 +213,7 @@ public class BigFloatTests
         AreEqual(bigFloatTotal, (BigFloat)doubleTotal, "Fail on Verify_Constants");
 
         double BigFloatZero1 = (double)BigFloat.Zero;
-        double BigFloatZero2 = (double)BigFloat.ZeroWithSpecifiedLeastPrecision(50);
+        double BigFloatZero2 = (double)BigFloat.ZeroWithAccuracy(50);
         AreEqual(BigFloatZero2, BigFloatZero1, "Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)");
 
         // following does not pass because of limitations of double. A number that is out-of-precision and Zero cannot be differentiated. 
@@ -7422,13 +7422,13 @@ public class BigFloatTests
     public void Sin_Zero_IsZero()
     {
         BigFloat s = BigFloat.Sin(BigFloat.Zero);
-        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), s, "Sin(0) should be 0");
+        Assert.AreEqual(BigFloat.ZeroWithAccuracy(100), s, "Sin(0) should be 0");
     }
 
     [TestMethod]
     public void Cos_Zero_IsOne()
     {
-        BigFloat c = BigFloat.Cos(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
+        BigFloat c = BigFloat.Cos(BigFloat.ZeroWithAccuracy(100));
         Assert.AreEqual(BigFloat.OneWithAccuracy(100), c, "Cos(0) should be 1");
     }
 
@@ -7450,7 +7450,7 @@ public class BigFloatTests
     public void Sin_Pi_IsZero()
     {
         BigFloat s = BigFloat.Sin(Pi);
-        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-200), s, "Sin(pi) should be 0");
+        Assert.AreEqual(BigFloat.ZeroWithAccuracy(200), s, "Sin(pi) should be 0");
     }
 
     [TestMethod]
@@ -7463,8 +7463,8 @@ public class BigFloatTests
     [TestMethod]
     public void Tan_Zero_IsZero()
     {
-        BigFloat t = BigFloat.Tan(BigFloat.ZeroWithSpecifiedLeastPrecision(-100));
-        Assert.AreEqual(BigFloat.ZeroWithSpecifiedLeastPrecision(-100), t, "Tan(0) should be 0");
+        BigFloat t = BigFloat.Tan(BigFloat.ZeroWithAccuracy(100));
+        Assert.AreEqual(BigFloat.ZeroWithAccuracy(100), t, "Tan(0) should be 0");
     }
 
     [TestMethod]

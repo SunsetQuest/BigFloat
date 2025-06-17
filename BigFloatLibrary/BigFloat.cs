@@ -7,7 +7,6 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
@@ -15,16 +14,17 @@ using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
 
-// BigFloat.cs (this file) - contains the main BigFloat struct and its core properties and methods.
-// BigIntegerTools.cs - contains helper methods for working with BigIntegers.
+// BigFloat.cs (this file) - contains core BigFloat struct and its core properties and methods.
+// BigIntegerTools.cs - helper methods for working with BigIntegers
 // optional: (contains additional methods that are not part of the core)
-//   BigFloatCompareTo.cs: contains additional string functions as well as the IComparable, IEquatable, and IFormattable interfaces.
-//   BigFloatExtended.cs: contains additional functions that do not fall into the other categories.
-//   BigFloatMath.cs: contains extended math functions like Log, Sqrt, Exp, etc.
-//   BigFloatParsing.cs: contains parsing functions for converting strings to BigFloat.
-//   BigFloatRandom.cs
-//   BigFloatStringsAndSpans.cs: contains functions related to converting BigFloat to strings/spans
-//   Constants.cs,ConstantInfo.cs,ConstantsCatalog.cs,ConstantBuilder.cs: contains features for pulling up constants. 
+//   BigFloatCompareTo.cs: extra string functions as well as the IComparable, IEquatable, and IFormattable interfaces.
+//   BigFloatExtended.cs: extra functions that do not fall into the other categories.
+//   BigFloatMath.cs: extra math functions like Log, Sqrt, Exp, etc.
+//   BigFloatParsing.cs: extra parsing functions for converting strings to BigFloat.
+//   BigFloatRandom.cs: functions for generating random BigFloats
+//   BigFloatRoundShiftTruncate.cs: extra rounding, shifting, truncating, or splitting functions.
+//   BigFloatStringsAndSpans.cs: extra functions related to converting BigFloat to strings/spans
+//   Constants.cs,ConstantInfo.cs,ConstantsCatalog.cs,ConstantBuilder.cs: extra features for returning common constants. 
 
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
@@ -45,7 +45,6 @@ public readonly partial struct BigFloat
     /// </summary>
     private const int KARATSUBA_THRESHOLD = 256;  // Threshold for switching to Karatsuba multiplication
     private const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;  // Threshold for advanced division algorithms
-    private const int SIMD_THRESHOLD = 64;  // Threshold for SIMD operations
     private const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
 
     /// <summary>
@@ -137,12 +136,22 @@ public readonly partial struct BigFloat
     const double LOG2_OF_10 = 3.32192809488736235;
 
     /// <summary>
-    /// Returns a "1" with a specific accuracy. 
+    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat ZeroWithAccuracy(int accuracy)
+    {
+        return new BigFloat(0, -accuracy, 0);
+    }
+
+    /// <summary>
+    /// Returns a one BigFloat with specified least precision for maintaining accuracy context
     /// </summary>
     /// <param name="accuracy">The wanted accuracy between -32(GuardBits) to Int.MaxValue.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat OneWithAccuracy(int accuracy)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(accuracy, -32);
+        //ArgumentOutOfRangeException.ThrowIfLessThan(accuracy, -32);
         return new(BigInteger.One << (GuardBits + accuracy), -accuracy, GuardBits + 1 + accuracy);
     }
 
@@ -1071,6 +1080,11 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
+    /// </summary>
+    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(_mantissa, GuardBits);
+
+    /// <summary>
     /// Mantissa with GuardBits rounded off.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1080,12 +1094,17 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Mantissa with GuardBits rounded off. It also requires the current size and will adjust it if it grows.
+    /// Mantissa with GuardBits rounded off. It also requires the current size and will increment it if the value rolls over.
     /// </summary>
     private static BigInteger MantissaWithoutGuardBits(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, GuardBits, ref size);
     }
+
+    /// <summary>
+    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
+    /// </summary>
+    public readonly BigInteger MantissaWithGuardBits => _mantissa;
 
     /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
@@ -1123,7 +1142,7 @@ public readonly partial struct BigFloat
 
         if (bitsToClear <= 0) return this;
         if (bitsToClear > _size) 
-            return ZeroWithSpecifiedLeastPrecision(-Accuracy);
+            return ZeroWithAccuracy(Accuracy);
         if (bitsToClear == _size) 
             return OneWithAccuracy(Accuracy);
 
@@ -1144,7 +1163,7 @@ public readonly partial struct BigFloat
         int bitsToClear = GuardBits - Scale;
         
         if (bitsToClear <= 0) return this;
-        if (bitsToClear > _size) return ZeroWithSpecifiedLeastPrecision(Precision);
+        if (bitsToClear > _size) return ZeroWithAccuracy(Accuracy);
 
         return new BigFloat(ClearLowerNBits(_mantissa, bitsToClear), Scale, _size);
     }
@@ -1459,7 +1478,7 @@ public readonly partial struct BigFloat
     public static BigFloat operator /(BigFloat divisor, int dividend)
     {
         if (dividend == 0) { throw new DivideByZeroException(); }
-        if (divisor.IsZero) { return ZeroWithSpecifiedLeastPrecision(divisor.Size); }
+        if (divisor.IsZero) { return ZeroWithAccuracy(-divisor.Size); }
 
         // Extract the sign once and apply at the end
         int sign = Math.Sign(dividend) * divisor._mantissa.Sign;
@@ -1921,14 +1940,5 @@ public readonly partial struct BigFloat
     private static void AssertValid(BigFloat val)
     {
         val.AssertValid();
-    }
-
-    /// <summary>
-    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat ZeroWithSpecifiedLeastPrecision(int precision)
-    {
-        return new BigFloat(0, precision, 0);
     }
 }

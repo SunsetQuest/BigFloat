@@ -382,7 +382,7 @@ public readonly partial struct BigFloat
         // now 0 ≤ r ≤ pi/2
 
         // when zero, return zero
-        if (r._mantissa < 2) { return ZeroWithSpecifiedLeastPrecision(x.Accuracy); }
+        if (r._mantissa < 2) { return ZeroWithAccuracy(x.Accuracy); }
 
         // ----- ----- choose the core routine ----------
         BigFloat result = (r.BinaryExponent <= _taylorExpSwitch)

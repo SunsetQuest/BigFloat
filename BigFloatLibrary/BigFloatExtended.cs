@@ -33,11 +33,6 @@ public readonly partial struct BigFloat
     /// </summary>
     public int Accuracy => -Scale;
 
-    /// <summary>
-    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
-    /// </summary>
-    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(_mantissa, GuardBits);
-
     ////future: rename to ZeroWithSpecifiedAccuracy  (like IntWithAccuracy?)
     ///// <summary>
     ///// Returns a Zero with a given lower bound of precision. Example: -4 would result in 0.0000 (in binary). GuardBits will be appended as well.
