@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BigFloatTests", "BigFloatTests\BigFloatTests.csproj", "{11CC4C7F-603B-43DA-8B54-861E7B47CB91}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BigFloatLibrary", "BigFloatLibrary\BigFloatLibrary.csproj", "{E0A3762E-A6F7-48BB-B193-FACF6ED1AE78}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlaygroundAndShowCase", "BigFloatPlayground\PlaygroundAndShowCase.csproj", "{1EC1B239-6746-427B-A1E0-89BBEB4104D2}"
@@ -21,18 +19,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Benchmark|Any CPU.ActiveCfg = Benchmark|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Benchmark|Any CPU.Build.0 = Benchmark|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Benchmark|x64.ActiveCfg = Benchmark|x64
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Benchmark|x64.Build.0 = Benchmark|x64
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Debug|x64.ActiveCfg = Debug|x64
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Debug|x64.Build.0 = Debug|x64
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Release|Any CPU.Build.0 = Release|Any CPU
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Release|x64.ActiveCfg = Release|x64
-		{11CC4C7F-603B-43DA-8B54-861E7B47CB91}.Release|x64.Build.0 = Release|x64
 		{E0A3762E-A6F7-48BB-B193-FACF6ED1AE78}.Benchmark|Any CPU.ActiveCfg = Benchmark|Any CPU
 		{E0A3762E-A6F7-48BB-B193-FACF6ED1AE78}.Benchmark|Any CPU.Build.0 = Benchmark|Any CPU
 		{E0A3762E-A6F7-48BB-B193-FACF6ED1AE78}.Benchmark|x64.ActiveCfg = Benchmark|x64
