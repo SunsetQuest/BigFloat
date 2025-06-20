@@ -9,14 +9,10 @@
 using BigFloatLibrary;
 using Xunit;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
-// using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert; // Commented out - use Xunit.Assert instead
 
 namespace BigFloatTests;
 
@@ -7551,10 +7547,30 @@ public class BigFloatTests
     }
 
     [Theory]
+    [InlineData("0", "0", 1)]   
+    [InlineData("1", "1", 1)]  // Rounds up then removes the bit
+    [InlineData("10", "1", 1)]  // Simple right shift (of Abs value) //future: or should this be 0?
+    [InlineData("11", "10", 1)]  // Rounds up to 100, then right shift
+    [InlineData("100", "10", 1)]  // Simple right shift (of Abs value)
+    [InlineData("-0", "0", 1)]
+    [InlineData("-1", "-1", 1)]  // Rounds down to -10 then removes the bit (of Abs value) //future: or should this be 0?
+    [InlineData("-10", "-1", 1)]  // Simple right shift (of Abs value)
+    [InlineData("-11", "-10", 1)]  // Rounds down to -100, then right shift (of Abs value)
+    [InlineData("-100", "-10", 1)]  // Simple right shift (of Abs value)
+    [InlineData("0", "0", 2)]
+    [InlineData("1", "0", 2)]  // Rounds up to 10, then rights shift by 2, so zero
+    [InlineData("10", "1", 2)]  // no rounding since LSB=0 -> 10, then rights shift by 2, so zero
+    [InlineData("11", "1", 2)]  // Rounds up to 100, then right shift by 2, so 10
+    [InlineData("100", "1", 2)]  // Simple right shift of 2 (of Abs value)
+    [InlineData("-0", "-0", 2)]
+    [InlineData("-1", "-0", 2)]  // Rounds down to -10, then rights shift by 2, so zero
+    [InlineData("-10", "-1", 2)]  // no rounding since LSB=0 -> 10, then rights shift by 2, so zero
+    [InlineData("-11", "-1", 2)]  // Rounds down to -100, then right shift by 2, so 10
+    [InlineData("-100", "-1", 2)]  // Simple right shift of 2 (of Abs value)
     [InlineData("10100010010111", "1010001001100", 1)]  // Round up due to LSB = 1
-    [InlineData("-10100010010111", "-1010001001100", 1)] // Negative with round up
-    [InlineData("10100010010110", "1010001001011", 1)]   // Round down due to LSB = 0
-    [InlineData("-10100010010110", "-1010001001011", 1)] // Negative with round down
+    [InlineData("-10100010010111", "-1010001001100", 1)] // LSB = 1, Negative with round to next larger negative number
+    [InlineData("10100010010110", "1010001001011", 1)]   // LSB = 0, Simple Right shift of 1
+    [InlineData("-10100010010110", "-1010001001011", 1)] // LSB = 0, Negative Simple Right shift (of Abs value)
     public void RightShiftWithRound_Basic_ShouldRoundCorrectly(string inputBinary, string expectedBinary, int shiftAmount)
     {
         // Arrange
