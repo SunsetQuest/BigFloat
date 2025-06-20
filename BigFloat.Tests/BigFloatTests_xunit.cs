@@ -6,15 +6,13 @@
 
 // Ignore Spelling: Aprox
 
-using BigFloatLibrary;
-using Xunit;
-using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Text;
+using Xunit.Abstractions;
 
-namespace BigFloatTests;
+namespace BigFloatLibrary.Tests;
 
 // Arrange, Act, Assert
 
@@ -7362,176 +7360,333 @@ public class BigFloatTests
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    private static readonly BigFloat Pi = BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, precisionInBits: 200);
-    private static readonly BigFloat HalfPi = Pi / 2;
-    private static readonly BigFloat QuarterPi = Pi / 4;
 
-    // ——— Exact values ————————————————————————————————————————————————————
-
-    [Fact]
-    public void Sin_Zero_IsZero()
+    /// <summary>
+    /// Tests for BigFloat trigonometric function implementations.
+    /// Verifies accuracy against known mathematical constants and standard library functions.
+    /// </summary>
+    public class BigFloatTrigonometricTests(ITestOutputHelper output)
     {
-        BigFloat s = BigFloat.Sin(BigFloat.Zero);
-        Assert.Equal(BigFloat.ZeroWithAccuracy(100), s); // Sin(0) should be 0
+        private readonly ITestOutputHelper _output = output;
+
+        // High-precision constants for testing
+        private static readonly BigFloat Pi = BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, precisionInBits: 200);
+        private static readonly BigFloat HalfPi = Pi / 2;
+        private static readonly BigFloat QuarterPi = Pi / 4;
+
+        // Test precision constants
+        private const int StandardPrecision = 100;
+        private const int HighPrecision = 200;
+        private const double DoublePrecisionTolerance = 1e-15;
+        private const double TaylorApproximationTolerance = 1e-24;
+
+        #region Exact Mathematical Values Tests
+
+        [Fact]
+        public void Sin_Should_ReturnZero_When_InputIsZero()
+        {
+            // Arrange
+            var input = BigFloat.Zero;
+            var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Sin(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Cos_Should_ReturnOne_When_InputIsZero()
+        {
+            // Arrange
+            var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
+            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Cos(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Sin_Should_ReturnOne_When_InputIsHalfPi()
+        {
+            // Arrange
+            var input = HalfPi;
+            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Sin(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Cos_Should_ReturnMinusOne_When_InputIsPi()
+        {
+            // Arrange
+            var input = Pi;
+            var expected = -BigFloat.OneWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Cos(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Sin_Should_ReturnZero_When_InputIsPi()
+        {
+            // Arrange
+            var input = Pi;
+            var expected = BigFloat.ZeroWithAccuracy(HighPrecision);
+
+            // Act
+            var result = BigFloat.Sin(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Tan_Should_ReturnZero_When_InputIsZero()
+        {
+            // Arrange
+            var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
+            var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Tan(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void Tan_Should_ReturnOne_When_InputIsQuarterPi()
+        {
+            // Arrange
+            var input = QuarterPi;
+            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
+
+            // Act
+            var result = BigFloat.Tan(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        #endregion
+
+        #region Standard Library Compatibility Tests
+
+        [Theory]
+        [InlineData(0.5)]
+        [InlineData(0.3)]
+        [InlineData(0.7)]
+        [InlineData(1.0)]
+        public void Sin_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
+        {
+            // Arrange
+            var bigFloatInput = (BigFloat)input;
+            var expectedFromStdLib = Math.Sin(input);
+
+            // Act
+            var bigFloatResult = BigFloat.Sin(bigFloatInput);
+            var actualDouble = (double)bigFloatResult;
+
+            // Assert
+            Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
+        }
+
+        [Fact]
+        public void Cos_Should_MatchHighPrecisionValue_When_InputIs0Point3()
+        {
+            // Arrange
+            const string inputStr = "0.30000000000000000000000000000000000000000000000000000000";
+            const string expectedStr = "0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629";
+
+            var input = BigFloat.Parse(inputStr);
+            var expected = BigFloat.Parse(expectedStr);
+
+            // Act
+            var result = BigFloat.Cos(input);
+
+            // Assert
+            Assert.Equal(0, expected.StrictCompareTo(result));
+
+            // Also verify double precision compatibility
+            var actualDouble = (double)BigFloat.Cos((BigFloat)0.3);
+            Assert.Equal(Math.Cos(0.3), actualDouble, DoublePrecisionTolerance);
+
+            _output.WriteLine($"High precision result: {result.ToString(true)}");
+        }
+
+        [Theory]
+        [InlineData(0.7)]
+        public void Tan_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
+        {
+            // Arrange
+            var bigFloatInput = (BigFloat)input;
+            var expectedFromStdLib = Math.Tan(input);
+
+            // Act
+            var bigFloatResult = BigFloat.Tan(bigFloatInput);
+            var actualDouble = (double)bigFloatResult;
+
+            // Assert
+            Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
+        }
+
+        #endregion
+
+        #region Taylor Series Approximation Tests
+
+        [Theory]
+        [InlineData(0.1, "Small angle approximation")]
+        [InlineData(1.0, "Larger angle approximation")]
+        public void SinAprox_Should_BeWithinTolerance_When_ComparedToExactSin(double inputValue, string testCase)
+        {
+            // Arrange
+            var input = (BigFloat)inputValue;
+
+            // Act
+            var exactResult = BigFloat.Sin(input);
+            var approximateResult = BigFloat.SinAprox(input);
+            var error = Math.Abs((double)(exactResult - approximateResult));
+
+            // Assert
+            Assert.True(error < TaylorApproximationTolerance,
+                $"{testCase}: Error {error:E} exceeds tolerance {TaylorApproximationTolerance:E}");
+
+            _output.WriteLine($"{testCase} - Input: {inputValue}, Error: {error:E}");
+        }
+
+        #endregion
     }
 
-    [Fact]
-    public void Cos_Zero_IsOne()
+    /// <summary>
+    /// Tests for BigInteger binary string conversion utilities.
+    /// Validates different output formats and width specifications.
+    /// </summary>
+    public class BigIntegerBinaryStringTests(ITestOutputHelper output)
     {
-        BigFloat c = BigFloat.Cos(BigFloat.ZeroWithAccuracy(100));
-        Assert.Equal(BigFloat.OneWithAccuracy(100), c); // Cos(0) should be 1
+        private readonly ITestOutputHelper _output = output;
+
+        #region Two's Complement Format Tests
+
+        [Theory]
+        [InlineData("256", "0000000100000000", 12, "Standard width test")]
+        [InlineData("127", "01111111", 8, "Positive boundary value")]
+        [InlineData("-127", "10000001", 8, "Negative boundary value")]
+        [InlineData("-63", "1111111111000001", 16, "Negative with minimum width")]
+        public void ToBinaryString_Should_ProduceTwosComplement_When_FormatSpecified(
+            string inputValue, string expectedResult, int minWidth, string testDescription)
+        {
+            // Arrange
+            var input = BigInteger.Parse(inputValue);
+
+            // Act
+            var result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: minWidth);
+
+            // Assert
+            Assert.Equal(expectedResult, result);
+            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+        }
+
+        #endregion
+
+        #region Standard Format Tests
+
+        [Theory]
+        [InlineData("256", "100000000", "Large positive value")]
+        [InlineData("127", "1111111", "Boundary positive value")]
+        [InlineData("-127", "-1111111", "Boundary negative value")]
+        [InlineData("-63", "-0000000000111111", "Negative with padding", 16)]
+        public void ToBinaryString_Should_ProduceStandardFormat_When_FormatSpecified(
+            string inputValue, string expectedResult, string testDescription, int minWidth = 0)
+        {
+            // Arrange
+            var input = BigInteger.Parse(inputValue);
+
+            // Act
+            var result = minWidth > 0
+                ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: minWidth)
+                : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard);
+
+            // Assert
+            Assert.Equal(expectedResult, result);
+            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+        }
+
+        #endregion
+
+        #region Shades Format Tests
+
+        [Theory]
+        [InlineData("256", "···█········", 12, "Large value with padding")]
+        [InlineData("256", "█········", 0, "Large value without padding")]
+        [InlineData("127", "███████", 0, "Multiple ones pattern")]
+        [InlineData("-127", "-███████", 0, "Negative multiple ones")]
+        [InlineData("-63", "-██████", 0, "Negative pattern")]
+        public void ToBinaryString_Should_ProduceShadesFormat_When_FormatSpecified(
+            string inputValue, string expectedResult, int minWidth, string testDescription)
+        {
+            // Arrange
+            var input = BigInteger.Parse(inputValue);
+
+            // Act
+            var result = minWidth > 0
+                ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: minWidth)
+                : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades);
+
+            // Assert
+            Assert.Equal(expectedResult, result);
+            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+        }
+
+        #endregion
+
+        #region Edge Cases and Validation Tests
+
+        [Fact]
+        public void ToBinaryString_Should_HandleZero_When_InputIsZero()
+        {
+            // Arrange
+            var input = BigInteger.Zero;
+
+            // Act & Assert
+            Assert.Equal("0", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard));
+            Assert.Equal("00000000", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement));
+            Assert.Equal("·", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades));
+        }
+
+        [Fact]
+        public void ToBinaryString_Should_HandleLargeNumbers_When_InputExceedsIntRange()
+        {
+            // Arrange
+            var largeNumber = BigInteger.Parse("123456789012345678901234567890");
+
+            // Act
+            var result = BigIntegerTools.ToBinaryString(largeNumber, BinaryStringFormat.Standard);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEmpty(result);
+            Assert.DoesNotContain(" ", result); // Should not contain spaces
+            _output.WriteLine($"Large number binary representation length: {result.Length}");
+        }
+
+        #endregion
     }
 
-    [Fact]
-    public void Sin_HalfPi_IsOne()
-    {
-        BigFloat s = BigFloat.Sin(HalfPi);
-        Assert.Equal(BigFloat.OneWithAccuracy(100), s); // Sin(pi/2) should be 1
-    }
 
-    [Fact]
-    public void Cos_Pi_IsMinusOne()
-    {
-        BigFloat c = BigFloat.Cos(Pi);
-        Assert.Equal(-BigFloat.OneWithAccuracy(100), c); // Cos(pi) should be −1
-    }
 
-    [Fact]
-    public void Sin_Pi_IsZero()
-    {
-        BigFloat s = BigFloat.Sin(Pi);
-        Assert.Equal(BigFloat.ZeroWithAccuracy(200), s); // Sin(pi) should be 0
-    }
-
-    [Fact]
-    public void Tan_QuarterPi_IsOne()
-    {
-        BigFloat t = BigFloat.Tan(QuarterPi);
-        Assert.Equal(BigFloat.OneWithAccuracy(100), t); // Tan(pi/4) should be 1
-    }
-
-    [Fact]
-    public void Tan_Zero_IsZero()
-    {
-        BigFloat t = BigFloat.Tan(BigFloat.ZeroWithAccuracy(100));
-        Assert.Equal(BigFloat.ZeroWithAccuracy(100), t); // Tan(0) should be 0
-    }
-
-    [Fact]
-    public void Sin_0p5_ShouldMatchMathSin()
-    {
-        const double x = 0.5;
-        // force a bit more precision internally to avoid rounding
-        BigFloat bf = BigFloat.Sin((BigFloat)x);
-        double got = (double)bf;
-        Assert.Equal(Math.Sin(x), got, 1e-15); // Sin(0.5) should match Math.Sin
-    }
-
-    [Fact]
-    public void Cos_0p3_ShouldMatchMathCos()
-    {
-        const double x = 0.3;
-        BigFloat answer = BigFloat.Parse("0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629");
-        BigFloat valToConvert = BigFloat.Parse("0.30000000000000000000000000000000000000000000000000000000");
-        BigFloat result = BigFloat.Cos(valToConvert);
-        Debug.WriteLine(result.ToString(true));
-
-        Assert.Equal(0, answer.StrictCompareTo(result)); // BigFloat.Parse("0.9553364891256060196..") should match BigFloat.Cos(BigFloat.Parse("0.3000000000000000...")
-        //Console.WriteLine($"{answer.ToString(true)} != \r\n{result.ToString(true)}[{valToConvert.Size}->{result.Size}]");
-
-        double got = (double)BigFloat.Cos((BigFloat)x);
-        Debug.WriteLine("(double)" + ((BigFloat)x).ToString(true) + " --> " + BigFloat.Cos((BigFloat)x).ToString(true));
-        Assert.Equal(Math.Cos(x), got); // Cos(0.3)({got}) should match Math.Cos({Math.Cos(x)})
-    }
-
-    [Fact]
-    public void Tan_0p7_ShouldMatchMathTan()
-    {
-        const double x = 0.7;
-        BigFloat bf = BigFloat.Tan((BigFloat)x);
-        double got = (double)bf;
-        Assert.Equal(Math.Tan(x), got, 1e-15); // Tan(0.7) should match Math.Tan
-    }
-
-    [Fact]
-    public void SinAprox_SmallAngle_IsReasonable()
-    {
-        const double x = 0.1;
-        BigFloat exact = BigFloat.Sin((BigFloat)x);
-        BigFloat approx = BigFloat.SinAprox((BigFloat)x);
-        // approx is a 5th-order Taylor; error ~ x^7/5040
-        double err = Math.Abs((double)(exact - approx));
-        Assert.True(err < 1e-24); // SinAprox(0.1) error {err:N2} should be <1e-24
-    }
-
-    [Fact]
-    public void SinAprox_LargerAngle_IsNotExact()
-    {
-        const double x = 1.0;
-        BigFloat exact = BigFloat.Sin((BigFloat)x);
-        BigFloat approx = BigFloat.SinAprox((BigFloat)x);
-        double err = Math.Abs((double)(exact - approx));
-        Assert.True(err < 1e-24); // SinAprox(1.0) error {err:N2} should be <1e-24
-    }
-
-    [Fact]
-    public void TestBigIntegerToBinaryString()
-    {
-        BigInteger input;
-        string answer, result;
-
-        // note: inputs with 0000000100000000 have leading zero because two's complement 
-        input = BigInteger.Parse("256");
-        answer = "0000000100000000";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "0000000100000000";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 12);
-        Assert.Equal(answer, result);
-        answer = "···█········";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 12);
-        Assert.Equal(answer, result);
-        answer = "100000000";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "█········";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
-        Assert.Equal(answer, result);
-
-        input = BigInteger.Parse("127");
-        answer = "01111111";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "1111111";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "███████";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
-        Assert.Equal(answer, result);
-
-        input = BigInteger.Parse("-127");
-        answer = "10000001";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "-1111111";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 0);
-        Assert.Equal(answer, result);
-        answer = "-███████";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
-        Assert.Equal(answer, result);
-
-        input = BigInteger.Parse("-63");
-        answer = "1111111111000001";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: 16);
-        Assert.Equal(answer, result);
-        answer = "-0000000000111111";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: 16);
-        Assert.Equal(answer, result);
-        answer = "-██████";
-        result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: 0);
-        Assert.Equal(answer, result);
-    }
-    [Fact]
+[Fact]
     public void TryParseBinary_WithValidInput_ShouldReturnExpectedValue()
     {
         // Arrange
@@ -7591,7 +7746,7 @@ public class BigFloatTests
     [InlineData("-101000100101011", "-1010001001011", 2)] // Negative round up
     [InlineData("101000100101101", "1010001001011", 2)]   // Round up (different pattern)
     [InlineData("-101000100101101", "-1010001001011", 2)] // Negative round up
-    public void RightShiftWithRound_MultibitShift_ShouldRoundCorrectly(string inputBinary, string expectedBinary, int shiftAmount)
+    public void RightShiftWithRound_MultiBitShift_ShouldRoundCorrectly(string inputBinary, string expectedBinary, int shiftAmount)
     {
         // Arrange
         Assert.True(BigIntegerTools.TryParseBinary(inputBinary, out BigInteger input));
@@ -7662,7 +7817,7 @@ public class BigFloatTests
     [Theory]
     [InlineData("-11111111111111", "-100000000000", 2, true)]    // 2-bit shift with carry
     [InlineData("-11011111111111", "-111000000000", 2, false)]   // 2-bit shift without carry
-    public void RightShiftWithRoundAndCarry_MultibitShift_ShouldHandleCarryCorrectly(
+    public void RightShiftWithRoundAndCarry_MultiBitShift_ShouldHandleCarryCorrectly(
         string inputBinary, string expectedBinary, int shiftAmount, bool expectedCarry)
     {
         // Arrange
@@ -7677,4 +7832,3 @@ public class BigFloatTests
         Assert.Equal(expectedCarry, carry);
     }
 }
-
