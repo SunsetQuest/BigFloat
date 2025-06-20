@@ -531,7 +531,7 @@ public static class BigIntegerTools
             switch (exp)
             {
                 case 0:
-                    return ( BigInteger.One << (wantedBits - 1), wantedBits - 1);
+                    return (BigInteger.One << (wantedBits - 1), wantedBits - 1);
                 case 1:
                     totalShift = valSize - wantedBits;
                     if (roundDown)
@@ -874,7 +874,7 @@ public static class BigIntegerTools
         int width = upperExclusive - lowerInclusive;
         BigInteger mask = (BigInteger.One << width) - 1;
         BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
-        return bits == 0u || bits== mask;
+        return bits == 0u || bits == mask;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -900,7 +900,7 @@ public static class BigIntegerTools
         BigInteger bits = (BigInteger.Abs(value) >> lowerInclusive) & mask;
         return bits;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigInteger ClearLowerNBits(BigInteger x, int n)
     {
@@ -967,39 +967,21 @@ public static class BigIntegerTools
     public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove, ref int size)
     {
         size = Math.Max(0, size - targetBitsToRemove);
+        bool isPos = val.Sign >= 0;
+        if (!isPos) val = -val;
+        BigInteger result = val >> targetBitsToRemove;
 
-        if (val.Sign >= 0)
+        if (!(val >> (targetBitsToRemove - 1)).IsEven)
         {
-            BigInteger result = val >>> targetBitsToRemove;
+            result++;
 
-            if (!(val >>> (targetBitsToRemove - 1)).IsEven)
-            {
-                result++;
-
-                if ((result >> size).IsOne)
-                {
-                    size++;
-                }
-            }
-            return result;
-        }
-
-        // val is Neg
-        val--;
-        BigInteger result2 = val >> targetBitsToRemove;
-        if ((val >>> (targetBitsToRemove - 1)).IsEven)
-        {
-            if (((result2 - 1) >>> size).IsEven)
+            if ((result >> size).IsOne)
             {
                 size++;
             }
         }
-        else
-        {
-            result2++;
-        }
 
-        return result2;
+        return isPos ? result : -result;
     }
 
 
@@ -1186,5 +1168,4 @@ public static class BigIntegerTools
                 ArrayPool<byte>.Shared.Return(buf.ToArray(), clearArray: true);
         }
     }
-
 }
