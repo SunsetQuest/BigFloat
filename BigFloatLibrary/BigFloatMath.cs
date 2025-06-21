@@ -28,10 +28,12 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns the absolute value of a BigFloat.
     /// </summary>
-    public static BigFloat ABS(BigFloat x)
-    {
-        return new BigFloat(-x._mantissa, x.Scale, x._size); //OR x.Sign < 0 ? -x : x;
-    }
+    public static BigFloat Abs(BigFloat x) => x.Abs();
+
+    /// <summary>
+    /// Returns the absolute value of a BigFloat.
+    /// </summary>
+    public BigFloat Abs() => new(_mantissa.Sign >= 0 ? _mantissa : -_mantissa, Scale, _size);
 
     /// <summary>
     /// Calculates a BigFloat as the base and an integer as the exponent. The integer part is treated as exact.

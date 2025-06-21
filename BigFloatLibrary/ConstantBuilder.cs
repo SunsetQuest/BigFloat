@@ -20,7 +20,7 @@ public readonly partial struct BigFloat
         /// <param name="minimumAccuracy">The required number of bits to the right of the radix point that should be returned.
         /// Irrationals where the available precision is not met will not be included in the array. 
         /// Extra included numbers will be forced to this precision.</param>
-        /// <param name="useExternalFiles">If True, will use external files for numbers larger then 5000 digits.</param>
+        /// <param name="useExternalFiles">If True, will use external files for numbers larger than 5000 digits.</param>
         /// <param name="includedWholeNumbers">Whole numbers that should be included. Example: [0,1,2,3] </param>
         /// <returns>Returns an array of BigFloats that meet the accuracy requirements.</returns>
         public static BigFloat[] GenerateArrayOfCommonConstants(
