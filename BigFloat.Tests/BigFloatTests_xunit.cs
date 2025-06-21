@@ -7831,4 +7831,12 @@ public class BigFloatTests
         Assert.Equal(expected, result);
         Assert.Equal(expectedCarry, carry);
     }
+
+    [Fact]
+    public void Verify_ABS()
+    {
+        Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(-5)));
+        Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(5)));
+        Assert.Equal(BigFloat.Zero, BigFloat.Abs(BigFloat.Zero));
+    }
 }
