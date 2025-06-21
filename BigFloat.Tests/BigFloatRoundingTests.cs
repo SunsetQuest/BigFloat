@@ -181,27 +181,27 @@ public class BigFloatRoundingTests
 
     #endregion
 
-    #region Round Tests (Banker's Rounding)
+    #region Round Tests (Half Away From Zero)
 
     [Fact]
     public void Round_ExactlyHalf()
     {
-        // 2.5 -> 2 (even)
+        // 2.5 -> 3 (away from zero)
         var bf = new BigFloat(2.5);
         var result = bf.RoundToInteger();
         Assert.Equal(3.0, (double)result);
 
-        // 3.5 -> 4 (even)
+        // 3.5 -> 4 (away from zero)
         bf = new BigFloat(3.5);
         result = bf.RoundToInteger();
         Assert.Equal(4.0, (double)result);
 
-        // -2.5 -> -2 (even)
+        // -2.5 -> -3 (away from zero)
         bf = new BigFloat(-2.5);
         result = bf.RoundToInteger();
         Assert.Equal(-3.0, (double)result);
 
-        // -3.5 -> -4 (even)
+        // -3.5 -> -4 (away from zero)
         bf = new BigFloat(-3.5);
         result = bf.RoundToInteger();
         Assert.Equal(-4.0, (double)result);
@@ -243,7 +243,7 @@ public class BigFloatRoundingTests
         var result = bf.RoundToInteger();
         Assert.Equal(0.0, (double)result);
 
-        // 0.5 -> 0 (rounds to even)
+        // 0.5 -> 1 (away from zero)
         bf = new BigFloat(0.5);
         result = bf.RoundToInteger();
         Assert.Equal(1.0, (double)result);
