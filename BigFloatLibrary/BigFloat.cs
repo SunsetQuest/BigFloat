@@ -1635,7 +1635,6 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
-
     /// <summary>
     /// Defines an explicit conversion of a BigFloat to a Double with full IEEE 754 compliance.
     /// Handles normal numbers, subnormal numbers, and special values with optimal performance.
@@ -1858,7 +1857,7 @@ public readonly partial struct BigFloat
     // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
     // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
 
-    /// <summary>Returns an input that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
+    /// <summary>Returns a value that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)
     {
         // 'this' is too large, not possible to be equal. The only 64 bit long is long.MinValue
@@ -1870,7 +1869,7 @@ public readonly partial struct BigFloat
         return other == (long)RightShiftWithRound(_mantissa << Scale, GuardBits);
     }
 
-    /// <summary>Returns an input that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
+    /// <summary>Returns a value that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
     public bool Equals(ulong other)
     {
         if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
@@ -1888,7 +1887,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool Equals(BigInteger other)
     {
-        return other.Equals(RightShiftWithRound(_mantissa, GuardBits));
+        return other.Equals(RightShiftWithRound(_mantissa, GuardBits - Scale));
     }
 
     /// <summary>

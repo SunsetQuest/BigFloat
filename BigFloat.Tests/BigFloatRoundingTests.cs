@@ -279,7 +279,7 @@ public class BigFloatRoundingTests
         var bf = new BigFloat(3.14159);
         var result = bf.FractionalPart();
         var resultDouble = (double)result;
-        Assert.True(Math.Abs(resultDouble - 0.14159) < 0.00001);
+        Assert.Equal(0.14159, resultDouble, 5); // 5 decimal places precision
     }
 
     [Fact]
@@ -288,7 +288,7 @@ public class BigFloatRoundingTests
         var bf = new BigFloat(-3.14159);
         var result = bf.FractionalPart();
         var resultDouble = (double)result;
-        Assert.True(Math.Abs(resultDouble - (-0.14159)) < 0.00001);
+        Assert.Equal(-0.14159, resultDouble, 5); // 5 decimal places precision
     }
 
     [Fact]
@@ -331,7 +331,7 @@ public class BigFloatRoundingTests
 
         Assert.Equal(3.0, (double)intPart);
         var fracDouble = (double)fracPart;
-        Assert.True(Math.Abs(fracDouble - 0.14159) < 0.00001);
+        Assert.Equal(0.14159, fracDouble, 5);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class BigFloatRoundingTests
 
         Assert.Equal(-3.0, (double)intPart);
         var fracDouble = (double)fracPart;
-        Assert.True(Math.Abs(fracDouble - (-0.14159)) < 0.00001);
+        Assert.Equal(-0.14159, fracDouble, 5);
     }
 
     [Fact]

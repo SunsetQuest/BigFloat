@@ -52,7 +52,7 @@ public class BigFloatTests
             Assert.False(value.IsOutOfPrecision); // 0.000...1->BigFloat->OutOfPrecision should never be zero.
         }
 
-        Assert.Equal(new BigFloat(1, -8, addedBinaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer then 0
+        Assert.Equal(new BigFloat(1, -8, addedBinaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
         Assert.Equal(new BigFloat(1, -1074, addedBinaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
         Assert.False(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, addedBinaryPrecision: 0));  // 0 != -1.0
 
@@ -7284,22 +7284,17 @@ public class BigFloatTests
         inputVal = new BigFloat("0.9876543210987654321098765432109876");
         string exact = "0.11111100110101101110100111100000110111110100110111000011010010...";
 
-        for (int i = 1; i < 6; i++)
+        for (int i = 1; i < 20; i++)
         {
             res = BigFloat.SetPrecision(inputVal, i);
             output = res.ToString("B");
             int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
             int mostSigBigInRemovedSection = exact[i + 2] - 48;
-            expect = Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, ".");
-            Assert.Equal(output, expect);
-        }
-        for (int i = 6; i < 20; i++)
-        {
-            res = BigFloat.SetPrecision(inputVal, i);
-            output = res.ToString("B");
-            int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-            int mostSigBigInRemovedSection = exact[i + 2] - 48;
-            expect = "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2);
+            expect = i switch
+            {
+                < 6 => Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, "."),
+                _ => "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2),
+            };
             Assert.Equal(output, expect);
         }
 
@@ -7683,7 +7678,6 @@ public class BigFloatTests
 
         #endregion
     }
-
 
 
 [Fact]
