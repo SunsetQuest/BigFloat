@@ -5,8 +5,8 @@ Ryan Scott White / [MIT](http://www.opensource.org/licenses/mit-license.php "The
 Updated: April 4th 2025 
 
 **Originally posted on CodeProject**:  
-![](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/Docs/Images/views32.png) 12.3K views, 
-![](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/Docs/Images/download32.png) 183 downloads
+![](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/docs/Images/views32.png) 12.3K views, 
+![](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/docs/Images/download32.png) 183 downloads
 
 **Quick Summary**: 
 BigFloat is both a C# struct data type along with a library of functions. It offers an innovative solution for handling large floating-point numbers, that extend beyond the precision limitations of standard the standard IEEE floating-point. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for high-precision applications. Available here on GitHub, BigFloat easily integrates into C# projects, providing a tool for developers needing advanced numerical computation capabilities.
@@ -35,7 +35,7 @@ BigFloat, while similar to IEEE standards in structure, introduces notable diffe
 -   **Scale** *(of type `int`)*: Scale dictates the position of the radix point, allowing for scalable precision. A positive value would move the radix point right, increasing the number size; a negative value would move the radix point left, creating a fractional part. A zero value would essentially represent an integer.
 -   **Size** *(of type `int`)*: A cached value representing the size of `DataBit`s. It is added for optimizing frequent access. '`_size`' is equivalent to the function '`int _size = > ABS(dataBits).GetBitSize();`'
 
-![BigFloatParts](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/Docs/Images/BigFloatParts.png)
+![BigFloatParts](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/docs/Images/BigFloatParts.png)
 
 ## Using the Code
 
