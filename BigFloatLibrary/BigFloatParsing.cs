@@ -107,16 +107,19 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Parses a decimal string to a BigFloat. It supports a binaryScaler and negative numbers. 
     /// Supports the precision separator, '|'.  For example, '1.23|456' parses '1.23' as in-precision and '456' as out of precision bits stored as guard bits.
+    /// Supports an out-of-precision placeholder, 'X'.  For example, '123XXX' is equivalent to 1.23e5.
     /// It will also ignore spaces or commas. But mixing is not allowed.
     /// It also accepts values wrapped with double quotes, (), {}, or []. But mixing is not allowed.
     /// Allowed:                                           }
     ///  * -123.456     leading minus (or plus) signs are supported
     ///  * 123 456 789  spaces or commas ignored
+    ///  * 123XXXXXXXX  is equivalent to 123e10. 'X' is a unknown or out-of-precision placeholder
     ///  * {123.456}    wrapped in {..} or (..) or ".."
     ///  * 123.456____  trailing spaces are ignored
     /// Not Allowed:
     ///  * 0xABC.DEF    leading 0x or 0b as hex or binary are not supported
     ///  * {123.456     must have leading and closing bracket
+    ///  * 123XXXXe10   'e' and 'X' notation cannot be mixed.
     ///  * {123.456)    brackets types must match
     ///  * {{123.456}}  limit of one only
     ///  * 123,456 789  mismatched separators will fail
