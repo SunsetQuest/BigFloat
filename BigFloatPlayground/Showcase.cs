@@ -39,6 +39,9 @@ public static class Showcase
         //Console.WriteLine("0.000000000232 -> " + BigFloat.Parse("0.00000000000232"));
         //Console.WriteLine("0.0000000000000000000000000000232 -> " + BigFloat.Parse("0.0000000000000000000000000000232"));
 
+        BigFloat randNumber = BigFloat.RandomWithMantissaBits(1024, 0, 0);
+        
+        Console.WriteLine($"The number {randNumber} is {randNumber.Size} bits.");
 
 
         BigFloat x = new("1.1234567890123456"); Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));

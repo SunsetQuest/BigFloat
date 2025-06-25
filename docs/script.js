@@ -498,26 +498,46 @@ function initAccessibility() {
  */
 function initSyntaxHighlighting() {
     const codeBlocks = document.querySelectorAll('pre code');
-    
+
     codeBlocks.forEach(block => {
-        let html = block.innerHTML;
-        
-        // Basic C# syntax highlighting
-        html = html.replace(/\b(class|struct|interface|enum|namespace|using|public|private|protected|internal|static|readonly|const|var|int|string|bool|float|double|decimal|void|return|if|else|for|foreach|while|do|switch|case|default|try|catch|finally|throw|new|this|base|null|true|false)\b/g, '<span style="color: #569cd6;">$1</span>');
-        
-        // Strings
-        html = html.replace(/"([^"\\]|\\.)*"/g, '<span style="color: #ce9178;">$&</span>');
-        
-        // Comments
-        html = html.replace(/\/\/.*$/gm, '<span style="color: #6a9955;">$&</span>');
-        html = html.replace(/\/\*[\s\S]*?\*\//g, '<span style="color: #6a9955;">$&</span>');
-        
-        // Numbers
-        html = html.replace(/\b\d+(\.\d+)?\b/g, '<span style="color: #b5cea8;">$&</span>');
-        
+        const rawCode = block.textContent;
+
+        // Step 1: Escape HTML (including quotes!)
+        const escapeHtml = (str) =>
+            str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+
+        let html = escapeHtml(rawCode);
+
+        // Step 2: Strings — match both raw and escaped quotes
+        html = html.replace(/(&quot;)([^]*?)(\1)/g,
+            '<span style="color: #ce9178;">$1$2$3</span>');
+
+        // Step 3: Single-line comments
+        html = html.replace(/(\/\/.*)/g,
+            '<span style="color: #6a9955;">$1</span>');
+
+        // Step 4: Multi-line comments
+        html = html.replace(/(\/\*[\s\S]*?\*\/)/g,
+            '<span style="color: #6a9955;">$1</span>');
+
+        // Step 5: Numbers
+        html = html.replace(/\b\d+(\.\d+)?\b/g,
+            '<span style="color: #b5cea8;">$&</span>');
+
+        // Step 6: Keywords (after quotes are handled!)
+        html = html.replace(
+            /\b(class|struct|interface|enum|namespace|using|public|private|protected|internal|static|readonly|const|var|int|string|bool|float|double|decimal|void|return|if|else|for|foreach|while|do|switch|case|default|try|catch|finally|throw|new|this|base|null|true|false)\b/g,
+            '<span style="color: #569cd6;">$1</span>'
+        );
+
         block.innerHTML = html;
     });
 }
+
+
 
 /**
  * Debounce function for performance

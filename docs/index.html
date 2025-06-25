@@ -113,6 +113,7 @@
                     <div class="stat-label">License</div>
                 </div>
             </div>
+            <br /><br />
         </div>
         <div class="hero-visual">
             <div class="floating-code">
@@ -330,9 +331,9 @@ BigFloat area = pi * radius * radius;</code></pre>
         <section id="examples" class="section section-dark">
             <div class="container">
                 <div class="section-header">
-                    <h2 class="section-title">Interactive Examples</h2>
+                    <h2 class="section-title">Code Examples</h2>
                     <p class="section-subtitle">
-                        Explore BigFloat's capabilities with real code examples and live demonstrations.
+                        Explore BigFloat's capabilities with code examples.
                     </p>
                 </div>
                 
@@ -349,38 +350,36 @@ BigFloat area = pi * radius * radius;</code></pre>
                             <div class="example-grid">
                                 <div class="code-example">
                                     <h4>Basic Arithmetic & Operations</h4>
-                                    <pre><code class="language-csharp">// Initialize BigFloat numbers
-BigFloat a = new("123456789.012345678901234"); // Initialize by String
-BigFloat b = new(1234.56789012345678);         // Initialize by Double
+                                    <pre><code class="language-csharp">
+    // Initialize BigFloat numbers
+    BigFloat a = new("123456789.012345678901234"); // by String
+    BigFloat b = new(1234.56789012345678);         // by Double
 
-// Basic arithmetic
-BigFloat sum = a + b;
-BigFloat difference = a - b;
-BigFloat product = a * b;
-BigFloat quotient = a / b;
+    // Basic arithmetic
+    BigFloat sum = a + b;
+    BigFloat difference = a - b;
+    BigFloat product = a * b;
+    BigFloat quotient = a / b;
 
-// Display results
-Console.WriteLine($"Sum: {sum}");
-// Output: Sum: 123458023.5802358024
+    // Display results
+    Console.WriteLine($"Sum: {sum}");
 
-Console.WriteLine($"Difference: {difference}");
-// Output: Difference: 123455554.4444555554
+    Console.WriteLine($"Difference: {difference}");
 
-Console.WriteLine($"Product: {product}");
-// Output: Product: 152415787532.39
+    Console.WriteLine($"Product: {product}");
 
-Console.WriteLine($"Quotient: {quotient}");
-// Output: Quotient: 100000.000000000
+    Console.WriteLine($"Quotient: {quotient}");
 
-// Comparing Numbers
-BigFloat num1 = new("12345.6790");
-BigFloat num2 = new("12345.6789");
+    // Comparing Numbers
+    BigFloat num1 = new("12345.6790");
+    BigFloat num2 = new("12345.6789");
 
-bool areEqual = num1 == num2;
-bool isFirstBigger = num1 > num2;
+    bool areEqual = num1 == num2;
+    bool isFirstBigger = num1 > num2;
 
-Console.WriteLine($"Are equal? {areEqual}"); // False
-Console.WriteLine($"First bigger? {isFirstBigger}"); // True</code></pre>
+    Console.WriteLine($"Are equal? {areEqual}"); // False
+    Console.WriteLine($"First bigger? {isFirstBigger}"); // True
+</code></pre>
                                 </div>
                                 <div class="output-example">
                                     <h4>Live Output</h4>
@@ -400,32 +399,33 @@ Console.WriteLine($"First bigger? {isFirstBigger}"); // True</code></pre>
                             <div class="example-grid">
                                 <div class="code-example">
                                     <h4>High-Precision Constants</h4>
-                                    <pre><code class="language-csharp">// Access constants with specified precision
-Dictionary&lt;string, BigFloat&gt; bigConstants = 
+                                    <pre><code class="language-csharp">
+    // Access constants with specified precision
+    Dictionary&lt;string, BigFloat&gt; bigConstants =
     Constants.WithConfig(precisionInBits: 1000).GetAll();
-BigFloat pi = bigConstants["Pi"];
-BigFloat e = bigConstants["E"];
+    BigFloat pi = bigConstants["Pi"];
+    BigFloat e = bigConstants["E"];
 
-Console.WriteLine($"e to 1000 binary digits: {e}");
-// Output: e to 1000 binary digits: 
-// 2.718281828459045235360287471352662497757247093699959574966967
-// 627724076630353547594571382178525166427427466391932003059921817
-// 413596629043572900334295260595630738132328627943490763233829880
-// 753195251019011573834187930702154089149934884167509244761460668
-// 082264800168477411853742345442437107539077744992070
+    Console.WriteLine($"e to 1000 binary digits: {e}");
 
-// Use Pi in calculations
-BigFloat radius = new("100.0000000000000000");
-BigFloat area = pi * radius * radius;
+    // Use Pi in calculations
+    BigFloat radius = new("100.0000000000000000");
+    BigFloat area = pi * radius * radius;
 
-Console.WriteLine($"Circle area: {area}");
-// Output: Circle area: 31415.9265358979324</code></pre>
+    Console.WriteLine($"Circle area: {area}");
+</code></pre>
                                 </div>
                                 <div class="output-example">
                                     <h4>Precision Demonstration</h4>
                                     <div class="output-box">
                                         <div class="output-line">π: 3.14159265358979323846264338327950288...</div>
-                                        <div class="output-line">e: 2.71828182845904523536028747135266249...</div>
+                                        <div class="output-line">e to 1000 binary digits:
+                                            2.7182818284590452353602874713526624977572470936999595749669676
+                                            277240766303535475945713821785251664274274663919320030599218174
+                                            135966290435729003342952605956307381323286279434907632338298807
+                                            531952510190115738341879307021540891499348841675092447614606680
+                                            82264800168477411853742345442437107539077744992070
+                                        </div>
                                         <div class="output-line">Circle area: 31415.9265358979324</div>
                                         <div class="precision-indicator">
                                             <span class="precise">Precise digits</span> | 
@@ -440,27 +440,25 @@ Console.WriteLine($"Circle area: {area}");
                             <div class="example-grid">
                                 <div class="code-example">
                                     <h4>Precision Manipulation</h4>
-                                    <pre><code class="language-csharp">// Initialize with high precision
-BigFloat preciseNumber = new("123.45678901234567890123");
+                                    <pre><code class="language-csharp">
+    // Initialize with high precision
+    BigFloat preciseNumber = new("123.45678901234567890123");
 
-// Extend precision by adding bits
-BigFloat morePrecise = ExtendPrecision(
+    // Extend precision by adding bits
+    BigFloat morePrecise = ExtendPrecision(
     preciseNumber, bitsToAdd: 50);
 
-Console.WriteLine($"Extended: {morePrecise}");
-// Output: Extended: 123.45678901234567890123000000000102788
+    Console.WriteLine($"Extended: {morePrecise}");
 
-// Create integer with custom precision
-BigFloat customInt = IntWithAccuracy(10, 100);
-Console.WriteLine($"Custom int: {customInt}");
-// Output: Custom int: 10.000000000000000000000000000000
+    // Create integer with custom precision
+    BigFloat customInt = IntWithAccuracy(10, 100);
+    Console.WriteLine($"Custom int: {customInt}");
 
-// Precision notation examples
-Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
-// Output: 232XXXX -> 2.32e+6
+    // Precision notation examples
+    Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
 
-Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
-// Output: 232X.X -> 2.32e+3</code></pre>
+    Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
+</code></pre>
                                 </div>
                                 <div class="output-example">
                                     <h4>Precision Control Results</h4>
@@ -479,33 +477,29 @@ Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
                             <div class="example-grid">
                                 <div class="code-example">
                                     <h4>Advanced Operations & Large Numbers</h4>
-                                    <pre><code class="language-csharp">// Handling Very Large Numbers
-BigFloat largeNumber = new("1234e+7");
-Console.WriteLine($"Large: {largeNumber}");
-// Output: Large: 1.234e+10
+                                    <pre><code class="language-csharp">
+    // Handling Very Large Numbers
+    BigFloat largeNumber = new("1234e+7");
+    Console.WriteLine($"Large: {largeNumber}");
 
-// Alternative notation with masking
-Console.WriteLine($"Masked: {BigFloat.ToStringDecimal(largeNumber, digitMaskingForm: true)}");
-// Output: Masked: 1234XXXXXXX
+    // Alternative notation with masking
+    Console.WriteLine($"Masked: {BigFloat.ToStringDecimal(largeNumber, digitMaskingForm: true)}");
 
-// Very large exponents
-BigFloat veryLarge = new("1234e+300");
-Console.WriteLine($"Very large: {veryLarge}");
-// Output: Very large: 123 * 10^301
+    // Very large exponents
+    BigFloat veryLarge = new("1234e+300");
+    Console.WriteLine($"Very large: {veryLarge}");
 
-// Very small numbers
-BigFloat smallNumber = new("1e-300");
-Console.WriteLine($"Small: {smallNumber}");
-// Output: Small: 1e-300
+    // Very small numbers
+    BigFloat smallNumber = new("1e-300");
+    Console.WriteLine($"Small: {smallNumber}");
 
-// Complex calculations
-BigFloat num5 = new("12121212.1212");
-BigFloat num6 = new("1234567");
-Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
-// Output: 12121212.1212 * 1234567 = 1.496445e+11
+    // Complex calculations
+    BigFloat num5 = new("12121212.1212");
+    BigFloat num6 = new("1234567");
+    Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
 
-Console.WriteLine($"Precision: {num6.Precision}");
-// Output: Precision: 21</code></pre>
+    Console.WriteLine($"Precision: {num6.Precision}");
+</code></pre>
                                 </div>
                                 <div class="output-example">
                                     <h4>Advanced Results</h4>
