@@ -26,9 +26,22 @@ public static class Showcase
     {
         //////////////////// TEST AREA ////////////////////
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
+        //Console.WriteLine("2320000 -> " + BigFloat.Parse("2320000"));
+        //Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
+        //Console.WriteLine("232XX -> " + BigFloat.Parse("232XX"));
+        //Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
+        //Console.WriteLine("232 -> " + BigFloat.Parse("232"));
+        //Console.WriteLine("23.2 -> " + BigFloat.Parse("23.2"));
+        //Console.WriteLine("2.32 -> " + BigFloat.Parse("2.32"));
+        //Console.WriteLine("0.232 -> " + BigFloat.Parse("0.232"));
+        //Console.WriteLine("0.00232 -> " + BigFloat.Parse("0.00232"));
+        //Console.WriteLine("0.00000000232 -> " + BigFloat.Parse("0.00232"));
+        //Console.WriteLine("0.000000000232 -> " + BigFloat.Parse("0.00000000000232"));
+        //Console.WriteLine("0.0000000000000000000000000000232 -> " + BigFloat.Parse("0.0000000000000000000000000000232"));
 
-        BigFloat x = new("1.1234567890123456");
-        Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));
+
+
+        BigFloat x = new("1.1234567890123456"); Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));
 
         Console.WriteLine(ConstantVisualization.GetConstantInfo("Pi"));
 
@@ -68,16 +81,16 @@ public static class Showcase
 
         // Display results
         Console.WriteLine($"Sum: {sum}");
-        // Output: Sum: 123458023.5802358023581
+        // Output: Sum: 123458023.5802358024
 
         Console.WriteLine($"Difference: {difference}");
-        // Output: Difference: 123455554.4444555554443
+        // Output: Difference: 123455554.4444555554
 
         Console.WriteLine($"Product: {product}");
-        // Output: Product: 152415787532.38838
+        // Output: Product: 152415787532.39
 
         Console.WriteLine($"Quotient: {quotient}");
-        // Output: Quotient: 99999.99999999999
+        // Output: Quotient: 100000.000000000
 
 
         //////////////////// Working with Mathematical Constants: ////////////////////
@@ -88,17 +101,17 @@ public static class Showcase
 
         Console.WriteLine($"e to 1000 binary digits: {e.ToString()}");
         // Output:
-        // e to 1000 binary digits: 2.71828182845904523536028747135266249775724709369995957496696
-        // 76277240766303535475945713821785251664274274663919320030599218174135966290435729003342
-        // 95260595630738132328627943490763233829880753195251019011573834187930702154089149934884
-        // 1675092447614606680822648001684774118537423454424371075390777449920696
+        // e to 1000 binary digits: 2.718281828459045235360287471352662497757247093699959574966967
+        // 627724076630353547594571382178525166427427466391932003059921817413596629043572900334295
+        // 260595630738132328627943490763233829880753195251019011573834187930702154089149934884167
+        // 509244761460668082264800168477411853742345442437107539077744992070
 
         // Use Pi in a calculation (Area of a circle with r = 100)
         BigFloat radius = new("100.0000000000000000");
         BigFloat area = pi * radius * radius;
 
         Console.WriteLine($"Area of the circle: {area}");
-        // Output: Area of the circle: 31415.92653589793238
+        // Output: Area of the circle: 31415.9265358979324
 
 
         //////////////////// Precision Manipulation: ////////////////////
@@ -107,7 +120,7 @@ public static class Showcase
         BigFloat morePreciseNumber = ExtendPrecision(preciseNumber, bitsToAdd: 50);
 
         Console.WriteLine($"Extend Precision result: {morePreciseNumber}");
-        // Output: Extend Precision result: 123.45678901234567890122999999999787243
+        // Output: Extend Precision result: 123.45678901234567890123000000000102788
 
         // Initialize an integer with custom precision
         BigFloat c = IntWithAccuracy(10, 100);
@@ -150,7 +163,10 @@ public static class Showcase
         BigFloat largeNumber = new("1234e+7");
 
         Console.WriteLine($"Large Number: {largeNumber}");
-        // Output: Large Number: 123XXXXXXXX
+        // Output: Large Number: 1.234e+10
+
+        Console.WriteLine($"Large Number: {BigFloat.ToStringDecimal(largeNumber,digitMaskingForm: true)}");
+        // Output: Large Number: 1234XXXXXXX
 
         // Creating a very large number
         BigFloat veryLargeNumber = new("1234e+300");
@@ -162,29 +178,24 @@ public static class Showcase
         BigFloat smallNumber = new("1e-300");
 
         Console.WriteLine($"Small Number: {smallNumber}");
-        // Output: Small Number: 0.00000000000000000000000000000000000000000000000000000000000000
-        // 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        // 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-        // 000000000000000000000000000000000000000000000000000000000000000001
+        // Output: Small Number: 1e-300
 
         BigFloat num5 = new("12121212.1212");
         BigFloat num6 = new("1234");
         Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
-        // Output: 12121212.1212 * 1234 = 1496XXXXXXX  (rounded up from 14957575757)
+        // Output: 12121212.1212 * 1234 = 1.496e+10
 
         num5 = new("12121212.1212");
         num6 = new("3");
         BigFloat result = num5 * num6;
-        Console.WriteLine($"12121212.1212 * 3 = 36363636.3636");
         Console.WriteLine($"{num5} * {num6} = {result}");
-        // Output: 12121212.1212 * 3 = 0XXXXXXXX
-        // Optimal Output:              4XXXXXXX
+        // Output: 12121212.1212 * 3 = 4e+7
 
         num5 = new("121212.1212");
         num6 = new("1234567");
 
         Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
-        // Output: 121212.1212 * 1234567 = 149644XXXXXX
+        // Output: 121212.1212 * 1234567 = 1.496445e+11
 
         Console.WriteLine($"GetPrecision: {num6.Precision}");
         // Output: GetPrecision: 21
