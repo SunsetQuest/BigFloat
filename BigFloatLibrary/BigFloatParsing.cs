@@ -137,6 +137,7 @@ public readonly partial struct BigFloat
         int exp = 0;
         int expSign = 0;
         int destinationLocation = 0;
+        int Xcount = 0;
 
         Span<char> cleaned = stackalloc char[numericString.Length];
 
@@ -146,6 +147,11 @@ public readonly partial struct BigFloat
             switch (c)
             {
                 case >= '0' and <= '9':
+                    if (Xcount > 0)
+                    {   // digits should not appear after an 'X'
+                        result = 0;
+                        return false;
+                    }
                     cleaned[destinationLocation++] = c;
                     break;
                 case '.':
@@ -199,6 +205,12 @@ public readonly partial struct BigFloat
                     }
                     accuracyDelimiterPosition = destinationLocation;
                     break;
+                case 'X':
+                    if (decimalLocation >= 0) break; // 'X' after point in meaningless
+                    Xcount++;
+                    if (accuracyDelimiterPosition < 0)
+                        accuracyDelimiterPosition = destinationLocation;
+                    break;
                 case ' ':
                     if (usedCommaAlready)
                     {   // already using Commas
@@ -215,7 +227,6 @@ public readonly partial struct BigFloat
                     }
                     usedCommaAlready = true;
                     break;
-
                 case '{' or '(':
                     if (BraceTypeAndStatus != 0)
                     {   // already using Spaces
@@ -278,8 +289,19 @@ public readonly partial struct BigFloat
         // now lets remove trailing null chars off the end of the cleaned Spam
         cleaned = cleaned[..destinationLocation];
 
+        if (Xcount > 0)
+        {
+            // 'X' cannot be used with 'e' notation
+            if (expLocation > 0)
+            {
+                result = 0;
+                return false;
+            }
+            exp = Xcount;
+        }
+
         // Check for 'e'  like 123e10 or 123.123e+100
-        if (expLocation >= 0)
+         else if (expLocation >= 0)
         {
             Span<char> expString = cleaned[expLocation..];
             if (!int.TryParse(expString, out exp))
@@ -291,6 +313,7 @@ public readonly partial struct BigFloat
 
             cleaned = cleaned[0..expLocation];
         }
+
 
         // Lets extract the actual base-10 number
         if (!BigInteger.TryParse(cleaned, out BigInteger val))
