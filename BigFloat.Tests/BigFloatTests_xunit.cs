@@ -3875,6 +3875,7 @@ public class BigFloatTests
     [Fact]
     public void Verify_TryParse_Errors()
     {
+        Assert.False(BigFloat.TryParse(null, out _));
         Assert.False(BigFloat.TryParse("", out _));
         Assert.False(BigFloat.TryParse(" ", out _));
         Assert.False(BigFloat.TryParse("e", out _));
@@ -3940,11 +3941,99 @@ public class BigFloatTests
         Assert.False(BigFloat.TryParse(".41.", out _));
         Assert.False(BigFloat.TryParse(".4.1", out _));
         Assert.False(BigFloat.TryParse(".4.1e", out _));
+        Assert.False(BigFloat.TryParse("XXXX", out _));
+        Assert.False(BigFloat.TryParse("XX1XX", out _));
+        Assert.False(BigFloat.TryParse("XXXX1", out _));
+        Assert.False(BigFloat.TryParse("1XXXXe10", out _));
+        Assert.False(BigFloat.TryParse("1XX.XXe10", out _));
+        Assert.False(BigFloat.TryParse("X.XX", out _));
+        Assert.False(BigFloat.TryParse("1e10XXX", out _));
 #if !DEBUG
         _ = Assert.Throws<ArgumentNullException>(() => BigFloat.ParseBinary(null));
         _ = Assert.Throws<ArgumentException>(() => BigFloat.ParseBinary(""));
         _ = Assert.Throws<ArgumentException>(() => BigFloat.ParseBinary(" "));
 #endif
+    }
+
+    /// <summary>
+    /// Test some string values that can not be converted to a big integer.  
+    /// </summary>
+    [Fact]
+    public void Verify_TryParseDecimal_Errors()
+    {
+        Assert.False(BigFloat.TryParseDecimal(null, out _));
+        Assert.False(BigFloat.TryParseDecimal("", out _));
+        Assert.False(BigFloat.TryParseDecimal(" ", out _));
+        Assert.False(BigFloat.TryParseDecimal("e", out _));
+        Assert.False(BigFloat.TryParseDecimal(".e", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e1.", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e1.1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e1+", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e1-", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e--1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e-+1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e++1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e+-1", out _));
+        Assert.False(BigFloat.TryParseDecimal("+-1e1", out _));
+        Assert.False(BigFloat.TryParseDecimal("e1", out _));
+        Assert.False(BigFloat.TryParseDecimal("{1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1}", out _));
+        Assert.False(BigFloat.TryParseDecimal("}", out _));
+        Assert.False(BigFloat.TryParseDecimal("{", out _));
+        Assert.False(BigFloat.TryParseDecimal("{}1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1{}", out _));
+        Assert.False(BigFloat.TryParseDecimal("{{}}", out _));
+        Assert.False(BigFloat.TryParseDecimal("{{1}}", out _));
+        Assert.False(BigFloat.TryParseDecimal("{}1", out _));
+        Assert.False(BigFloat.TryParseDecimal("{1)", out _));
+        Assert.False(BigFloat.TryParseDecimal("(1}", out _));
+        Assert.False(BigFloat.TryParseDecimal("+-1", out _));
+        Assert.False(BigFloat.TryParseDecimal("--1", out _));
+        Assert.False(BigFloat.TryParseDecimal("++1", out _));
+        Assert.False(BigFloat.TryParseDecimal("+-1", out _));
+        Assert.False(BigFloat.TryParseDecimal("-1+", out _));
+        Assert.False(BigFloat.TryParseDecimal("+1-", out _));
+        Assert.False(BigFloat.TryParseDecimal("-1-", out _));
+        Assert.False(BigFloat.TryParseDecimal("+1+", out _));
+        Assert.False(BigFloat.TryParseDecimal("+1-", out _));
+        Assert.False(BigFloat.TryParseDecimal("-1+", out _));
+        Assert.False(BigFloat.TryParseDecimal("1-+", out _));
+        Assert.False(BigFloat.TryParseDecimal("1+-", out _));
+        Assert.False(BigFloat.TryParseDecimal("1--", out _));
+        Assert.False(BigFloat.TryParseDecimal("1++", out _));
+        Assert.False(BigFloat.TryParseDecimal("1+-", out _));
+        Assert.False(BigFloat.TryParseDecimal("1-+", out _));
+        Assert.False(BigFloat.TryParseDecimal("*", out _));
+        Assert.False(BigFloat.TryParseDecimal("0x1", out _));
+        Assert.False(BigFloat.TryParseDecimal(".", out _));
+        Assert.False(BigFloat.TryParseDecimal("-", out _));
+        Assert.False(BigFloat.TryParseDecimal("-.", out _));
+        Assert.False(BigFloat.TryParseDecimal(".-", out _));
+        Assert.False(BigFloat.TryParseDecimal("+.", out _));
+        Assert.False(BigFloat.TryParseDecimal("1+.", out _));
+        Assert.False(BigFloat.TryParseDecimal(".1+", out _));
+        Assert.False(BigFloat.TryParseDecimal("1.+", out _));
+        Assert.False(BigFloat.TryParseDecimal("1.e", out _));
+        Assert.False(BigFloat.TryParseDecimal(".+", out _));
+        Assert.False(BigFloat.TryParseDecimal("/", out _));
+        Assert.False(BigFloat.TryParseDecimal(@"\", out _));
+        Assert.False(BigFloat.TryParseDecimal("--1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1-1", out _));
+        Assert.False(BigFloat.TryParseDecimal("0-1", out _));
+        Assert.False(BigFloat.TryParseDecimal("0-", out _));
+        Assert.False(BigFloat.TryParseDecimal("0.-", out _));
+        Assert.False(BigFloat.TryParseDecimal("1.41.", out _));
+        Assert.False(BigFloat.TryParseDecimal(".41.", out _));
+        Assert.False(BigFloat.TryParseDecimal(".4.1", out _));
+        Assert.False(BigFloat.TryParseDecimal(".4.1e", out _));
+        Assert.False(BigFloat.TryParseDecimal("XXXX", out _));
+        Assert.False(BigFloat.TryParseDecimal("XX1XX", out _));
+        Assert.False(BigFloat.TryParseDecimal("XXXX1", out _));
+        Assert.False(BigFloat.TryParseDecimal("1XXXXe10", out _));
+        Assert.False(BigFloat.TryParseDecimal("1XX.XXe10", out _));
+        Assert.False(BigFloat.TryParseDecimal("X.XX", out _));
+        Assert.False(BigFloat.TryParseDecimal("1e10XXX", out _));
     }
 
     /// <summary>
@@ -4058,7 +4147,7 @@ public class BigFloatTests
         bf = new("1230000000");
         str = bf.ToString("B");
         Assert.Equal("1001001010100000100111110000000", str); // Verify_ToStringFormat on 1230000000
-
+        
         bf = new("-1230000000");
         str = bf.ToString("B");
         Assert.Equal("-1001001010100000100111110000000", str); // Verify_ToStringFormat on -1230000000
