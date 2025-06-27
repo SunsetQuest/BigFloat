@@ -87,14 +87,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     public string ToBinaryString(bool includeGuardBits = false)
     {
         // Auto-determine guard bits to include when Scale < 32
-        int guardBitsToInclude = 0;
-        if (includeGuardBits && Scale >= 0 && Scale < 32)
-        {
-            guardBitsToInclude = Math.Min(GuardBits, Scale);
-        }
+        int guardBitsToInclude = includeGuardBits? 32 : int.Clamp(Scale-GuardBits,0,32);
 
         // Calculate buffer size including potential guard bits
-        int bufferSize = CalculateBinaryStringLength() + guardBitsToInclude;
+        int bufferSize = CalculateBinaryStringLength(guardBitsToInclude);
         Span<char> buffer = stackalloc char[bufferSize];
 
         WriteBinaryToSpan(buffer, out int charsWritten, guardBitsToInclude);
@@ -160,16 +156,31 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    private int CalculateBinaryStringLength()
+    public int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0)
     {
-        // Future: what if we just add a few instead of calculating. Also with last update it is now Aprox size.
-        bool isNeg = _mantissa.Sign < 0;
-        int size = _size - GuardBits
-            + Math.Max(Math.Max(Scale, -(_size - GuardBits) - Scale), 0)// out-of-precision zeros in the output.
-            + (Scale < 0 ? 1 : 0)                                       // add one if it has a point like (1.1)
-            + (isNeg ? 1 : 0)                                           // add one if a leading '-' sign (-0.1)
-            + 1                                                         // add one in case rollover
-            + (BinaryExponent <= 0 ? 1 : 0);                            // add one if <1 for leading Zero (0.1) 
+        numberOfGuardBitsToOutput = int.Clamp(numberOfGuardBitsToOutput, 0, GuardBits);
+        //numberOfGuardBitsToOutput = int.Clamp(Scale - GuardBits, 0, 32);
+        int guardBitsToHide = GuardBits - numberOfGuardBitsToOutput;
+
+        int size = 0;
+        size += (_mantissa.Sign < 0) ? 1 : 0;    // add one if a leading '-' sign (-1.1)
+        size += 1;                               // add one in case rollover
+         
+        if (_size < guardBitsToHide && ((_size == 0) || (_size + Scale < guardBitsToHide))) //is zero
+        {
+        }
+        else if (Scale >= GuardBits)  // is Integer
+        {
+            size += Scale - GuardBits + _size - (GuardBits - numberOfGuardBitsToOutput); // trailing out of precision zeros
+        }
+        else if (BinaryExponent <= 0) // 0.1
+        {
+            size += _size - guardBitsToHide - BinaryExponent + 2;   // leading zeros, 0.00000 and +2 for leading '0.'
+        }
+        else  // 1.1
+        {
+            size += _size - (GuardBits - numberOfGuardBitsToOutput) + 1; // +1 for point
+        }
         return size;
     }
 
@@ -180,6 +191,77 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <param name="charsWritten">The number of characters written.</param>
     /// <param name="numberOfGuardBitsToInclude">Number of guard bits to include in output (0-32).</param>
     private void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0)
+    {
+        numberOfGuardBitsToInclude = int.Clamp(numberOfGuardBitsToInclude, 0, 32);
+        //numberOfGuardBitsToInclude = Math.Max(numberOfGuardBitsToInclude, Scale- (GuardBits-numberOfGuardBitsToInclude));
+        //numberOfGuardBitsToInclude = int.Clamp(numberOfGuardBitsToInclude, 0, 32);
+        
+        int modifiedScale = Scale - (GuardBits - numberOfGuardBitsToInclude);
+        int modifiedScale2 = Scale - numberOfGuardBitsToInclude;
+
+        int pos = 0;
+        // Write a leading sign if needed.
+        if (_mantissa.Sign < 0)
+        {
+            destination[pos++] = '-';
+        }
+        // Get the absolute value as a byte array (after rounding off guard bits).
+        int size = _size;
+        BigInteger bits = RightShiftWithRound(BigInteger.Abs(_mantissa), GuardBits - numberOfGuardBitsToInclude, ref size);
+        bool carry = _size > (size - (GuardBits - numberOfGuardBitsToInclude));
+
+        if (bits.IsZero) 
+        { 
+            destination[0] = '0';
+            charsWritten = 1;
+            return; 
+        }
+
+        ReadOnlySpan<byte> bytes = bits.ToByteArray();
+        // Compute the number of leading zeros in the most significant byte.
+        int msbLeadingZeros = BitOperations.LeadingZeroCount(bytes[^1]) - 24;
+        // Three cases:
+        //   Type '0.110' - all bits are to the right of the radix point. (has leading '0.' or '-0.')
+        //   Type '11010' - if all bits are to the left of the radix point(no radix point required)
+        //   Type '11.01' - has bits below AND above the point.
+        // Special cases: '0.999' - like 0.123 above, however because of rounding, has leading '1.' or '-1.'
+        if (modifiedScale2 < 1 - size) // Type '0.110'
+        {
+            // For numbers less than one, prepend "0." and any extra zeros.
+            destination[pos++] = '0';
+            destination[pos++] = '.';
+            int zerosCount = -Scale - _size + GuardBits - (carry ? 1 : 0);
+            for (int i = 0; i < zerosCount; i++)
+            {
+                destination[pos++] = '0';
+            }
+            //destination.Slice(pos, zerosCount2).Fill('0'); pos += zerosCount;
+
+            pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
+        }
+        else if (modifiedScale2 >= 0) // Type '11010'
+        {
+            // For integer numbers (no radix point) write the bits...
+            pos += WriteBits(bytes, msbLeadingZeros, size, destination[pos..]);
+            // ...and then append any trailing zeros.
+            int trailingZeros = Math.Max(0, Scale - numberOfGuardBitsToInclude) ;
+            destination.Slice(pos, trailingZeros).Fill('0');
+            pos += trailingZeros;
+        }
+        else // Type '11.01'
+        {
+            // For numbers with a fractional part, split the bits before and after the radix point.
+            int bitsBeforePoint = size + modifiedScale2; // Scale is negative
+            int bitsAfterPoint = Math.Max(0, -modifiedScale2);
+            pos += WriteBits(bytes, msbLeadingZeros, bitsBeforePoint, destination[pos..]);
+            destination[pos++] = '.';
+            pos += WriteBits(bytes, msbLeadingZeros + bitsBeforePoint, bitsAfterPoint, destination[pos..]);
+        }
+        charsWritten = pos;
+    }
+
+
+    private void WriteBinaryToSpan0(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0)
     {
         int pos = 0;
 
