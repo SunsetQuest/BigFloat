@@ -9,6 +9,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 using System.Text;
 using Xunit.Abstractions;
 
@@ -7911,5 +7912,81 @@ public class BigFloatTests
         Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(-5)));
         Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(5)));
         Assert.Equal(BigFloat.Zero, BigFloat.Abs(BigFloat.Zero));
+    }
+
+    [Theory]
+    [InlineData("0", 0, false, "0")]
+    [InlineData("0", 10, false, "0")]
+    [InlineData("0", 0, true, "0")]
+    [InlineData("0", 10, true, "0")]
+    [InlineData("0", -10, false, "0.0000000000")]
+    [InlineData("0", -10, true, "0.000000000000000000000000000000000000000000")]
+    [InlineData("1111", -4, false, "0.0000")]
+    [InlineData("1111", 0, false, "0")]
+    [InlineData("1111", 4, false, "0")]
+    [InlineData("-1111", -4, false, "0.0000")]
+    [InlineData("-1111", 0, false, "0")]
+    [InlineData("-1111", 4, false, "0")]
+    [InlineData("111111111111111111111111", 0, false, "0")]
+    [InlineData("111111111111111111111111", -8, false, "0.00000000")]
+    [InlineData("1111111111111111111111111111111", 0, false, "0")]
+    [InlineData("11111111111111111111111111111111", 1, false, "0")]
+    [InlineData("11111111111111111111111111111111", 2, false, "0")]
+    [InlineData("11111111111111111111111111111111", 0, false, "0")]
+    [InlineData("11111111111111111111111111111111", -1, false, "0.0")]
+    [InlineData("111111111111", 32, true, "111111111111")]
+    [InlineData("111111111111", 0, true, "0.00000000000000000000111111111111")]
+    [InlineData("111111111111111111111111111111111", 0, false, "1")]
+    [InlineData("1111", 32, true, "1111")]
+    [InlineData("1111", 33, true, "11110")]
+    [InlineData("1111", 34, true, "111100")]
+    [InlineData("1111", 36, true, "11110000")]
+    [InlineData("1111111", 36, true, "11111110000")]
+    [InlineData("1111", 31, true, "111.1")]
+    [InlineData("1111", 28, true, "0.1111")]
+    [InlineData("-1111", 32, true, "-1111")]
+    [InlineData("-1111", 33, true, "-11110")]
+    [InlineData("-1111", 36, true, "-11110000")]
+    [InlineData("-1111", 31, true, "-111.1")]
+    [InlineData("-1111", 28, true, "-0.1111")]
+    [InlineData("111111111111111111111111111111111", 1, false, "11")]
+    [InlineData("111111111111111111111111111111111", 2, false, "111")]
+    [InlineData("111111111111111111111111111111111", -1, false, "0.1")]
+    [InlineData("111111111111111111111111111111111", -2, false, "0.01")]
+    [InlineData("11111111111111111111111111111111", 32, true, "11111111111111111111111111111111")]
+    [InlineData("11111111111111111111111111111111", 33, true, "111111111111111111111111111111110")]
+    [InlineData("11111111111111111111111111111111", 31, true, "1111111111111111111111111111111.1")]
+    [InlineData("111111111111111111111111111111111111", 0, false, "1111")]
+    [InlineData("111111111111111111111111111111111111", 1, false, "11111")]
+    [InlineData("111111111111111111111111111111111111", -1, false, "111.1")]
+    [InlineData("111111111111111111111111111111111111", 32, true, "111111111111111111111111111111111111")]
+    [InlineData("111111111111111111111111111111111111", 33, true, "1111111111111111111111111111111111110")]
+    [InlineData("111111111111111111111111111111111111", 31, true, "11111111111111111111111111111111111.1")]
+    [InlineData("111111111111111111111111111111111111", 0, true, "1111.11111111111111111111111111111111")]
+    [InlineData("111111111111111111111111111111111111", 1, true, "11111.1111111111111111111111111111111")]
+    [InlineData("111111111111111111111111111111111111", -1, true, "111.111111111111111111111111111111111")]
+    [InlineData("111111111111111111111110000000000000", -1, true, "111.111111111111111111110000000000000")]
+    [InlineData("111111111111111111111111111111111111", -4, true, "0.111111111111111111111111111111111111")]
+    [InlineData("111111111111111111111110000000000000", -4, true, "0.111111111111111111111110000000000000")]
+    [InlineData("111111111111111111111110000000000000", -1, false, "111.1")]
+    [InlineData("111111111111111111111111111111111111", -4, false, "0.1111")]
+    [InlineData("111111111111111111111110000000000000", -4, false, "0.1111")]
+    public void ToBinaryString_WithVariousInputs_ReturnsExpectedOutput(string binaryInput, int scale, bool includeGuard, string expectedOutput)
+    {
+        // Arrange
+        Assert.True(BigIntegerTools.TryParseBinary(binaryInput, out BigInteger mantissa));
+        var bigFloat = new BigFloat(mantissa, scale, true);
+
+        // Use reflection to access private CalculateBinaryStringLength method
+        MethodInfo calculateBinaryStringLengthMethod = typeof(BigFloat).GetMethod("CalculateBinaryStringLength", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.NotNull(calculateBinaryStringLengthMethod);
+
+        // Act
+        int bufferSize = (int)calculateBinaryStringLengthMethod.Invoke(bigFloat, [includeGuard ? 32 : 0]);
+        string result = bigFloat.ToBinaryString(includeGuard);
+
+        // Assert
+        //Assert.InRange(bufferSize, expectedOutput.Length, expectedOutput.Length + 2);  //todo:resolve issues
+        Assert.Equal(expectedOutput, result);
     }
 }

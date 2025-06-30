@@ -5,10 +5,8 @@
 // Starting 2/25, ChatGPT was used in the development of this library.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
-using System.Reflection;
 using System.Text;
 using static BigFloatLibrary.BigIntegerTools;
 
@@ -144,12 +142,11 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         charsWritten = 0;
 
         // Handle zero mantissa special case
-        //        if (_mantissa.IsZero)
-        bool a = ((_size == 0) || (_size + Scale < (GuardBits - numberOfGuardBitsToInclude))); //is zero
-        bool b = (((_size == 0) || (_size + Scale < numberOfGuardBitsToInclude))); //is zero
-        bool c = ((_size == 0) || (_size <= 32 && numberOfGuardBitsToInclude == 0)); //is zero
+        //bool isZero1 = ((_size == 0) || (_size + Scale < (GuardBits - numberOfGuardBitsToInclude)));
+        //bool isZero2 = (((_size == 0) || (_size + Scale < numberOfGuardBitsToInclude)));
+        bool isZero3 = ((_size == 0) || (_size <= 32 && numberOfGuardBitsToInclude == 0));
 
-        if (c)
+        if (isZero3)
         {
             destination[charsWritten++] = '0';
 
@@ -170,7 +167,6 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         var absMantissa = BigInteger.Abs(_mantissa);
 
         int totalBits = _size;
-        int realBits = Math.Max(0, totalBits - GuardBits);
 
         // Key insight: Scale determines how bits are interpreted
         // Scale = 0: Real bits are whole, guard bits are fractional
@@ -178,17 +174,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // Scale < 0: Some real bits become fractional (shift right)
 
         // Calculate which bits are whole vs fractional
-        int wholeBitCount;
-        //if (Scale >= GuardBits)
-        {
-            // All bits (including guard bits) are whole, plus extra zeros
-            wholeBitCount = totalBits + (Scale - GuardBits);
-        }
-        //else
-        //{
-        //    // Standard case: real bits + scale determines whole count
-        //    wholeBitCount = realBits + Scale;
-        //}
+        int wholeBitCount = totalBits + (Scale - GuardBits);
 
         // Determine output range based on guard bit inclusion
         int outputStart = totalBits - 1;
@@ -208,12 +194,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // Determine if we need a decimal point
-        bool hasWholePart = wholeBitCount > 0 || (wholeBitCount == 0 && outputEnd < GuardBits);
         bool hasFracPart = wholeBitCount < totalBits && outputEnd < totalBits - wholeBitCount;
 
         // Write whole part
         if (wholeBitCount <= 0)
-        //if (!hasWholePart)
         {
             destination[charsWritten++] = '0';
         }
@@ -299,7 +283,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    public int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0) //todo: put back to private
+    private int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0) //todo: put back to private
     {
         numberOfGuardBitsToOutput = int.Clamp(numberOfGuardBitsToOutput, 0, GuardBits);
         //numberOfGuardBitsToOutput = int.Clamp(Scale - GuardBits, 0, 32);

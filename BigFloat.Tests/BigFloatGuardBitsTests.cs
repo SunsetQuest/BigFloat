@@ -47,7 +47,7 @@ public class BigFloatGuardBitsTests
         }
 
         // Should be identical to traditional result
-        Assert.Equal(withoutGuard.Remove(withoutGuard.Length - BigFloat.GuardBits), withGuard);
+        Assert.Equal(withoutGuard[..^BigFloat.GuardBits], withGuard);
     }
 
     [Theory]
