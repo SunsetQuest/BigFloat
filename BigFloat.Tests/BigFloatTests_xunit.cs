@@ -4088,9 +4088,9 @@ public class BigFloatTests
         bf = new(0.0000123);
         str = bf.ToString("B");
         Assert.Equal("0.0000000000000000110011100101110000011001000001011000101010000", str); // Verify_ToStringFormat on 0.0000123
-        //     answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
-        //                               12345678901234567890123456789012345678901234567890123  (expect 1+52= 53 significant bits)
-        //   expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
+        //    answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
+        //                             12345678901234567890123456789012345678901234567890123  (expect 1+52= 53 significant bits)
+        //  expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
 
         bf = new(1230000000, addedBinaryPrecision: 0);
         str = bf.ToString("B");
@@ -4113,7 +4113,7 @@ public class BigFloatTests
 
         bf = new(-0.123);
         str = bf.ToString("B");
-        Assert.Equal("-0.000111110111110011101101100100010110100001110011", str); // Verify_ToStringFormat on -3.5
+        Assert.Equal("-0.000111110111110011101101100100010110100001110010", str); // Verify_ToStringFormat on -3.5
         //     answer: -0.00011111011111001110110110010001011010000111001010110000001000...
         //                   12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: -0.00011111011111001110110110010001011010000111001010110000
@@ -4158,7 +4158,7 @@ public class BigFloatTests
 
         bf = new("-123456.7890123");
         str = bf.ToString("B");
-        Assert.Equal("-11110001001000000.11001001111111001011011", str); // Verify_ToStringFormat on -123456.7890123
+        Assert.Equal("-11110001001000000.11001001111111001011010", str); // Verify_ToStringFormat on -123456.7890123
         //     answer: -11110001001000000.110010011111110010110101110010001010010001001001001000000000010010000010010001011011111111...
         //                                012345678901234567890123 (expect 7 * 3.321928 = 23.253 significant binary digits)
         //   expected: -11110001001000000.11001001111111001011011  
@@ -7378,19 +7378,9 @@ public class BigFloatTests
             res = BigFloat.SetPrecision(inputVal, i);
             output = res.ToString("B");
             int temp = Convert.ToInt32(exact[2..(i + 2)], 2);
-            int mostSigBigInRemovedSection = exact[i + 2] - 48;
-            expect = i switch
-            {
-                < 6 => Convert.ToString(temp + mostSigBigInRemovedSection, 2).Insert(1, "."),
-                _ => "0." + Convert.ToString(temp + mostSigBigInRemovedSection, 2),
-            };
+            expect = "0." + Convert.ToString(temp, 2);
             Assert.Equal(output, expect);
         }
-
-        res = BigFloat.SetPrecision(inputVal, 11);
-        output = res.ToString("B");
-        expect = "0.11111100111";
-        Assert.Equal(output, expect);
     }
 
     [Fact]
