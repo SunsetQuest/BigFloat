@@ -47,7 +47,7 @@ public class BigFloatGuardBitsTests
         }
 
         // Should be identical to traditional result
-        Assert.Equal(withoutGuard[..^BigFloat.GuardBits], withGuard);
+        Assert.Equal(withGuard[..^BigFloat.GuardBits], withoutGuard);
     }
 
     [Theory]
@@ -58,7 +58,7 @@ public class BigFloatGuardBitsTests
     {
         // Arrange
         BigInteger mantissa = BigInteger.Parse("123456789012345678901234567890");
-        var bigFloat = new BigFloat(mantissa, scale - BigFloat.GuardBits, true);
+        var bigFloat = new BigFloat(mantissa, scale, true);
 
         // Act
         string resultWithGuardBits = bigFloat.ToBinaryString(includeGuardBits: true);
@@ -66,10 +66,6 @@ public class BigFloatGuardBitsTests
 
         // Assert - Should be identical since Scale >= 32
         Assert.Equal(resultWithoutGuardBits, resultWithGuardBits);
-
-        // Should end with all zeros (traditional behavior)
-        string trailingZeros = resultWithGuardBits[^scale..];
-        Assert.Equal(new string('0', scale), trailingZeros);
     }
 
     [Theory]
@@ -117,15 +113,15 @@ public class BigFloatGuardBitsTests
     [InlineData("11110000111100001111000011110000", 4, 2)]  // Block pattern
     [InlineData("00000000000000000000000000000001", 2, 1)]  // Single bit set
     public void ToBinaryString_WithSpecificPatterns_ShouldPreserveGuardBits(
-        string mantissaBinary, int scale, int expectedGuardBits)
+        string mantissaBinary, int scale, int nTrailingGuardBits)
     {
         // Arrange
         Assert.True(BigIntegerTools.TryParseBinary(mantissaBinary, out BigInteger mantissa));
-        var bigFloat = new BigFloat(mantissa, scale - BigFloat.GuardBits, true);
+        var bigFloat = new BigFloat(mantissa, scale, true);
 
-        // Extract expected guard bits from original mantissa
-        BigInteger guardBitMask = (BigInteger.One << expectedGuardBits) - 1;
-        BigInteger expectedGuardBitsValue = mantissa & guardBitMask;
+        // Extract the last few guard bits from original mantissa
+        BigInteger guardBitMask = (BigInteger.One << nTrailingGuardBits) - 1;
+        BigInteger expectednTrailingGuardBitValue = mantissa & guardBitMask;
 
         // Act
         string result = bigFloat.ToBinaryString(includeGuardBits: true);
@@ -133,23 +129,23 @@ public class BigFloatGuardBitsTests
         // Assert
         Assert.True(result.Length > 0);
 
-        // Extract the guard bit section from result
-        string actualGuardBits = result.Substring(result.Length - scale, expectedGuardBits);
+        // Extract the trailing GuardBits from result
+        string actualTrailingGuardBits = result[^nTrailingGuardBits..];
 
         // Convert expected guard bits to string (MSB first)
         string expectedGuardBitsString = "";
-        for (int i = expectedGuardBits - 1; i >= 0; i--)
+        for (int i = nTrailingGuardBits - 1; i >= 0; i--)
         {
-            bool bitSet = !((expectedGuardBitsValue >> i) & 1).IsZero;
+            bool bitSet = !((expectednTrailingGuardBitValue >> i) & 1).IsZero;
             expectedGuardBitsString += bitSet ? '1' : '0';
         }
 
-        Assert.Equal(expectedGuardBitsString, actualGuardBits);
+        Assert.Equal(expectedGuardBitsString, actualTrailingGuardBits);
     }
 
     [Theory]
-    [InlineData(1)]    // Negative Scale should not expose guard bits
-    [InlineData(10)]   // More negative Scale
+    [InlineData(32)]
+    [InlineData(33)]
     public void ToBinaryString_WithNegativeScale_ShouldNotExposeGuardBits(int scale)
     {
         // Arrange
@@ -160,7 +156,7 @@ public class BigFloatGuardBitsTests
         string resultWithGuardBits = bigFloat.ToBinaryString(includeGuardBits: true);
         string resultWithoutGuardBits = bigFloat.ToBinaryString(includeGuardBits: false);
 
-        // Assert - Should be identical since negative scale means fractional representation
+        // Assert - Should be identical since scales larger than GuardBit count show GuardBits anyway.
         Assert.Equal(resultWithoutGuardBits, resultWithGuardBits);
     }
 
@@ -175,8 +171,23 @@ public class BigFloatGuardBitsTests
         string resultWithoutGuardBits = bigFloat.ToBinaryString(includeGuardBits: false);
 
         // Assert
-        Assert.Equal("0", resultWithGuardBits);
+        Assert.Equal("0.00000000000000000000000000000000", resultWithGuardBits);
         Assert.Equal("0", resultWithoutGuardBits);
+    }
+
+    [Fact]
+    public void ToBinaryString_WithZeroWithAccuracyValue_ShouldHandleGuardBitsCorrectly()
+    {
+        // Arrange
+        var bigFloat = BigFloat.ZeroWithAccuracy(10);
+
+        // Act
+        string resultWithGuardBits = bigFloat.ToBinaryString(includeGuardBits: true);
+        string resultWithoutGuardBits = bigFloat.ToBinaryString(includeGuardBits: false);
+
+        // Assert
+        Assert.Equal("0." + new string('0', 10 + BigFloat.GuardBits), resultWithGuardBits);
+        Assert.Equal("0." + new string('0', 10), resultWithoutGuardBits);
     }
 
     [Theory]

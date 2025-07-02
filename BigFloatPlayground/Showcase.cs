@@ -24,7 +24,7 @@ public static class Showcase
     ////////////// Play Area & Examples //////////////
     public static void Main()
     {
-        //////////////////// TEST AREA ////////////////////               
+        //////////////////// TEST AREA //////////////////// 
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
         //Console.WriteLine("2320000 -> " + BigFloat.Parse("2320000"));
         //Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));

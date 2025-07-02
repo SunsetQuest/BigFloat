@@ -7915,12 +7915,15 @@ public class BigFloatTests
     }
 
     [Theory]
+    [InlineData("0", -10, false, "0.0000000000")]
     [InlineData("0", 0, false, "0")]
     [InlineData("0", 10, false, "0")]
-    [InlineData("0", 0, true, "0")]
-    [InlineData("0", 10, true, "0")]
-    [InlineData("0", -10, false, "0.0000000000")]
     [InlineData("0", -10, true, "0.000000000000000000000000000000000000000000")]
+    [InlineData("0", 0, true, "0.00000000000000000000000000000000")]
+    [InlineData("0", 10, true, "0.0000000000000000000000")]
+    [InlineData("0", 31, true, "0.0")]
+    [InlineData("0", 32, true, "0")]
+    [InlineData("0", 33, true, "0")]
     [InlineData("1111", -4, false, "0.0000")]
     [InlineData("1111", 0, false, "0")]
     [InlineData("1111", 4, false, "0")]
@@ -7978,15 +7981,17 @@ public class BigFloatTests
         var bigFloat = new BigFloat(mantissa, scale, true);
 
         // Use reflection to access private CalculateBinaryStringLength method
-        MethodInfo calculateBinaryStringLengthMethod = typeof(BigFloat).GetMethod("CalculateBinaryStringLength", BindingFlags.NonPublic | BindingFlags.Instance);
+        MethodInfo? calculateBinaryStringLengthMethod = typeof(BigFloat).GetMethod("CalculateBinaryStringLength", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(calculateBinaryStringLengthMethod);
 
         // Act
-        int bufferSize = (int)calculateBinaryStringLengthMethod.Invoke(bigFloat, [includeGuard ? 32 : 0]);
+        int? bufferSizeNullable = calculateBinaryStringLengthMethod.Invoke(bigFloat, [includeGuard ? 32 : 0]) as int?;
+        Assert.NotNull(bufferSizeNullable);
+        int bufferSize = bufferSizeNullable.Value;
         string result = bigFloat.ToBinaryString(includeGuard);
 
         // Assert
-        //Assert.InRange(bufferSize, expectedOutput.Length, expectedOutput.Length + 2);  //todo:resolve issues
+        Assert.InRange(bufferSize, expectedOutput.Length, expectedOutput.Length + 2);
         Assert.Equal(expectedOutput, result);
     }
 }
