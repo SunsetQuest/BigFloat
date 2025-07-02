@@ -137,24 +137,21 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
     public void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0)
     {
-        const int GuardBits = 32;
         numberOfGuardBitsToInclude = Math.Clamp(numberOfGuardBitsToInclude, 0, GuardBits);
         charsWritten = 0;
 
         // Handle zero mantissa special case
-        //bool isZero1 = ((_size == 0) || (_size + Scale < (GuardBits - numberOfGuardBitsToInclude)));
-        //bool isZero2 = (((_size == 0) || (_size + Scale < numberOfGuardBitsToInclude)));
-        bool isZero3 = ((_size == 0) || (_size <= 32 && numberOfGuardBitsToInclude == 0));
+        bool isZero = (_size == 0) || (_size <= (GuardBits - numberOfGuardBitsToInclude));
 
-        if (isZero3)
+        if (isZero)
         {
             destination[charsWritten++] = '0';
 
             // Add decimal point and trailing zeros if scale is negative
-            if (Scale < 0)
+            int zerosToWrite = numberOfGuardBitsToInclude - Scale;
+            if (zerosToWrite > 0)
             {
                 destination[charsWritten++] = '.';
-                int zerosToWrite = numberOfGuardBitsToInclude - Scale;
                 for (int i = 0; i < zerosToWrite; i++)
                 {
                     destination[charsWritten++] = '0';
@@ -283,7 +280,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    private int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0) //todo: put back to private
+    private int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0)
     {
         numberOfGuardBitsToOutput = int.Clamp(numberOfGuardBitsToOutput, 0, GuardBits);
         //numberOfGuardBitsToOutput = int.Clamp(Scale - GuardBits, 0, 32);
