@@ -45,7 +45,6 @@ public readonly partial struct BigFloat
     /// </summary>
     private const int KARATSUBA_THRESHOLD = 256;  // Threshold for switching to Karatsuba multiplication
     private const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;  // Threshold for advanced division algorithms
-    private const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
 
     /// <summary>
     /// Gets the full integer's data bits, including guard bits.
@@ -715,6 +714,8 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
     {
+        const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
+        
         // Early exit for zero divisor
         if (dividend.IsZero)
         {
@@ -1329,45 +1330,21 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat operator *(BigFloat a, BigFloat b)
     {
-        // Early exit for zero operands
+        // Early exit for zero operands //Future: use "isStrictZero" and maybe try and preserver accuracy.
         if (a.IsZero || b.IsZero) return Zero;
 
-        // Use optimized algorithms based on size
-        if (a._size < SMALL_NUMBER_THRESHOLD && b._size < SMALL_NUMBER_THRESHOLD)
-        {
-            return MultiplySmallNumbers(a, b);
+        return Multiply(a, b);
         }
-
-        if (a._size > KARATSUBA_THRESHOLD || b._size > KARATSUBA_THRESHOLD)
-        {
-            return MultiplyLargeNumbers(a, b);
-        }
-
-        return MultiplyStandard(a, b);
-    }
-
-    /// <summary>
-    /// Optimized multiplication for small numbers
-    /// </summary>
-    private static BigFloat MultiplySmallNumbers(BigFloat a, BigFloat b)
-    {
-        // future: implement optimized small number multiplication using hardware arithmetic when possible
-        return MultiplyStandard(a, b);
-    }
-
-    /// <summary>
-    /// Optimized multiplication for large numbers using advanced algorithms
-    /// </summary>
-    private static BigFloat MultiplyLargeNumbers(BigFloat a, BigFloat b)
-    {
-        // future: implement Karatsuba or FFT multiplication for better performance on large numbers
-        return MultiplyStandard(a, b);
-    }
 
     /// <summary>
     /// Standard multiplication algorithm with optimizations
     /// </summary>
-    private static BigFloat MultiplyStandard(BigFloat a, BigFloat b)
+    public BigFloat Multiply(BigFloat other)
+    {
+        return Multiply(this, other);
+    }
+
+    public static BigFloat Multiply(BigFloat a, BigFloat b)
     {
         BigInteger prod;
         int shouldBe;
