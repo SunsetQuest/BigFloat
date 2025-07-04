@@ -109,6 +109,86 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a BigFloat from a decimal value.
+    /// Converts from decimal (base-10) to binary representation.
+    /// </summary>
+    public BigFloat(decimal value, int binaryScaler = 0, int addedBinaryPrecision = 24)
+    {
+        if (value == 0m)
+        {
+            _mantissa = 0;
+            Scale = binaryScaler + GuardBits - addedBinaryPrecision;
+            _size = 0;
+            AssertValid();
+            return;
+        }
+
+        // Extract decimal components
+        int[] bits = decimal.GetBits(value);
+        bool isNegative = (bits[3] & 0x80000000) != 0;
+        byte scale = (byte)((bits[3] >> 16) & 0x7F);
+
+        // Reconstruct the 96-bit integer mantissa
+        BigInteger decimalMantissa = ((BigInteger)(uint)bits[2] << 64) |
+                                     ((BigInteger)(uint)bits[1] << 32) |
+                                     (uint)bits[0];
+
+        // The decimal value is: decimalMantissa * 10^(-scale)
+        // We need to convert this to binary: mantissa * 2^exponent
+
+        // Strategy: Convert 10^(-scale) to 2^x * 5^(-scale)
+        // Then: value = decimalMantissa * 5^(-scale) * 2^(-scale)
+
+        BigInteger numerator = decimalMantissa;
+        BigInteger denominator = BigInteger.Pow(5, scale);
+        int binaryExponent = -scale;
+
+        // Normalize: ensure numerator is odd (extract all factors of 2)
+        int trailingZeros = 0;
+        BigInteger temp = numerator;
+        while (!temp.IsZero && temp.IsEven)
+        {
+            temp >>= 1;
+            trailingZeros++;
+        }
+
+        if (trailingZeros > 0)
+        {
+            numerator >>= trailingZeros;
+            binaryExponent += trailingZeros;
+        }
+
+        // Now we have: value = (numerator / denominator) * 2^binaryExponent
+        // We need to convert the fraction to a normalized binary form
+
+        // Find the number of bits we need to shift numerator to make division exact enough
+        int numeratorBits = (int)numerator.GetBitLength();
+        int denominatorBits = (int)denominator.GetBitLength();
+
+        // We want enough precision: shift left to get desired precision
+        int shiftBits = Math.Max(53 + addedBinaryPrecision - numeratorBits + denominatorBits, 0);
+
+        BigInteger shiftedNumerator = numerator << shiftBits;
+        BigInteger mantissa = shiftedNumerator / denominator;
+
+        // Adjust binary exponent
+        binaryExponent -= shiftBits;
+
+        // Apply sign
+        if (isNegative)
+        {
+            mantissa = -mantissa;
+        }
+
+        // Set fields
+        _mantissa = mantissa;
+        _size = (int)BigInteger.Abs(mantissa).GetBitLength();
+        Scale = binaryExponent + binaryScaler + GuardBits;
+
+        AssertValid();
+    }
+
     /////////////////////////// Implicit CASTS ///////////////////////////
 
     /// <summary>Defines an implicit conversion of an 8-bit signed integer to a BigFloat.</summary>
