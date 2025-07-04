@@ -49,7 +49,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Gets the full integer's data bits, including guard bits.
     /// </summary>
-    public readonly BigInteger _mantissa;
+    public readonly BigInteger _mantissa; //Future: change to private?
 
     /// <summary>
     /// _size are the number of precision bits. It is equal to "ABS(DataBits).GetBitLength()". The ABS is for 
@@ -1334,7 +1334,7 @@ public readonly partial struct BigFloat
         if (a.IsZero || b.IsZero) return Zero;
 
         return Multiply(a, b);
-        }
+    }
 
     /// <summary>
     /// Standard multiplication algorithm with optimizations
