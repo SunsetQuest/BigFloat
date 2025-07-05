@@ -6,6 +6,7 @@
 
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -108,6 +109,62 @@ public readonly partial struct BigFloat
         Scale = binaryScaler; // DataBits of zero can have scale
         AssertValid();
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat BitIncrement(in BigFloat x)
+       => BitAdjust(x, 1);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat BitDecrement(in BigFloat x)
+       => BitAdjust(x, -1);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat GuardBitIncrement(in BigFloat x)
+       => BitAdjust(x, 1L << GuardBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat GuardBitDecrement(in BigFloat x)
+       => BitAdjust(x, -(1L << GuardBits));
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat BitAdjust(in BigFloat x, long delta)
+    {
+        BigInteger mant = x._mantissa;
+        int size = x._size;
+        bool positive = mant.Sign >= 0;
+
+        // fast path: small mantissa → ulong
+        if (size < 63)
+        {
+            long uNew = (long)mant + delta;
+            size = 64 - BitOperations.LeadingZeroCount((ulong)Math.Abs(uNew));
+            return new BigFloat((BigInteger)uNew, x.Scale, size);
+        }
+
+        // slow path: BigInteger arithmetic
+        BigInteger newVal = mant + delta;
+        BigInteger absNew = BigInteger.Abs(newVal);
+
+        if (delta == 1L)
+        {
+            if ((absNew & (absNew - BigInteger.One)).IsZero)
+                size ++;
+        }
+        else if (delta == -1L)
+        {
+            if ((mant & (mant - BigInteger.One)).IsZero)
+                size --;
+        }
+        else
+        {
+            // fallback to your existing GetBitLength (rarely hit)
+            size = (int)absNew.GetBitLength();
+        }
+
+        return new BigFloat(newVal, x.Scale, size);
+    }
+
 
     /// <summary>
     /// Initializes a BigFloat from a decimal value.
