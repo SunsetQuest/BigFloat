@@ -33,19 +33,11 @@ public class BitAdjustTests
     [Theory]
     [InlineData(3, 0)]
     [InlineData(3, 5)]
-    public void BitIncrement_MonotonicIncrease(long m, int scale)
-    {
-        var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.BitIncrement(x);
-        Assert.True(y == x, "BitIncrement usually does not impact compares - unless it causes a rollover.");
-    }
-
-    [Theory]
     [InlineData(long.MaxValue, 0)]
     [InlineData(uint.MaxValue, 0)]
-    [InlineData(3, 0)]
     [InlineData(-1, 4)]
-    public void BitIncrement_MonotonicIncrease2(long m, int scale)
+    [InlineData(-0x200000000000, -45)]
+    public void BitIncrement_MonotonicEqual(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
         var y = BigFloat.BitIncrement(x);
@@ -54,7 +46,7 @@ public class BitAdjustTests
 
     [Theory]
     [InlineData(int.MaxValue, 0)]
-    public void BitIncrement_MonotonicIncrease3(long m, int scale)
+    public void BitIncrement_MonotonicIncrease(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
         var y = BigFloat.BitIncrement(x);
@@ -78,6 +70,8 @@ public class BitAdjustTests
     [InlineData(7, 0, 8, 1)]
     [InlineData(9, 0, 8, 0)]
     [InlineData(8, 0, 7, -1)]
+    [InlineData(-0x200000000000, -45, -0x1FFFFFFFFFFF, -1)]
+    [InlineData(-0x1FFFFFFFFFFF, -45, -0x200000000000, 1)]
     public void PowerOfTwo_BoundaryAdjustsSize(long m, int scale, long expectedMantissa, int sizeDelta)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
