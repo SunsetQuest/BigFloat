@@ -132,7 +132,6 @@ public readonly partial struct BigFloat
     {
         BigInteger mant = x._mantissa;
         int size = x._size;
-        bool positive = mant.Sign >= 0;
 
         // fast path: small mantissa → ulong
         if (size < 63)
@@ -146,14 +145,14 @@ public readonly partial struct BigFloat
         BigInteger newVal = mant + delta;
         BigInteger absNew = BigInteger.Abs(newVal);
 
-        if (delta == 1L)
+        if (delta == mant.Sign)
         {
             if ((absNew & (absNew - BigInteger.One)).IsZero)
                 size ++;
         }
-        else if (delta == -1L)
+        else if (delta == -mant.Sign)
         {
-            if ((mant & (mant - BigInteger.One)).IsZero)
+            if ((BigInteger.Abs(mant) & (BigInteger.Abs(mant) - BigInteger.One)).IsZero)
                 size --;
         }
         else
