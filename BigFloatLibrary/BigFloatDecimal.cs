@@ -128,7 +128,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
 
             // Use data bit size (without GuardBits) when determining precision to remove.
-            int bitsToRemove = Math.Max(0, bigFloat.Size - DecimalPrecisionBits);
+            int bitsToRemove = Math.Max(0, bigFloat._size - 93);
 
             if (bitsToRemove > 0)
             {
