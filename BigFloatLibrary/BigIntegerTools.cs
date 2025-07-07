@@ -930,7 +930,7 @@ public static class BigIntegerTools
     /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
     /// <returns>The rounded result of shifting val to the right by bitsToRemove.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigInteger RightShiftWithRound(BigInteger val, int targetBitsToRemove)
+    public static BigInteger RightShiftWithRound(BigInteger val, int targetBitsToRemove) //future: rename to RoundingRightShift
     {
         bool isPos = val.Sign >= 0;
         if (!isPos) val = -val;
