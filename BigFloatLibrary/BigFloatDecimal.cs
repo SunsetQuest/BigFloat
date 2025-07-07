@@ -104,6 +104,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         private const int DecimalMaxScale = 28;
         private const int DecimalPrecisionBits = 96; // 96-bit mantissa in decimal
+        // We keep a few extra bits of precision before converting to avoid
+        // rounding issues when the binary precision slightly exceeds what
+        // the decimal type can store.
+        private const int DecimalExtraPrecisionBits = 3;
         private const uint DecimalSignMask = 0x80000000;
         private const int DecimalScaleShift = 16;
 
@@ -127,8 +131,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 flags = DecimalSignMask;
             }
 
-            // Use data bit size (without GuardBits) when determining precision to remove.
-            int bitsToRemove = Math.Max(0, bigFloat._size - 93);
+            // Remove any excess precision beyond what the decimal type can hold.
+            int targetPrecision = DecimalPrecisionBits - DecimalExtraPrecisionBits;
+            int bitsToRemove = Math.Max(0, bigFloat._size - targetPrecision);
 
             if (bitsToRemove > 0)
             {
