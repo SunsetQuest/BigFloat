@@ -137,11 +137,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
             var (low, mid, high, decimalScale) = ConvertMantissaToDecimal(mantissa, bigFloat.Scale + bitsToRemove - BigFloat.GuardBits);
 
-            Span<int> bits = stackalloc int[4];
-            bits[0] = (int)low;
-            bits[1] = (int)mid;
-            bits[2] = (int)high;
-            bits[3] = (int)(flags | ((uint)decimalScale << DecimalScaleShift));
+            Span<int> bits =
+            [
+                (int)low,
+                (int)mid,
+                (int)high,
+                (int)(flags | ((uint)decimalScale << DecimalScaleShift)),
+            ];
             return new decimal(bits);
         }
 

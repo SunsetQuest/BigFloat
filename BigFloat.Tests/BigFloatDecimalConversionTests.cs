@@ -21,7 +21,7 @@ public class BigFloatDecimalConversionTests
     }
 
     [Theory]
-    //[InlineData("0.0")]
+    [InlineData("0.0")]
     [InlineData("1.0")]
     [InlineData("-1.0")]
     [InlineData("2.0")]
@@ -53,11 +53,8 @@ public class BigFloatDecimalConversionTests
 
         decimal converted = (decimal)bf;
 
-        decimal diff = Math.Abs(original - converted);
-        decimal diff2 = diff/ original;
-       
         // Assert
-        //Assert.True(diff2 < 0.000000000000000000000006M);
+        //Assert.True(Math.Abs(original - converted)/ original < 0.000000000000000000000006M);
         Assert.Equal(original, converted);
     }
 
