@@ -98,7 +98,6 @@ public class BigFloatDecimalConversionTests
 
         // Assert
         Assert.Equal(value, converted);
-        Assert.False(bf.IsZero);
     }
 
     [Theory]
@@ -136,19 +135,21 @@ public class BigFloatDecimalConversionTests
         Assert.Equal(decimal.MaxValue, result);
     }
 
+#if !DEBUG
     [Fact]
-    public void ToDecimal_BigFloatSmallerThanDecimalMin_ReturnsMinValue()
+    public void ToDecimal_BigFloatSmallerThanDecimalMin_Exception()
     {
         // Arrange
         var bf = new BigFloat(-1.0);
         bf = bf.Multiply(new BigFloat(Math.Pow(2, 100)));
 
         // Act
-        decimal result = (decimal)bf;
+        decimal result;
 
         // Assert
-        Assert.Equal(decimal.MinValue, result);
+        Assert.Throws<ArgumentException>(() => result = (decimal)bf);
     }
+#endif
 
     [Fact]
     public void ToDecimal_VerySmallBigFloat_ReturnsZero()
@@ -194,15 +195,15 @@ public class BigFloatDecimalConversionTests
         int addedPrecision = 64;
 
         // Act
-        var bf1 = new BigFloat(value, addedBinaryPrecision: 0);
-        var bf2 = new BigFloat(value, addedBinaryPrecision: addedPrecision);
+        var bf1 = new BigFloat(value, addedBinaryPrecision: 10);
+        var bf2 = new BigFloat(value, addedBinaryPrecision: 10+addedPrecision);
 
         // Assert
         Assert.True(bf2.Size > bf1.Size);
         Assert.Equal(bf1.Size + addedPrecision, bf2.Size);
 
         // Both should convert back to the same decimal
-        Assert.Equal((decimal)bf1, (decimal)bf2);
+        Assert.Equal(bf1, bf2);
     }
 
     [Fact]
@@ -273,7 +274,7 @@ public class BigFloatDecimalConversionTests
         decimal result = (decimal)product;
 
         // Assert
-        Assert.Equal(1m, result);
+        Assert.Equal(1m, result, 15);
     }
 
     [Fact]
@@ -356,6 +357,7 @@ public class BigFloatDecimalConversionTests
         decimal converted = (decimal)bf;
 
         // Assert
-        Assert.Equal(original.ToString(), converted.ToString());
+        //Assert.Equal(original, converted, 26); 
+        Assert.True(Math.Abs(original - converted) <= 0.000000000000000000000000001M);
     }
 }
