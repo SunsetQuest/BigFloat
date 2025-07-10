@@ -717,7 +717,7 @@ public readonly partial struct BigFloat
         const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
         
         // Early exit for zero divisor
-        if (dividend.IsZero)
+        if (dividend.IsStrictZero)
         {
             throw new DivideByZeroException("Division by zero");
         }
