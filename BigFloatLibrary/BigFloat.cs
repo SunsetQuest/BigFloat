@@ -1246,9 +1246,9 @@ public readonly partial struct BigFloat
 
     public static BigFloat operator -(BigFloat r1, BigFloat r2)
     {
-        // Early exit for zero operands
-        if (r2.IsZero) return r1;
-        if (r1.IsZero) return -r2;
+        //// Early exit for zero operands
+        if (r2.IsStrictZero) return r1; // Future: review if this is needed and is accuracy preserved.
+        if (r1.IsStrictZero) return -r2;
 
         BigInteger r1Bits = (r1.Scale < r2.Scale) ? (r1._mantissa >> (r2.Scale - r1.Scale)) : r1._mantissa;
         BigInteger r2Bits = (r1.Scale > r2.Scale) ? (r2._mantissa >> (r1.Scale - r2.Scale)) : r2._mantissa;
