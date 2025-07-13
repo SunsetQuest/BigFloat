@@ -452,7 +452,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // #########.  - check to see if we have an integer, if so, no Pow(5) scaling required
         if (scale < 1)
         {
-            return MantissaWithoutGuardBits(intVal << scale).ToString();
+            return GetRoundedMantissa(intVal << scale).ToString();
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point

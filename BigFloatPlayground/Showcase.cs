@@ -672,7 +672,7 @@ public static class Showcase
             {
                 BigFloat res = Pow(val, exp);
                 double correct = Math.Pow((double)val, exp);
-                Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.MantissaWithGuardBitsRoundedOff,4} << {res.Scale,2})  Correct: {correct,8}");
+                Console.WriteLine($"{val,3}^{exp,2} = {res,8} ({res.RoundedMantissa,4} << {res.Scale,2})  Correct: {correct,8}");
             }
         }
     }
