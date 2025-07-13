@@ -135,7 +135,9 @@ public readonly partial struct BigFloat
     const double LOG2_OF_10 = 3.32192809488736235;
 
     /// <summary>
-    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context
+    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context.
+    /// Value can range from -32(GuardBits) to Int.MaxValue.
+    /// Example: -4 would result in 0.0000(binary) + GuardBits appended as well.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ZeroWithAccuracy(int accuracy)
@@ -1081,31 +1083,41 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
+    /// Computes the rounded mantissa without guard bits for any BigInteger input.
+    /// Rounding is applied based on the guard bits; assumes the input is non-negative (mantissa is typically unsigned).
     /// </summary>
-    public readonly BigInteger MantissaWithGuardBitsRoundedOff => RightShiftWithRound(_mantissa, GuardBits);
-
-    /// <summary>
-    /// Mantissa with GuardBits rounded off.
-    /// </summary>
+    /// <param name="x">The input mantissa including guard bits.</param>
+    /// <returns>The rounded and shifted mantissa.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static BigInteger MantissaWithoutGuardBits(BigInteger x)
+    private static BigInteger GetRoundedMantissa(BigInteger x)
     {
         return RightShiftWithRound(x, GuardBits);
     }
 
     /// <summary>
-    /// Mantissa with GuardBits rounded off. It also requires the current size and will increment it if the value rolls over.
+    /// Computes the rounded mantissa without guard bits, also updating the size (e.g., bit length or exponent)
+    /// if rounding causes a carry-over (e.g., all guard bits set, leading to increment).
+    /// This is useful in normalization steps where overflow affects the exponent.
     /// </summary>
-    private static BigInteger MantissaWithoutGuardBits(BigInteger x, ref int size)
+    /// <param name="x">The input mantissa including guard bits.</param>
+    /// <param name="size">The current size (e.g., bit count); incremented if carry occurs.</param>
+    /// <returns>The rounded and shifted mantissa.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigInteger GetRoundedMantissa(BigInteger x, ref int size)
     {
         return RightShiftWithRound(x, GuardBits, ref size);
     }
 
     /// <summary>
+    /// Represents the raw mantissa including guard bits.
+    /// </summary>
+    public readonly BigInteger RawMantissa => _mantissa;
+
+
+    /// <summary>
     /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
     /// </summary>
-    public readonly BigInteger MantissaWithGuardBits => _mantissa;
+    public readonly BigInteger RoundedMantissa => RightShiftWithRound(_mantissa, GuardBits);
 
     /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
