@@ -125,13 +125,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (v._size == 0)
                 return decimal.Zero;
 
-            // BinaryExponent is *signed*; outside [-2^31, +2^31] anyway => decimal.Zero or overflow.
-            // (A full-range check would be ~ ±10^28 decimal digits but the
-            //  miniature test below is usually enough and cheap.)
-            if (v.BinaryExponent > 500 || v.BinaryExponent < -500)
-                return v.BinaryExponent < 0 ? decimal.Zero
-                                            : throw new OverflowException();
-
             BigInteger m = v._mantissa;
             uint flags = 0;
             if (m.Sign < 0)
