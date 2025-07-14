@@ -143,30 +143,28 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             // ---------------------------------------------------------
             // 1.  Keep   PrecBits-ExtraBits   worth of precision in ‘m’
             // ---------------------------------------------------------
-            int targetBits = PrecBits - ExtraBits;
-            int bitsDropped = Math.Max(0, v._size - targetBits); // v._size == bit-length of mantissa
+            int bitsDropped = Math.Max(0, v._size - PrecBits); // v._size == bit-length of mantissa
             if (bitsDropped > 0)
+            {
                 m >>= bitsDropped;
 
             // ---------------------------------------------------------
             // 2.  Binary → decimal scaling
             // ---------------------------------------------------------
-            int scale2 = v.Scale + bitsDropped - 32;   // base-2 exponent
-            int bitLen = (int)m.GetBitLength();             // current #significant bits
+            int scale2 = v.Scale + bitsDropped - GuardBits;  // base-2 exponent
             int decScale = 0;
 
             if (scale2 >= 0)
             {
                 // ----- overflow detection ------------------------------------
-                if (bitLen + scale2 > PrecBits)          // need >96 bits after the shift
+                if (bitLen + scale2 > PrecBits)   // need >96 bits after the shift
                     throw new OverflowException(); // or, return (flags != 0) ? decimal.MinValue : decimal.MaxValue;
                 // -------------------------------------------------------------
 
-                m <<= scale2;                            // safe: fits in 96 bits
-                bitLen += scale2;                     // bit-length increases by scale2
-
+                m <<= scale2;                     // safe: fits in 96 bits
+                bitLen += scale2;                 // bit-length increases by scale2
             }
-            else /*if (scale2 < 0)*/
+            else 
             {
                 // decimal digits needed to offset the *entire* negative scale
                 int idealDec = (int)Math.Ceiling(-scale2 * Log10Of2);
@@ -230,8 +228,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     }
 
     ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    /// <summary>
     /// Converts BigFloat to Decimal using the high-performance approach similar to Microsoft's VarDecFromR8.
     /// Handles precision truncation, scaling, and rounding with optimal performance characteristics.
     /// </summary>
