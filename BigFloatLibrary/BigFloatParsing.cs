@@ -645,9 +645,9 @@ public readonly partial struct BigFloat
     /// <param name="result">(out) The BigFloat result.</param>
     /// <param name="binaryScaler">(optional)Additional scale - can be positive or negative</param>
     /// <param name="forceSign">(optional)Forces a sign on the output. [negative int = force negative, 0 = do nothing, positive int = force positive]</param>
-    /// <param name="includedGuardBits">(optional)The number of sub-precision guard bits that are included. However, if the precision separator '|' is also used, this takes precedence.</param>
+    /// <param name="includedGuardBits">(optional)The number of sub-precision guard-bits to include. However, if the precision separator '|' is also used, this takes precedence.</param>
     /// <returns>Returns false if it fails or is given an empty or null string.</returns>
-    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue)
+    public static bool TryParseBinary(ReadOnlySpan<char> input, out BigFloat result, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = 0)
     {
         int inputLen = input.Length;
 
@@ -727,10 +727,10 @@ public readonly partial struct BigFloat
             return false;
         }
 
-        // if param includesGuardBits not is specified then use '|' separator if present
-        if (includedGuardBits == int.MinValue)
+        // if param includesGuardBits not specified then use '|' separator if present
+        if (accuracyDelimiterPosition >= 0)
         {
-            includedGuardBits = (accuracyDelimiterPosition >= 0) ? accuracyDelimiterPosition : 0;
+            includedGuardBits = accuracyDelimiterPosition;
         }
 
         // Lets add the missing zero guard bits
