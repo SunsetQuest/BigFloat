@@ -866,41 +866,42 @@ public class BigFloatTests
         Assert.True(a.LeftShiftMantissa(1).IsExactMatchOf(expectedAnswer));
     }
 
-    [Fact]
-    public void Verify_RightShiftMantissa()
+    [Theory]
+    [InlineData("10000.0", "1000.0", 1)]
+    [InlineData("100000", "10000", 1)]
+    [InlineData("0.0000100000", "0.0000010000", 1)]
+    [InlineData("0.10", "0.01", 1)]
+    [InlineData("-10000.0", "-1000.0", 1)]
+    [InlineData("-0.0000100000", "-0.0000010000", 1)]
+    public void Verify_RightShiftMantissa(string input, string expected, int shift)
     {
-        BigFloat a = BigFloat.ParseBinary("10000.0");
-        BigFloat expectedAnswer = BigFloat.ParseBinary("1000.0");
-        Assert.True(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
+        BigFloat a = BigFloat.ParseBinary(input);
+        BigFloat aShifted = a.RightShiftMantissa(shift);
+        BigFloat expectedAnswer = BigFloat.ParseBinary(expected);
+        Assert.True(aShifted.IsExactMatchOf(expectedAnswer));
+    }
 
-        a = BigFloat.ParseBinary("-10000.0");
-        expectedAnswer = BigFloat.ParseBinary("-1000.0");
-        Assert.True(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
+    [Theory]
+    [InlineData("10000.0")]
+    [InlineData("10000")]
+    [InlineData("10000000000000000000000000.0000000000000000000000000000000000000000000000000000000000000000000000")]
+    [InlineData("-10000.0")]
+    [InlineData("-1000000|0000")]
 
-        a = BigFloat.ParseBinary("100000");
-        expectedAnswer = BigFloat.ParseBinary("10000");
-        Assert.True(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
-
-        a = BigFloat.ParseBinary("0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("0.0000010000");
-        Assert.True(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
-
-        a = BigFloat.ParseBinary("-0.0000100000");
-        expectedAnswer = BigFloat.ParseBinary("-0.0000010000");
-        Assert.True(a.RightShiftMantissa(1).IsExactMatchOf(expectedAnswer));
+    public void Verify_IsOneBitFollowedByZeroBitsTrueValues(string valueStr)
+    {
+        _ = BigFloat.TryParseBinary(valueStr, out BigFloat result);
+        Assert.True(result.IsOneBitFollowedByZeroBits);
     }
 
     [Fact]
-    public void Verify_IsOneBitFollowedByZeroBits()
+    public void Verify_IsOneBitFollowedByZeroBitsFalseValues()
     {
-        _ = BigFloat.TryParseBinary("10000.0", out BigFloat result);
-        Assert.True(result.IsOneBitFollowedByZeroBits);
+        _ = BigFloat.TryParseBinary("-111111111111", out BigFloat result);
+        Assert.False(result.IsOneBitFollowedByZeroBits);
 
-        _ = BigFloat.TryParseBinary("10000", out result);
-        Assert.True(result.IsOneBitFollowedByZeroBits);
-
-        _ = BigFloat.TryParseBinary("10000000000000000000000000.0000000000000000000000000000000000000000000000000000000000000000000000", out result);
-        Assert.True(result.IsOneBitFollowedByZeroBits);
+        _ = BigFloat.TryParseBinary("-11111111111111111111111111111111111111111111111111111", out result, includedGuardBits: -BigFloat.GuardBits);
+        Assert.False(result.IsOneBitFollowedByZeroBits);
 
         _ = BigFloat.TryParseBinary("10101.1", out result);
         Assert.False(result.IsOneBitFollowedByZeroBits);
