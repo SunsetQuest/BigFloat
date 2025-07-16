@@ -126,6 +126,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 return decimal.Zero;
 
             BigInteger m = v._mantissa;
+            int bitLen = v._size;             // current #significant bits
             uint flags = 0;
             if (m.Sign < 0)
             {
@@ -140,6 +141,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             if (bitsDropped > 0)
             {
                 m >>= bitsDropped;
+                bitLen -= bitsDropped;
+            }
 
             // ---------------------------------------------------------
             // 2.  Binary → decimal scaling
@@ -151,7 +154,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             {
                 // ----- overflow detection ------------------------------------
                 if (bitLen + scale2 > PrecBits)   // need >96 bits after the shift
-                    throw new OverflowException(); // or, return (flags != 0) ? decimal.MinValue : decimal.MaxValue;
+                   throw new OverflowException(); // or, return (flags != 0) ? decimal.MinValue : decimal.MaxValue;
                 // -------------------------------------------------------------
 
                 m <<= scale2;                     // safe: fits in 96 bits
@@ -220,94 +223,4 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////
-    /// Converts BigFloat to Decimal using the high-performance approach similar to Microsoft's VarDecFromR8.
-    /// Handles precision truncation, scaling, and rounding with optimal performance characteristics.
-    /// </summary>
-    public static class BigFloatToDecimalConverter2
-    {
-        private const int DecimalMaxScale = 28;
-        private const int DecimalPrecisionBits = 96;
-        private static readonly double Log10_2 = Math.Log10(2);
-
-        public static decimal ToDecimal(BigFloat bigFloat)
-        {
-            int e = bigFloat.Scale;
-            BigInteger mantissa = bigFloat._mantissa;
-            int decimalScale;
-            BigInteger decimalMantissa;
-
-            if (e >= 0)
-            {
-                // Handle positive or zero exponent
-                decimalMantissa = mantissa << e;
-                decimalScale = 0;
-
-                // Truncate to 96 bits if necessary
-                int bitLength = (int)decimalMantissa.GetBitLength();
-                if (bitLength > DecimalPrecisionBits)
-                {
-                    int excessBits = bitLength - DecimalPrecisionBits;
-                    decimalMantissa = BigIntegerTools.RightShiftWithRound(decimalMantissa, excessBits);
-                }
-            }
-            else // e < 0
-            {
-                // Calculate desired scale, capped at 28
-                int desiredScale = (int)Math.Ceiling(-e * Log10_2);
-                decimalScale = Math.Min(desiredScale, DecimalMaxScale);
-
-                // Scale mantissa by 10^decimalScale
-                BigInteger temp = mantissa * BigInteger.Pow(10, decimalScale);
-
-                // Right-shift by -e bits to adjust for binary exponent
-                decimalMantissa = BigIntegerTools.RightShiftWithRound(temp, -e);
-
-                // Truncate to 96 bits, keeping decimalScale unchanged
-                while (decimalMantissa.GetBitLength() > DecimalPrecisionBits)
-                {
-                    int excessBits = (int)decimalMantissa.GetBitLength() - DecimalPrecisionBits;
-                    decimalMantissa = BigIntegerTools.RightShiftWithRound(decimalMantissa, excessBits);
-                }
-            }
-
-            // Check scale bounds
-            if (decimalScale > DecimalMaxScale)
-            {
-                throw new OverflowException("Decimal scale exceeds maximum allowed value");
-            }
-
-            // Construct decimal (simplified; actual implementation may vary)
-            bool isNegative = mantissa < 0;
-            BigInteger absMantissa = BigInteger.Abs(decimalMantissa);
-
-            //The fix for 123456
-            //absMantissa >>= 19;
-            //or
-            //absMantissa *= 5;
-            //absMantissa >>= 18;
-            //decimalScale = 19; //18
-             //or
-            //absMantissa *= 5*5;
-            //absMantissa >>= 17;
-            //decimalScale = 20; //18
-                               //or
-            absMantissa *= 5*5*5*5*5;
-            absMantissa >>= 14;
-            decimalScale = 23; //18
-
-            int lo = int.CreateTruncating(absMantissa);           // Low bits
-            int mi = int.CreateTruncating((absMantissa >> 32));  // Mid bits
-            int hi = int.CreateTruncating((absMantissa >> 64));  // High bits
-
-            decimal val= new decimal(
-                lo, //(int)(absMantissa & 0xFFFFFFFF),           // Low bits
-                mi, //(int)((absMantissa >> 32) & 0xFFFFFFFF),  // Mid bits
-                hi, //(int)((absMantissa >> 64) & 0xFFFFFFFF),  // High bits
-                isNegative,
-                (byte)decimalScale
-            );
-            return val;
-        }
-    }
 }
