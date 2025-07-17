@@ -7778,12 +7778,12 @@ public class BigFloatTests
 
     [Theory]
     [InlineData("0", "0", 1)]   
-    [InlineData("1", "1", 1)]  // Rounds up then removes the bit
-    [InlineData("10", "1", 1)]  // Simple right shift (of Abs value) //future: or should this be 0?
+    [InlineData("1", "1", 1)]  // Rounds up then removes the bit (always stays 1)
+    [InlineData("10", "1", 1)]  // Simple right shift (of Abs value)
     [InlineData("11", "10", 1)]  // Rounds up to 100, then right shift
     [InlineData("100", "10", 1)]  // Simple right shift (of Abs value)
     [InlineData("-0", "0", 1)]
-    [InlineData("-1", "-1", 1)]  // Rounds down to -10 then removes the bit (of Abs value) //future: or should this be 0?
+    [InlineData("-1", "-1", 1)]  // Rounds down to -10 then removes the bit (of Abs value)
     [InlineData("-10", "-1", 1)]  // Simple right shift (of Abs value)
     [InlineData("-11", "-10", 1)]  // Rounds down to -100, then right shift (of Abs value)
     [InlineData("-100", "-10", 1)]  // Simple right shift (of Abs value)
