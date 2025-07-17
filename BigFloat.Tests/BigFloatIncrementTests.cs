@@ -13,7 +13,7 @@ public class BitAdjustTests
         var y = BigFloat.BitIncrement(x);
         var z = BigFloat.BitDecrement(y);
 
-        Assert.Equal(x._mantissa, z._mantissa);
+        Assert.Equal(x.RawMantissa, z.RawMantissa);
         Assert.Equal(x.SizeWithGuardBits, z.SizeWithGuardBits);
         Assert.Equal(x, z);
     }
@@ -81,7 +81,7 @@ public class BitAdjustTests
             ? BigFloat.BitIncrement(x)
             : BigFloat.BitDecrement(x);
 
-        Assert.Equal(new BigInteger(expectedMantissa), y._mantissa);
+        Assert.Equal(new BigInteger(expectedMantissa), y.RawMantissa);
         Assert.Equal(oldSize + sizeDelta, y.SizeWithGuardBits);
     }
 
@@ -95,11 +95,11 @@ public class BitAdjustTests
         int oldSize = x.SizeWithGuardBits;
 
         var inc = BigFloat.BitIncrement(x);
-        Assert.Equal(big + BigInteger.One, inc._mantissa);
+        Assert.Equal(big + BigInteger.One, inc.RawMantissa);
         Assert.Equal(oldSize, inc.SizeWithGuardBits);
 
         var dec = BigFloat.BitDecrement(x);
-        Assert.Equal(big - BigInteger.One, dec._mantissa);
+        Assert.Equal(big - BigInteger.One, dec.RawMantissa);
         Assert.Equal(oldSize, dec.SizeWithGuardBits + 1);
     }
 
@@ -110,7 +110,7 @@ public class BitAdjustTests
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
         var y = BigFloat.GuardBitIncrement(x);
 
-        long delta = (long)(y._mantissa - x._mantissa);
+        long delta = (long)(y.RawMantissa - x.RawMantissa);
         Assert.Equal(1L << BigFloat.GuardBits, delta);
         Assert.Equal(x.SizeWithGuardBits, y.SizeWithGuardBits);
     }
@@ -122,7 +122,7 @@ public class BitAdjustTests
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
         var y = BigFloat.GuardBitDecrement(x);
 
-        long delta = (long)(x._mantissa - y._mantissa);
+        long delta = (long)(x.RawMantissa - y.RawMantissa);
         Assert.Equal(1L << BigFloat.GuardBits, delta);
         Assert.Equal(x.SizeWithGuardBits, y.SizeWithGuardBits);
     }

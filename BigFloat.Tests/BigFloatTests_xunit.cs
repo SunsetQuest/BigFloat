@@ -1019,15 +1019,15 @@ public class BigFloatTests
         Assert.Equal(0, BigFloat.IntWithAccuracy(2, 10).StrictCompareTo(new BigFloat(2)));
 
         BigFloat a = BigFloat.IntWithAccuracy(2, 10);
-        Assert.Equal(a._mantissa, (BigInteger)2 << (hb + 10));
+        Assert.Equal(a.RawMantissa, (BigInteger)2 << (hb + 10));
         Assert.Equal(-10, a.Scale);
 
         a = BigFloat.IntWithAccuracy(-32, 100);
-        Assert.Equal(a._mantissa, -(BigInteger)32 << (hb + 100));
+        Assert.Equal(a.RawMantissa, -(BigInteger)32 << (hb + 100));
         Assert.Equal(-100, a.Scale);
 
         a = BigFloat.IntWithAccuracy(27, -15);
-        Assert.Equal(a._mantissa, (BigInteger)27 << (hb - 15));
+        Assert.Equal(a.RawMantissa, (BigInteger)27 << (hb - 15));
         Assert.Equal(15, a.Scale);
     }
     

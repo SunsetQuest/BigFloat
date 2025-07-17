@@ -385,9 +385,9 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Tests to see if the number is in the format of "10000000..." after rounding.
-    /// future: can we use BigInteger.IsPowerOfTwo here?
     /// </summary>
     //public bool IsOneBitFollowedByZeroBits => 
+    public bool IsOneBitFollowedByZeroBits => BigInteger.IsPow2(BigInteger.Abs(_mantissa) >> (GuardBits - 1));
 
     /// <summary>
     /// Compares two BigFloats and returns negative if this instance is less, Zero if difference is 2^(GuardBits-1) or less, or Positive if this instance is greater

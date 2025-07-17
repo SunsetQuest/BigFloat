@@ -17,7 +17,7 @@ public class BigFloatDecimalConversionTests
 
         // Assert
         Assert.True(bf.IsZero);
-        Assert.Equal(0, bf._mantissa);
+        Assert.Equal(0, bf.RawMantissa);
         Assert.Equal(0, bf.Size);
     }
 
