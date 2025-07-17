@@ -49,7 +49,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Gets the full integer's data bits, including guard bits.
     /// </summary>
-    public readonly BigInteger _mantissa; //Future: change to private?
+    private readonly BigInteger _mantissa;
 
     /// <summary>
     /// _size are the number of precision bits. It is equal to "ABS(DataBits).GetBitLength()". The ABS is for 
@@ -386,9 +386,8 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Tests to see if the number is in the format of "10000000..." after rounding.
     /// future: can we use BigInteger.IsPowerOfTwo here?
-    /// future: does this work with neg numbers, if not add to summary note
     /// </summary>
-    public bool IsOneBitFollowedByZeroBits => BigInteger.TrailingZeroCount(_mantissa >> (GuardBits - 1)) == (_size - GuardBits);
+    //public bool IsOneBitFollowedByZeroBits => 
 
     /// <summary>
     /// Compares two BigFloats and returns negative if this instance is less, Zero if difference is 2^(GuardBits-1) or less, or Positive if this instance is greater
