@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
@@ -1076,9 +1077,8 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool WouldRoundUp(BigInteger val, int bottomBitsRemoved)
     {
-        // Future: for .net 7 and later use ">>>" instead of >> for a slight performance boost.
         bool isPos = val.Sign >= 0;
-        return isPos ^ ((isPos ? val : val - 1) >> (bottomBitsRemoved - 1)).IsEven;
+        return isPos ^ ((isPos ? val : val - 1) >>> (bottomBitsRemoved - 1)).IsEven;
     }
 
     /// <summary>
@@ -1130,11 +1130,9 @@ public readonly partial struct BigFloat
     /// <param name="targetBitsToRemove">Specifies the target number of least-significant bits to remove.</param>
     public static BigFloat TruncateByAndRound(BigFloat x, int targetBitsToRemove)
     {
-        // future: if (bitsToClear <= 0) return this;
-        // future: if (bitsToClear > _size) return Zero;
         if (targetBitsToRemove < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(targetBitsToRemove), $"Param {nameof(targetBitsToRemove)}({targetBitsToRemove}) be 0 or greater.");
+            throw new ArgumentOutOfRangeException(nameof(targetBitsToRemove), $"Param {nameof(targetBitsToRemove)} must be 0 or greater.");
         }
 
         int newScale = x.Scale + targetBitsToRemove;
