@@ -216,6 +216,7 @@ public class BigFloatDecimalConversionTests
         Assert.Throws<OverflowException>(() => result = (decimal)bf);
     }
 
+    [Fact]
     public void ToDecimal_BigFloatLargeScale_OverflowException()
     {
         // Arrange
@@ -229,6 +230,7 @@ public class BigFloatDecimalConversionTests
         Assert.Throws<OverflowException>(() => result = (decimal)bf);
     }
 
+    [Fact]
     public void ToDecimal_BigFloatLargeScale2_OverflowException()
     {
         // Arrange
