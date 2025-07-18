@@ -7200,7 +7200,7 @@ public class BigFloatTests
         expect = "1010001001100";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out BigInteger inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7208,7 +7208,7 @@ public class BigFloatTests
         expect = "-1010001001100";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7216,7 +7216,7 @@ public class BigFloatTests
         expect = "1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7224,7 +7224,7 @@ public class BigFloatTests
         expect = "-1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7232,7 +7232,7 @@ public class BigFloatTests
         expect = "101000100110";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7240,7 +7240,7 @@ public class BigFloatTests
         expect = "-101000100110";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7248,7 +7248,7 @@ public class BigFloatTests
         expect = "1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7256,7 +7256,7 @@ public class BigFloatTests
         expect = "-1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7264,7 +7264,7 @@ public class BigFloatTests
         expect = "1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound'
@@ -7272,7 +7272,7 @@ public class BigFloatTests
         expect = "-1010001001011";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 2);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 2);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound' (with overflow)
@@ -7280,7 +7280,7 @@ public class BigFloatTests
         expect = "10000000000000";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound' (with overflow)
@@ -7288,7 +7288,7 @@ public class BigFloatTests
         expect = "-10000000000000";
         Assert.True(BigIntegerTools.TryParseBinary(input0, out inpVal));
         Assert.True(BigIntegerTools.TryParseBinary(expect, out expVal));
-        resVal = BigIntegerTools.RightShiftWithRound(inpVal, 1);
+        resVal = BigIntegerTools.RoundingRightShift(inpVal, 1);
         Assert.Equal(resVal, expVal);
 
         // test 'RightShiftWithRound' (with overflow)
@@ -7808,7 +7808,7 @@ public class BigFloatTests
         Assert.True(BigIntegerTools.TryParseBinary(expectedBinary, out BigInteger expected));
 
         // Act
-        BigInteger result = BigIntegerTools.RightShiftWithRound(input, shiftAmount);
+        BigInteger result = BigIntegerTools.RoundingRightShift(input, shiftAmount);
 
         // Assert
         Assert.Equal(expected, result);
@@ -7828,7 +7828,7 @@ public class BigFloatTests
         Assert.True(BigIntegerTools.TryParseBinary(expectedBinary, out BigInteger expected));
 
         // Act
-        BigInteger result = BigIntegerTools.RightShiftWithRound(input, shiftAmount);
+        BigInteger result = BigIntegerTools.RoundingRightShift(input, shiftAmount);
 
         // Assert
         Assert.Equal(expected, result);
@@ -7844,7 +7844,7 @@ public class BigFloatTests
         Assert.True(BigIntegerTools.TryParseBinary(expectedBinary, out BigInteger expected));
 
         // Act
-        BigInteger result = BigIntegerTools.RightShiftWithRound(input, shiftAmount);
+        BigInteger result = BigIntegerTools.RoundingRightShift(input, shiftAmount);
 
         // Assert
         Assert.Equal(expected, result);

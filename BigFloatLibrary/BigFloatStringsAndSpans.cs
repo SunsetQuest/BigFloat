@@ -71,7 +71,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         {
             // For negative Scale, we must align to a 4‑bit boundary so that the radix point falls correctly.
             int rightShift = (GuardBits - Scale) & 0x03;
-            BigInteger rounded = RightShiftWithRound(_mantissa, rightShift);
+            BigInteger rounded = RoundingRightShift(_mantissa, rightShift);
             string hex = rounded.ToString("X");
             // Insert the radix point at the appropriate position.
             int insertIndex = (-Scale / 4) - 1;
@@ -381,12 +381,12 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
 
             // Applies the scale to the number and rounds from bottom bit
-            BigInteger power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+            BigInteger power5Scaled = RoundingRightShift(power5, -scale - decimalDigits + GuardBits);
 
             // If zero, then special handling required. Add as many precision zeros based on scale.
             if (power5Scaled.IsZero)
             {
-                if (RightShiftWithRound(intVal, GuardBits).IsZero)
+                if (RoundingRightShift(intVal, GuardBits).IsZero)
                 {
                     return $"0.{new string('0', decimalDigits)}";
                 }
@@ -395,7 +395,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
                 //// solves an issue when a "BigFloat(1, -8)" being 0.000
                 decimalDigits++;
                 power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
-                power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+                power5Scaled = RoundingRightShift(power5, -scale - decimalDigits + GuardBits);
             }
 
             string numberText = power5Scaled.ToString();
@@ -460,7 +460,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
 
         // Applies the scale to the number and rounds from bottom bit
-        BigInteger resScaled = RightShiftWithRound(resUnScaled, GuardBits);
+        BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
         
         // #########e+NN   ->  want  D.DDDDDDe+MMM
         // maskSize is your "raw" decimal exponent,
@@ -525,7 +525,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             BigInteger power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
 
             // Applies the scale to the number and rounds from bottom bit
-            BigInteger power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+            BigInteger power5Scaled = RoundingRightShift(power5, -scale - decimalDigits + GuardBits);
 
             // If zero, then special handling required. Add as many precision zeros based on scale.
             if (power5Scaled.IsZero)
@@ -535,7 +535,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
                 //// solves an issue when a "BigFloat(1, -8)" being 0.000
                 decimalDigits++;
                 power5 = BigInteger.Abs(intVal) * BigInteger.Pow(5, decimalDigits);
-                power5Scaled = RightShiftWithRound(power5, -scale - decimalDigits + GuardBits);
+                power5Scaled = RoundingRightShift(power5, -scale - decimalDigits + GuardBits);
             }
 
             string numberText = power5Scaled.ToString();
@@ -549,7 +549,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
 
         // Applies the scale to the number and rounds from bottom bit
-        BigInteger resScaled = RightShiftWithRound(resUnScaled, GuardBits);
+        BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
 
         // #########e+NN   ->  want  D.DDDDDDe+MMM
         // maskSize is your "raw" decimal exponent,
@@ -636,7 +636,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string GetBitsAsString()
     {
-        BigInteger shiftedMantissa = RightShiftWithRound(_mantissa, GuardBits);
+        BigInteger shiftedMantissa = RoundingRightShift(_mantissa, GuardBits);
         return BigIntegerTools.ToBinaryString(shiftedMantissa);
     }
 

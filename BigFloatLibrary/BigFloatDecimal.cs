@@ -195,7 +195,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                 }
 
                 if (excessBits > 0)
-                    m = BigIntegerTools.RightShiftWithRound(m, excessBits);
+                    m = BigIntegerTools.RoundingRightShift(m, excessBits);
             }
 
             // did the rounding spill into a new MSB?

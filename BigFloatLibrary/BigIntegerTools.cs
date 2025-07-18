@@ -467,13 +467,13 @@ public static class BigIntegerTools
     /// if <paramref name="extraAccurate"/> is true. There are no known rounding errors at this time with <paramref name="extraAccurate"/> enabled.
     /// </summary>
     /// <param name="val">The input value.</param>
-    /// <param name="valSize">The input values size. This can be left at zero if unknown.</param>
     /// <param name="exp">The exponent to raise the value by.</param>
-    /// <param name="totalShift">(out) The number of bits that were removed from the result.</param>
+    /// <param name="valSize">The input values size. This can be left at zero if unknown.</param>
     /// <param name="wantedBits">The number of bits to return. A unspecified value or a value less then 0 will default 
     /// to the inputs size. A value too large will be limited to <paramref name="valSize"/>. </param>
     /// <param name="extraAccurate">When false, about 1-in-4096 will round up when it shouldn't. When true, accuracy 
     /// is much better but performance is slower.</param>
+    /// <param name="totalShift">(out) The number of bits that were removed from the result.</param>
     /// <returns>The top bits val raised to the power of exp.</returns>
     public static (BigInteger value, int totalShift) PowMostSignificantBitsApprox(BigInteger val, int exp, int valSize = -1, int wantedBits = 0, bool extraAccurate = false, bool roundDown = false)
     {
@@ -925,7 +925,7 @@ public static class BigIntegerTools
     /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
     /// <returns>The rounded result of shifting val to the right by bitsToRemove.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigInteger RightShiftWithRound(BigInteger val, int targetBitsToRemove) //future: rename to RoundingRightShift
+    public static BigInteger RoundingRightShift(BigInteger val, int targetBitsToRemove)
     {
         bool isPos = val.Sign >= 0;
         if (!isPos) val = -val;
@@ -1021,7 +1021,7 @@ public static class BigIntegerTools
             throw new ArgumentOutOfRangeException(nameof(targetNewSizeInBits), $"Param newSizeInBits({targetNewSizeInBits}) be 0 or greater.");
         }
         int currentSize = (int)BigInteger.Abs(x).GetBitLength();
-        BigInteger result = RightShiftWithRound(x, currentSize - targetNewSizeInBits);
+        BigInteger result = RoundingRightShift(x, currentSize - targetNewSizeInBits);
         return result;
     }
 

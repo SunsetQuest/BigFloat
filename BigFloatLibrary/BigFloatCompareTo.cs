@@ -51,9 +51,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         BigInteger diff = sizeDiff switch
         {
             //> 0 => -(other.DataBits - (DataBits >> (sizeDiff - expDifference))),    // slightly faster version
-            > 0 => RightShiftWithRound(_mantissa, sizeDiff) - other._mantissa, // slightly more precise version
+            > 0 => RoundingRightShift(_mantissa, sizeDiff) - other._mantissa, // slightly more precise version
             //< 0 => -((other.DataBits >> (expDifference - sizeDiff)) - DataBits),    // slightly faster version
-            < 0 => _mantissa - RightShiftWithRound(other._mantissa, -sizeDiff),// slightly more precise version
+            < 0 => _mantissa - RoundingRightShift(other._mantissa, -sizeDiff),// slightly more precise version
             0 => _mantissa - other._mantissa
         };
 
@@ -302,6 +302,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         //};
 
         // Option B:
-        return RightShiftWithRound(_mantissa, -Scale + GuardBits).CompareTo(bigInteger);
+        return RoundingRightShift(_mantissa, -Scale + GuardBits).CompareTo(bigInteger);
     }
 }

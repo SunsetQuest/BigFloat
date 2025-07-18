@@ -753,7 +753,7 @@ public static class Showcase
                         {
                             if (shiftedRes > shiftedAns + 1)
                             {
-                                ans = BigIntegerTools.RightShiftWithRound(ans, shiftedRes - shiftedAns);
+                                ans = BigIntegerTools.RoundingRightShift(ans, shiftedRes - shiftedAns);
                             }
                             else
                             {

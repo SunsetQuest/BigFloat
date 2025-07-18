@@ -987,12 +987,12 @@ public readonly partial struct BigFloat
 
         if (r1.Scale < r2.Scale)
         {
-            BigInteger intVal0 = RightShiftWithRound(r1._mantissa, -scaleDiff) + r2._mantissa;
+            BigInteger intVal0 = RoundingRightShift(r1._mantissa, -scaleDiff) + r2._mantissa;
             int resSize0 = (int)BigInteger.Abs(intVal0).GetBitLength();
             return new BigFloat(intVal0, r2.Scale, resSize0);
         }
 
-        BigInteger intVal = r1._mantissa + RightShiftWithRound(r2._mantissa, scaleDiff);
+        BigInteger intVal = r1._mantissa + RoundingRightShift(r2._mantissa, scaleDiff);
         int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
         return new BigFloat(intVal, r1.Scale, sizeVal);
     }
@@ -1023,13 +1023,13 @@ public readonly partial struct BigFloat
         else if (r1.Scale < 0)
         {
             // r2 has larger exponent: shift r1 down
-            sum = RightShiftWithRound(r1._mantissa, -scaleDiff) + r2Bits;
+            sum = RoundingRightShift(r1._mantissa, -scaleDiff) + r2Bits;
             resScale = 0;
         }
         else
         {
             // r1 has larger exponent: shift r2 down
-            sum = r1._mantissa + RightShiftWithRound(r2Bits, scaleDiff);
+            sum = r1._mantissa + RoundingRightShift(r2Bits, scaleDiff);
             resScale = r1.Scale;
         }
 
@@ -1089,7 +1089,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigInteger GetRoundedMantissa(BigInteger x)
     {
-        return RightShiftWithRound(x, GuardBits);
+        return RoundingRightShift(x, GuardBits);
     }
 
     /// <summary>
@@ -1115,7 +1115,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
     /// </summary>
-    public readonly BigInteger RoundedMantissa => RightShiftWithRound(_mantissa, GuardBits);
+    public readonly BigInteger RoundedMantissa => RoundingRightShift(_mantissa, GuardBits);
 
     /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
@@ -1327,7 +1327,7 @@ public readonly partial struct BigFloat
         int resBitLen = (int)prod.GetBitLength();
         int shrinkBy = resBitLen - val._size - (2 * GuardBits);
         int sizePart = resBitLen - shrinkBy;
-        prod = RightShiftWithRound(prod, shrinkBy);
+        prod = RoundingRightShift(prod, shrinkBy);
         int resScalePart = (2 * val.Scale) + shrinkBy - GuardBits;
 
         return new(prod, resScalePart, sizePart);
@@ -1810,20 +1810,20 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(BigFloat value)
     {
-        return (int)RightShiftWithRound(value._mantissa, GuardBits - value.Scale);
+        return (int)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
-        return (uint)RightShiftWithRound(value._mantissa, GuardBits - value.Scale);
+        return (uint)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
     }
 
     /// <summary>Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigInteger(BigFloat value)
     {
-        return RightShiftWithRound(value._mantissa, GuardBits - value.Scale);
+        return RoundingRightShift(value._mantissa, GuardBits - value.Scale);
     }
 
     /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
@@ -1851,7 +1851,7 @@ public readonly partial struct BigFloat
         if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; } // too large by 1
         if (!IsInteger) { return false; }
 
-        return other == (long)RightShiftWithRound(_mantissa << Scale, GuardBits);
+        return other == (long)RoundingRightShift(_mantissa << Scale, GuardBits);
     }
 
     /// <summary>Returns a value that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
@@ -1863,7 +1863,7 @@ public readonly partial struct BigFloat
         if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; }// too large by 1
         if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
 
-        return (ulong)RightShiftWithRound(_mantissa << Scale, GuardBits) == other;
+        return (ulong)RoundingRightShift(_mantissa << Scale, GuardBits) == other;
     }
 
     /// <summary>
@@ -1872,7 +1872,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool Equals(BigInteger other)
     {
-        return other.Equals(RightShiftWithRound(_mantissa, GuardBits - Scale));
+        return other.Equals(RoundingRightShift(_mantissa, GuardBits - Scale));
     }
 
     /// <summary>
@@ -1896,7 +1896,7 @@ public readonly partial struct BigFloat
     /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
     public override int GetHashCode()
     {
-        return RightShiftWithRound(_mantissa, GuardBits).GetHashCode() ^ Scale;
+        return RoundingRightShift(_mantissa, GuardBits).GetHashCode() ^ Scale;
     }
 
     /// <summary>
