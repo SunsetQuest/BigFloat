@@ -1,7 +1,4 @@
-﻿using System;
-using System.Numerics;
-using Xunit;
-using BigFloatLibrary;
+﻿using System.Numerics;
 
 namespace BigFloatLibrary.Tests;
 

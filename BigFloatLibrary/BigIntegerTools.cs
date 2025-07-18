@@ -2,7 +2,7 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT was used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok was used in the development of this library.
 
 using System;
 using System.Buffers;
@@ -298,11 +298,6 @@ public static class BigIntegerTools
         for (; size < 256; size <<= 1)
         {
             val = (val << (size - 1)) + ((x >> (xLenMod - (3 * size))) / val);
-            //BigInteger temp1 = (val << (size - 1));
-            //int temp2 = (xLenMod - (3 * size));
-            //BigInteger temp3 = (x >> temp2);
-            //BigInteger temp4 = temp3 / val;
-            //val = temp1 + temp4;
         }
 
         if (xAsDub > 4e254) // 4e254 = 1<<845.76973610139
@@ -342,21 +337,21 @@ public static class BigIntegerTools
         }
 
         ////////// Error Detection ////////
-        //// I believe the above has no errors but to guarantee the following can be added.
+        //// No errors have been discovered above, but to guarantee, the following can be added.
         //// If an error is found, please report it.
-        //BigInteger tmp = val * val;
-        //if (tmp > x)
-        //{
-        //    Console.WriteLine($"Missed  , {ToolsForOther.ToBinaryString(saveDroppedDigitsBI, oversidedBy)}, {oversidedBy}, {size}, {wantedPrecision}, {saveDroppedDigitsBI.GetBitLength()}");
-        //    if (saveDroppedDigitsBI.GetBitLength() >= 6)
-        //        Console.WriteLine($"val^2 ({tmp}) < x({x})  off%:{((double)(tmp)) / (double)x}");
-        //    //throw new Exception("Sqrt function had internal error - value too high");
-        //}
-        //if ((tmp + 2 * val + 1) <= x)
-        //{
-        //    Console.WriteLine($"(val+1)^2({((val + 1) * (val + 1))}) >= x({x})");
-        //    //throw new Exception("Sqrt function had internal error - value too low");
-        //}
+        // BigInteger tmp = val * val;
+        // if (tmp > x)
+        // {
+        //     Console.WriteLine($"Missed  , {ToolsForOther.ToBinaryString(saveDroppedDigitsBI, oversidedBy)}, {oversidedBy}, {size}, {wantedPrecision}, {saveDroppedDigitsBI.GetBitLength()}");
+        //     if (saveDroppedDigitsBI.GetBitLength() >= 6)
+        //         Console.WriteLine($"val^2 ({tmp}) < x({x})  off%:{((double)(tmp)) / (double)x}");
+        //     //throw new Exception("Sqrt function had internal error - value too high");
+        // }
+        // if ((tmp + 2 * val + 1) <= x)
+        // {
+        //     Console.WriteLine($"(val+1)^2({((val + 1) * (val + 1))}) >= x({x})");
+        //     //throw new Exception("Sqrt function had internal error - value too low");
+        // }
 
         return val;
     }

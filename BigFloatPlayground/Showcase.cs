@@ -2,7 +2,7 @@
 // Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 // The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot are used in the development of this library.
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
 
 using BigFloatLibrary;
 using System;
@@ -26,31 +26,26 @@ public static class Showcase
     {
         //////////////////// TEST AREA //////////////////// 
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
-        //Console.WriteLine("2320000 -> " + BigFloat.Parse("2320000"));
-        //Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
-        //Console.WriteLine("232XX -> " + BigFloat.Parse("232XX"));
-        //Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
-        //Console.WriteLine("232 -> " + BigFloat.Parse("232"));
-        //Console.WriteLine("23.2 -> " + BigFloat.Parse("23.2"));
-        //Console.WriteLine("2.32 -> " + BigFloat.Parse("2.32"));
-        //Console.WriteLine("0.232 -> " + BigFloat.Parse("0.232"));
-        //Console.WriteLine("0.00232 -> " + BigFloat.Parse("0.00232"));
-        //Console.WriteLine("0.00000000232 -> " + BigFloat.Parse("0.00232"));
-        //Console.WriteLine("0.000000000232 -> " + BigFloat.Parse("0.00000000000232"));
-        //Console.WriteLine("0.0000000000000000000000000000232 -> " + BigFloat.Parse("0.0000000000000000000000000000232"));
-
-        BigFloat randNumber = BigFloat.RandomWithMantissaBits(1024, 0, 0);
-
-        Console.WriteLine($"The number {randNumber} is {randNumber.Size} bits.");
-
-
-        BigFloat x = new("1.1234567890123456"); Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));
-
-        Console.WriteLine(ConstantVisualization.GetConstantInfo("Pi"));
-
-        var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 20000).GetAll();
-        Console.WriteLine(ConstantVisualization.CreateComparisonTable(allConstants));
-
+        // Console.WriteLine("2320000 -> " + BigFloat.Parse("2320000"));
+        // Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
+        // Console.WriteLine("232XX -> " + BigFloat.Parse("232XX"));
+        // Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
+        // Console.WriteLine("232 -> " + BigFloat.Parse("232"));
+        // Console.WriteLine("23.2 -> " + BigFloat.Parse("23.2"));
+        // Console.WriteLine("2.32 -> " + BigFloat.Parse("2.32"));
+        // Console.WriteLine("0.232 -> " + BigFloat.Parse("0.232"));
+        // Console.WriteLine("0.00232 -> " + BigFloat.Parse("0.00232"));
+        // Console.WriteLine("0.00000000232 -> " + BigFloat.Parse("0.00232"));
+        // Console.WriteLine("0.000000000232 -> " + BigFloat.Parse("0.00000000000232"));
+        // Console.WriteLine("0.0000000000000000000000000000232 -> " + BigFloat.Parse("0.0000000000000000000000000000232"));
+           
+        // BigFloat randNumber = BigFloat.RandomWithMantissaBits(1024, 0, 0);
+        // Console.WriteLine($"The number {randNumber} is {randNumber.Size} bits.");
+           
+        // BigFloat x = new("1.1234567890123456"); Console.WriteLine(ConstantVisualization.GetContinuedFraction(x));
+        // Console.WriteLine(ConstantVisualization.GetConstantInfo("Pi"));
+        // var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 20000).GetAll();
+        // Console.WriteLine(ConstantVisualization.CreateComparisonTable(allConstants));
 
         // CastingFromFloatAndDouble_Stuff(); return;
         // Constant_Stuff(); return;
