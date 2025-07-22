@@ -358,26 +358,26 @@ public readonly partial struct BigFloat
     ///////////////////////// [END] INIT / CONVERSION  FUNCTIONS [END] /////////////////////////
 
     /// <summary>
-    /// Checks to see if the value is an integer. Returns true if all the bits between the  point and 8 bits into the GuardBits are all 0 or all 1.
-    /// True if...
-    ///   all bits are 0 or 1 between point and half-way through the GuardBits
-    ///   or, the scale >= 8(GuardBits/4), is always true.
+    /// Checks to see if the value is an integer.
+    /// Returns True if...
+    /// - all the bits between the point and 16 bits into the GuardBits are all 0 or all 1.
+    /// - or, the scale >= 16(GuardBits / 2), is always true.
     /// 
-    /// If an integer then it should follow that ...
-    ///   it should not round-up based on GuardBits
-    ///   Ceiling would round-up (and Floor down for negative)
+    /// If an integer, it should follow that ...
+    /// - it should not round-up based on GuardBits
+    /// - Ceiling() would not round-up and Floor would not round-down.
     /// </summary>
-    public bool IsInteger  //v6 - check to see if all the bits between the point and the 8 most significant guard bits are uniform. (111.??|?)
+    public bool IsInteger  //v6 - check to see if all the bits between the point and the 16 most significant guard bits are uniform. (111.??|?)
     {
         get
         {
-            const int topBitsToCheck = 8;
+            const int topBitsToCheck = 16;
             if (Scale >= topBitsToCheck)
             {
-                // The radix point is at least 8 bits into the guard area so it is very inconclusive, however these cases are considered integers.
+                // The radix point is at least 16 bits into the guard area so it is very inconclusive, however these cases are considered integers.
                 return true;
             }
-
+            
             int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
             return BitsAreUniformInRange(_mantissa, GuardBits - topBitsToCheck, end);
         }

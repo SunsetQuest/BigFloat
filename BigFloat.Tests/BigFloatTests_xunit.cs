@@ -2183,18 +2183,19 @@ public class BigFloatTests
         Assert.True(bf.IsInteger); // MaxValue should be considered an integer
         bf = new BigFloat(double.MinValue);
         Assert.True(bf.IsInteger); // MinValue should be considered an integer
-        // 
-        bf = new BigFloat("0b101010101|10101010.010");  // |8.
-        Assert.True(bf.IsInteger); // only the top 8 bits are considered in the guard bits and all of these are above the point. 
-        bf = new BigFloat("0b101010101|10101010.1010"); // |8.
-        Assert.True(bf.IsInteger); // Only the top 8 bits are considered in the guard bits and all of these are above the point.
-        bf = new BigFloat("0b101010101|1010101.01010"); // |7.0
-        Assert.True(bf.IsInteger); // Only the top 8 bits are considered in the guard bits and only one bit after the decimal. If this one bit is all one or zero it is true.
-        bf = new BigFloat("0b101010101|1010101.1010");  // |7.1 - 
-        Assert.True(bf.IsInteger); // Only the top 8 bits are considered in the guard bits and only one bit after the decimal. If this one bit is all one or zero it is true.
-        bf = new BigFloat("0b101010101|101010.101010"); // |6.10
-        Assert.False(bf.IsInteger); // The 2 bits after the point (10) are not uniform so false.
-        bf = new BigFloat("0b101010101|101010.001010"); // |6.00
+
+        // The top 16 bits of the GuardBits are used for IsInteger, Ceiling, and Floor 
+        bf = new BigFloat("0b101010101|1010101010101010.010");  // |16.
+        Assert.True(bf.IsInteger); // only the top 16 bits are considered GuardBits and all of these are above the point. 
+        bf = new BigFloat("0b101010101|1010101010101010.1010"); // |16.
+        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and all of these are above the point.
+        bf = new BigFloat("0b101010101|101010101010101.01010"); // |15.0
+        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
+        bf = new BigFloat("0b101010101|101010101010101.1010");  // |15.1
+        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
+        bf = new BigFloat("0b101010101|10101010101010.101010"); // |14.10
+        Assert.False(bf.IsInteger); // The 2 bits after the point (10) are not uniform and in top 16 GuardBits so false.
+        bf = new BigFloat("0b101010101|10101010101010.001010"); // |14.00
         Assert.True(bf.IsInteger); // The 2 bits after the point (10) are not uniform so true.
 
         bf = new BigFloat(double.Epsilon); Assert.False(bf.IsInteger); // {bf}.IsInteger is false because all top 8 Guardbits are not uniform.
