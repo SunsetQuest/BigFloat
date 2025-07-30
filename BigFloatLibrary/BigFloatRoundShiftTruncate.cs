@@ -128,17 +128,18 @@ public readonly partial struct BigFloat
         return new BigFloat(result, Scale, newSize);
     }
 
+
     /// <summary>
     /// Rounds to the next integer towards positive infinity. 
-    /// Removes all fractional bits, sets negative scales to zero, 
-    /// and resizes precision to just the integer part.
+    /// Removes all fractional bits, sets negative scales to zero, and resizes precision to just the integer part.
+    /// Round-up if any bits are set between the point(GuardBits-Scale) and halfway through the GuardBits(GuardBits/2).
     /// </summary>
     public BigFloat Ceiling()
     {
         int bitsToClear = GuardBits - Scale;
 
         // Fast path: already an integer with no fractional bits (Scale >= 16, 1010|1010101010101010.1010101010101010)
-        if (bitsToClear <= 16) return this;
+        if (bitsToClear <= (GuardBits / 2)) return this;
 
         int sign = _mantissa.Sign;
 
@@ -163,7 +164,7 @@ public readonly partial struct BigFloat
         // At this point Sign is positive AND Scale >= 0 (decimal is at in the in the GuardBits. i.e. 11|1.1000)
         if (Scale < 0)
         {
-            //round up if any bits set between halfway through the GuardBits(GuardBits / 2) and the point(GuardBits - Scale)
+            // Round-up if any bits are set between the point(GuardBits - Scale) and halfway through the GuardBits(GuardBits / 2).
             bool roundsUp = (_mantissa & (((BigInteger.One << ((GuardBits / 2) - Scale)) - 1) << (GuardBits / 2))) > 0;
 
             BigInteger intPart = _mantissa >> bitsToClear << GuardBits;
@@ -178,6 +179,73 @@ public readonly partial struct BigFloat
             return new BigFloat(intPart >> Scale, Scale, newSize - Scale);
         }
 
+        // ---------------  Sign > 0   AND   Scale >= 0  ------------------
+
+        // Mask of all bits that are going to be discarded.
+        BigInteger mask = (BigInteger.One << bitsToClear) - 1;
+        bool hasFraction = (_mantissa & mask) != 0;        // true ⇢ something to round-up
+
+        // Remove the fractional field.
+        BigInteger intPart2 = _mantissa >> bitsToClear;
+
+        // Ceiling: if *any* fraction existed, add 1.
+        if (hasFraction) intPart2 += 1;
+
+        // Re-insert the guard word and build the result.
+        return new BigFloat(intPart2 << GuardBits, 0,
+                            (int)intPart2.GetBitLength() + GuardBits);
+    }
+
+
+    /// <summary>
+    /// Rounds to the next integer towards positive infinity. 
+    /// Removes all fractional bits, sets negative scales to zero, and resizes precision to just the integer part.
+    /// Round-up if any bits are set between the point(GuardBits-Scale) and halfway through the GuardBits(GuardBits/2).
+    /// </summary>
+    public BigFloat Ceiling0()
+    {
+        int bitsToClear = GuardBits - Scale;
+
+        // Fast path: already an integer with no fractional bits (Scale >= 16, 1010|1010101010101010.1010101010101010)
+        if (bitsToClear <= (GuardBits / 2)) return this;
+
+        int sign = _mantissa.Sign;
+
+        // Fast path: entire value is fractional
+        if (bitsToClear >= _size)
+        {
+            return sign > 0
+                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
+                : Zero;
+        }
+
+        // Fast path: zero
+        if (sign == 0) return Zero;
+
+        // Negative values: just truncate (round toward zero)
+        if (sign < 0)
+        {
+            BigInteger truncated = -(-_mantissa >> bitsToClear);
+            return new BigFloat(truncated << GuardBits, 0, _size + Scale);
+        }
+
+        // At this point Sign is positive AND Scale >= 0 (decimal is at in the in the GuardBits. i.e. 11|1.1000)
+        if (Scale < 0)
+        {
+            // Round-up if any bits are set between the point(GuardBits - Scale) and halfway through the GuardBits(GuardBits / 2).
+            bool roundsUp = (_mantissa & (((BigInteger.One << ((GuardBits / 2) - Scale)) - 1) << (GuardBits / 2))) > 0;
+
+            BigInteger intPart = _mantissa >> bitsToClear << GuardBits;
+
+            if (roundsUp)
+            {
+                intPart += BigInteger.One << GuardBits;
+            }
+
+            int newSize = roundsUp ? (int)intPart.GetBitLength() : _size + Scale; //future: optimize using bit scan operations when the rollover is predictable
+
+            return new BigFloat(intPart >> Scale, Scale, newSize - Scale);
+        }
 
         // At this point Sign is positive AND Scale >= 0; i.e. 111.10|0001...
 
@@ -247,29 +315,29 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the GuardBits.
+    /// Returns an integer with a specific binary accuracy. This is the number of binary digits to the right of the point. This is beyond the GuardBits.
     /// </summary>
-    /// <param name="precisionInBits">The precision between (-GuardBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(BigInteger intVal, int precisionInBits)
+    /// <param name="accuracyBits">The accuracy range can be from -GuardBits to Int.MaxValue.</param>
+    public static BigFloat IntWithAccuracy(BigInteger intVal, int accuracyBits)
     {
         int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
         // if the precision is shrunk to a size of zero it cannot contain any data bits
-        return precisionInBits < -(GuardBits + intSize)
+        return accuracyBits < -(GuardBits + intSize)
             ? Zero
-            : new(intVal << (GuardBits + precisionInBits), -precisionInBits, GuardBits + intSize + precisionInBits);
+            : new(intVal << (GuardBits + accuracyBits), -accuracyBits, GuardBits + intSize + accuracyBits);
         // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
     }
 
     /// <summary>
-    /// Returns an integer with additional accuracy. This is beyond the GuardBits.
+    /// Returns an integer with a specific binary accuracy. This is the number of binary digits to the right of the point. This is beyond the GuardBits.
     /// </summary>
-    /// <param name="precisionInBits">The precision between (-GuardBits - intVal.BitSize) to Int.MaxValue.</param>
-    public static BigFloat IntWithAccuracy(int intVal, int precisionInBits)
+    /// <param name="accuracyBits">The accuracy range can be from -GuardBits to Int.MaxValue.</param>
+    public static BigFloat IntWithAccuracy(int intVal, int accuracyBits)
     {
         int size = int.Log2(int.Abs(intVal)) + 1 + GuardBits;
-        return precisionInBits < -size
+        return accuracyBits < -size
             ? Zero
-            : new(((BigInteger)intVal) << (GuardBits + precisionInBits), -precisionInBits, size + precisionInBits);
+            : new(((BigInteger)intVal) << (GuardBits + accuracyBits), -accuracyBits, size + accuracyBits);
     }
 
     /// <summary>
