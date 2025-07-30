@@ -2157,6 +2157,23 @@ public class BigFloatTests
         Assert.Equal(res << scale, input);
     }
 
+    //[Fact]
+    //public void IsIntegerInLineWithFloorAndCeiling()
+    //{
+    //    BigFloat bf,ceil;
+    //    bf = new BigFloat("0b101010101|1010101010101010.010");  // |[16].[3]
+    //    Assert.True(bf.IsInteger); 
+    //    Assert.True(bf.Ceiling() == (long)bf);
+    //    bf = new BigFloat("0b101010101|10101010101010.1");  // |[14].[1]
+    //    ceil = bf.Ceiling();
+    //    Assert.False(bf.IsInteger);
+    //    //todo: Ceiling has an issue!
+    //    Assert.True(ceil == (long)bf+1);
+    //    bf = new BigFloat("0b101010101|10101010101010.0");  // |[14].[1]
+    //    Assert.True(bf.IsInteger);
+    //    Assert.True(bf.Ceiling() == bf);
+    //}
+
     [Fact]
     public void IsIntegerChecker()
     {
@@ -2198,7 +2215,7 @@ public class BigFloatTests
         bf = new BigFloat("0b101010101|10101010101010.001010"); // |14.00
         Assert.True(bf.IsInteger); // The 2 bits after the point (10) are not uniform so true.
 
-        bf = new BigFloat(double.Epsilon); Assert.False(bf.IsInteger); // {bf}.IsInteger is false because all top 8 Guardbits are not uniform.
+        bf = new BigFloat(double.Epsilon); Assert.False(bf.IsInteger); // {bf}.IsInteger is false because all top 8 GuardBits are not uniform.
         bf = new BigFloat(double.E); Assert.False(bf.IsInteger); // {bf}.IsInteger reported as true but should be false.
         bf = new BigFloat(double.Pi); Assert.False(bf.IsInteger); // {bf}.IsInteger reported as true but should be false.
         bf = new BigFloat(0.001); Assert.False(bf.IsInteger); // {bf}.IsInteger reported as true but should be false.

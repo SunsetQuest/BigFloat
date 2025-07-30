@@ -1213,6 +1213,12 @@ public readonly partial struct BigFloat
         return new BigFloat(x._mantissa << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + GuardBits);
     }
 
+    // Future: add a SetAccuracy, draft below
+    // public static BigFloat SetAccuracy(BigFloat x, int accuracy) =>
+    //  (accuracy > x.Accuracy) ?
+    //   BigFloat.ExtendPrecision(x, accuracy - x.Accuracy) :
+    //   BigFloat.ShrinkPrecision(x, x.Accuracy - accuracy);
+
     /// <summary>
     /// Reduces the precision of the a number but keeps the value the same.
     /// i.e. Down-shifts the value but and increases the scale. 
