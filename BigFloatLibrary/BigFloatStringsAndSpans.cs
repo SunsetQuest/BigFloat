@@ -62,21 +62,40 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// </summary>
     public string ToHexString()
     {
-        // When Scale is non-negative, shift off the extra guard bits and format.
-        if (Scale >= 0)
-        {
-            return (_mantissa >> (GuardBits - Scale)).ToString("X");
-        }
-        else
-        {
-            // For negative Scale, we must align to a 4‑bit boundary so that the radix point falls correctly.
-            int rightShift = (GuardBits - Scale) & 0x03;
-            BigInteger rounded = RoundingRightShift(_mantissa, rightShift);
-            string hex = rounded.ToString("X");
-            // Insert the radix point at the appropriate position.
-            int insertIndex = (-Scale / 4) - 1;
-            return hex.Insert(insertIndex, ".");
-        }
+        // --- 1.  ‘binExp’  tells us whether we have a fraction at all -----------
+        int binExp = Scale - GuardBits;          // =  power‑of‑two exponent
+
+        // a) nothing after the radix point, no rounding necessary
+        if (binExp >= 0)
+            return (_mantissa << binExp).ToString("X");
+
+        // b) still an integer, but part of the 32 guard bits ends up in it
+        if (Scale > -2)
+            return BigIntegerTools.RoundingRightShift(_mantissa, -binExp).ToString("X");
+        
+        // --- 2.  real fraction ---------------------------------------------------
+        // how many *hex* digits contain real information?
+        int fracNibbles = (-Scale + 2) >> 2;     // == ceil(−binExp / 4)
+
+        // bits we must drop *before* rounding (always ≥ 0)
+        int shift = GuardBits - Scale - (fracNibbles << 2);
+
+        BigInteger rounded = shift == 0
+            ? _mantissa
+            : BigIntegerTools.RoundingRightShift(_mantissa, shift);
+
+        // --- 3.  build the textual representation -------------------------------
+        string hex = rounded.ToString("X");
+
+        // make sure we have at least ‘fracNibbles’ characters to slice
+        if (hex.Length <= fracNibbles)
+            hex = new string('0', fracNibbles - hex.Length + 1) + hex;
+
+        int dotPos = hex.Length - fracNibbles;
+        hex = hex.Insert(dotPos, ".");
+
+        // strip trailing zeros in the fraction; drop the dot if nothing is left
+        return hex.TrimStart('0');
     }
 
     /// <summary>
