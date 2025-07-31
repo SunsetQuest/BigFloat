@@ -75,17 +75,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         
         // --- 2.  real fraction ---------------------------------------------------
         // how many *hex* digits contain real information?
-        int fracNibbles = (-Scale + 2) >> 2;     // == ceil(−binExp / 4)
+        int fracNibbles = (-Scale + 2) >> 2;     // == ceil(−Scale / 4)
 
         // bits we must drop *before* rounding (always ≥ 0)
         int shift = GuardBits - Scale - (fracNibbles << 2);
 
-        BigInteger rounded = shift == 0
-            ? _mantissa
-            : BigIntegerTools.RoundingRightShift(_mantissa, shift);
-
         // --- 3.  build the textual representation -------------------------------
-        string hex = rounded.ToString("X");
+        string hex = RoundingRightShift(_mantissa, shift).ToString("X");
 
         // make sure we have at least ‘fracNibbles’ characters to slice
         if (hex.Length <= fracNibbles)
