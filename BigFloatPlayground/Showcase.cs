@@ -25,64 +25,7 @@ public static class Showcase
     public static void Main()
     {
         //////////////////// TEST AREA //////////////////// 
-        ///
-        /// KEY: (and Type) 
-        ///   When "Scale-16 >= 0", A Bit is Set between decimal point and 16th GuardBit
-        ///   When "Scale-16 = 0" , A Bit is Set between decimal point and 16th GuardBit
-        ///   When "Scale-16 < 0" , A Bit is Set between decimal point and 15th bit
-        BigFloat orig, answ;
-        bool success;
-        //                     098765432 10987654321098765 432109876543210
-        orig = new BigFloat("0b101010101|10101010101010101.100000000000000");  // [9 bits]|[17 bits].[15 bits] bit15=1,bit16-32=hasBitsSet, but above the decimal point 
-        answ = new BigFloat("0b101010101|10101010101010101.100000000000000");  // [9 bits]|[17 bits].[15 bits] no round up since all bits to the right of the decimal point are under 15th bit, so ignored. Also Ceiling should never be less then original numbers so keep GuardBits as-is
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 10987654321098765 432109876543210
-        orig = new BigFloat("0b101010101|10101010101010101.000000000000000");  // [9 bits]|[17 bits].[15 bits] bit15=1,bit16-32=hasBitsSet, but above the decimal point 
-        answ = new BigFloat("0b101010101|10101010101010101.000000000000000");  // [9 bits]|[17 bits].[15 bits] 
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 1098765432109876 5432109876543210
-        orig = new BigFloat("0b101010101|1010101010101010.0100000000000000");  // [9 bits]|[16 bits].[16 bits] bit15=0,bit16-32=hasBitsSet
-        answ = new BigFloat("0b101010101|1010101010101010.0100000000000000");  // [9 bits]|[16 bits].[16 bits] no round up since top bit in lower 16 is zero
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 1098765432109876 5432109876543210
-        orig = new BigFloat("0b101010101|1010101010101010.1000000000000000");  // [9 bits]|[16 bits].[16 bits] bit15=1,bit16-32=hasBitsSet
-        answ = new BigFloat("0b101010101|1010101010101011.0000000000000000");  // [9 bits]|[16 bits].[16 bits] round up since top bit in lower 16 is one
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 109876543210987 65432109876543210
-        orig = new BigFloat("0b101010101|101010101010101.01000000000000000");  // [9 bits]|[15 bits].[17 bits] bit15=1,bit16-32=hasBitsSet, so .1 would round up
-        answ = new BigFloat("0b101010101|101010101010110.00000000000000000");  // [9 bits]|[15 bits].[17 bits] round up since top bit in lower 16 is one
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 109876543210987 65432109876543210
-        orig = new BigFloat("0b101010101|101010101010101.10000000000000000");  // [9 bits]|[15 bits].[17 bits] bit15=0,bit16-32=hasBitsSet, so .1 would round up
-        answ = new BigFloat("0b101010101|101010101010110.00000000000000000");  // [9 bits]|[15 bits].[17 bits] no round up since top bit in lower 16 is zero, however, .1 so rounds up
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 109876543210987 65432109876543210
-        orig = new BigFloat("0b101010101|101010101010101.00100000000000000");  // [9 bits]|[15 bits].[17 bits] bit15=0,bit16-32=hasBitsSet, so rounds to .00 and that would not round up
-        answ = new BigFloat("0b101010101|101010101010101.00100000000000000");  // [9 bits]|[15 bits].[17 bits]
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 1 0987654321098765432109876543210
-        orig = new BigFloat("0b101010101|1.0101010101010101010101010101010");  // [9 bits]|[1 bits].[31 bits] bit15=1,bit16-32=hasBitsSet, so rounds to .00 and that would not round up
-        answ = new BigFloat("0b101010110|0.0000000000000000000000000000000");  // [9 bits]|[1 bits].[31 bits] round up since bits are set between decimal point and 16th bit, so it rounds up to next integer
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 1 0987654321098765432109876543210
-        orig = new BigFloat("0b101010101|1.0000000000000010000000000000000");  // [9 bits]|[1 bits].[31 bits] bit15=0,bit16-32=hasBitsSet, so rounds to .00 and that would not round up
-        answ = new BigFloat("0b101010110|0.0000000000000000000000000000000");  // [9 bits]|[1 bits].[31 bits] round up since bits are set between decimal point and 16th bit, so it rounds up to next integer
-        success = (orig.Ceiling() == answ);
-
-        //                     098765432 1 0987654321098765432109876543210
-        orig = new BigFloat("0b101010101|1.0000000000000001000000000000000");  // [9 bits]|[1 bits].[31 bits] bit15=1,bit16-32=hasBitsSet so rounds to .00 and that would not round up
-        answ = new BigFloat("0b101010110|0.0000000000000000000000000000000");  // [9 bits]|[1 bits].[31 bits] borderline case, either way will work(round up because 16th bit is set), or no round up because top 16 GuardBits are zero
-        //success = (orig.Ceiling() == answ);
-
-
+        
 
         //Console.WriteLine(ceil0.ToBinaryString(false));
         //Console.WriteLine(ceil1.ToBinaryString(false));
