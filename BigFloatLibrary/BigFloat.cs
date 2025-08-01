@@ -360,12 +360,12 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Checks to see if the value is an integer.
     /// Returns True if...
-    /// - all the bits between the point and 16 bits into the GuardBits are all 0 or all 1.
-    /// - or, the scale >= 16(GuardBits / 2), is always true.
+    ///  - the scale >= (GuardBits/2)
+    ///  - or, all bits between the point and 16 bits into the GuardBits are all 0 or 1.
     /// 
     /// If an integer, it should follow that ...
-    /// - it should not round-up based on GuardBits
-    /// - Ceiling() would not round-up and Floor would not round-down.
+    ///  - it should not round-up based on GuardBits
+    /// -  Ceiling() would not round-up and Floor() would not round-down.
     /// </summary>
     public bool IsInteger  //v6 - check to see if all the bits between the point and the 16 most significant guard bits are uniform. (111.??|?)
     {
