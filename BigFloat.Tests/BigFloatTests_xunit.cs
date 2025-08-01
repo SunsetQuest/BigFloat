@@ -8034,4 +8034,40 @@ public class BigFloatTests
         Assert.InRange(bufferSize, expectedOutput.Length, expectedOutput.Length + 2);
         Assert.Equal(expectedOutput, result);
     }
+
+    [Theory]
+    // [9 bits]|[17 bits].[15 bits] bit15=1, bit16–32 has guard bits, but all fraction bits are under the 15th bit => no round up
+    [InlineData("0b101010101|10101010101010101.100000000000000", "0b101010101|10101010101010101.100000000000000")]
+    // [9 bits]|[17 bits].[15 bits] bit15=1, bit16–32 has guard bits, .000… => no fractional part to round
+    [InlineData("0b101010101|10101010101010101.000000000000000", "0b101010101|10101010101010101.000000000000000")]
+    // [9 bits]|[16 bits].[16 bits] bit15=0, bit16–32 has guard bits, .010… => top bit in lower-16 is zero, so no round up
+    [InlineData("0b101010101|1010101010101010.0100000000000000", "0b101010101|1010101010101010.0100000000000000")]
+    // [9 bits]|[16 bits].[16 bits] bit15=1, bit16–32 has guard bits => rounds up the 16th fractional bit
+    [InlineData("0b101010101|1010101010101010.1000000000000000", "0b101010101|1010101010101011.0000000000000000")]
+    // [9 bits]|[15 bits].[17 bits] bit15=1, bit16–32 has guard bits => round up fractional part
+    [InlineData("0b101010101|101010101010101.01000000000000000", "0b101010101|101010101010110.00000000000000000")]
+    // [9 bits]|[15 bits].[17 bits] bit15=0, bit16–32 has guard bits, but there is a .1 => still rounds up
+    [InlineData("0b101010101|101010101010101.10000000000000000", "0b101010101|101010101010110.00000000000000000")]
+    // [9 bits]|[15 bits].[17 bits] bit15=0, bit16–32 has guard bits, .001… => no round up
+    [InlineData("0b101010101|101010101010101.00100000000000000", "0b101010101|101010101010101.00100000000000000")]
+    // [9 bits]|[1 bit] .[31 bits] bit15=1, bit16–32 has guard bits => rounds up to next integer
+    [InlineData("0b101010101|1.0101010101010101010101010101010", "0b101010110|0.0000000000000000000000000000000")]
+    // [9 bits]|[1 bit] .[31 bits] bit15=0, bit16–32 has guard bits => rounds up to next integer
+    [InlineData("0b101010101|1.0000000000000010000000000000000", "0b101010110|0.0000000000000000000000000000000")]
+    // [9 bits]|[1 bit] .[31 bits] bit15=1, bit16–32 has guard bits => borderline, but still rounds up
+    [InlineData("0b101010101|1.0000000000000001000000000000000", "0b101010110|0.0000000000000000000000000000000")]
+    public void Ceiling_ShouldReturnExpected(string origBinary, string expectedBinary)
+    {
+        // Arrange
+        BigFloat orig = new(origBinary);
+        BigFloat expected = new(expectedBinary);
+
+        // Act
+        BigFloat actual = orig.Ceiling();
+
+        // Assert
+        Assert.True(actual == expected,
+            $"Ceiling of {origBinary} expected to be {expectedBinary}, but was {actual}.");
+    }
+
 }
