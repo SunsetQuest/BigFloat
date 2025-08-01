@@ -2659,6 +2659,27 @@ public class BigFloatTests
         }
     }
 
+    [Theory]
+    [InlineData("0b101010101|10101010101010101.100000000000000", new[] { "2AB5556" })]
+    [InlineData("0b1010101010101010101010.|1010101010101010101010101010", new[] { "2AAAAB" })]
+    [InlineData("0b101010101010101010101.0|1010101010101010101010101010", new[] { "155555" })]
+    [InlineData("0b1010101010101010101.010|1010101010101010101010101010", new[] { "55555.5" })]
+    [InlineData("0b10101010101010101.01010|1010101010101010101010101010", new[] { "15555.5" })]
+    [InlineData("0b101010101010101010.1010|1010101010101010101010101010", new[] { "2AAAA.B" })]
+    [InlineData("0b10101010101010101010.10|1010101010101010101010101010", new[] { "AAAAB", "AAAAA.B" })]
+    [InlineData("0b10101010101010101010.101010|101010101010101010101010", new[] { "AAAAA.B", "AAAAA.AB" })]
+    public void BigFloatToHexStringTests(string binaryInput, string[] validResults)
+    {
+        // Arrange
+        var bigFloat = new BigFloat(binaryInput);
+
+        // Act
+        var result = bigFloat.ToHexString();
+
+        // Assert
+        Assert.Contains(result, validResults);
+    }
+
     [Fact]
     public void Verify_TryParseHex()
     {
