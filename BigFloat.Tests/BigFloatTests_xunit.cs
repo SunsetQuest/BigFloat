@@ -2157,22 +2157,22 @@ public class BigFloatTests
         Assert.Equal(res << scale, input);
     }
 
-    //[Fact]
-    //public void IsIntegerInLineWithFloorAndCeiling()
-    //{
-    //    BigFloat bf,ceil;
-    //    bf = new BigFloat("0b101010101|1010101010101010.010");  // |[16].[3]
-    //    Assert.True(bf.IsInteger); 
-    //    Assert.True(bf.Ceiling() == (long)bf);
-    //    bf = new BigFloat("0b101010101|10101010101010.1");  // |[14].[1]
-    //    ceil = bf.Ceiling();
-    //    Assert.False(bf.IsInteger);
-    //    //todo: Ceiling has an issue!
-    //    Assert.True(ceil == (long)bf+1);
-    //    bf = new BigFloat("0b101010101|10101010101010.0");  // |[14].[1]
-    //    Assert.True(bf.IsInteger);
-    //    Assert.True(bf.Ceiling() == bf);
-    //}
+    [Fact]
+    public void IsIntegerInLineWithCeiling()
+    {
+        BigFloat bf, ceil;
+        bf = new BigFloat("0b101010101|1010101010101010.010"); //[9]|[16].[3]
+        Assert.True(bf.IsInteger);
+        Assert.True(bf.Ceiling() == (long)bf);
+        bf = new BigFloat("0b101010101|10101010101010.1");     //[9]|[14].[1]
+        ceil = bf.Ceiling();
+        Assert.False(bf.IsInteger);
+        //'(long)bf' rounds up since accuracy is to the left of the decimal so it rounds.
+        Assert.True(ceil == (long)bf);
+        bf = new BigFloat("0b101010101|10101010101010.0");     //[9]|[14].[1]
+        Assert.True(bf.IsInteger);
+        Assert.True(bf.Ceiling() == bf); //This is not a great compare but leaving in.
+    }
 
     [Fact]
     public void IsIntegerChecker()
