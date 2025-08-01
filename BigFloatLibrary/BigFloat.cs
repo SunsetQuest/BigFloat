@@ -1835,10 +1835,17 @@ public readonly partial struct BigFloat
     /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
     /// Since BigFloats can be any precision and doubles have fixed 53-bits precision, precision is ignored.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool FitsInADouble()
+    public bool FitsInADouble(bool allowDenormalized = false)
     {
-        // future: possibly add denormalized support 
-        return (BinaryExponent + 1023) is not (< -52 or > 2046);
+        if (allowDenormalized)
+        {
+            // Denormalized values are allowed, so we check the exponent range for denormalized numbers
+            return (BinaryExponent + 1023) is (>= -51 and <= 2046);
+        }
+        // Normalized values only, so we check the exponent range for normalized numbers
+        return (BinaryExponent + 1023) is (>= 1 and <= 2046);
+
+        // future: supports denormalized values
     }
 
     ///////////////////////// COMPARE FUNCTIONS /////////////////////////
