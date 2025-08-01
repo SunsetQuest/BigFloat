@@ -5529,7 +5529,9 @@ public class BigFloatTests
         Assert.True(new BigFloat(double.MaxValue).FitsInADouble());
         Assert.True(new BigFloat(double.MinValue).FitsInADouble());
         Assert.True(new BigFloat(double.MinValue).FitsInADouble());
-        Assert.False((new BigFloat(double.MinValue) >> 1).FitsInADouble());
+        Assert.False((new BigFloat(double.MinValue) << 1).FitsInADouble());
+        Assert.False((new BigFloat(double.MaxValue) << 1).FitsInADouble());
+        Assert.False(((new BigFloat(double.MinValue)) * (new BigFloat("1.1"))).FitsInADouble());
         Assert.True(new BigFloat(double.Epsilon).FitsInADouble(true));
         Assert.False((new BigFloat(double.Epsilon) >> 1).FitsInADouble(true));
         Assert.True(new BigFloat(double.NegativeZero).FitsInADouble());
@@ -5541,11 +5543,6 @@ public class BigFloatTests
 
         Assert.False((new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble()); // Failed on: (new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble()
         Assert.False((new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble()); // Failed on: (new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble()
-
-        // Below checked in Verify_FloatAndDoubleExceptions
-        //  Assert.False(new BigFloat(double.NaN).FitsInADouble()); 
-        //  Assert.False(new BigFloat(double.NegativeInfinity).FitsInADouble());
-        //  Assert.False(new BigFloat(double.PositiveInfinity).FitsInADouble());
     }
 
     [Fact]
