@@ -5519,15 +5519,19 @@ public class BigFloatTests
     [Fact]
     public void Verify_FitsInADouble()
     {
-        Assert.True(new BigFloat("1.000").FitsInADouble()); // Failed on: FitsInADouble(1.000)
-        Assert.True(new BigFloat("0.000").FitsInADouble()); // Failed on: FitsInADouble(0.000)
-        Assert.True(new BigFloat("-99.000").FitsInADouble()); // Failed on: FitsInADouble(-99.000)
-        Assert.True(new BigFloat("0.00000001").FitsInADouble()); // Failed on: FitsInADouble(0.00000001)
-        Assert.True(new BigFloat("-0.00000001").FitsInADouble()); // Failed on: FitsInADouble(-0.00000001)
-        Assert.True(new BigFloat(double.MaxValue).FitsInADouble()); // Failed on: FitsInADouble(double.MaxValue)
-        Assert.True(new BigFloat(double.MinValue).FitsInADouble()); // Failed on: FitsInADouble(double.MinValue)
+        Assert.True(new BigFloat("1.000").FitsInADouble());
+        Assert.True(new BigFloat("1.000").FitsInADouble());
+        Assert.True(new BigFloat("0.000").FitsInADouble());
+        Assert.True(new BigFloat("-99.000").FitsInADouble());
+        Assert.True(new BigFloat("0.00000001").FitsInADouble());
+        Assert.True(new BigFloat("-0.00000001").FitsInADouble());
         Assert.True(new BigFloat(double.E).FitsInADouble());
-        Assert.True(new BigFloat(double.Epsilon).FitsInADouble());
+        Assert.True(new BigFloat(double.MaxValue).FitsInADouble());
+        Assert.True(new BigFloat(double.MinValue).FitsInADouble());
+        Assert.True(new BigFloat(double.MinValue).FitsInADouble());
+        Assert.False((new BigFloat(double.MinValue) >> 1).FitsInADouble());
+        Assert.True(new BigFloat(double.Epsilon).FitsInADouble(true));
+        Assert.False((new BigFloat(double.Epsilon) >> 1).FitsInADouble(true));
         Assert.True(new BigFloat(double.NegativeZero).FitsInADouble());
         Assert.True(new BigFloat(0).FitsInADouble());
         Assert.True(new BigFloat("0.000000000000000001").FitsInADouble());
