@@ -2,16 +2,16 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
 	<metadata>
 		<id>BigFloatLibrary</id>
-		<version>2.1.0</version>
+		<version>2.2.0</version>
 		<authors>Ryan Scott White</authors>
 		<owners>Ryan Scott White</owners>
 		<license type="expression">MIT</license>
-		<projectUrl>https://github.com/SunsetQuest/BigFloat</projectUrl>
+		<projectUrl>https://BigFloat.org</projectUrl>
 		<repository type="git" url="https://github.com/SunsetQuest/BigFloat.git" />
 		<icon>images/icon.png</icon>
 		<readme>README.md</readme>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<description>BigFloat is a C# struct/class library for large Floating-Point numbers with arbitrary precision.</description>
+		<description>BigFloat is a C# struct library for large Floating-Point numbers with arbitrary precision.</description>
 		<summary>A C# library for handling substantially large floating-point numbers with arbitrary precision and a flexible-sized mantissa.</summary>
 		<tags>bigfloat mathematics numeric arbitrary-precision floating-point</tags>
 		<dependencies>
