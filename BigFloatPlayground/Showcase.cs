@@ -25,11 +25,11 @@ public static class Showcase
     public static void Main()
     {
         //////////////////// TEST AREA //////////////////// 
-        
+
 
         //Console.WriteLine(ceil0.ToBinaryString(false));
         //Console.WriteLine(ceil1.ToBinaryString(false));
-         
+
         /////// Author experimentation area - Please make sure to comment this top area out! ///////
         // Console.WriteLine("2320000 -> " + BigFloat.Parse("2320000"));
         // Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));

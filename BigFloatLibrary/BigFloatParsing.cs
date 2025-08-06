@@ -338,7 +338,7 @@ public readonly partial struct BigFloat
         // (1) in base-10 needs to be converted to base-2
         // (2) currently it's measured from the MSB but should measure from LSB
         int guardBits = (guardBitsIncluded != int.MinValue) ? guardBitsIncluded :
-            (accuracyDelimiterPosition < 0) ? 0 : // Future:instead of 0, maybe GuardBits/2   //(radixDepth >= 0 ? 0 : 1)
+            (accuracyDelimiterPosition < 0) ? 0 : // Future:instead of" < 0", maybe "< (GuardBits/2)"   //(radixDepth >= 0 ? 0 : 1)
             (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
 
         if (sign < 0) { val = BigInteger.Negate(val); }
@@ -352,7 +352,7 @@ public readonly partial struct BigFloat
         if (val.IsZero)
         {
             int scaleAmt = (int)((decimalLocation - cleaned.Length + exp) * LOG2_OF_10) - guardBits;
-            result = new BigFloat(BigInteger.Zero, scaleAmt, 0); //future: create a ZeroWithSpecificAccuracy(int prec) method.
+            result = ZeroWithAccuracy(-scaleAmt);
             return true;
         }
 
