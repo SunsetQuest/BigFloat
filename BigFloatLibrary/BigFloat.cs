@@ -1344,8 +1344,8 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat operator *(BigFloat a, BigFloat b)
     {
-        // Early exit for zero operands //Future: use "isStrictZero" and maybe try and preserver accuracy.
-        if (a.IsZero || b.IsZero) return Zero;
+        // Early exit for zero operands
+        if (a.IsStrictZero || b.IsStrictZero) return ZeroWithAccuracy(Math.Min(a.Accuracy, b.Accuracy));
 
         return Multiply(a, b);
     }
