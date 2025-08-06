@@ -3,778 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BigFloat Library - High-Precision Floating Point Arithmetic</title>
+    <title>BigFloat - High-Precision Arithmetic Library for C#</title>
     <meta name="description" content="BigFloat is a C# library for arbitrary-precision floating-point arithmetic, extending beyond IEEE limits with flexible mantissa size and advanced mathematical operations.">
-    <meta name="keywords" content="BigFloat, C#, arbitrary precision, floating point, BigInteger, mathematical constants, high precision computing">
-    <meta name="author" content="Ryan Scott White">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://bigfloat.org/">
-    <meta property="og:title" content="BigFloat Library - High-Precision Floating Point Arithmetic">
-    <meta property="og:description" content="Advanced C# library for arbitrary-precision floating-point arithmetic with mathematical constants up to 1 million digits.">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://bigfloat.org/">
-    <meta property="twitter:title" content="BigFloat Library">
-    <meta property="twitter:description" content="Advanced C# library for arbitrary-precision floating-point arithmetic.">
     
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E">
+    <!-- Favicon using the BigFloat logo concept -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EBF%3C/text%3E%3C/svg%3E">
 </head>
 <body>
-    <div class="background-animation"></div>
-    
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <div class="nav-brand">
-                <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:#6366f1"/>
-                                <stop offset="100%" style="stop-color:#8b5cf6"/>
-                            </linearGradient>
-                        </defs>
-                        <circle cx="50" cy="50" r="45" fill="url(#logoGradient)"/>
-                        <text x="50" y="65" font-family="monospace" font-size="35" fill="white" text-anchor="middle" font-weight="bold">F</text>
-                    </svg>
-                </div>
+            <a href="index.html" class="nav-brand">
+                <img src="favicon.png" alt="BigFloat Logo" class="logo-image">
                 <span class="brand-text">BigFloat</span>
-            </div>
+            </a>
             <div class="nav-links" id="navLinks">
-                <a href="#overview" class="nav-link">Overview</a>
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#architecture" class="nav-link">Architecture</a>
-                <a href="#examples" class="nav-link">Examples</a>
-                <a href="#performance" class="nav-link">Performance</a>
-                <a href="#installation" class="nav-link">Installation</a>
-                <a href="#documentation" class="nav-link">Docs</a>
+                <a href="index.html" class="nav-link active">Home</a>
+                <a href="getting-started.html" class="nav-link">Getting Started</a>
+                <a href="documentation.html" class="nav-link">Documentation</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="architecture.html" class="nav-link">Architecture</a>
                 <a href="https://github.com/SunsetQuest/BigFloat" class="nav-link external" target="_blank">GitHub</a>
             </div>
-            <div class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="hero">
-        <div class="container">
-        <div class="hero-content">
-            <div class="hero-badge">
-                <span class="badge-icon">🚀</span>
-                <span>Version 2.0.0 Available</span>
-            </div>
-            <h1 class="hero-title">
-                <span class="gradient-text">BigFloat Library</span>
-                <br>
-                <span class="subtitle">High-Precision Floating Point Arithmetic</span>
-            </h1>
-            <p class="hero-description">
-                A cutting-edge C# library for arbitrary-precision floating-point arithmetic that extends far beyond IEEE limitations. 
-                Handle numbers with mantissas up to 2 billion bits and access mathematical constants with up to 1 million digits of precision.
-            </p>
-            <div class="hero-actions">
-                <a href="#installation" class="btn btn-primary">
-                    <span>Get Started</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                </a>
-                <a href="#examples" class="btn btn-secondary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polygon points="10,8 16,12 10,16 10,8"/>
-                    </svg>
-                    <span>See Examples</span>
-                </a>
-            </div>
-            <div class="hero-stats">
-                <div class="stat">
-                    <div class="stat-number">2B+</div>
-                    <div class="stat-label">Max Mantissa Bits</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">1M+</div>
-                    <div class="stat-label">Constant Digits</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">MIT</div>
-                    <div class="stat-label">License</div>
-                </div>
-            </div>
-            <br /><br />
-        </div>
-        <div class="hero-visual">
-            <div class="floating-code">
-                <div class="code-block">
-                    <pre><code>BigFloat pi = bigConstants.Pi;
-BigFloat radius = new("100.0");
-BigFloat area = pi * radius * radius;</code></pre>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <main>
-        <!-- Overview Section -->
-        <section id="overview" class="section">
+        <!-- Hero Section - Simplified -->
+        <section class="hero-simple">
             <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Precision Without Limits</h2>
-                    <p class="section-subtitle">
-                        BigFloat revolutionizes numerical computing by providing arbitrary-precision arithmetic 
-                        with sophisticated guard bit mechanisms and advanced rounding algorithms.
+                <div class="hero-content">
+                    <h1>BigFloat Library</h1>
+                    <p class="hero-subtitle">Arbitrary-precision floating-point arithmetic for C#</p>
+                    <p class="hero-description">
+                        BigFloat extends beyond IEEE floating-point limitations, offering precision up to 2 billion bits
+                        with a comprehensive mathematical function library. Perfect for scientific computing, 
+                        cryptography, and any application requiring extreme numerical precision.
                     </p>
-                </div>
-                
-                <div class="overview-grid">
-                    <div class="overview-card">
-                        <div class="card-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                <path d="m2 17 10 5 10-5"/>
-                                <path d="m2 12 10 5 10-5"/>
-                            </svg>
-                        </div>
-                        <h3>Scale-Based Architecture</h3>
-                        <p>Unlike traditional IEEE floating-point exponents, BigFloat uses a scale-based approach measuring the radix point from the least significant digit, providing more intuitive precision control.</p>
-                    </div>
-                    
-                    <div class="overview-card">
-                        <div class="card-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"/>
-                                <path d="m12 1 0 6"/>
-                                <path d="m12 17 0 6"/>
-                                <path d="m4.22 4.22 4.24 4.24"/>
-                                <path d="m15.54 15.54 4.24 4.24"/>
-                                <path d="m1 12 6 0"/>
-                                <path d="m17 12 6 0"/>
-                                <path d="m4.22 19.78 4.24-4.24"/>
-                                <path d="m15.54 8.46 4.24-4.24"/>
-                            </svg>
-                        </div>
-                        <h3>Guard Bit Technology</h3>
-                        <p>32 hidden guard bits maintain accuracy during sequential operations, preventing cumulative rounding errors that plague traditional floating-point arithmetic.</p>
-                    </div>
-                    
-                    <div class="overview-card">
-                        <div class="card-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                            </svg>
-                        </div>
-                        <h3>Mathematical Constants</h3>
-                        <p>Access pre-computed mathematical constants like π, e, and others with precision up to 1 million decimal digits, perfect for scientific and research applications.</p>
+                    <div class="hero-actions">
+                        <a href="getting-started.html" class="btn btn-primary">Get Started</a>
+                        <a href="documentation.html" class="btn btn-secondary">View Documentation</a>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Features Section -->
-        <section id="features" class="section section-dark">
+        <!-- Quick Start Section -->
+        <section class="section">
             <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Advanced Features</h2>
-                    <p class="section-subtitle">
-                        Built for demanding computational scenarios where precision is paramount.
-                    </p>
+                <h2 class="section-title">Quick Start</h2>
+                <div class="quick-start-grid">
+                    <div class="quick-start-step">
+                        <div class="step-number">1</div>
+                        <h3>Install via NuGet</h3>
+                        <div class="code-snippet">
+                            <pre><code>dotnet add package BigFloatLibrary</code></pre>
+                            <button class="copy-btn" onclick="copyToClipboard('dotnet add package BigFloatLibrary')">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-start-step">
+                        <div class="step-number">2</div>
+                        <h3>Add using statement</h3>
+                        <div class="code-snippet">
+                            <pre><code>using BigFloatLibrary;</code></pre>
+                            <button class="copy-btn" onclick="copyToClipboard('using BigFloatLibrary;')">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-start-step">
+                        <div class="step-number">3</div>
+                        <h3>Start using BigFloat</h3>
+                        <div class="code-snippet">
+                            <pre><code>BigFloat pi = Constants.Fundamental.Pi;
+BigFloat area = pi * radius * radius;</code></pre>
+                            <button class="copy-btn" onclick="copyToClipboard('BigFloat pi = Constants.Fundamental.Pi;\nBigFloat area = pi * radius * radius;')">Copy</button>
+                        </div>
+                    </div>
                 </div>
-                
+            </div>
+        </section>
+
+        <!-- What is BigFloat Section -->
+        <section class="section section-alt">
+            <div class="container">
+                <div class="content-grid">
+                    <div class="content-text">
+                        <h2>What is BigFloat?</h2>
+                        <p>
+                            BigFloat is a high-performance C# struct that provides arbitrary-precision floating-point arithmetic.
+                            Unlike standard <code>double</code> or <code>decimal</code> types, BigFloat can handle numbers with
+                            mantissas up to 2 billion bits, making it ideal for:
+                        </p>
+                        <ul class="feature-list">
+                            <li>Scientific computations requiring extreme precision</li>
+                            <li>Financial calculations where rounding errors are unacceptable</li>
+                            <li>Cryptographic applications</li>
+                            <li>Mathematical research and education</li>
+                            <li>Any scenario where IEEE floating-point precision is insufficient</li>
+                        </ul>
+                    </div>
+                    <div class="content-code">
+                        <div class="code-example">
+                            <div class="code-header">Simple Example</div>
+                            <pre><code class="language-csharp">// Standard double loses precision
+double d1 = 0.1 + 0.2;
+Console.WriteLine(d1 == 0.3); // False!
+
+// BigFloat maintains precision
+BigFloat b1 = new("0.1");
+BigFloat b2 = new("0.2");
+BigFloat sum = b1 + b2;
+Console.WriteLine(sum.ToString()); // 0.3 exactly</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features Grid -->
+        <section class="section">
+            <div class="container">
+                <h2 class="section-title">Key Features</h2>
                 <div class="features-grid">
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                    <circle cx="9" cy="9" r="2"/>
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
-                                </svg>
-                            </div>
-                            <h3>Flexible Precision</h3>
-                        </div>
-                        <p>Mantissa size up to 2 billion bits allows for unprecedented precision in numerical calculations, limited only by available memory.</p>
+                        <div class="feature-icon">🎯</div>
+                        <h3>Arbitrary Precision</h3>
+                        <p>Mantissa size up to 2 billion bits, limited only by available memory</p>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                                    <path d="m9 14 2 2 4-4"/>
-                                </svg>
-                            </div>
-                            <h3>Two's Complement</h3>
-                        </div>
-                        <p>Uses two's complement representation for efficient arithmetic operations, leveraging the underlying BigInteger implementation.</p>
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Guard Bits</h3>
+                        <p>32 hidden guard bits maintain accuracy through chain operations</p>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <polyline points="12,6 12,12 16,14"/>
-                                </svg>
-                            </div>
-                            <h3>Smart Rounding</h3>
-                        </div>
-                        <p>Advanced rounding algorithms that check the most significant removed bit and apply appropriate rounding to maintain precision across operations.</p>
+                        <div class="feature-icon">🚀</div>
+                        <h3>Optimized Algorithms</h3>
+                        <p>Newton-Plus square root, binary exponentiation, and more</p>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 12l2 2 4-4"/>
-                                    <path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3"/>
-                                    <path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-                                </svg>
-                            </div>
-                            <h3>Modern C# Integration</h3>
-                        </div>
-                        <p>Built for C# 11/.NET 7+ with full operator overloading, implicit conversions, and seamless integration with existing .NET applications.</p>
+                        <div class="feature-icon">🧮</div>
+                        <h3>Math Functions</h3>
+                        <p>Comprehensive library including trig, log, roots, and more</p>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </div>
-                            <h3>Comprehensive Math Library</h3>
-                        </div>
-                        <p>Extended mathematical functions including logarithms, square roots, exponentials, and trigonometric operations with high precision.</p>
+                        <div class="feature-icon">📐</div>
+                        <h3>Constants Library</h3>
+                        <p>Pre-computed constants like π, e with up to 1M digits</p>
                     </div>
                     
                     <div class="feature-card">
-                        <div class="feature-header">
-                            <div class="feature-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3v18h18"/>
-                                    <path d="m19 9-5 5-4-4-3 3"/>
-                                </svg>
-                            </div>
-                            <h3>Performance Optimized</h3>
-                        </div>
-                        <p>Optimized for performance with caching mechanisms, efficient bit operations, and minimal memory allocation during calculations.</p>
+                        <div class="feature-icon">🔧</div>
+                        <h3>Easy Integration</h3>
+                        <p>Familiar operators and implicit conversions from standard types</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Architecture Section -->
-        <section id="architecture" class="section">
+        <!-- Code Examples Preview -->
+        <section class="section section-alt">
             <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Architecture Deep Dive</h2>
-                    <p class="section-subtitle">
-                        Understanding the innovative design that makes BigFloat uniquely powerful.
-                    </p>
-                </div>
-                
-                <div class="architecture-content">
-                    <div class="architecture-diagram">
-                        <div class="component">
-                            <h4>Mantissa (DataBits)</h4>
-                            <div class="component-description">BigInteger holding the binary representation</div>
-                        </div>
-                        <div class="component">
-                            <h4>Scale</h4>
-                            <div class="component-description">Radix point position from least significant digit</div>
-                        </div>
-                        <div class="component">
-                            <h4>Size (Cached)</h4>
-                            <div class="component-description">Optimized access to mantissa bit count</div>
-                        </div>
-                        <div class="guard-bits">
-                            <h4>32 Guard Bits</h4>
-                            <div class="component-description">Hidden precision maintenance</div>
-                        </div>
-                    </div>
-                    
-                    <div class="architecture-details">
-                        <div class="detail-card">
-                            <h4>Scale vs. Exponent</h4>
-                            <p>Unlike IEEE floating-point's left-measured exponent, BigFloat's scale measures the radix point from the right (least significant digit), providing more intuitive control over decimal placement and precision.</p>
-                        </div>
-                        
-                        <div class="detail-card">
-                            <h4>Guard Bit Mechanism</h4>
-                            <p>The 32 hidden guard bits act as a precision buffer, maintaining accuracy during sequential operations. They correct cumulative rounding errors that would otherwise degrade precision over multiple calculations.</p>
-                        </div>
-                        
-                        <div class="detail-card">
-                            <h4>Precision Notation</h4>
-                            <p>BigFloat defaults its output to scientific notation to express precision (e.g., 2.32e10). However, it also supports a unique output and input notation (e.g., "232XXXXXXXX") where imprecise portions are marked with X's, ensuring users understand the reliability of each digit.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Interactive Examples Section -->
-        <section id="examples" class="section section-dark">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Code Examples</h2>
-                    <p class="section-subtitle">
-                        Explore BigFloat's capabilities with code examples.
-                    </p>
-                </div>
-                
-                <div class="examples-tabs">
+                <h2 class="section-title">Example Usage</h2>
+                <div class="example-tabs">
                     <div class="tab-nav">
                         <button class="tab-btn active" data-tab="basic">Basic Operations</button>
-                        <button class="tab-btn" data-tab="constants">Mathematical Constants</button>
                         <button class="tab-btn" data-tab="precision">Precision Control</button>
-                        <button class="tab-btn" data-tab="advanced">Advanced Math</button>
+                        <button class="tab-btn" data-tab="constants">Mathematical Constants</button>
                     </div>
                     
                     <div class="tab-content">
                         <div class="tab-pane active" id="basic-tab">
-                            <div class="example-grid">
-                                <div class="code-example">
-                                    <h4>Basic Arithmetic & Operations</h4>
-                                    <pre><code class="language-csharp">
-    // Initialize BigFloat numbers
-    BigFloat a = new("123456789.012345678901234"); // by String
-    BigFloat b = new(1234.56789012345678);         // by Double
+                            <pre><code class="language-csharp">// Create BigFloat numbers
+BigFloat a = new("123456789.012345678901234567890");
+BigFloat b = new(3.14159265358979323846);
 
-    // Basic arithmetic
-    BigFloat sum = a + b;
-    BigFloat difference = a - b;
-    BigFloat product = a * b;
-    BigFloat quotient = a / b;
+// Basic arithmetic
+BigFloat sum = a + b;
+BigFloat product = a * b;
+BigFloat quotient = a / b;
 
-    // Display results
-    Console.WriteLine($"Sum: {sum}");
+// Comparisons
+bool isGreater = a > b;
+bool areEqual = a == b;
 
-    Console.WriteLine($"Difference: {difference}");
-
-    Console.WriteLine($"Product: {product}");
-
-    Console.WriteLine($"Quotient: {quotient}");
-
-    // Comparing Numbers
-    BigFloat num1 = new("12345.6790");
-    BigFloat num2 = new("12345.6789");
-
-    bool areEqual = num1 == num2;
-    bool isFirstBigger = num1 > num2;
-
-    Console.WriteLine($"Are equal? {areEqual}"); // False
-    Console.WriteLine($"First bigger? {isFirstBigger}"); // True
-</code></pre>
-                                </div>
-                                <div class="output-example">
-                                    <h4>Live Output</h4>
-                                    <div class="output-box">
-                                        <div class="output-line">Sum: 123458023.5802358024</div>
-                                        <div class="output-line">Difference: 123455554.4444555554</div>
-                                        <div class="output-line">Product: 152415787532.39</div>
-                                        <div class="output-line">Quotient: 100000.000000000</div>
-                                        <div class="output-line">Are equal? False</div>
-                                        <div class="output-line">First bigger? True</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="tab-pane" id="constants-tab">
-                            <div class="example-grid">
-                                <div class="code-example">
-                                    <h4>High-Precision Constants</h4>
-                                    <pre><code class="language-csharp">
-    // Access constants with specified precision
-    Dictionary&lt;string, BigFloat&gt; bigConstants =
-    Constants.WithConfig(precisionInBits: 1000).GetAll();
-    BigFloat pi = bigConstants["Pi"];
-    BigFloat e = bigConstants["E"];
-
-    Console.WriteLine($"e to 1000 binary digits: {e}");
-
-    // Use Pi in calculations
-    BigFloat radius = new("100.0000000000000000");
-    BigFloat area = pi * radius * radius;
-
-    Console.WriteLine($"Circle area: {area}");
-</code></pre>
-                                </div>
-                                <div class="output-example">
-                                    <h4>Precision Demonstration</h4>
-                                    <div class="output-box">
-                                        <div class="output-line">π: 3.14159265358979323846264338327950288...</div>
-                                        <div class="output-line">e to 1000 binary digits:
-                                            2.7182818284590452353602874713526624977572470936999595749669676
-                                            277240766303535475945713821785251664274274663919320030599218174
-                                            135966290435729003342952605956307381323286279434907632338298807
-                                            531952510190115738341879307021540891499348841675092447614606680
-                                            82264800168477411853742345442437107539077744992070
-                                        </div>
-                                        <div class="output-line">Circle area: 31415.9265358979324</div>
-                                        <div class="precision-indicator">
-                                            <span class="precise">Precise digits</span> | 
-                                            <span class="imprecise">XXXXXXXX Extended precision</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+// Convert to standard types (with safety check)
+if (sum.FitsInADouble())
+{
+    double result = (double)sum;
+}</code></pre>
                         </div>
                         
                         <div class="tab-pane" id="precision-tab">
-                            <div class="example-grid">
-                                <div class="code-example">
-                                    <h4>Precision Manipulation</h4>
-                                    <pre><code class="language-csharp">
-    // Initialize with high precision
-    BigFloat preciseNumber = new("123.45678901234567890123");
+                            <pre><code class="language-csharp">// Set specific precision
+BigFloat precise = BigFloat.SetPrecisionWithRound(value, 1000);
 
-    // Extend precision by adding bits
-    BigFloat morePrecise = ExtendPrecision(
-    preciseNumber, bitsToAdd: 50);
+// Extend precision
+BigFloat extended = BigFloat.ExtendPrecision(value, 500);
 
-    Console.WriteLine($"Extended: {morePrecise}");
+// Check if integer
+if (value.IsInteger)
+{
+    BigFloat floor = value.FloorPreservingAccuracy();
+}
 
-    // Create integer with custom precision
-    BigFloat customInt = IntWithAccuracy(10, 100);
-    Console.WriteLine($"Custom int: {customInt}");
-
-    // Precision notation examples
-    Console.WriteLine("232XXXX -> " + BigFloat.Parse("232XXXX"));
-
-    Console.WriteLine("232X.X -> " + BigFloat.Parse("232X.X"));
-</code></pre>
-                                </div>
-                                <div class="output-example">
-                                    <h4>Precision Control Results</h4>
-                                    <div class="output-box">
-                                        <div class="output-line">Original: 123.45678901234567890123</div>
-                                        <div class="output-line">Extended: 123.45678901234567890123000000000102788</div>
-                                        <div class="output-line">Custom int: 10.000000000000000000000000000000</div>
-                                        <div class="output-line">232XXXX -> 2.32e+6</div>
-                                        <div class="output-line">232X.X -> 2.32e+3</div>
-                                    </div>
-                                </div>
-                            </div>
+// Parse with precision separator
+BigFloat parsed = BigFloat.Parse("123.456|789"); // precise|guard</code></pre>
                         </div>
                         
-                        <div class="tab-pane" id="advanced-tab">
-                            <div class="example-grid">
-                                <div class="code-example">
-                                    <h4>Advanced Operations & Large Numbers</h4>
-                                    <pre><code class="language-csharp">
-    // Handling Very Large Numbers
-    BigFloat largeNumber = new("1234e+7");
-    Console.WriteLine($"Large: {largeNumber}");
+                        <div class="tab-pane" id="constants-tab">
+                            <pre><code class="language-csharp">// Access pre-computed constants
+BigFloat pi = Constants.Fundamental.Pi;
+BigFloat e = Constants.Fundamental.E;
+BigFloat sqrt2 = Constants.Fundamental.Sqrt2;
 
-    // Alternative notation with masking
-    Console.WriteLine($"Masked: {BigFloat.ToStringDecimal(largeNumber, digitMaskingForm: true)}");
+// Get constants with specific precision
+var config = Constants.WithConfig(precisionInBits: 5000);
+BigFloat precisePi = config.Get("Pi");
 
-    // Very large exponents
-    BigFloat veryLarge = new("1234e+300");
-    Console.WriteLine($"Very large: {veryLarge}");
-
-    // Very small numbers
-    BigFloat smallNumber = new("1e-300");
-    Console.WriteLine($"Small: {smallNumber}");
-
-    // Complex calculations
-    BigFloat num5 = new("12121212.1212");
-    BigFloat num6 = new("1234567");
-    Console.WriteLine($"{num5} * {num6} = {num5 * num6}");
-
-    Console.WriteLine($"Precision: {num6.Precision}");
-</code></pre>
-                                </div>
-                                <div class="output-example">
-                                    <h4>Advanced Results</h4>
-                                    <div class="output-box">
-                                        <div class="output-line">Large: 1.234e+10</div>
-                                        <div class="output-line">Masked: 1234XXXXXXX</div>
-                                        <div class="output-line">Very large: 123 * 10^301</div>
-                                        <div class="output-line">Small: 1e-300</div>
-                                        <div class="output-line">Complex calc: 1.496445e+11</div>
-                                        <div class="output-line">Precision: 21 bits</div>
-                                    </div>
-                                </div>
-                            </div>
+// Use in calculations
+BigFloat circleArea = pi * radius * radius;
+BigFloat compound = BigFloat.Pow(e, rate * time);</code></pre>
                         </div>
                     </div>
+                </div>
+                <div class="example-footer">
+                    <a href="examples.html" class="btn btn-secondary">View More Examples →</a>
                 </div>
             </div>
         </section>
 
-        <!-- Performance Section -->
-        <section id="performance" class="section">
+        <!-- Resources Section -->
+        <section class="section">
             <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Performance & Precision</h2>
-                    <p class="section-subtitle">
-                        Benchmarks and precision analysis demonstrating BigFloat's capabilities.
-                    </p>
-                </div>
-                
-                <div class="performance-grid">
-                    <div class="performance-card">
-                        <h4>Guard Bit Effectiveness</h4>
-                        <div class="chart-container">
-                            <div class="chart-bar">
-                                <div class="bar" style="width: 15%">
-                                    <span class="bar-label">Without Rounding</span>
-                                    <span class="bar-value">39 bits affected</span>
-                                </div>
-                            </div>
-                            <div class="chart-bar">
-                                <div class="bar good" style="width: 45%">
-                                    <span class="bar-label">With Rounding</span>
-                                    <span class="bar-value">18 bits affected</span>
-                                </div>
-                            </div>
-                        </div>
-                        <p>After 2⁴⁰ sequential operations, rounding maintains precision within guard bits.</p>
-                    </div>
-                    
-                    <div class="performance-card">
-                        <h4>Precision Scaling</h4>
-                        <div class="precision-scale">
-                            <div class="scale-item">
-                                <span class="scale-label">IEEE Double</span>
-                                <span class="scale-bar">
-                                    <span class="scale-fill" style="width: 5%"></span>
-                                </span>
-                                <span class="scale-value">53 bits</span>
-                            </div>
-                            <div class="scale-item">
-                                <span class="scale-label">IEEE Quad</span>
-                                <span class="scale-bar">
-                                    <span class="scale-fill" style="width: 10%"></span>
-                                </span>
-                                <span class="scale-value">113 bits</span>
-                            </div>
-                            <div class="scale-item">
-                                <span class="scale-label">BigFloat</span>
-                                <span class="scale-bar">
-                                    <span class="scale-fill gradient-fill" style="width: 100%"></span>
-                                </span>
-                                <span class="scale-value">2B+ bits</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="performance-card">
-                        <h4>Memory Efficiency</h4>
-                        <div class="memory-stats">
-                            <div class="stat-row">
-                                <span class="stat-name">Base Overhead</span>
-                                <span class="stat-value">~16 bytes</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-name">Per Precision Bit</span>
-                                <span class="stat-value">~0.125 bytes</span>
-                            </div>
-                            <div class="stat-row">
-                                <span class="stat-name">1000-bit Number</span>
-                                <span class="stat-value">~141 bytes</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Installation Section -->
-        <section id="installation" class="section section-dark">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Get Started</h2>
-                    <p class="section-subtitle">
-                        Quick installation and integration into your C# projects.
-                    </p>
-                </div>
-                
-                <div class="installation-content">
-                    <div class="install-methods">
-                        <div class="install-card">
-                            <div class="install-header">
-                                <div class="install-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                                        <polyline points="3.27,6.96 12,12.01 20.73,6.96"/>
-                                        <line x1="12" y1="22.08" x2="12" y2="12"/>
-                                    </svg>
-                                </div>
-                                <h3>NuGet Package</h3>
-                            </div>
-                            <div class="install-code">
-                                <pre><code>Install-Package BigFloatLibrary</code></pre>
-                                <button class="copy-btn" onclick="copyToClipboard('Install-Package BigFloatLibrary')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p>or via .NET CLI:</p>
-                            <div class="install-code">
-                                <pre><code>dotnet add package BigFloatLibrary</code></pre>
-                                <button class="copy-btn" onclick="copyToClipboard('dotnet add package BigFloatLibrary')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="install-card">
-                            <div class="install-header">
-                                <div class="install-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-                                    </svg>
-                                </div>
-                                <h3>GitHub Source</h3>
-                            </div>
-                            <div class="install-code">
-                                <pre><code>git clone https://github.com/SunsetQuest/BigFloat.git</code></pre>
-                                <button class="copy-btn" onclick="copyToClipboard('git clone https://github.com/SunsetQuest/BigFloat.git')">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p>Add the source files directly to your project for maximum customization.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="requirements">
-                        <h3>Requirements</h3>
-                        <ul>
-                            <li><strong>C# 11</strong> or later</li>
-                            <li><strong>.NET 7</strong> or later</li>
-                            <li><strong>System.Numerics.BigInteger</strong> support</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="quick-start">
-                        <h3>Quick Start Example</h3>
-                        <div class="code-block">
-                            <pre><code class="language-csharp">using BigFloatLibrary;
-
-// Create your first BigFloat
-BigFloat number = new("123.456789012345678901234567890");
-BigFloat doubled = number * 2;
-
-Console.WriteLine($"Original: {number}");
-Console.WriteLine($"Doubled:  {doubled}");</code></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Documentation Section -->
-        <section id="documentation" class="section">
-            <div class="container">
-                <div class="section-header">
-                    <h2 class="section-title">Documentation & Resources</h2>
-                    <p class="section-subtitle">
-                        Comprehensive guides, API references, and community resources.
-                    </p>
-                </div>
-                
-                <div class="docs-grid">
-                    <a href="https://github.com/SunsetQuest/BigFloat" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14,2 14,8 20,8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                <polyline points="10,9 9,9 8,9"/>
-                            </svg>
-                        </div>
-                        <h3>API Reference</h3>
-                        <p>Complete documentation of all classes, methods, and properties with detailed examples.</p>
-                        <span class="doc-link">View Documentation →</span>
-                    </a>
-                    
-                    <a href="https://github.com/SunsetQuest/BigFloat/blob/master/README.md" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M2 3h20v18H2z"/>
-                                <path d="M8 21V7a4 4 0 0 1 4-4 4 4 0 0 1 4 4v14"/>
-                                <path d="M8 7h8"/>
-                                <path d="M8 11h8"/>
-                            </svg>
-                        </div>
+                <h2 class="section-title">Resources & Documentation</h2>
+                <div class="resources-grid">
+                    <a href="getting-started.html" class="resource-card">
+                        <div class="resource-icon">🚀</div>
                         <h3>Getting Started Guide</h3>
-                        <p>Step-by-step tutorials to get you up and running with BigFloat in your projects.</p>
-                        <span class="doc-link">Read Guide →</span>
+                        <p>Installation, setup, and your first BigFloat program</p>
                     </a>
                     
-                    <a href="https://github.com/SunsetQuest/BigFloat/tree/master/Examples" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="16 18 22 12 16 6"/>
-                                <polyline points="8 6 2 12 8 18"/>
-                            </svg>
-                        </div>
-                        <h3>Code Examples</h3>
-                        <p>Real-world examples and use cases demonstrating BigFloat's capabilities.</p>
-                        <span class="doc-link">Browse Examples →</span>
+                    <a href="documentation.html" class="resource-card">
+                        <div class="resource-icon">📖</div>
+                        <h3>API Documentation</h3>
+                        <p>Complete reference for all classes, methods, and properties</p>
                     </a>
                     
-                    <a href="https://www.nuget.org/packages/BigFloatLibrary/" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12,6 12,12 16,14"/>
-                            </svg>
-                        </div>
-                        <h3>Release Notes</h3>
-                        <p>Version history, changelog, and what's new in the latest releases.</p>
-                        <span class="doc-link">View Releases →</span>
+                    <a href="architecture.html" class="resource-card">
+                        <div class="resource-icon">🏗️</div>
+                        <h3>Architecture Guide</h3>
+                        <p>Deep dive into BigFloat's design and implementation</p>
                     </a>
                     
-                    <a href="https://github.com/SunsetQuest/BigFloat/issues" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                            </svg>
-                        </div>
-                        <h3>Community Support</h3>
-                        <p>Get help, report bugs, or contribute to the BigFloat community.</p>
-                        <span class="doc-link">Join Community →</span>
+                    <a href="https://github.com/SunsetQuest/BigFloat" class="resource-card" target="_blank">
+                        <div class="resource-icon">💻</div>
+                        <h3>Source Code</h3>
+                        <p>View on GitHub, contribute, or report issues</p>
                     </a>
-                    
-                    <a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" class="doc-card" target="_blank">
-                        <div class="doc-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                            </svg>
-                        </div>
-                        <h3>Technical Article</h3>
-                        <p>In-depth technical analysis and implementation details published on CodeProject.</p>
-                        <span class="doc-link">Read Article →</span>
-                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fun Fact Section -->
+        <section class="section section-fun">
+            <div class="container">
+                <div class="fun-fact">
+                    <h3>🤓 Fun Fact</h3>
+                    <p>
+                        With BigFloat's 2 billion bit precision limit, you could calculate π to over 600 million decimal places! 
+                        That's enough digits to wrap around the Earth's equator if each digit was 1 millimeter wide.
+                    </p>
                 </div>
             </div>
         </section>
@@ -784,64 +308,43 @@ Console.WriteLine($"Doubled:  {doubled}");</code></pre>
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <div class="footer-brand">
-                    <div class="footer-logo">
-                        <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="footerLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" style="stop-color:#6366f1"/>
-                                    <stop offset="100%" style="stop-color:#8b5cf6"/>
-                                </linearGradient>
-                            </defs>
-                            <circle cx="50" cy="50" r="45" fill="url(#footerLogoGradient)"/>
-                            <text x="50" y="65" font-family="monospace" font-size="35" fill="white" text-anchor="middle" font-weight="bold">F</text>
-                        </svg>
-                    </div>
-                    <div class="footer-brand-text">
-                        <h3>BigFloat</h3>
-                        <p>High-Precision Floating Point Arithmetic</p>
-                    </div>
+                <div class="footer-section">
+                    <h4>BigFloat Library</h4>
+                    <p>High-precision arithmetic for C#</p>
+                    <p class="footer-meta">Created by Ryan Scott White</p>
                 </div>
                 
-                <div class="footer-links">
-                    <div class="link-group">
-                        <h4>Library</h4>
-                        <a href="#overview">Overview</a>
-                        <a href="#features">Features</a>
-                        <a href="#examples">Examples</a>
-                        <a href="#installation">Installation</a>
-                    </div>
-                    <div class="link-group">
-                        <h4>Resources</h4>
-                        <a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub</a>
-                        <a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet</a>
-                        <a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Article</a>
-                    </div>
-                    <div class="link-group">
-                        <h4>Community</h4>
-                        <a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Support</a>
-                        <a href="https://github.com/SunsetQuest/BigFloat/blob/master/CONTRIBUTING.md" target="_blank">Contribute</a>
-                        <a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">License</a>
-                    </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="documentation.html">API Reference</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet Package</a></li>
+                        <li><a href="community.html">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Original Article</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">MIT License</a></li>
+                    </ul>
                 </div>
             </div>
             
             <div class="footer-bottom">
-                <div class="footer-credits">
-                    <p>&copy; 2020-2025 Ryan Scott White. Released under the MIT License.</p>
-                    <p>Website enhanced by Claude (Anthropic) with modern design and comprehensive documentation.</p>
-                </div>
-                <div class="footer-badges">
-                    <a href="https://github.com/SunsetQuest/BigFloat" target="_blank" class="badge">
-                        <img src="https://img.shields.io/github/stars/SunsetQuest/BigFloat?style=social" alt="GitHub Stars">
-                    </a>
-                    <a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank" class="badge">
-                        <img src="https://img.shields.io/nuget/v/BigFloatLibrary.svg" alt="NuGet Version">
-                    </a>
-                    <a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank" class="badge">
-                        <img src="https://img.shields.io/nuget/dt/BigFloatLibrary.svg" alt="NuGet Downloads">
-                    </a>
-                </div>
+                <p>&copy; 2020-2025 BigFloat Library. Released under the MIT License.</p>
             </div>
         </div>
     </footer>

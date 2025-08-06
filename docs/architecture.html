@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - BigFloat Library</title>
+    <meta name="description" content="Deep dive into BigFloat's architecture, internal structure, and design decisions for arbitrary-precision arithmetic.">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EBF%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="favicon.png" alt="BigFloat Logo" class="logo-image">
+                <span class="brand-text">BigFloat</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="getting-started.html" class="nav-link">Getting Started</a>
+                <a href="documentation.html" class="nav-link">Documentation</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="architecture.html" class="nav-link active">Architecture</a>
+                <a href="https://github.com/SunsetQuest/BigFloat" class="nav-link external" target="_blank">GitHub</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <h1>BigFloat Architecture</h1>
+                <p class="page-subtitle">Understanding the internal design and implementation</p>
+            </div>
+        </section>
+
+        <!-- Table of Contents -->
+        <section class="section">
+            <div class="container">
+                <div class="toc-card">
+                    <h2>On This Page</h2>
+                    <ul class="toc-list">
+                        <li><a href="#structure">Core Structure</a></li>
+                        <li><a href="#design-principles">Design Principles</a></li>
+                        <li><a href="#guard-bits">Guard Bits Mechanism</a></li>
+                        <li><a href="#scale-system">Scale vs. Exponent</a></li>
+                        <li><a href="#file-organization">File Organization</a></li>
+                        <li><a href="#optimizations">Performance Optimizations</a></li>
+                        <li><a href="#memory">Memory Management</a></li>
+                        <li><a href="#algorithms">Key Algorithms</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Core Structure -->
+        <section class="section section-alt" id="structure">
+            <div class="container">
+                <h2>Core Structure</h2>
+                
+                <div class="architecture-diagram">
+                    <div class="struct-visualization">
+                        <div class="struct-header">BigFloat Struct Components</div>
+                        <div class="struct-components">
+                            <div class="component-item">
+                                <div class="component-name">DataBits (Mantissa)</div>
+                                <div class="component-type">BigInteger</div>
+                                <div class="component-desc">Binary representation of the number in two's complement</div>
+                            </div>
+                            <div class="component-item">
+                                <div class="component-name">Scale</div>
+                                <div class="component-type">int</div>
+                                <div class="component-desc">Position of radix point from least significant digit</div>
+                            </div>
+                            <div class="component-item">
+                                <div class="component-name">_size</div>
+                                <div class="component-type">int (cached)</div>
+                                <div class="component-desc">Cached bit count for performance optimization</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-representation">
+                    <h3>Visual Representation</h3>
+                    <div class="bit-diagram">
+                        <div class="bit-diagram-content">
+                            <div class="scale-markers">
+                                <div class="scale-marker" style="left: 35%;">
+                                    <span class="scale-label">Scale = 14</span>
+                                    <span class="scale-arrow">↓</span>
+                                </div>
+                                <div class="scale-marker" style="left: 65%;">
+                                    <span class="scale-label">Scale = 0</span>
+                                    <span class="scale-arrow">↓</span>
+                                </div>
+                            </div>
+                            <div class="bit-string">
+                                <span class="bits in-precision">110010010001111110110110101010</span>
+                                <span class="bits out-precision">00010000010000101110100000</span>
+                            </div>
+                            <div class="bit-labels">
+                                <div class="label in-precision-label">In-Precision Bits</div>
+                                <div class="label out-precision-label">Out-of-Precision Bits<br><small>"Hidden Guard Bits"</small></div>
+                            </div>
+                            <div class="full-label">DataBits (BigInteger)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="structure-details">
+                    <h3>Component Details</h3>
+                    
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <h4>📊 DataBits (Mantissa)</h4>
+                            <ul>
+                                <li>Stores the actual numeric value as a BigInteger</li>
+                                <li>Uses two's complement for sign representation</li>
+                                <li>Can grow up to 2 billion bits</li>
+                                <li>Least significant 32 bits serve as guard bits</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>📏 Scale</h4>
+                            <ul>
+                                <li>Indicates radix point position from the right</li>
+                                <li>Positive scale: shifts radix right (larger numbers)</li>
+                                <li>Negative scale: shifts radix left (fractions)</li>
+                                <li>Zero scale: essentially an integer</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="detail-card">
+                            <h4>⚡ Size Cache</h4>
+                            <ul>
+                                <li>Cached value of <code>ABS(DataBits).GetBitLength()</code></li>
+                                <li>Avoids repeated expensive bit counting</li>
+                                <li>Critical for performance in size-based algorithms</li>
+                                <li>Updated only when DataBits changes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Principles -->
+        <section class="section" id="design-principles">
+            <div class="container">
+                <h2>Design Principles</h2>
+                
+                <div class="principles-grid">
+                    <div class="principle-card">
+                        <div class="principle-icon">♾️</div>
+                        <h3>Arbitrary Precision</h3>
+                        <p>
+                            Unlike IEEE floating-point with fixed precision (32/64/128 bits), BigFloat's mantissa 
+                            can grow arbitrarily large, limited only by available memory. This enables calculations 
+                            with thousands or even millions of digits of precision.
+                        </p>
+                    </div>
+                    
+                    <div class="principle-card">
+                        <div class="principle-icon">🛡️</div>
+                        <h3>Immutable Struct Design</h3>
+                        <p>
+                            BigFloat is implemented as an immutable value type (struct), ensuring thread safety 
+                            without locks and preventing unexpected mutations. All operations return new instances 
+                            rather than modifying existing ones.
+                        </p>
+                    </div>
+                    
+                    <div class="principle-card">
+                        <div class="principle-icon">⚙️</div>
+                        <h3>Base-2 Internal Representation</h3>
+                        <p>
+                            All operations are performed in binary for maximum efficiency. While this means some 
+                            decimal values cannot be represented exactly (e.g., 0.1), it aligns with hardware 
+                            architecture and enables fast bit-level operations.
+                        </p>
+                    </div>
+                    
+                    <div class="principle-card">
+                        <div class="principle-icon">🔄</div>
+                        <h3>Two's Complement</h3>
+                        <p>
+                            Leverages BigInteger's two's complement representation for efficient arithmetic. This 
+                            eliminates the need for separate sign handling and simplifies many operations compared 
+                            to sign-magnitude representation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Guard Bits Mechanism -->
+        <section class="section section-alt" id="guard-bits">
+            <div class="container">
+                <h2>Guard Bits Mechanism</h2>
+                
+                <div class="guard-bits-explanation">
+                    <div class="explanation-header">
+                        <h3>The 32 Hidden Guard Bits</h3>
+                        <p>
+                            BigFloat maintains 32 least-significant bits as "guard bits" - extra precision that's 
+                            not considered accurate but helps maintain precision through chains of operations.
+                        </p>
+                    </div>
+                    
+                    <div class="guard-bits-example">
+                        <h4>Example: Addition with Guard Bits</h4>
+                        <div class="code-example">
+                            <pre><code>  101.01100|110011001100110011001100110011  (≈ 5.4)
++ 100.01001|100110011001100110011001100110  (≈ 4.3)
+=========================================
+ 1001.1011|0011001100110011001100110011001 (≈ 9.7)
+
+Without guard bits: 1001.101 (loses precision)
+With guard bits:    1001.110 (more accurate rounding)</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="guard-bits-benefits">
+                        <h4>Benefits of Guard Bits</h4>
+                        <div class="benefit-grid">
+                            <div class="benefit-item">
+                                <h5>🎯 Cumulative Error Correction</h5>
+                                <p>
+                                    Over many operations, rounding errors accumulate. Guard bits act as a buffer, 
+                                    preserving sub-precision information that improves final results.
+                                </p>
+                            </div>
+                            
+                            <div class="benefit-item">
+                                <h5>📊 Statistical Accuracy</h5>
+                                <p>
+                                    With proper rounding, guard bits can maintain accuracy through approximately 
+                                    10²¹ operations before precision degradation becomes significant.
+                                </p>
+                            </div>
+                            
+                            <div class="benefit-item">
+                                <h5>🔄 Rounding Improvement</h5>
+                                <p>
+                                    Guard bits provide additional information for rounding decisions, resulting in 
+                                    "round to nearest" behavior rather than always truncating.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="theoretical-limits">
+                        <h4>Theoretical Precision Limits</h4>
+                        <div class="info-box">
+                            <p>
+                                <strong>With proper rounding:</strong> ~(2³² × 2)² × 4 = 1.5 × 10²¹ operations before guard bit exhaustion<br>
+                                <strong>Without rounding:</strong> ~2⁴⁰ operations would affect 39 bits (exceeding guard bits)<br>
+                                <strong>With rounding:</strong> Only ~18 bits affected on average (staying within guard bits)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scale vs Exponent -->
+        <section class="section" id="scale-system">
+            <div class="container">
+                <h2>Scale vs. Exponent System</h2>
+                
+                <div class="comparison-table">
+                    <h3>BigFloat Scale vs. IEEE Exponent</h3>
+                    <table class="architecture-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>BigFloat (Scale)</th>
+                                <th>IEEE Floating-Point (Exponent)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Measurement Direction</strong></td>
+                                <td>From right (least significant digit)</td>
+                                <td>From left (most significant digit)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Representation</strong></td>
+                                <td>Integer scale value</td>
+                                <td>Biased exponent</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Normalization</strong></td>
+                                <td>Not required</td>
+                                <td>Mantissa normalized (1.xxxx)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Precision Control</strong></td>
+                                <td>More intuitive for decimal placement</td>
+                                <td>Optimized for hardware</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Range</strong></td>
+                                <td>-2³¹ to 2³¹-1</td>
+                                <td>Limited by exponent bits</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="scale-examples">
+                    <h3>Scale Examples</h3>
+                    <div class="example-grid">
+                        <div class="scale-example">
+                            <code>DataBits: 1234</code>
+                            <code>Scale: 0</code>
+                            <div class="result">Result: 1234</div>
+                        </div>
+                        <div class="scale-example">
+                            <code>DataBits: 1234</code>
+                            <code>Scale: 2</code>
+                            <div class="result">Result: 123400</div>
+                        </div>
+                        <div class="scale-example">
+                            <code>DataBits: 1234</code>
+                            <code>Scale: -2</code>
+                            <div class="result">Result: 12.34</div>
+                        </div>
+                        <div class="scale-example">
+                            <code>DataBits: 1234</code>
+                            <code>Scale: -4</code>
+                            <div class="result">Result: 0.1234</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- File Organization -->
+        <section class="section section-alt" id="file-organization">
+            <div class="container">
+                <h2>File Organization</h2>
+                
+                <div class="file-structure">
+                    <h3>Core Implementation Files</h3>
+                    
+                    <div class="file-grid">
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">📄</span>
+                                <h4>BigFloat.cs</h4>
+                            </div>
+                            <p><strong>Primary Structure & Operations</strong></p>
+                            <ul>
+                                <li>Struct definition and fields</li>
+                                <li>Constructors for all numeric types</li>
+                                <li>Basic arithmetic operators (+, -, *, /, %)</li>
+                                <li>Comparison operators and IComparable</li>
+                                <li>Type conversions (explicit/implicit)</li>
+                                <li>Core properties (Sign, IsZero, IsInteger)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">🧮</span>
+                                <h4>BigFloatMath.cs</h4>
+                            </div>
+                            <p><strong>Mathematical Functions</strong></p>
+                            <ul>
+                                <li>Sqrt() - Newton-Plus algorithm</li>
+                                <li>Pow() - Binary exponentiation</li>
+                                <li>NthRoot(), CubeRoot()</li>
+                                <li>Trigonometric functions (Sin, Cos, Tan)</li>
+                                <li>Log2() with hardware acceleration</li>
+                                <li>Floor/Ceiling with precision preservation</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">📝</span>
+                                <h4>BigFloatStringsAndSpans.cs</h4>
+                            </div>
+                            <p><strong>String Formatting & Display</strong></p>
+                            <ul>
+                                <li>ToString() with format specifiers</li>
+                                <li>IFormattable implementation</li>
+                                <li>Scientific notation support</li>
+                                <li>Hexadecimal/Binary output</li>
+                                <li>Precision masking (XXXXX notation)</li>
+                                <li>Debug visualization</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">🔍</span>
+                                <h4>BigFloatParsing.cs</h4>
+                            </div>
+                            <p><strong>Input Processing</strong></p>
+                            <ul>
+                                <li>Parse() and TryParse() methods</li>
+                                <li>Decimal string parsing</li>
+                                <li>Hexadecimal (0x) support</li>
+                                <li>Binary (0b) support</li>
+                                <li>Scientific notation (1.23e+10)</li>
+                                <li>Precision separator (123.456|789)</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">⚖️</span>
+                                <h4>BigFloatCompareTo.cs</h4>
+                            </div>
+                            <p><strong>Comparison Operations</strong></p>
+                            <ul>
+                                <li>Standard CompareTo()</li>
+                                <li>CompareInPrecisionBitsTo()</li>
+                                <li>StrictCompareTo() - exact bit comparison</li>
+                                <li>FullPrecisionCompareTo()</li>
+                                <li>CompareToIgnoringLeastSigBits()</li>
+                                <li>BigInteger comparisons</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">🔧</span>
+                                <h4>BigFloatExtended.cs</h4>
+                            </div>
+                            <p><strong>Extended Functionality</strong></p>
+                            <ul>
+                                <li>UInt128/Int128 constructors</li>
+                                <li>FitsInADouble() validation</li>
+                                <li>Extended comparisons</li>
+                                <li>Precision management utilities</li>
+                                <li>Debug and diagnostic functions</li>
+                                <li>Helper methods</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="file-card">
+                            <div class="file-header">
+                                <span class="file-icon">π</span>
+                                <h4>Constants.cs</h4>
+                            </div>
+                            <p><strong>Mathematical Constants</strong></p>
+                            <ul>
+                                <li>Pre-computed constants (π, e, √2, φ)</li>
+                                <li>Up to 1M decimal digits precision</li>
+                                <li>Base64 encoded storage</li>
+                                <li>Lazy loading and caching</li>
+                                <li>Category organization</li>
+                                <li>External file support</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Optimizations -->
+        <section class="section" id="optimizations">
+            <div class="container">
+                <h2>Performance Optimizations</h2>
+                
+                <div class="optimization-grid">
+                    <div class="optimization-card">
+                        <h3>🚀 Newton-Plus Square Root</h3>
+                        <p>
+                            Custom algorithm that's 2-10x faster than traditional Newton's method. Uses adaptive 
+                            precision and early termination when convergence is detected.
+                        </p>
+                        <div class="performance-stat">2-10x faster</div>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>⚡ Binary Exponentiation</h3>
+                        <p>
+                            Efficient O(log n) algorithm for integer powers. Minimizes the number of multiplications 
+                            through bit manipulation of the exponent.
+                        </p>
+                        <div class="performance-stat">O(log n) complexity</div>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>💾 Size Caching</h3>
+                        <p>
+                            The _size field caches the bit count of DataBits, avoiding repeated expensive 
+                            GetBitLength() calls during size-based algorithm selection.
+                        </p>
+                        <div class="performance-stat">~5x speedup for comparisons</div>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>🎯 RoundingRightShift</h3>
+                        <p>
+                            Core primitive for all rounding operations. Optimized for common bit shift patterns 
+                            with special cases for power-of-2 shifts.
+                        </p>
+                        <div class="performance-stat">Used in 90% of operations</div>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>🔄 Scale Alignment</h3>
+                        <p>
+                            Minimal BigInteger operations during arithmetic by efficient scale alignment. Reduces 
+                            unnecessary bit shifting and copying.
+                        </p>
+                        <div class="performance-stat">30% reduction in allocations</div>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>📊 Size-Based Algorithms</h3>
+                        <p>
+                            Different algorithms selected based on operand sizes. Small numbers use simpler 
+                            algorithms while large numbers use more sophisticated approaches.
+                        </p>
+                        <div class="performance-stat">Adaptive optimization</div>
+                    </div>
+                </div>
+                
+                <div class="recent-optimizations">
+                    <h3>Recent Performance Improvements (2025)</h3>
+                    <ul class="optimization-list">
+                        <li><strong>IsOneBitFollowedByZeroBits:</strong> 2x performance using IsPow2 instead of TrailingZeroCount</li>
+                        <li><strong>ToDecimal:</strong> Performance boost using cached _size instead of GetBitLength()</li>
+                        <li><strong>ToHexString:</strong> Complete rewrite for better performance and accuracy</li>
+                        <li><strong>Binary Operations:</strong> Streamlined internal calculations for better throughput</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Memory Management -->
+        <section class="section section-alt" id="memory">
+            <div class="container">
+                <h2>Memory Management</h2>
+                
+                <div class="memory-details">
+                    <h3>Memory Characteristics</h3>
+                    
+                    <div class="memory-grid">
+                        <div class="memory-card">
+                            <h4>Struct Overhead</h4>
+                            <div class="memory-breakdown">
+                                <div class="memory-item">
+                                    <span class="item-name">BigInteger reference:</span>
+                                    <span class="item-size">8 bytes</span>
+                                </div>
+                                <div class="memory-item">
+                                    <span class="item-name">Scale (int):</span>
+                                    <span class="item-size">4 bytes</span>
+                                </div>
+                                <div class="memory-item">
+                                    <span class="item-name">_size (int):</span>
+                                    <span class="item-size">4 bytes</span>
+                                </div>
+                                <div class="memory-total">
+                                    <span class="item-name">Base overhead:</span>
+                                    <span class="item-size">~16 bytes</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-card">
+                            <h4>Precision Scaling</h4>
+                            <div class="memory-breakdown">
+                                <div class="memory-item">
+                                    <span class="item-name">Per precision bit:</span>
+                                    <span class="item-size">0.125 bytes</span>
+                                </div>
+                                <div class="memory-item">
+                                    <span class="item-name">100-bit number:</span>
+                                    <span class="item-size">~29 bytes</span>
+                                </div>
+                                <div class="memory-item">
+                                    <span class="item-name">1,000-bit number:</span>
+                                    <span class="item-size">~141 bytes</span>
+                                </div>
+                                <div class="memory-item">
+                                    <span class="item-name">1M-bit number:</span>
+                                    <span class="item-size">~125 KB</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="memory-card">
+                            <h4>Optimization Strategies</h4>
+                            <ul>
+                                <li><strong>Immutable design:</strong> Zero heap allocation for struct itself</li>
+                                <li><strong>BigInteger efficiency:</strong> Leverages .NET's optimized implementation</li>
+                                <li><strong>Constants caching:</strong> Pre-computed values cached to avoid recomputation</li>
+                                <li><strong>Lazy evaluation:</strong> Constants loaded only when needed</li>
+                                <li><strong>Reference sharing:</strong> BigInteger internally shares buffers when possible</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="memory-tips">
+                    <h3>Memory Usage Guidelines</h3>
+                    <div class="tip-box">
+                        <p>
+                            <strong>💡 Tip:</strong> For most applications, precision between 100-1000 bits is sufficient. 
+                            Only use extreme precision (>10,000 bits) when absolutely necessary, as memory usage and 
+                            computation time scale with precision.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Algorithms -->
+        <section class="section" id="algorithms">
+            <div class="container">
+                <h2>Key Algorithms</h2>
+                
+                <div class="algorithm-showcase">
+                    <div class="algorithm-card">
+                        <h3>Newton-Plus Square Root Algorithm</h3>
+                        <p>
+                            BigFloat's signature optimization for square root calculation. Combines Newton's method 
+                            with adaptive precision scaling and convergence detection.
+                        </p>
+                        <div class="algorithm-features">
+                            <h4>Key Features:</h4>
+                            <ul>
+                                <li>Starts with lower precision, gradually increases</li>
+                                <li>Early termination on convergence</li>
+                                <li>Bit-shift optimizations for power-of-2 cases</li>
+                                <li>2-10x performance improvement over traditional methods</li>
+                            </ul>
+                        </div>
+                        <div class="code-snippet">
+                            <pre><code class="language-csharp">// Simplified algorithm overview
+BigFloat Sqrt(BigFloat value)
+{
+    // Start with hardware double approximation
+    double initial = Math.Sqrt((double)value);
+    BigFloat x = new(initial);
+    
+    // Newton iterations with increasing precision
+    while (!converged)
+    {
+        x = (x + value / x) / 2;
+        // Adaptive precision adjustment
+    }
+    return x;
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card">
+                        <h3>Payne-Hanek Reduction</h3>
+                        <p>
+                            Used for trigonometric functions to accurately reduce arguments to the primary range 
+                            [-π/2, π/2], maintaining precision even for very large arguments.
+                        </p>
+                        <div class="algorithm-features">
+                            <h4>Benefits:</h4>
+                            <ul>
+                                <li>Accurate for arguments with magnitude up to 2^63</li>
+                                <li>Preserves precision for periodic functions</li>
+                                <li>Eliminates catastrophic cancellation</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card">
+                        <h3>Adaptive Precision Division</h3>
+                        <p>
+                            Division algorithm that dynamically adjusts precision based on operand sizes and 
+                            required accuracy, minimizing unnecessary computation.
+                        </p>
+                        <div class="algorithm-features">
+                            <h4>Optimization Strategy:</h4>
+                            <ul>
+                                <li>Analyzes operand bit patterns</li>
+                                <li>Selects optimal algorithm (long division vs. Newton-Raphson)</li>
+                                <li>Adjusts working precision dynamically</li>
+                                <li>Handles special cases (power-of-2 divisors)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Trade-offs -->
+        <section class="section section-alt">
+            <div class="container">
+                <h2>Design Trade-offs</h2>
+                
+                <div class="tradeoff-grid">
+                    <div class="tradeoff-card">
+                        <h3>Binary vs. Decimal</h3>
+                        <div class="tradeoff-content">
+                            <div class="pros">
+                                <h4>✅ Advantages</h4>
+                                <ul>
+                                    <li>Aligns with hardware architecture</li>
+                                    <li>Efficient bit-level operations</li>
+                                    <li>Direct BigInteger integration</li>
+                                </ul>
+                            </div>
+                            <div class="cons">
+                                <h4>⚠️ Trade-offs</h4>
+                                <ul>
+                                    <li>Some decimal values not exact (0.1)</li>
+                                    <li>Conversion overhead for I/O</li>
+                                    <li>Less intuitive for financial calculations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tradeoff-card">
+                        <h3>Scale vs. Exponent</h3>
+                        <div class="tradeoff-content">
+                            <div class="pros">
+                                <h4>✅ Advantages</h4>
+                                <ul>
+                                    <li>More intuitive decimal placement</li>
+                                    <li>No normalization required</li>
+                                    <li>Simpler mental model</li>
+                                </ul>
+                            </div>
+                            <div class="cons">
+                                <h4>⚠️ Trade-offs</h4>
+                                <ul>
+                                    <li>Different from IEEE standard</li>
+                                    <li>Requires conversion for interop</li>
+                                    <li>Less hardware optimization</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tradeoff-card">
+                        <h3>Guard Bits (32)</h3>
+                        <div class="tradeoff-content">
+                            <div class="pros">
+                                <h4>✅ Advantages</h4>
+                                <ul>
+                                    <li>Maintains accuracy over ~10²¹ ops</li>
+                                    <li>Minimal memory overhead</li>
+                                    <li>Good balance for most use cases</li>
+                                </ul>
+                            </div>
+                            <div class="cons">
+                                <h4>⚠️ Trade-offs</h4>
+                                <ul>
+                                    <li>Not configurable</li>
+                                    <li>May be insufficient for some edge cases</li>
+                                    <li>Gradual precision loss inevitable</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Future Considerations -->
+        <section class="section">
+            <div class="container">
+                <h2>Future Architecture Considerations</h2>
+                
+                <div class="future-grid">
+                    <div class="future-item">
+                        <h3>🔄 Repeating Digit Support</h3>
+                        <p>
+                            Potential addition of a _repeat field to exactly represent rational numbers with 
+                            repeating binary patterns (e.g., 1/3 = 0.010101...).
+                        </p>
+                    </div>
+                    
+                    <div class="future-item">
+                        <h3>🎯 Configurable Guard Bits</h3>
+                        <p>
+                            Allow users to specify guard bit count based on their precision requirements and 
+                            operation chain length.
+                        </p>
+                    </div>
+                    
+                    <div class="future-item">
+                        <h3>⚡ Hardware Acceleration</h3>
+                        <p>
+                            Leverage SIMD instructions and GPU computation for operations on very large 
+                            precision numbers.
+                        </p>
+                    </div>
+                    
+                    <div class="future-item">
+                        <h3>📊 Decimal Mode</h3>
+                        <p>
+                            Optional base-10 internal representation for applications requiring exact decimal 
+                            arithmetic (financial, accounting).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>BigFloat Library</h4>
+                    <p>High-precision arithmetic for C#</p>
+                    <p class="footer-meta">Created by Ryan Scott White</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="documentation.html">API Reference</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet Package</a></li>
+                        <li><a href="community.html">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Original Article</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">MIT License</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2020-2025 BigFloat Library. Released under the MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Additional styles for architecture page -->
+    <style>
+        /* Architecture-specific styles */
+        .architecture-diagram {
+            margin: 2rem 0;
+        }
+        
+        .struct-visualization {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        
+        .struct-header {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .struct-components {
+            padding: 1.5rem;
+        }
+        
+        .component-item {
+            display: grid;
+            grid-template-columns: 200px 120px 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            align-items: center;
+        }
+        
+        .component-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .component-name {
+            font-weight: 600;
+            color: var(--brand-primary);
+        }
+        
+        .component-type {
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .component-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        /* Bit diagram */
+        .bit-diagram {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .bit-diagram-content {
+            position: relative;
+        }
+        
+        .scale-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            position: relative;
+            height: 40px;
+        }
+        
+        .scale-marker {
+            position: absolute;
+            text-align: center;
+        }
+        
+        .scale-label {
+            display: block;
+            font-weight: 600;
+            color: var(--brand-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .scale-arrow {
+            display: block;
+            font-size: 1.5rem;
+            color: var(--brand-primary);
+        }
+        
+        .bit-string {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            letter-spacing: 0.1em;
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            justify-content: center;
+        }
+        
+        .bits.in-precision {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .bits.out-precision {
+            color: var(--text-tertiary);
+            opacity: 0.7;
+        }
+        
+        .bit-labels {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1rem;
+            gap: 2rem;
+        }
+        
+        .bit-labels .label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .in-precision-label {
+            color: var(--brand-primary);
+            font-weight: 500;
+        }
+        
+        .out-precision-label {
+            color: var(--accent-orange);
+            font-weight: 500;
+        }
+        
+        .full-label {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Detail cards */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .detail-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        
+        .detail-card h4 {
+            color: var(--brand-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .detail-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .detail-card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        
+        .detail-card li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Principles grid */
+        .principles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .principle-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+        
+        .principle-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .principle-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Guard bits section */
+        .guard-bits-explanation {
+            background: var(--bg-primary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        
+        .benefit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .benefit-item {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+        }
+        
+        .benefit-item h5 {
+            color: var(--brand-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Architecture table */
+        .architecture-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        
+        .architecture-table th {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .architecture-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .architecture-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* Scale examples */
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .scale-example {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+        }
+        
+        .scale-example code {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+        
+        .scale-example .result {
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--brand-primary);
+            font-weight: 600;
+        }
+        
+        /* File grid */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .file-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+        }
+        
+        .file-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .file-icon {
+            font-size: 1.5rem;
+        }
+        
+        .file-card h4 {
+            margin: 0;
+            color: var(--brand-primary);
+        }
+        
+        .file-card > p {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .file-card ul {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .file-card li {
+            padding: 0.25rem 0;
+        }
+        
+        /* Optimization grid */
+        .optimization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .optimization-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .optimization-card h3 {
+            color: var(--brand-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .performance-stat {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--accent-green);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .optimization-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .optimization-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .optimization-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* Memory cards */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .memory-card {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+        
+        .memory-breakdown {
+            margin-top: 1rem;
+        }
+        
+        .memory-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .memory-item:last-child {
+            border-bottom: none;
+        }
+        
+        .memory-total {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 2px solid var(--border-color);
+            font-weight: 600;
+        }
+        
+        .item-name {
+            color: var(--text-secondary);
+        }
+        
+        .item-size {
+            font-family: var(--font-mono);
+            color: var(--brand-primary);
+            font-weight: 500;
+        }
+        
+        /* Algorithm cards */
+        .algorithm-card {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+        }
+        
+        .algorithm-card h3 {
+            color: var(--brand-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .algorithm-features {
+            margin: 1.5rem 0;
+        }
+        
+        .algorithm-features h4 {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Trade-off cards */
+        .tradeoff-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .tradeoff-card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .tradeoff-card h3 {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            margin: 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tradeoff-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .pros, .cons {
+            padding: 1.5rem;
+        }
+        
+        .pros {
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .pros h4 {
+            color: var(--accent-green);
+            margin-bottom: 0.75rem;
+        }
+        
+        .cons h4 {
+            color: var(--accent-orange);
+            margin-bottom: 0.75rem;
+        }
+        
+        .pros ul, .cons ul {
+            list-style: none;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+        
+        .pros li, .cons li {
+            padding: 0.25rem 0;
+        }
+        
+        /* Future grid */
+        .future-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .future-item {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--brand-primary);
+        }
+        
+        .future-item h3 {
+            color: var(--brand-primary);
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Dark mode adjustments */
+        [data-theme="dark"] .struct-visualization {
+            background: var(--bg-secondary);
+        }
+        
+        [data-theme="dark"] .bit-diagram {
+            background: var(--bg-secondary);
+        }
+        
+        [data-theme="dark"] .guard-bits-explanation {
+            background: var(--bg-secondary);
+        }
+        
+        [data-theme="dark"] .file-card {
+            background: var(--bg-secondary);
+        }
+        
+        [data-theme="dark"] .memory-card {
+            background: var(--bg-secondary);
+        }
+        
+        [data-theme="dark"] .tradeoff-card {
+            background: var(--bg-secondary);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .component-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .tradeoff-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .pros {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+
+    <script src="script.js"></script>
+</body>
+</html>

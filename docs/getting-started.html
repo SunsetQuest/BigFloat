@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - BigFloat Library</title>
+    <meta name="description" content="Learn how to install and start using the BigFloat arbitrary-precision arithmetic library for C#.">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EBF%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="BigFloatImage.png" alt="BigFloat Logo" class="logo-image">
+                <span class="brand-text">BigFloat</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="getting-started.html" class="nav-link active">Getting Started</a>
+                <a href="documentation.html" class="nav-link">Documentation</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="architecture.html" class="nav-link">Architecture</a>
+                <a href="https://github.com/SunsetQuest/BigFloat" class="nav-link external" target="_blank">GitHub</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <h1>Getting Started with BigFloat</h1>
+                <p class="page-subtitle">Learn how to install and start using BigFloat in your C# projects</p>
+            </div>
+        </section>
+
+        <!-- Table of Contents -->
+        <section class="section">
+            <div class="container">
+                <div class="toc-card">
+                    <h2>On This Page</h2>
+                    <ul class="toc-list">
+                        <li><a href="#requirements">Requirements</a></li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#first-program">Your First BigFloat Program</a></li>
+                        <li><a href="#basic-operations">Basic Operations</a></li>
+                        <li><a href="#precision">Understanding Precision</a></li>
+                        <li><a href="#next-steps">Next Steps</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Requirements -->
+        <section class="section" id="requirements">
+            <div class="container">
+                <h2>Requirements</h2>
+                <div class="requirements-grid">
+                    <div class="requirement-card">
+                        <div class="requirement-icon">📦</div>
+                        <h3>.NET 9 or later</h3>
+                        <p>BigFloat uses modern C# features that require .NET 9+</p>
+                    </div>
+                    <div class="requirement-card">
+                        <div class="requirement-icon">⚙️</div>
+                        <h3>C# 11 or later</h3>
+                        <p>Language features from C# 11 are utilized throughout the library</p>
+                    </div>
+                    <div class="requirement-card">
+                        <div class="requirement-icon">💾</div>
+                        <h3>System.Numerics</h3>
+                        <p>BigInteger support is required (included in .NET)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Installation -->
+        <section class="section section-alt" id="installation">
+            <div class="container">
+                <h2>Installation</h2>
+                
+                <div class="installation-methods">
+                    <div class="method-card">
+                        <h3>Method 1: NuGet Package (Recommended)</h3>
+                        <p>The easiest way to add BigFloat to your project is via NuGet:</p>
+                        
+                        <h4>Using Package Manager Console:</h4>
+                        <div class="code-snippet">
+                            <pre><code>Install-Package BigFloatLibrary</code></pre>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        
+                        <h4>Using .NET CLI:</h4>
+                        <div class="code-snippet">
+                            <pre><code>dotnet add package BigFloatLibrary</code></pre>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        
+                        <h4>Using PackageReference in .csproj:</h4>
+                        <div class="code-snippet">
+                            <pre><code class="language-xml">&lt;PackageReference Include="BigFloatLibrary" Version="*" /&gt;</code></pre>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="method-card">
+                        <h3>Method 2: Source Code</h3>
+                        <p>For maximum control or to contribute to development:</p>
+                        
+                        <h4>Clone the repository:</h4>
+                        <div class="code-snippet">
+                            <pre><code>git clone https://github.com/SunsetQuest/BigFloat.git</code></pre>
+                            <button class="copy-btn">Copy</button>
+                        </div>
+                        
+                        <h4>Add to your project:</h4>
+                        <ol class="numbered-list">
+                            <li>Copy the <code>BigFloatLibrary</code> folder to your solution</li>
+                            <li>Add a project reference in your .csproj file</li>
+                            <li>Optional: Include <code>Constants.cs</code> for mathematical constants</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- First Program -->
+        <section class="section" id="first-program">
+            <div class="container">
+                <h2>Your First BigFloat Program</h2>
+                <p>Let's create a simple program that demonstrates BigFloat's precision advantages:</p>
+                
+                <div class="code-example">
+                    <div class="code-header">Program.cs</div>
+                    <pre><code class="language-csharp">using System;
+using BigFloatLibrary;
+
+class Program
+{
+    static void Main()
+    {
+        // Problem: 0.1 + 0.2 != 0.3 in standard floating point
+        double d1 = 0.1;
+        double d2 = 0.2;
+        double d3 = d1 + d2;
+        Console.WriteLine($"Double: {d1} + {d2} = {d3}");
+        Console.WriteLine($"Is 0.1 + 0.2 == 0.3? {d3 == 0.3}"); // False!
+        
+        // Solution: BigFloat maintains precision
+        BigFloat b1 = new("0.1");
+        BigFloat b2 = new("0.2");
+        BigFloat b3 = b1 + b2;
+        Console.WriteLine($"\nBigFloat: {b1} + {b2} = {b3}");
+        Console.WriteLine($"Is 0.1 + 0.2 == 0.3? {b3 == new BigFloat("0.3")}"); // True!
+        
+        // High precision calculation
+        BigFloat pi = Constants.Fundamental.Pi;
+        BigFloat radius = new("10.123456789");
+        BigFloat area = pi * radius * radius;
+        Console.WriteLine($"\nCircle area with radius {radius}:");
+        Console.WriteLine($"Area = {area}");
+    }
+}</code></pre>
+                </div>
+                
+                <div class="output-box">
+                    <h4>Expected Output:</h4>
+                    <pre><code>Double: 0.1 + 0.2 = 0.30000000000000004
+Is 0.1 + 0.2 == 0.3? False
+
+BigFloat: 0.1 + 0.2 = 0.3
+Is 0.1 + 0.2 == 0.3? True
+
+Circle area with radius 10.123456789:
+Area = 321.7526058894951</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Basic Operations -->
+        <section class="section section-alt" id="basic-operations">
+            <div class="container">
+                <h2>Basic Operations</h2>
+                
+                <div class="operation-grid">
+                    <div class="operation-card">
+                        <h3>Creating BigFloat Values</h3>
+                        <pre><code class="language-csharp">// From string (most precise)
+BigFloat a = new("123.456789012345678901234567890");
+
+// From double
+BigFloat b = new(3.14159265358979323846);
+
+// From integer
+BigFloat c = new(42);
+
+// From BigInteger
+BigInteger bigInt = BigInteger.Parse("123456789012345678901234567890");
+BigFloat d = new(bigInt);
+
+// With specific precision
+BigFloat e = BigFloat.IntWithAccuracy(10, 100); // 10 with 100 bits precision</code></pre>
+                    </div>
+                    
+                    <div class="operation-card">
+                        <h3>Arithmetic Operations</h3>
+                        <pre><code class="language-csharp">BigFloat x = new("100.5");
+BigFloat y = new("25.25");
+
+// Basic arithmetic
+BigFloat sum = x + y;        // 125.75
+BigFloat diff = x - y;       // 75.25
+BigFloat prod = x * y;       // 2537.625
+BigFloat quot = x / y;       // 3.98...
+BigFloat rem = x % y;        // 0.5
+
+// Unary operations
+BigFloat neg = -x;           // -100.5
+BigFloat abs = BigFloat.Abs(x);  // 100.5</code></pre>
+                    </div>
+                    
+                    <div class="operation-card">
+                        <h3>Comparisons</h3>
+                        <pre><code class="language-csharp">BigFloat a = new("100.1");
+BigFloat b = new("100.2");
+
+// Comparison operators
+bool isEqual = a == b;       // false
+bool isNotEqual = a != b;    // true
+bool isLess = a < b;         // true
+bool isGreater = a > b;      // false
+bool isLessOrEqual = a <= b; // true
+bool isGreaterOrEqual = a >= b; // false
+
+// CompareTo method
+int comparison = a.CompareTo(b); // -1 (a < b)</code></pre>
+                    </div>
+                    
+                    <div class="operation-card">
+                        <h3>Type Conversions</h3>
+                        <pre><code class="language-csharp">BigFloat bf = new("123.456");
+
+// Check if fits in standard type
+if (bf.FitsInADouble())
+{
+    double d = (double)bf;
+}
+
+// Explicit conversions
+int intValue = (int)bf;      // 123 (truncates)
+long longValue = (long)bf;   // 123
+decimal decValue = (decimal)bf; // 123.456
+
+// To string with format
+string str1 = bf.ToString();      // "123.456"
+string str2 = bf.ToString("E");   // "1.23456E+2"
+string str3 = bf.ToString("X");   // Hexadecimal</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Understanding Precision -->
+        <section class="section" id="precision">
+            <div class="container">
+                <h2>Understanding Precision</h2>
+                
+                <div class="info-box">
+                    <h3>🔍 Key Concept: Guard Bits</h3>
+                    <p>
+                        BigFloat maintains 32 "guard bits" as hidden extra precision. These bits help maintain 
+                        accuracy through chains of operations, preventing cumulative rounding errors.
+                    </p>
+                </div>
+                
+                <div class="precision-examples">
+                    <h3>Precision in Action</h3>
+                    
+                    <div class="code-example">
+                        <div class="code-header">Precision Examples</div>
+                        <pre><code class="language-csharp">// When you see output like "232XXXXXXXX", the X's indicate out-of-precision digits
+BigFloat large = new("232000000000");
+Console.WriteLine(large); // May display as "232XXXXXXXX" or "2.32e+11"
+
+// Parsing with precision separator
+// Format: "precise_part|guard_bits"
+BigFloat precise = BigFloat.Parse("123.456|789");
+Console.WriteLine($"Value: {precise}");
+
+// Setting specific precision
+BigFloat original = new("3.14159265358979323846264338327950288");
+BigFloat rounded = BigFloat.SetPrecisionWithRound(original, 100); // 100 bits
+
+// Extending precision (adds zeros, doesn't add information)
+BigFloat extended = BigFloat.ExtendPrecision(original, 50);</code></pre>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4>⚠️ Important: Base-2 vs Base-10</h4>
+                        <p>
+                            BigFloat uses binary (base-2) internally. Most decimal numbers cannot be represented 
+                            exactly in binary, leading to small precision differences:
+                        </p>
+                        <ul>
+                            <li><code>0.1</code> in decimal = <code>0.00011001100110011...</code> (repeating) in binary</li>
+                            <li><code>0.25</code> in decimal = <code>0.01</code> (exact) in binary</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Next Steps -->
+        <section class="section section-alt" id="next-steps">
+            <div class="container">
+                <h2>Next Steps</h2>
+                
+                <div class="next-steps-grid">
+                    <a href="documentation.html" class="next-step-card">
+                        <div class="step-icon">📚</div>
+                        <h3>API Documentation</h3>
+                        <p>Explore the complete API reference with all methods, properties, and advanced features.</p>
+                    </a>
+                    
+                    <a href="examples.html" class="next-step-card">
+                        <div class="step-icon">💡</div>
+                        <h3>Code Examples</h3>
+                        <p>See practical examples including financial calculations, scientific computing, and more.</p>
+                    </a>
+                    
+                    <a href="architecture.html" class="next-step-card">
+                        <div class="step-icon">🏗️</div>
+                        <h3>Architecture Deep Dive</h3>
+                        <p>Understand how BigFloat works internally, including the scale system and optimizations.</p>
+                    </a>
+                </div>
+                
+                <div class="help-section">
+                    <h3>Need Help?</h3>
+                    <p>
+                        If you run into issues or have questions:
+                    </p>
+                    <ul>
+                        <li>Check the <a href="documentation.html">documentation</a> for detailed information</li>
+                        <li>Browse <a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">GitHub issues</a> for similar problems</li>
+                        <li>Join the discussion in the <a href="community.html">community section</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>BigFloat Library</h4>
+                    <p>High-precision arithmetic for C#</p>
+                    <p class="footer-meta">Created by Ryan Scott White</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="documentation.html">API Reference</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet Package</a></li>
+                        <li><a href="community.html">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Original Article</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">MIT License</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2020-2025 BigFloat Library. Released under the MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

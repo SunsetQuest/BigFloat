@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - BigFloat Library</title>
+    <meta name="description" content="Complete API reference for the BigFloat arbitrary-precision arithmetic library for C#.">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EBF%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="BigFloatImage.png" alt="BigFloat Logo" class="logo-image">
+                <span class="brand-text">BigFloat</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="getting-started.html" class="nav-link">Getting Started</a>
+                <a href="documentation.html" class="nav-link active">Documentation</a>
+                <a href="examples.html" class="nav-link">Examples</a>
+                <a href="architecture.html" class="nav-link">Architecture</a>
+                <a href="https://github.com/SunsetQuest/BigFloat" class="nav-link external" target="_blank">GitHub</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <h1>API Documentation</h1>
+                <p class="page-subtitle">Complete reference for BigFloat classes, methods, and properties</p>
+            </div>
+        </section>
+
+        <!-- API Navigation -->
+        <section class="section">
+            <div class="container">
+                <div class="api-nav">
+                    <h2>Quick Navigation</h2>
+                    <div class="api-nav-grid">
+                        <a href="#constructors" class="api-nav-item">Constructors</a>
+                        <a href="#properties" class="api-nav-item">Properties</a>
+                        <a href="#operators" class="api-nav-item">Operators</a>
+                        <a href="#arithmetic" class="api-nav-item">Arithmetic Methods</a>
+                        <a href="#comparison" class="api-nav-item">Comparison Methods</a>
+                        <a href="#conversion" class="api-nav-item">Conversion Methods</a>
+                        <a href="#mathematical" class="api-nav-item">Mathematical Functions</a>
+                        <a href="#precision" class="api-nav-item">Precision Management</a>
+                        <a href="#constants" class="api-nav-item">Constants</a>
+                        <a href="#parsing" class="api-nav-item">Parsing & Formatting</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Constructors -->
+        <section class="section section-alt" id="constructors">
+            <div class="container">
+                <h2>Constructors</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public BigFloat(string value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Creates a BigFloat from a string representation. This is the most precise way to initialize a BigFloat.</p>
+                        <h4>Parameters:</h4>
+                        <ul class="param-list">
+                            <li><code>value</code> - String representation of the number. Supports decimal, hexadecimal (0x), binary (0b), and scientific notation.</li>
+                        </ul>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat a = new("123.456789012345678901234567890");
+BigFloat b = new("1.23e+100");
+BigFloat c = new("0xABC.DEF");
+BigFloat d = new("0b1101.1011");</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public BigFloat(double value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Creates a BigFloat from a double value.</p>
+                        <h4>Parameters:</h4>
+                        <ul class="param-list">
+                            <li><code>value</code> - The double value to convert.</li>
+                        </ul>
+                        <h4>Note:</h4>
+                        <p class="api-note">Due to the limitations of double precision, some precision may be lost. Use string constructor for exact values.</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public BigFloat(int value)</code>
+                        <code>public BigFloat(long value)</code>
+                        <code>public BigFloat(BigInteger value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Creates a BigFloat from various integer types.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Properties -->
+        <section class="section" id="properties">
+            <div class="container">
+                <h2>Properties</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int Sign { get; }</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Gets the sign of the BigFloat value.</p>
+                        <h4>Returns:</h4>
+                        <ul class="param-list">
+                            <li><code>-1</code> if negative</li>
+                            <li><code>0</code> if zero</li>
+                            <li><code>1</code> if positive</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public bool IsZero { get; }</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Determines whether this BigFloat represents zero.</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public bool IsInteger { get; }</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Determines whether this BigFloat represents an integer value (no fractional part).</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat a = new("123.0");
+Console.WriteLine(a.IsInteger); // True
+
+BigFloat b = new("123.456");
+Console.WriteLine(b.IsInteger); // False</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int Precision { get; }</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Gets the precision of this BigFloat in bits (excluding guard bits).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Operators -->
+        <section class="section section-alt" id="operators">
+            <div class="container">
+                <h2>Operators</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat operator +(BigFloat a, BigFloat b)</code>
+                        <code>public static BigFloat operator -(BigFloat a, BigFloat b)</code>
+                        <code>public static BigFloat operator *(BigFloat a, BigFloat b)</code>
+                        <code>public static BigFloat operator /(BigFloat a, BigFloat b)</code>
+                        <code>public static BigFloat operator %(BigFloat a, BigFloat b)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Standard arithmetic operators with full precision preservation.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat a = new("100.5");
+BigFloat b = new("25.25");
+
+BigFloat sum = a + b;  // 125.75
+BigFloat diff = a - b; // 75.25
+BigFloat prod = a * b; // 2537.625
+BigFloat quot = a / b; // 3.9801980198...
+BigFloat rem = a % b;  // 0.5</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static bool operator ==(BigFloat a, BigFloat b)</code>
+                        <code>public static bool operator !=(BigFloat a, BigFloat b)</code>
+                        <code>public static bool operator &lt;(BigFloat a, BigFloat b)</code>
+                        <code>public static bool operator &gt;(BigFloat a, BigFloat b)</code>
+                        <code>public static bool operator &lt;=(BigFloat a, BigFloat b)</code>
+                        <code>public static bool operator &gt;=(BigFloat a, BigFloat b)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Comparison operators for BigFloat values.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mathematical Functions -->
+        <section class="section" id="mathematical">
+            <div class="container">
+                <h2>Mathematical Functions</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Sqrt(BigFloat value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Calculates the square root using the Newton-Plus algorithm.</p>
+                        <h4>Parameters:</h4>
+                        <ul class="param-list">
+                            <li><code>value</code> - The value to calculate the square root of.</li>
+                        </ul>
+                        <h4>Returns:</h4>
+                        <p>The square root of the value.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat x = new("2");
+BigFloat sqrt2 = BigFloat.Sqrt(x);
+Console.WriteLine(sqrt2); // 1.41421356237309504880168872420969807...</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Pow(BigFloat baseValue, int exponent)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Raises a BigFloat to an integer power using binary exponentiation.</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Sin(BigFloat x)</code>
+                        <code>public static BigFloat Cos(BigFloat x)</code>
+                        <code>public static BigFloat Tan(BigFloat x)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Trigonometric functions with high precision using Payne-Hanek reduction.</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Log2(BigFloat value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Calculates the base-2 logarithm.</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public BigFloat FloorPreservingAccuracy()</code>
+                        <code>public BigFloat CeilingPreservingAccuracy()</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Floor and ceiling operations that maintain BigFloat precision (new in 2025).</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat x = new("123.456");
+BigFloat floor = x.FloorPreservingAccuracy(); // 123
+BigFloat ceil = x.CeilingPreservingAccuracy(); // 124</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Precision Management -->
+        <section class="section section-alt" id="precision">
+            <div class="container">
+                <h2>Precision Management</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat SetPrecisionWithRound(BigFloat value, int precisionInBits)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Sets the precision of a BigFloat value with proper rounding.</p>
+                        <h4>Parameters:</h4>
+                        <ul class="param-list">
+                            <li><code>value</code> - The BigFloat value to adjust.</li>
+                            <li><code>precisionInBits</code> - The desired precision in bits.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat ExtendPrecision(BigFloat value, int bitsToAdd)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Extends the precision by adding zero bits (doesn't add information).</p>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public bool FitsInADouble(bool allowDenormalized = false)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Determines if this BigFloat can be accurately represented as a double (new in 2025).</p>
+                        <h4>Parameters:</h4>
+                        <ul class="param-list">
+                            <li><code>allowDenormalized</code> - Whether to allow denormalized double values.</li>
+                        </ul>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat big = new("1e+400");
+if (!big.FitsInADouble())
+{
+    Console.WriteLine("Too large for double!");
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Constants -->
+        <section class="section" id="constants">
+            <div class="container">
+                <h2>Mathematical Constants</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>Constants.Fundamental.Pi</code>
+                        <code>Constants.Fundamental.E</code>
+                        <code>Constants.Fundamental.Sqrt2</code>
+                        <code>Constants.Fundamental.GoldenRatio</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Pre-computed mathematical constants with up to 1 million decimal digits precision.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">// Direct access
+BigFloat pi = Constants.Fundamental.Pi;
+
+// With specific precision
+var config = Constants.WithConfig(precisionInBits: 10000);
+BigFloat precisePi = config.Get("Pi");</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>Constants.WithConfig(int precisionInBits)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Creates a constants configuration with specific precision requirements.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Parsing and Formatting -->
+        <section class="section section-alt" id="parsing">
+            <div class="container">
+                <h2>Parsing and Formatting</h2>
+                
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Parse(string s)</code>
+                        <code>public static bool TryParse(string s, out BigFloat result)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Parses a string representation into a BigFloat.</p>
+                        <h4>Supported Formats:</h4>
+                        <ul class="param-list">
+                            <li>Decimal: <code>"123.456"</code>, <code>"1.23e+10"</code></li>
+                            <li>Hexadecimal: <code>"0xABC.DEF"</code></li>
+                            <li>Binary: <code>"0b1101.1011"</code></li>
+                            <li>Precision separator: <code>"123.456|789"</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public string ToString()</code>
+                        <code>public string ToString(string format)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Converts the BigFloat to a string representation.</p>
+                        <h4>Format Specifiers:</h4>
+                        <ul class="param-list">
+                            <li><code>"G"</code> or default - General format with precision masking</li>
+                            <li><code>"E"</code> - Scientific notation</li>
+                            <li><code>"X"</code> - Hexadecimal</li>
+                            <li><code>"B"</code> - Binary</li>
+                        </ul>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat x = new("123.456789");
+Console.WriteLine(x.ToString());    // "123.456789"
+Console.WriteLine(x.ToString("E")); // "1.23456789E+2"
+Console.WriteLine(x.ToString("X")); // "7B.74BC6A7EF9D"</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Known Limitations -->
+        <section class="section">
+            <div class="container">
+                <h2>Known Limitations & Considerations</h2>
+                
+                <div class="limitation-grid">
+                    <div class="limitation-card">
+                        <h3>Base-2 Representation</h3>
+                        <p>
+                            BigFloat uses binary internally. Most decimal numbers cannot be represented exactly,
+                            leading to small precision differences. For example, 0.1 in decimal is a repeating
+                            binary fraction.
+                        </p>
+                    </div>
+                    
+                    <div class="limitation-card">
+                        <h3>Guard Bit Consumption</h3>
+                        <p>
+                            The 32 guard bits gradually consume through operations. After approximately 10²¹
+                            operations, precision may degrade. Not all functions implement perfect rounding.
+                        </p>
+                    </div>
+                    
+                    <div class="limitation-card">
+                        <h3>Memory Usage</h3>
+                        <p>
+                            Very high precision numbers consume significant memory. A 1 million bit number
+                            requires approximately 125KB of memory.
+                        </p>
+                    </div>
+                    
+                    <div class="limitation-card">
+                        <h3>Performance Considerations</h3>
+                        <p>
+                            Operations on very large precision numbers can be computationally intensive.
+                            Consider using appropriate precision for your use case.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>BigFloat Library</h4>
+                    <p>High-precision arithmetic for C#</p>
+                    <p class="footer-meta">Created by Ryan Scott White</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="documentation.html">API Reference</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet Package</a></li>
+                        <li><a href="community.html">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Original Article</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">MIT License</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2020-2025 BigFloat Library. Released under the MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

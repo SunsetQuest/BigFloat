@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Examples - BigFloat Library</title>
+    <meta name="description" content="Practical code examples and use cases for the BigFloat arbitrary-precision arithmetic library.">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234F46E5'/%3E%3Ctext x='50' y='65' font-family='monospace' font-size='40' fill='white' text-anchor='middle'%3EBF%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-brand">
+                <img src="BigFloatImage.png" alt="BigFloat Logo" class="logo-image">
+                <span class="brand-text">BigFloat</span>
+            </a>
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="getting-started.html" class="nav-link">Getting Started</a>
+                <a href="documentation.html" class="nav-link">Documentation</a>
+                <a href="examples.html" class="nav-link active">Examples</a>
+                <a href="architecture.html" class="nav-link">Architecture</a>
+                <a href="https://github.com/SunsetQuest/BigFloat" class="nav-link external" target="_blank">GitHub</a>
+            </div>
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <div class="hamburger" id="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="container">
+                <h1>Code Examples</h1>
+                <p class="page-subtitle">Practical examples demonstrating BigFloat's capabilities</p>
+            </div>
+        </section>
+
+        <!-- Example Categories -->
+        <section class="section">
+            <div class="container">
+                <div class="example-categories">
+                    <a href="#financial" class="category-card">
+                        <div class="category-icon">💰</div>
+                        <h3>Financial Calculations</h3>
+                        <p>Compound interest, currency conversions</p>
+                    </a>
+                    <a href="#scientific" class="category-card">
+                        <div class="category-icon">🔬</div>
+                        <h3>Scientific Computing</h3>
+                        <p>Physics simulations, numerical methods</p>
+                    </a>
+                    <a href="#geometry" class="category-card">
+                        <div class="category-icon">📐</div>
+                        <h3>Geometry & Trigonometry</h3>
+                        <p>Area calculations, angle computations</p>
+                    </a>
+                    <a href="#crypto" class="category-card">
+                        <div class="category-icon">🔐</div>
+                        <h3>Cryptography</h3>
+                        <p>Large prime numbers, modular arithmetic</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Examples -->
+        <section class="section section-alt" id="financial">
+            <div class="container">
+                <h2>Financial Calculations</h2>
+                
+                <div class="example-card">
+                    <h3>Compound Interest Calculator</h3>
+                    <p>Calculate compound interest with extreme precision, avoiding rounding errors that accumulate with standard floating-point.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">CompoundInterest.cs</div>
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+
+// $10,000 at 5% annual rate, compounded daily for 30 years
+BigFloat principal = new("10000.00000000000000");
+BigFloat rate = new("0.0500000000000000000000000");
+int compoundings = 365;
+int years = 30;
+
+BigFloat finalAmount = Calculate(principal, rate, compoundings, years);
+BigFloat earned = finalAmount - principal;
+
+Console.WriteLine($"Initial Investment: ${principal}");
+Console.WriteLine($"Final Amount: ${finalAmount}");
+Console.WriteLine($"Interest Earned: ${earned}");
+
+// Compare with double precision (Correct is 44,812.29)
+double doubleFinal = 10000 * Math.Pow(1 + 0.05 / 12, 12 * 30);
+Console.WriteLine($"\nDouble precision: ${doubleFinal}");
+Console.WriteLine($"Incorrect By: ${doubleFinal - (double)finalAmount}");
+
+static BigFloat Calculate(
+    BigFloat principal,
+    BigFloat annualRate,
+    int compoundingsPerYear,
+    int years)
+{
+    // Formula: A = P(1 + r/n)^(nt)
+    BigFloat ratePerPeriod = annualRate / compoundingsPerYear;
+    BigFloat onePlusRate = BigFloat.OneWithAccuracy(ratePerPeriod.Precision) + ratePerPeriod;
+    int totalPeriods = compoundingsPerYear * years;
+
+    BigFloat amount = principal * BigFloat.Pow(onePlusRate, totalPeriods);
+    return amount;
+}</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Initial Investment: $10000.00000000000000
+Final Amount: $44812.2868852451525
+Interest Earned: $34812.2868852451525
+
+Double precision: $44677.443140061085
+Incorrect By: $-134.84374518406548</code></pre>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <h3>Currency Conversion with Exchange Rates</h3>
+                    <p>Handle currency conversions with many decimal places, crucial for large transactions.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">CurrencyConverter.cs</div>
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+
+Dictionary<string, BigFloat> exchangeRates = [];
+CurrencyConverter converter = new();
+
+// Set precise exchange rates
+converter.SetExchangeRate("USD", "EUR", "0.92385647291038475");
+converter.SetExchangeRate("EUR", "JPY", "157.38492018374659");
+converter.SetExchangeRate("USD", "BTC", "0.000015823947562839");
+converter.SetExchangeRate("USD", "JPY", "145.401077250238547");
+
+// Convert $1,000,000 through multiple currencies
+BigFloat usd = new("1000000.0000000000");
+BigFloat eur = converter.Convert(usd, "USD", "EUR");
+BigFloat jpy = converter.Convert(eur, "EUR", "JPY");
+BigFloat backToUsd = converter.Convert(jpy, "JPY", "USD");
+
+Console.WriteLine($"Original USD:     ${usd}");
+Console.WriteLine($"Converted to EUR: €{eur}");
+Console.WriteLine($"Converted to JPY: ¥{jpy}");
+Console.WriteLine($"Back to USD:      ${backToUsd}");
+Console.WriteLine($"Precision loss:   ${usd - backToUsd}");
+
+class CurrencyConverter
+{
+    Dictionary<string, BigFloat> exchangeRates = [];
+
+    public void SetExchangeRate(string from, string to, string rate)
+    {
+        string key = $"{from}-{to}";
+        exchangeRates[key] = new BigFloat(rate);
+    }
+
+    public BigFloat Convert(BigFloat amount, string from, string to)
+    {
+        string key = $"{from}-{to}";
+        if (exchangeRates.TryGetValue(key, out BigFloat rate))
+        {
+            return amount * rate;
+        }
+
+        // Try reverse conversion
+        string reverseKey = $"{to}-{from}";
+        if (exchangeRates.TryGetValue(reverseKey, out BigFloat reverseRate))
+        {
+            return amount / reverseRate;
+        }
+
+        throw new InvalidOperationException($"No exchange rate found for {from} to {to}");
+    }
+}</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Original USD:     $1000000.0000000000
+Converted to EUR: ?923856.4729103848
+Converted to JPY: ¥145401077.2502385
+Back to USD:      $1000000.0000000000
+Precision loss:   $0.0000000000</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scientific Examples -->
+        <section class="section" id="scientific">
+            <div class="container">
+                <h2>Scientific Computing</h2>
+                
+                <div class="example-card">
+                    <h3>Calculating π Using Machin's Formula</h3>
+                    <p>Compute π to arbitrary precision using the Machin formula.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">MachinPi.cs</div>
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+using static BigFloatLibrary.BigFloat;
+
+Console.WriteLine("Calculating π to various precisions:");
+
+foreach (int bits in new[] { 100, 500, 1000 })
+{
+    var start = DateTime.Now;
+    BigFloat pi = CalculatePi(bits);
+    var elapsed = DateTime.Now - start;
+
+    Console.WriteLine($"\nPrecision: {bits} bits");
+    Console.WriteLine($"π = {pi.ToString()}");
+    Console.WriteLine($"Time: {elapsed.TotalMilliseconds:F2}ms");
+
+    // Compare with library constant
+    BigFloat libraryPi = Constants.GetConstant(Catalog.Pi, bits);
+    Console.WriteLine($"Difference from library: {BigFloat.Abs(pi - libraryPi).ToString(true)}");
+}
+
+// Machin's formula: π/4 = 4*arctan(1/5) - arctan(1/239)
+static BigFloat CalculatePi(int precision)
+{
+    BigFloat arctan5 = ArcTan(BigFloat.OneWithAccuracy(precision) / 5, precision);
+    BigFloat arctan239 = ArcTan(BigFloat.OneWithAccuracy(precision) / 239, precision);
+
+    BigFloat piOver4 = 4 * arctan5 - arctan239;
+    return 4 * piOver4;
+}
+
+// Calculate arctan(x) using Taylor series
+static BigFloat ArcTan(BigFloat x, int precision)
+{
+    BigFloat sum = BigFloat.ZeroWithAccuracy(precision);
+    BigFloat term = x;
+    BigFloat xSquared = x * x;
+    int n = 1;
+
+    while (term.Precision > 0)
+    {
+        sum += term / n;
+        term *= -xSquared;
+        n += 2;
+
+        // Limit iterations for reasonable computation time
+        if (n > precision) break;
+    }
+
+    return sum;
+}</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Calculating π to various precisions:
+
+Precision: 100 bits
+π = 3.14159265358979323846264338328
+Time: 13500.95ms
+Difference from library: 1e-38
+
+Precision: 500 bits
+π = 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940813
+Time: 0.78ms
+Difference from library: 3e-159
+
+Precision: 1000 bits
+π = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930381964428810975665933446128475648233786783165271201909145648566923460348610454326648213393607260249141274
+Time: 2.23ms
+Difference from library: 1e-309</code></pre>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <h3>Mandelbrot Set Computation</h3>
+                    <p>Calculate points in the Mandelbrot set with arbitrary precision for deep zooms.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">Mandelbrot.cs</div>
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+
+// Deep zoom coordinates requiring high precision
+BigFloat centerX = new("-0.5000000000000000000");
+BigFloat centerY = new("0.00000000000000000");
+BigFloat zoom = new("0.0400000000000000"); //new("5e-13");
+
+int width = 70;
+int height = 60;
+int maxIter = 200;
+
+Console.WriteLine("Mandelbrot set visualization:");
+Console.WriteLine($"Center: ({centerX}, {centerY})");
+Console.WriteLine($"Zoom: {zoom}\n");
+
+for (int py = 0; py < height; py++)
+{
+    for (int px = 0; px < width; px++)
+    {
+        BigFloat x = centerX + (px - width / 2) * zoom;
+        BigFloat y = centerY + (py - height / 2) * zoom;
+
+        int iterations = CalculateIterations(x, y, maxIter);
+
+        // Simple ASCII visualization
+        if (iterations == maxIter)
+            Console.Write("█");
+        else if (iterations > maxIter * 0.3)
+            Console.Write("▓");
+        else if (iterations > maxIter * 0.2)
+            Console.Write("▒");
+        else if (iterations > maxIter * 0.1)
+            Console.Write("░");
+        else
+            Console.Write(" ");
+    }
+    Console.WriteLine();
+}
+
+static int CalculateIterations(
+        BigFloat x0,
+        BigFloat y0,
+        int maxIterations,
+        BigFloat escapeRadius = default)
+{
+    if (escapeRadius == default)
+        escapeRadius = new BigFloat("4.00000000000000000000000000000000000000000000000000000");
+
+    //BigFloat x = BigFloat.ZeroWithAccuracy(100);
+    //BigFloat y = BigFloat.ZeroWithAccuracy(100);
+    BigFloat x = new("0.0000000000000000000000000000000000000000000000000000000000000001");
+    BigFloat y = new("0.0000000000000000000000000000000000000000000000000000000000000001");
+
+    for (int i = 0; i < maxIterations; i++)
+    {
+        BigFloat xSquared = x * x;
+        BigFloat ySquared = y * y;
+
+        // Check if escaped
+        if (xSquared + ySquared > escapeRadius)
+            return i;
+
+        // z = z² + c
+        BigFloat xNew = xSquared - ySquared + x0;
+        y = 2 * x * y + y0;
+        x = xNew;
+    }
+
+    return maxIterations;
+}</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Mandelbrot set visualization:
+Center: (-0.5000000000000000000, 0.00000000000000000)
+Zoom: 0.0400000000000000
+                                                ░
+                                            ▒▓░
+                                    █       ▒▒▓
+                                            █████▓
+                                            ░▓████░░
+                                            █████░
+                                ░  █       ████    ░
+                                    █  ░▓▓███████▓▒▒▒
+                                    ██▒▓█████████████▒▒    ░
+                                    ░██░███████████████▓ ██▒
+                                    █████████████████████░
+                                    ▓█████████████████████░
+                                ▒████████████████████████
+                                ▒███████████████████████▓
+                                ▓░██████████████████████████
+                    ░   ░        ███████████████████████████
+                    ░  ▒▒      ███████████████████████████░
+                    ░█░████░░  ░████████████████████████████
+                    ░████████░ ░███████████████████████████░░
+                    ███████████ ░███████████████████████████▓
+                ░███████████▓████████████████████████████
+                    ████████████████████████████████████████
+                ░██▓███████████████████████████████████████
+██████████████████████████████████████████████████████░
+                ░██▓███████████████████████████████████████
+                    ████████████████████████████████████████
+                ░███████████▓████████████████████████████
+                    ███████████ ░███████████████████████████▓
+                    ░████████░ ░███████████████████████████░░
+                    ░█░████░░  ░████████████████████████████
+                    ░  ▒▒      ███████████████████████████░
+                    ░   ░        ███████████████████████████
+                                ▓░██████████████████████████
+                                ▒███████████████████████▓
+                                ▒████████████████████████
+                                    ▓█████████████████████░
+                                    █████████████████████░
+                                    ░██░███████████████▓ ██▒
+                                    ██▒▓█████████████▒▒    ░
+                                    █  ░▓▓███████▓▒▒▒
+                                ░  █       ████    ░
+                                            █████░
+                                            ░▓████░░
+                                            █████▓
+                                    █       ▒▒▓
+                                            ▒▓░
+                                                ░</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Geometry Examples -->
+        <section class="section section-alt" id="geometry">
+            <div class="container">
+                <h2>Geometry & Trigonometry</h2>
+                
+                <div class="example-card">
+                    <h3>High-Precision Circle Calculations</h3>
+                    <p>Calculate circle properties with extreme precision.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">CircleCalculations.cs</div>
+                        <pre><code class="language-csharp">using System;
+using BigFloatLibrary;
+
+public class CircleCalculations
+{
+    private readonly BigFloat pi;
+    
+    public CircleCalculations(int precisionBits = 1000)
+    {
+        pi = Constants.WithConfig(precisionBits).Get("Pi");
+    }
+    
+    public BigFloat Area(BigFloat radius)
+    {
+        return pi * radius * radius;
+    }
+    
+    public BigFloat Circumference(BigFloat radius)
+    {
+        return 2 * pi * radius;
+    }
+    
+    public BigFloat ArcLength(BigFloat radius, BigFloat angleRadians)
+    {
+        return radius * angleRadians;
+    }
+    
+    public BigFloat SectorArea(BigFloat radius, BigFloat angleRadians)
+    {
+        return radius * radius * angleRadians / 2;
+    }
+    
+    public static void Example()
+    {
+        var calc = new CircleCalculations(2000); // 2000 bits precision
+        
+        // Earth's radius at equator (meters)
+        BigFloat earthRadius = new("6378137");
+        
+        Console.WriteLine("Earth Calculations (at equator):");
+        Console.WriteLine($"Radius: {earthRadius} meters");
+        
+        BigFloat circumference = calc.Circumference(earthRadius);
+        Console.WriteLine($"Circumference: {circumference} meters");
+        Console.WriteLine($"             = {circumference / 1000} kilometers");
+        
+        BigFloat area = calc.Area(earthRadius);
+        Console.WriteLine($"Surface area: {area} square meters");
+        Console.WriteLine($"            = {area / 1000000} square kilometers");
+        
+        // Calculate arc length for 1 degree
+        BigFloat oneDegreeRadians = calc.pi / 180;
+        BigFloat arcLength = calc.ArcLength(earthRadius, oneDegreeRadians);
+        Console.WriteLine($"\nArc length of 1°: {arcLength} meters");
+        Console.WriteLine($"                = {arcLength / 1000} kilometers");
+        
+        // Demonstrate precision vs double
+        double doubleCirc = 2 * Math.PI * 6378137;
+        Console.WriteLine($"\nDouble precision circumference: {doubleCirc}");
+        Console.WriteLine($"Difference: {circumference - (BigFloat)doubleCirc} meters");
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <h3>Spherical Trigonometry</h3>
+                    <p>Calculate distances on a sphere using the haversine formula.</p>
+                    
+                    <div class="code-example">
+                        <div class="code-header">SphericalDistance.cs</div>
+                        <pre><code class="language-csharp">using System;
+using BigFloatLibrary;
+
+public class SphericalDistance
+{
+    private readonly BigFloat pi;
+    
+    public SphericalDistance(int precisionBits = 1000)
+    {
+        pi = Constants.WithConfig(precisionBits).Get("Pi");
+    }
+    
+    // Convert degrees to radians
+    private BigFloat ToRadians(BigFloat degrees)
+    {
+        return degrees * pi / 180;
+    }
+    
+    // Haversine formula for great circle distance
+    public BigFloat CalculateDistance(
+        BigFloat lat1, BigFloat lon1,
+        BigFloat lat2, BigFloat lon2,
+        BigFloat radius)
+    {
+        // Convert to radians
+        lat1 = ToRadians(lat1);
+        lon1 = ToRadians(lon1);
+        lat2 = ToRadians(lat2);
+        lon2 = ToRadians(lon2);
+        
+        // Differences
+        BigFloat dlat = lat2 - lat1;
+        BigFloat dlon = lon2 - lon1;
+        
+        // Haversine formula
+        BigFloat a = BigFloat.Sin(dlat / 2) * BigFloat.Sin(dlat / 2) +
+                     BigFloat.Cos(lat1) * BigFloat.Cos(lat2) *
+                     BigFloat.Sin(dlon / 2) * BigFloat.Sin(dlon / 2);
+        
+        BigFloat c = 2 * BigFloat.Atan2(BigFloat.Sqrt(a), BigFloat.Sqrt(1 - a));
+        
+        return radius * c;
+    }
+    
+    public static void Example()
+    {
+        var calc = new SphericalDistance(1500);
+        BigFloat earthRadius = new("6371000"); // meters
+        
+        // New York City coordinates
+        BigFloat nycLat = new("40.7128");
+        BigFloat nycLon = new("-74.0060");
+        
+        // London coordinates
+        BigFloat londonLat = new("51.5074");
+        BigFloat londonLon = new("-0.1278");
+        
+        BigFloat distance = calc.CalculateDistance(
+            nycLat, nycLon, londonLat, londonLon, earthRadius);
+        
+        Console.WriteLine("Great Circle Distance: NYC to London");
+        Console.WriteLine($"NYC: {nycLat}°N, {nycLon}°W");
+        Console.WriteLine($"London: {londonLat}°N, {londonLon}°W");
+        Console.WriteLine($"Distance: {distance} meters");
+        Console.WriteLine($"        = {distance / 1000} kilometers");
+        Console.WriteLine($"        = {distance / 1609.344} miles");
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tips and Best Practices -->
+        <section class="section">
+            <div class="container">
+                <h2>Tips and Best Practices</h2>
+                
+                <div class="tips-grid">
+                    <div class="tip-card">
+                        <h3>🎯 Choose Appropriate Precision</h3>
+                        <p>
+                            Don't use more precision than needed. Higher precision means more memory 
+                            and slower operations. Start with the minimum required and increase if needed.
+                        </p>
+                        <pre><code class="language-csharp">// For financial calculations, 128-256 bits often sufficient
+// For scientific computing, 500-1000 bits may be needed
+// For mathematical research, 5000+ bits possible</code></pre>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h3>🔍 Use String Initialization for Exact Values</h3>
+                        <p>
+                            When you need exact decimal values, always use string initialization to avoid
+                            binary conversion issues.
+                        </p>
+                        <pre><code class="language-csharp">// Good - exact representation
+BigFloat exact = new("0.1");
+
+// Avoid - loses precision
+BigFloat approx = new(0.1);</code></pre>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h3>⚡ Cache Constants</h3>
+                        <p>
+                            If using mathematical constants repeatedly, load them once and reuse.
+                        </p>
+                        <pre><code class="language-csharp">// Load once
+var constants = Constants.WithConfig(1000);
+BigFloat pi = constants.Get("Pi");
+BigFloat e = constants.Get("E");
+
+// Reuse many times
+for (int i = 0; i < 1000; i++)
+{
+    result = pi * radius[i] * radius[i];
+}</code></pre>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h3>✅ Check Conversion Safety</h3>
+                        <p>
+                            Always check if a BigFloat fits in a standard type before converting.
+                        </p>
+                        <pre><code class="language-csharp">if (bigValue.FitsInADouble())
+{
+    double d = (double)bigValue;
+}
+else
+{
+    // Handle overflow case
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>BigFloat Library</h4>
+                    <p>High-precision arithmetic for C#</p>
+                    <p class="footer-meta">Created by Ryan Scott White</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="documentation.html">API Reference</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                        <li><a href="architecture.html">Architecture</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/SunsetQuest/BigFloat" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://www.nuget.org/packages/BigFloatLibrary/" target="_blank">NuGet Package</a></li>
+                        <li><a href="community.html">Contributing</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://codeproject.com/Articles/5375327/A-BigFloat-Library-in-Csharp" target="_blank">Original Article</a></li>
+                        <li><a href="https://github.com/SunsetQuest/BigFloat/blob/master/LICENSE" target="_blank">MIT License</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2020-2025 BigFloat Library. Released under the MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
