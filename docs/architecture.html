@@ -107,27 +107,8 @@
                 <div class="visual-representation">
                     <h3>Visual Representation</h3>
                     <div class="bit-diagram">
-                        <div class="bit-diagram-content">
-                            <div class="scale-markers">
-                                <div class="scale-marker" style="left: 35%;">
-                                    <span class="scale-label">Scale = 14</span>
-                                    <span class="scale-arrow">↓</span>
-                                </div>
-                                <div class="scale-marker" style="left: 65%;">
-                                    <span class="scale-label">Scale = 0</span>
-                                    <span class="scale-arrow">↓</span>
-                                </div>
-                            </div>
-                            <div class="bit-string">
-                                <span class="bits in-precision">110010010001111110110110101010</span>
-                                <span class="bits out-precision">00010000010000101110100000</span>
-                            </div>
-                            <div class="bit-labels">
-                                <div class="label in-precision-label">In-Precision Bits</div>
-                                <div class="label out-precision-label">Out-of-Precision Bits<br><small>"Hidden Guard Bits"</small></div>
-                            </div>
-                            <div class="full-label">DataBits (BigInteger)</div>
-                        </div>
+
+                        <img src="images/BigFloatParts.png" alt="Parts of a BigFloat" style="max-width:100%; height:auto;">
                     </div>
                 </div>
 
@@ -235,10 +216,10 @@
                     <div class="guard-bits-example">
                         <h4>Example: Addition with Guard Bits</h4>
                         <div class="code-example">
-                            <pre><code>  101.01100|110011001100110011001100110011  (≈ 5.4)
-+ 100.01001|100110011001100110011001100110  (≈ 4.3)
-=========================================
- 1001.1011|0011001100110011001100110011001 (≈ 9.7)
+                            <pre><code>  101.011|00110011001100110011001100110011 (≈ 5.4)
++ 100.010|01100110011001100110011001100110 (≈ 4.3)
+==========================================
+ 1001.101|10011001100110011001100110011001 (≈ 9.7)
 
 Without guard bits: 1001.101 (loses precision)
 With guard bits:    1001.110 (more accurate rounding)</code></pre>
@@ -548,7 +529,7 @@ With guard bits:    1001.110 (more accurate rounding)</code></pre>
                 </div>
                 
                 <div class="recent-optimizations">
-                    <h3>Recent Performance Improvements (2025)</h3>
+                    <h3><br>Recent Performance Improvements (2025)</h3>
                     <ul class="optimization-list">
                         <li><strong>IsOneBitFollowedByZeroBits:</strong> 2x performance using IsPow2 instead of TrailingZeroCount</li>
                         <li><strong>ToDecimal:</strong> Performance boost using cached _size instead of GetBitLength()</li>
@@ -1228,6 +1209,7 @@ BigFloat Sqrt(BigFloat value)
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-color);
             position: relative;
+            padding-bottom: 2.0rem;
         }
         
         .optimization-card h3 {
@@ -1237,7 +1219,7 @@ BigFloat Sqrt(BigFloat value)
         
         .performance-stat {
             position: absolute;
-            top: 1rem;
+            bottom: 1rem;   /* instead of top: 1rem; */
             right: 1rem;
             background: var(--accent-green);
             color: white;
