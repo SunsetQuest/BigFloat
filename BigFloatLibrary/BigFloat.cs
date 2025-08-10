@@ -5,6 +5,7 @@
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -1103,7 +1104,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigInteger GetRoundedMantissa(BigInteger x, ref int size)
     {
-        return RightShiftWithRound(x, GuardBits, ref size);
+        return RoundingRightShift(x, GuardBits, ref size);
     }
 
     /// <summary>
@@ -1137,7 +1138,7 @@ public readonly partial struct BigFloat
         int newScale = x.Scale + targetBitsToRemove;
         int size = x._size;
 
-        BigInteger b = RightShiftWithRound(x._mantissa, targetBitsToRemove, ref size);
+        BigInteger b = RoundingRightShift(x._mantissa, targetBitsToRemove, ref size);
 
         return new(b, newScale, size);
     }
@@ -1159,7 +1160,7 @@ public readonly partial struct BigFloat
         //return new BigFloat(result, Scale, _size);
 
         //// below keeps the same size (it does not rollover to 1 bit larger)
-        (BigInteger result, bool carry) = RightShiftWithRoundAndCarry(_mantissa, bitsToClear);
+        (BigInteger result, bool carry) = RoundingRightShiftWithCarry(_mantissa, bitsToClear);
         return new BigFloat(result << bitsToClear, Scale + (carry ? 1 : 0), _size);
     }
 
@@ -1273,10 +1274,9 @@ public readonly partial struct BigFloat
             if (m.Sign < 0)
             {
                 m = -(BigInteger.Abs(m) >> k);
-                m = RoundingRightShift(m, k);
             }
             else
-    {
+            {
                 m >>= k; // safe: logical and arithmetic are the same for non-negative
             }
 
@@ -1285,8 +1285,7 @@ public readonly partial struct BigFloat
                 x.Scale + k,
                 checked(x._size - k)
             );
-            }
-            : new BigFloat(x._mantissa << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
+        }
     }
 
     /// <summary>
@@ -1371,7 +1370,7 @@ public readonly partial struct BigFloat
         BigInteger prod = val._mantissa * val._mantissa;
         int resSize = (int)prod.GetBitLength();
         int shrinkBy = resSize - val._size;
-        prod = RightShiftWithRound(prod, shrinkBy, ref resSize);
+        prod = RoundingRightShift(prod, shrinkBy, ref resSize);
         int resScalePart = (2 * val.Scale) + shrinkBy - GuardBits;
         BigFloat res = new(prod, resScalePart, resSize);
         AssertValid(res);
@@ -1476,7 +1475,7 @@ public readonly partial struct BigFloat
         int sizePart = (int)BigInteger.Abs(prod).GetBitLength();
         int shrinkBy = sizePart - shouldBe;
 
-        prod = RightShiftWithRound(prod, shrinkBy, ref sizePart);
+        prod = RoundingRightShift(prod, shrinkBy, ref sizePart);
 
         int resScalePart = a.Scale + b.Scale + shrinkBy + shiftBy - GuardBits;
 
@@ -1527,7 +1526,7 @@ public readonly partial struct BigFloat
 
         if (shrinkBy > 0)
         {
-            mant = RightShiftWithRound(mant, shrinkBy, ref sizePart);
+            mant = RoundingRightShift(mant, shrinkBy, ref sizePart);
         }
 
         int resScale = a.Scale + shrinkBy;

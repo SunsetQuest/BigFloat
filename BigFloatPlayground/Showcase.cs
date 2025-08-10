@@ -657,7 +657,7 @@ public static class Showcase
             if (value == 0) return BigInteger.One;
             if (exp == 0) return BigInteger.Zero;
             //return BigIntegerTools.RightShiftWithRound(res, shifted);
-            (BigInteger result, bool carry) = (BigIntegerTools.RightShiftWithRoundAndCarry(res, shifted));
+            (BigInteger result, bool carry) = (BigIntegerTools.RoundingRightShiftWithCarry(res, shifted));
             if (carry)
                 shifted++;
             return result;
@@ -722,7 +722,7 @@ public static class Showcase
                         // Answer Setup version 2
                         BigInteger p = BigInteger.Pow(val, exp);
                         int shiftedAns = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits, valSize)));
-                        (ans, bool overflowed) = BigIntegerTools.RightShiftWithRoundAndCarry(p, shiftedAns);
+                        (ans, bool overflowed) = BigIntegerTools.RoundingRightShiftWithCarry(p, shiftedAns);
                         if (overflowed)
                         {
                             shiftedAns++;

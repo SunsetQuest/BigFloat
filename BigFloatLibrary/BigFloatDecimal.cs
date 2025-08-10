@@ -173,7 +173,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     m *= TenPow[decScale];
 
                 // **always** shift by the full |scale2| bits
-                m = BigIntegerTools.RightShiftWithRound(m, -scale2, ref bitLen);
+                m = BigIntegerTools.RoundingRightShift(m, -scale2, ref bitLen);
                 //bitLen = (int)m.GetBitLength();
             }
 

@@ -6,6 +6,7 @@
 
 using System;
 using System.Buffers;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -533,7 +534,7 @@ public static class BigIntegerTools
                     {
                         return (val >> totalShift, totalShift);
                     }
-                    (BigInteger result, bool carried) = RightShiftWithRoundAndCarry(val, totalShift);
+                    (BigInteger result, bool carried) = RoundingRightShiftWithCarry(val, totalShift);
                     if (carried)
                     {
                         totalShift++;
@@ -547,7 +548,7 @@ public static class BigIntegerTools
                     {
                         return (sqr >> totalShift, totalShift);
                     }
-                    (result, carried) = RightShiftWithRoundAndCarry(sqr, totalShift);
+                    (result, carried) = RoundingRightShiftWithCarry(sqr, totalShift);
                     if (carried)
                     {
                         totalShift++;
@@ -693,7 +694,7 @@ public static class BigIntegerTools
 
         BigInteger res0 = product >> bitsToRemove;
 
-        (BigInteger res, bool carry) = RightShiftWithRoundAndCarry(product, bitsToRemove);
+        (BigInteger res, bool carry) = RoundingRightShiftWithCarry(product, bitsToRemove);
         if (carry)
         {
             totalShift++;
@@ -940,26 +941,40 @@ public static class BigIntegerTools
     }
 
     /// <summary>
-    /// Removes x number of bits of precision. It also requires the current size and will increment it if it grows by a bit.
-    /// If the most significant bit of the removed bits is set, then the least significant bit will increment away from zero. 
-    /// e.g. 1010010 << 2 = 10101
-    /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
+    /// Right-shifts by <paramref name="bitsToRemove"/> with round-away-from-zero
+    /// semantics based on the MSB of the discarded field. Requires the current bit-size and
+    /// will increment it if rounding grows the result by one bit.
+    /// 
+    /// Examples:
+    ///   0b1010010 >> 2 → base 0b10100; guard=1 → 0b10101
+    /// 
+    /// Caution: Round-ups can percolate to the top bit, increasing <paramref name="size"/> by 1.
     /// THIS FUNCTION IS HIGHLY TUNED!
     /// </summary>
-    /// <param name="val">The source BigInteger we would like right-shift.</param>
-    /// <param name="targetBitsToRemove">The target number of bits to reduce the precision.</param>
-    /// <param name="size">IN: the size of Val.  OUT: The size of the output.</param>
-    public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove, ref int size)
+    /// <param name="value">The source <see cref="BigInteger"/> to right-shift.</param>
+    /// <param name="bitsToRemove">The number of least-significant bits to discard.</param>
+    /// <param name="size">IN: bit-size of <paramref name="value"/>; OUT: bit-size of the result (may increase by 1 on rounding).</param>
+    public static BigInteger RoundingRightShift(BigInteger value, in int bitsToRemove, ref int size)
     {
-        size = Math.Max(0, size - targetBitsToRemove);
-        bool isPos = val.Sign >= 0;
-        if (!isPos) val = -val;
-        BigInteger result = val >> targetBitsToRemove;
+        if (bitsToRemove <= 0)
+            return value; // no shift, no rounding, no size change
 
-        if (!(val >> (targetBitsToRemove - 1)).IsEven)
+        // Clamp size down by the discarded bits; it can grow back by 1 below if rounding overflows.
+        size = Math.Max(0, size - bitsToRemove);
+
+        bool isPos = value.Sign >= 0;
+        if (!isPos) value = -value;
+
+        BigInteger result = value >> bitsToRemove;
+
+        // Guard bit = MSB of the discarded field
+        bool roundUp = !((value >> (bitsToRemove - 1)).IsEven);
+        if (roundUp)
         {
             result++;
 
+            // If rounding overflowed the retained width, bump the reported size.
+            // We test whether the bit just above 'size-1' is now 1.
             if ((result >> size).IsOne)
             {
                 size++;
@@ -969,37 +984,72 @@ public static class BigIntegerTools
         return isPos ? result : -result;
     }
 
+    /// <summary>
+    /// [Obsolete] Removes x bits of precision; rounds away from zero based on the
+    /// MSB of the discarded field. Prefer <see cref="RoundingRightShift(BigInteger, int, ref int)"/>.
+    /// </summary>
+    [Obsolete("Renamed to RoundingRightShift(value, bitsToRemove, ref size). This alias will be removed in the next major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static BigInteger RightShiftWithRound(BigInteger val, in int targetBitsToRemove, ref int size)
+        => RoundingRightShift(val, targetBitsToRemove, ref size);
+
 
     /// <summary>
-    /// Removes x number of bits of precision.
-    /// If the most significant bit of the removed bits is set, then the least significant bit will increment away from zero. 
-    /// e.g. 1010010 << 2 = 10101
-    /// Caution: Round-ups may percolate to the most significate bit. This function will automaticlly remove that extra bit. 
-    /// e.g. 1111111 << 2 = 10000
-    /// Also see: ReducePrecision, TruncateByAndRound, RightShiftWithRoundWithCarry
+    /// Performs a right shift by <paramref name="bitsToRemove"/> with *round away from zero*
+    /// semantics based on the most significant bit of the discarded field.
+    /// If that MSB is 1, the retained LSB is incremented (i.e., round half-up, away from zero).
+    ///
+    /// If the rounding increments all retained bits (e.g., 0b1111 + 1 → 0b10000),
+    /// the method normalizes by shifting the result right by one extra bit to preserve
+    /// the original bit width and returns <c>carry = true</c> to signal the carry-out.
+    ///
+    /// Examples:
+    ///   0b1010010 >> 2  →  base 0b10100; discarded 0b10 (MSB=1) → 0b10101, carry=false
+    ///   0b1111111 >> 2  →  base 0b1111;  discarded 0b11 (MSB=1) → 0b10000 (overflow)
+    ///                      normalized result = 0b1000, carry=true
+    ///
+    /// Notes:
+    /// - Negative inputs are rounded away from zero using the magnitude; the sign is then reapplied.
+    /// - When <paramref name="bitsToRemove"/> exceeds the bit length, the result is 0 with carry=false.
     /// </summary>
-    /// <param name="result">The result of val being right shifted and rounded. The size will be "size-bitsToRemove".</param>
-    /// <param name="value">The source BigInteger we would like right-shift.</param>
-    /// <param name="bitsToRemove">The number of bits that will be removed.</param>
-    /// <returns>Returns the result and if a carry took place.  e.g. 1111111 << 2 = (10000, true)</returns>
+    /// <param name="value">Source magnitude to right-shift and round.</param>
+    /// <param name="bitsToRemove">Number of low-order bits to discard before rounding.</param>
+    /// <returns>(result, carry) where <c>carry</c> indicates a one-bit carry-out occurred and the
+    ///          returned <c>result</c> has been normalized (shifted right by one extra bit).</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (BigInteger result, bool carry) RightShiftWithRoundAndCarry(BigInteger value, int bitsToRemove)
+    public static (BigInteger result, bool carryOut) RoundingRightShiftWithCarry(BigInteger value, int bitsToRemove)
     {
-        if (bitsToRemove <= 0) { return (value, false); }
+        if (bitsToRemove <= 0) return (value, false);
 
         bool isNegative = value.Sign < 0;
-        value = BigInteger.Abs(value);
+        BigInteger mag = BigInteger.Abs(value);
 
-        int increment = (value >> (bitsToRemove - 1)).IsEven ? 0 : 1;
-        BigInteger result = (value >> bitsToRemove) + increment;
+        // Guard bit (MSB of the discarded field)
+        bool roundUp = !((mag >> (bitsToRemove - 1)).IsEven);
 
-        if (increment > 0 && result.IsPowerOfTwo)
+        BigInteger result = (mag >> bitsToRemove) + (roundUp ? 1 : 0);
+
+        // If rounding overflowed the retained field (all ones -> power of two after +1),
+        // normalize by dropping the top bit and report carry-out.
+        if (roundUp && result.IsPowerOfTwo)
         {
-            return ((isNegative ? -result : result) >> 1, true);
+            BigInteger normalized = result >> 1;
+            return (isNegative ? -normalized : normalized, true);
         }
 
         return (isNegative ? -result : result, false);
     }
+
+
+    /// <summary>
+    /// [Obsolete] Removes x bits of precision. If the most significant bit of the
+    /// removed bits is set, the retained LSB is incremented away from zero.
+    /// Prefer <see cref="RoundingRightShiftWithCarry(BigInteger, int)"/>.
+    /// </summary>
+    [Obsolete("Renamed to RoundingRightShiftWithCarry(value, bitsToRemove). This alias will be removed in the next major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static (BigInteger result, bool carryOut) RightShiftWithRoundAndCarry(BigInteger value, int bitsToRemove)
+        => RoundingRightShiftWithCarry(value, bitsToRemove);
 
 
     ///////////////////////////////////////////////////
