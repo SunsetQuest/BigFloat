@@ -1213,25 +1213,6 @@ public readonly partial struct BigFloat
         return new BigFloat(x._mantissa << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + GuardBits);
     }
 
-    // Future: add a SetAccuracy, draft below
-    // public static BigFloat SetAccuracy(BigFloat x, int accuracy) =>
-    //  (accuracy > x.Accuracy) ?
-    //   BigFloat.ExtendPrecision(x, accuracy - x.Accuracy) :
-    //   BigFloat.ShrinkPrecision(x, x.Accuracy - accuracy);
-
-    /// <summary>
-    /// Reduces the precision of the a number but keeps the value the same.
-    /// i.e. Down-shifts the value but and increases the scale. 
-    /// Example: ReducePrecision(0b1101.1101, 3) --> 0b1101.1; 
-    /// No rounding is performed.
-    /// Also see: TruncateByAndRound, RightShiftWithRoundWithCarry, RightShiftWithRound
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
-    {
-        return new BigFloat(x._mantissa >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
-    }
-
     /// <summary>
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
     /// When reducing the least significant bit will rounded up if the most significant bit is set of the removed bits. 
@@ -1247,16 +1228,117 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Extends the precision and accuracy of a number by appending 0 bits. 
-    /// e.g. 1.1 --> 1.100000
-    /// This can be useful for extending whole or rational numbers precision. 
+    /// Adjusts precision by shifting the mantissa and compensating the scale.
+    /// Positive <paramref name="deltaBits"/> appends zero bits (extends precision).
+    /// Negative <paramref name="deltaBits"/> drops low bits (reduces precision). No rounding.
     /// </summary>
-    public static BigFloat ExtendPrecision(BigFloat x, int bitsToAdd)
+    /// <remarks>
+    /// Semantics for negative mantissas: reduction truncates toward zero (bit-drop), not toward -∞.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat AdjustPrecision(BigFloat x, int deltaBits)
     {
-        return bitsToAdd < 0
-            ? throw new ArgumentOutOfRangeException(nameof(bitsToAdd), "cannot be a negative number")
+        if (deltaBits == 0) return x;
+
+        // Defensive checks — tailor to your invariants
+        // Avoid int overflow on _size arithmetic
+        // (use checked if you want exceptions instead of wrap)
+        if (deltaBits > 0)
+        {
+            // Extend precision: left shift mantissa; scale decreases; size increases
+            // validate: deltaBits <= MaxAllowedBits, size bounds, etc.
+            return new BigFloat(
+                x._mantissa << deltaBits,
+                x.Scale - deltaBits,
+                checked(x._size + deltaBits)
+            );
+        }
+        else
+        {
+            int k = -deltaBits;
+
+            // If k >= current size, result should be zero with well-defined size/scale.
+            // Decide policy: here we zero mantissa and clamp size to 0.
+            if (k >= x._size)
+            {
+                return new BigFloat(BigInteger.Zero, x.Scale + k, 0);
+            }
+
+            BigInteger m = x._mantissa;
+
+            // IMPORTANT: BigInteger >> is arithmetic shift (sign-propagating),
+            // which truncates toward -∞ for negative values.
+            // If your intended semantics are "drop bits" (truncate toward 0),
+            // normalize via abs/sign:
+            if (m.Sign < 0)
+            {
+                m = -(BigInteger.Abs(m) >> k);
+                m = RoundingRightShift(m, k);
+            }
+            else
+    {
+                m >>= k; // safe: logical and arithmetic are the same for non-negative
+            }
+
+            return new BigFloat(
+                m,
+                x.Scale + k,
+                checked(x._size - k)
+            );
+            }
             : new BigFloat(x._mantissa << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
     }
+
+    /// <summary>
+    /// [Obsolete] Extends the precision and accuracy of a number by appending 0 bits (no rounding).
+    /// Prefer <see cref="AdjustPrecision(BigFloat, int)"/> with a positive delta.
+    /// </summary>
+    [Obsolete("Use AdjustPrecision(x, +bitsToAdd). This method will be removed in the next major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static BigFloat ExtendPrecision(BigFloat x, int bitsToAdd)
+        => AdjustPrecision(x, bitsToAdd);
+
+    /// <summary>
+    /// [Obsolete] Reduces the precision by dropping low bits (no rounding).
+    /// Prefer <see cref="AdjustPrecision(BigFloat, int)"/> with a negative delta.
+    /// </summary>
+    [Obsolete("Use AdjustPrecision(x, -reduceBy). This method will be removed in the next major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
+        => AdjustPrecision(x, -reduceBy);
+
+
+    ///// <summary>
+    ///// Reduces the precision of the a number but keeps the value the same.
+    ///// i.e. Down-shifts the value but and increases the scale. 
+    ///// Example: ReducePrecision(0b1101.1101, 3) --> 0b1101.1; 
+    ///// No rounding is performed.
+    ///// Also see: TruncateByAndRound, RightShiftWithRoundWithCarry, RightShiftWithRound
+    ///// </summary>
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
+    //{
+    //    return new BigFloat(x._mantissa >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
+    //}
+
+    ///// <summary>
+    ///// Extends the precision and accuracy of a number by appending 0 bits. 
+    ///// e.g. 1.1 --> 1.100000
+    ///// This can be useful for extending whole or rational numbers precision. 
+    ///// </summary>
+    //public static BigFloat ExtendPrecision(BigFloat x, int bitsToAdd)
+    //{
+    //    return bitsToAdd < 0
+    //        ? throw new ArgumentOutOfRangeException(nameof(bitsToAdd), "cannot be a negative number")
+    //        : new BigFloat(x._mantissa << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
+    //}
+
+    // Future: add a SetAccuracy, draft below
+    // public static BigFloat SetAccuracy(BigFloat x, int accuracy) =>
+    //  (accuracy > x.Accuracy) ?
+    //   BigFloat.ExtendPrecision(x, accuracy - x.Accuracy) :
+    //   BigFloat.ShrinkPrecision(x, x.Accuracy - accuracy);
 
     public static BigFloat operator -(BigFloat r1, BigFloat r2)
     {
