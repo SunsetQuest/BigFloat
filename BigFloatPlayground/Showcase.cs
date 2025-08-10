@@ -120,7 +120,7 @@ public static class Showcase
         //////////////////// Precision Manipulation: ////////////////////
         // Initialize a number with high precision
         BigFloat preciseNumber = new("123.45678901234567890123");
-        BigFloat morePreciseNumber = ExtendPrecision(preciseNumber, bitsToAdd: 50);
+        BigFloat morePreciseNumber = AdjustPrecision(preciseNumber, deltaBits: 50);
 
         Console.WriteLine($"Extend Precision result: {morePreciseNumber}");
         // Output: Extend Precision result: 123.45678901234567890123000000000102788

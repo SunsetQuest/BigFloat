@@ -185,7 +185,7 @@ public readonly partial struct BigFloat
                         if ((value._mantissa & (BigInteger.One << (i - 1))) == 0)
                         {
                             // Found a zero bit, truncate here
-                            value = ReducePrecision(value, i);
+                            value = AdjustPrecision(value, deltaBits: i);
                             return true;
                         }
                     }
@@ -196,7 +196,7 @@ public readonly partial struct BigFloat
                 {
                     if ((value._mantissa & (BigInteger.One << i)) == 0)
                     {
-                        value = ReducePrecision(value, i);
+                        value = AdjustPrecision(value, deltaBits: i);
                         return true;
                     }
                 }
