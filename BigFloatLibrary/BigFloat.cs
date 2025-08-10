@@ -1241,9 +1241,6 @@ public readonly partial struct BigFloat
     {
         if (deltaBits == 0) return x;
 
-        // Defensive checks — tailor to your invariants
-        // Avoid int overflow on _size arithmetic
-        // (use checked if you want exceptions instead of wrap)
         if (deltaBits > 0)
         {
             // Extend precision: left shift mantissa; scale decreases; size increases
@@ -1256,34 +1253,19 @@ public readonly partial struct BigFloat
         }
         else
         {
-            int k = -deltaBits;
+            int shrinkBy = -deltaBits;
 
             // If k >= current size, result should be zero with well-defined size/scale.
             // Decide policy: here we zero mantissa and clamp size to 0.
-            if (k >= x._size)
+            if (shrinkBy >= x._size)
             {
-                return new BigFloat(BigInteger.Zero, x.Scale + k, 0);
-            }
-
-            BigInteger m = x._mantissa;
-
-            // IMPORTANT: BigInteger >> is arithmetic shift (sign-propagating),
-            // which truncates toward -∞ for negative values.
-            // If your intended semantics are "drop bits" (truncate toward 0),
-            // normalize via abs/sign:
-            if (m.Sign < 0)
-            {
-                m = -(BigInteger.Abs(m) >> k);
-            }
-            else
-            {
-                m >>= k; // safe: logical and arithmetic are the same for non-negative
+                return new BigFloat(BigInteger.Zero, x.Scale + shrinkBy, 0);
             }
 
             return new BigFloat(
-                m,
-                x.Scale + k,
-                checked(x._size - k)
+                RoundingRightShift(x._mantissa, shrinkBy),
+                x.Scale + shrinkBy,
+                checked(x._size - shrinkBy)
             );
         }
     }
