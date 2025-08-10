@@ -100,7 +100,7 @@
 
 // $10,000 at 5% annual rate, compounded daily for 30 years
 BigFloat principal = new("10000.00000000000000");
-BigFloat rate = new("0.0500000000000000000000000");
+BigFloat rate = new("0.05");
 int compoundings = 365;
 int years = 30;
 
@@ -347,12 +347,12 @@ static int CalculateIterations(
         BigFloat escapeRadius = default)
 {
     if (escapeRadius == default)
-        escapeRadius = new BigFloat("4.00000000000000000000000000000000000000000000000000000");
+        escapeRadius = new BigFloat("4.0000000");
 
     //BigFloat x = BigFloat.ZeroWithAccuracy(100);
     //BigFloat y = BigFloat.ZeroWithAccuracy(100);
-    BigFloat x = new("0.0000000000000000000000000000000000000000000000000000000000000001");
-    BigFloat y = new("0.0000000000000000000000000000000000000000000000000000000000000001");
+    BigFloat x = new("0.000000000000000001");
+    BigFloat y = new("0.000000000000000001");
 
     for (int i = 0; i < maxIterations; i++)
     {
@@ -433,153 +433,197 @@ Zoom: 0.0400000000000000
         <section class="section section-alt" id="geometry">
             <div class="container">
                 <h2>Geometry & Trigonometry</h2>
-                
+
                 <div class="example-card">
                     <h3>High-Precision Circle Calculations</h3>
                     <p>Calculate circle properties with extreme precision.</p>
-                    
+
                     <div class="code-example">
                         <div class="code-header">CircleCalculations.cs</div>
-                        <pre><code class="language-csharp">using System;
-using BigFloatLibrary;
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+
+var calc = new CircleCalculations(2000); // 2000 bits precision
+
+// Earth's radius at equator (meters)
+BigFloat earthRadius = BigFloat.SetPrecision(new BigFloat("6378137"), 2000);
+
+Console.WriteLine("Earth Calculations (at equator):");
+Console.WriteLine($"Radius: {earthRadius} meters");
+
+BigFloat circumference = calc.Circumference(earthRadius);
+Console.WriteLine($"Circumference: {circumference} meters");
+Console.WriteLine($"             = {circumference / 1000} kilometers");
+
+BigFloat area = calc.Area(earthRadius);
+Console.WriteLine($"Surface area: {area} square meters");
+Console.WriteLine($"            = {area / 1000000} square kilometers");
+
+// Calculate arc length for 1 degree
+BigFloat oneDegreeRadians = calc.pi / 180;
+BigFloat arcLength = calc.ArcLength(earthRadius, oneDegreeRadians);
+Console.WriteLine($"\nArc length of 1°: {arcLength} meters");
+Console.WriteLine($"                = {arcLength / 1000} kilometers");
+
+// Demonstrate precision vs double
+double doubleCirc = 2 * Math.PI * 6378137;
+Console.WriteLine($"\nDouble precision circumference: {doubleCirc}");
+Console.WriteLine($"Difference: {circumference - (BigFloat)doubleCirc} meters");
 
 public class CircleCalculations
 {
-    private readonly BigFloat pi;
-    
+    public readonly BigFloat pi;
+
     public CircleCalculations(int precisionBits = 1000)
-    {
-        pi = Constants.WithConfig(precisionBits).Get("Pi");
-    }
-    
-    public BigFloat Area(BigFloat radius)
-    {
-        return pi * radius * radius;
-    }
-    
-    public BigFloat Circumference(BigFloat radius)
-    {
-        return 2 * pi * radius;
-    }
-    
+    => pi = BigFloat.Constants.GetConstant("Pi", precisionBits);
+
+    public BigFloat Area(BigFloat radius) => pi * radius * radius;
+
+    public BigFloat Circumference(BigFloat radius) => 2 * pi * radius;
+
     public BigFloat ArcLength(BigFloat radius, BigFloat angleRadians)
-    {
-        return radius * angleRadians;
-    }
-    
-    public BigFloat SectorArea(BigFloat radius, BigFloat angleRadians)
-    {
-        return radius * radius * angleRadians / 2;
-    }
-    
-    public static void Example()
-    {
-        var calc = new CircleCalculations(2000); // 2000 bits precision
-        
-        // Earth's radius at equator (meters)
-        BigFloat earthRadius = new("6378137");
-        
-        Console.WriteLine("Earth Calculations (at equator):");
-        Console.WriteLine($"Radius: {earthRadius} meters");
-        
-        BigFloat circumference = calc.Circumference(earthRadius);
-        Console.WriteLine($"Circumference: {circumference} meters");
-        Console.WriteLine($"             = {circumference / 1000} kilometers");
-        
-        BigFloat area = calc.Area(earthRadius);
-        Console.WriteLine($"Surface area: {area} square meters");
-        Console.WriteLine($"            = {area / 1000000} square kilometers");
-        
-        // Calculate arc length for 1 degree
-        BigFloat oneDegreeRadians = calc.pi / 180;
-        BigFloat arcLength = calc.ArcLength(earthRadius, oneDegreeRadians);
-        Console.WriteLine($"\nArc length of 1°: {arcLength} meters");
-        Console.WriteLine($"                = {arcLength / 1000} kilometers");
-        
-        // Demonstrate precision vs double
-        double doubleCirc = 2 * Math.PI * 6378137;
-        Console.WriteLine($"\nDouble precision circumference: {doubleCirc}");
-        Console.WriteLine($"Difference: {circumference - (BigFloat)doubleCirc} meters");
-    }
+    => radius * angleRadians;
+
+    public static BigFloat SectorArea(BigFloat radius, BigFloat angleRadians)
+    => radius * radius * angleRadians / 2;
 }</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Earth Calculations (at equator):
+Radius: 6378137.00000000000000000000 meters
+Circumference: 40075016.685578486153176817761400357374609362882844278631351340354296798420282204407764836313606189059256908100139133742942350385552850243807420177358564732338022005391910068106377301750152963557105603262912166299801979504579074571197800263634786735862384999027382997235010474655210111659324060127354352339832393109971773229948598404534193780409542317886674685202063175352246124247754603037775230754064109063198477709573081839073372320095045568480203001720014521496943274522109078454959123775917562568374219911837794324879125494483798432799039182587258703479771115557382046302066983849065385273851073281 meters
+= 40075.016685578486153176817761400357374609362882844278631351340354296798420282204407764836313606189059256908100139133742942350385552850243807420177358564732338022005391910068106377301750152963557105603262912166299801979504579074571197800263634786735862384999027382997235010474655210111659324060127354352339832393109971773229948598404534193780409542317886674685202063175352246124247754603037775230754064109063198477709573081839073372320095045568480203001720014521496943274522109078454959123775917562568374219911837794324879125494483798432799039182587258703479771115557382046302066983849065385273851073281 kilometers
+Surface area: 127801973348952.754468782364453122395592109418974747879388465671956666759492971739187363994895377618933920839029548557036904546930529449797743563753878611993110117329702170553030902502126407686261613430539250407813460049075698732474157912090049393883556552335270757753917759001892978927974233091444251753384860780146628017896772331791050254557999988505389380808325315807525824519085600400277773298478017097194010774511551663740910960854787026828504808266390744130048474643065310615664738810421379757383581320932914686990950785422005205342388782687454775232618178451833907026327463303083063174617202331491 square meters
+= 127801973.348952754468782364453122395592109418974747879388465671956666759492971739187363994895377618933920839029548557036904546930529449797743563753878611993110117329702170553030902502126407686261613430539250407813460049075698732474157912090049393883556552335270757753917759001892978927974233091444251753384860780146628017896772331791050254557999988505389380808325315807525824519085600400277773298478017097194010774511551663740910960854787026828504808266390744130048474643065310615664738810421379757383581320932914686990950785422005205342388782687454775232618178451833907026327463303083063174617202331491 square kilometers
+
+Arc length of 1°: 111319.490793273572647713382670556548262803785785678551753753723206379995611895012243791211982239414053491411389275371508173195515424584010576167159329346478716727792755305744739936949305980454325293342396978239721672165290497429364438334065652185377395513886187174992319473540708916976831455722575984312055089980861032703416523884457039427167804284216351874125561286598200683678465985008438264529872400302953329104748814116219648256444708459912445008338111151448602620207005858551263775343821993229356595055310660539791330904151343884535552886618297940842999364209881616795283519399580737181316252981336 meters
+= 111.319490793273572647713382670556548262803785785678551753753723206379995611895012243791211982239414053491411389275371508173195515424584010576167159329346478716727792755305744739936949305980454325293342396978239721672165290497429364438334065652185377395513886187174992319473540708916976831455722575984312055089980861032703416523884457039427167804284216351874125561286598200683678465985008438264529872400302953329104748814116219648256444708459912445008338111151448602620207005858551263775343821993229356595055310660539791330904151343884535552886618297940842999364209881616795283519399580737181316252981336 kilometers
+
+Double precision circumference: 40075016.68557849
+Difference: 0.000000 meters</code></pre>
                     </div>
                 </div>
 
                 <div class="example-card">
                     <h3>Spherical Trigonometry</h3>
                     <p>Calculate distances on a sphere using the haversine formula.</p>
-                    
+
                     <div class="code-example">
                         <div class="code-header">SphericalDistance.cs</div>
-                        <pre><code class="language-csharp">using System;
-using BigFloatLibrary;
+                        <pre><code class="language-csharp">using BigFloatLibrary;
 
-public class SphericalDistance
+var calc = new SphericalDistanceNoInverse(200);
+BigFloat earthRadius = new("6371000.00"); // meters
+
+// New York City
+BigFloat nycLat = new ("40.712800");
+BigFloat nycLon = new ("-74.006000");
+// London
+BigFloat londonLat = new ("51.507400");
+BigFloat londonLon = new ("-0.12780000");
+
+BigFloat distance = calc.CalculateDistance(
+nycLat, nycLon, londonLat, londonLon, earthRadius);
+
+Console.WriteLine("Great Circle Distance: NYC → London");
+Console.WriteLine($"  NYC:    {nycLat}°N, {nycLon}°W");
+Console.WriteLine($"  London: {londonLat}°N, {londonLon}°W");
+Console.WriteLine($"  Distance = {distance} meters");
+Console.WriteLine($"           = {distance / 1000} kilometers");
+Console.WriteLine($"           = {distance / new BigFloat(1609.344)} miles");
+
+class SphericalDistanceNoInverse(int precisionBits = 1000)
 {
-    private readonly BigFloat pi;
-    
-    public SphericalDistance(int precisionBits = 1000)
-    {
-        pi = Constants.WithConfig(precisionBits).Get("Pi");
-    }
-    
+    private readonly BigFloat pi = BigFloat.Constants.GetConstant("Pi", precisionBits);
+    readonly int precisionBits = precisionBits;
+
     // Convert degrees to radians
-    private BigFloat ToRadians(BigFloat degrees)
+    BigFloat ToRadians(BigFloat degrees) => degrees * pi / BigFloat.SetPrecision(new BigFloat(180), precisionBits);
+
+    /// <summary>
+    /// Solve for the central angle c (in radians) from haversine term a:
+    ///     a = sin²(dlat/2) + cos(lat1)*cos(lat2)*sin²(dlon/2)
+    /// so that:
+    ///     cos(c) = 1 - 2a.
+    /// We find c via Newton's method on f(c)=cos(c)-(1-2a)=0.
+    ///
+    </summary>
+    BigFloat SolveCentralAngle(BigFloat a)
     {
-        return degrees * pi / 180;
+        // target = 1 - 2a
+        BigFloat one = BigFloat.OneWithAccuracy(precisionBits);
+        BigFloat two = one * 2;
+        BigFloat target = one - two * a;
+
+        // initial guess: for small a, c≈2√a
+        BigFloat c = two * BigFloat.Sqrt(a);
+
+        // tolerance scaled to precision
+        BigFloat tol = BigFloat.Pow(BigFloat.SetPrecision(BigFloat.SetPrecision(new BigFloat(10), precisionBits), precisionBits) , -((precisionBits / 3)));
+
+        for (int iter = 0; iter < 50; iter++)
+        {
+            BigFloat f = BigFloat.Cos(c) - target;   // f(c)
+            BigFloat df = -BigFloat.Sin(c);          // f'(c)
+
+            if (df.IsZero)
+            break;
+
+            BigFloat delta = f / df;
+            c -= delta;
+
+            if (BigFloat.Abs(delta) < tol)
+            break;
+        }
+
+        return c;
     }
-    
-    // Haversine formula for great circle distance
+
+    /// <summary>
+    /// Great‐circle distance using only Sin, Cos, Sqrt, +, −, ×, ÷.
+    ///
+    </summary>
     public BigFloat CalculateDistance(
-        BigFloat lat1, BigFloat lon1,
-        BigFloat lat2, BigFloat lon2,
-        BigFloat radius)
+    BigFloat lat1, BigFloat lon1,
+    BigFloat lat2, BigFloat lon2,
+    BigFloat radius)
     {
-        // Convert to radians
+        // to radians
         lat1 = ToRadians(lat1);
         lon1 = ToRadians(lon1);
         lat2 = ToRadians(lat2);
         lon2 = ToRadians(lon2);
-        
-        // Differences
+
+        // deltas
         BigFloat dlat = lat2 - lat1;
         BigFloat dlon = lon2 - lon1;
-        
-        // Haversine formula
-        BigFloat a = BigFloat.Sin(dlat / 2) * BigFloat.Sin(dlat / 2) +
-                     BigFloat.Cos(lat1) * BigFloat.Cos(lat2) *
-                     BigFloat.Sin(dlon / 2) * BigFloat.Sin(dlon / 2);
-        
-        BigFloat c = 2 * BigFloat.Atan2(BigFloat.Sqrt(a), BigFloat.Sqrt(1 - a));
-        
+        BigFloat half = BigFloat.OneWithAccuracy(precisionBits) /2;
+
+        // haversine 'a'
+        BigFloat sin_dlat2 = BigFloat.Sin(dlat * half);
+        BigFloat sin_dlon2 = BigFloat.Sin(dlon * half);
+        BigFloat a = sin_dlat2 * sin_dlat2
+        + BigFloat.Cos(lat1)
+        * BigFloat.Cos(lat2)
+        * (sin_dlon2 * sin_dlon2);
+
+        // central angle c via solver
+        BigFloat c = SolveCentralAngle(a);
+
+        // arc length
         return radius * c;
-    }
-    
-    public static void Example()
-    {
-        var calc = new SphericalDistance(1500);
-        BigFloat earthRadius = new("6371000"); // meters
-        
-        // New York City coordinates
-        BigFloat nycLat = new("40.7128");
-        BigFloat nycLon = new("-74.0060");
-        
-        // London coordinates
-        BigFloat londonLat = new("51.5074");
-        BigFloat londonLon = new("-0.1278");
-        
-        BigFloat distance = calc.CalculateDistance(
-            nycLat, nycLon, londonLat, londonLon, earthRadius);
-        
-        Console.WriteLine("Great Circle Distance: NYC to London");
-        Console.WriteLine($"NYC: {nycLat}°N, {nycLon}°W");
-        Console.WriteLine($"London: {londonLat}°N, {londonLon}°W");
-        Console.WriteLine($"Distance: {distance} meters");
-        Console.WriteLine($"        = {distance / 1000} kilometers");
-        Console.WriteLine($"        = {distance / 1609.344} miles");
     }
 }</code></pre>
                     </div>
+                </div>
+                <div class="output-box">
+                    <h4>Output:</h4>
+                    <pre><code>Great Circle Distance: NYC → London
+NYC:    40.712800°N, -74.006000°W
+London: 51.507400°N, -0.12780000°W
+Distance = 5.572e+6 meters
+= 5572.3 kilometers
+= 3462.5 miles</code></pre>
                 </div>
             </div>
         </section>
