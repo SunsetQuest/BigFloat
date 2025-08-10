@@ -68,12 +68,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         {
             numerator >>= trailingZeros;
             binaryExponent += trailingZeros;
-            numeratorBits -= trailingZeros;
         }
 
         // We want enough precision: shift left to get desired precision
         int shiftBits = int.Clamp(addedBinaryPrecision + denominatorBits, denominatorBits, 96);
-        //int shiftBits = Math.Max(addedBinaryPrecision - numeratorBits + denominatorBits, 0);
 
         BigInteger shiftedNumerator = numerator << shiftBits;
         BigInteger mantissa = shiftedNumerator / denominator;
