@@ -732,6 +732,49 @@ public class BigFloatTests
         Assert.Equal(-hb, BigFloat.ParseBinary("100000000000000000000000000000000", 0, 0, hb).Accuracy);// 1|00000000000000000000000000000000.(accuracy is -32)
     }
 
+    [Theory]
+    [InlineData(0.0, 0)]
+    [InlineData(1.25, 1)]
+    [InlineData(1.25, 17)]
+    [InlineData(-42.5, 5)]
+    public void AdjustAccuracy_Increase_IsValuePreserving(double v, int inc)
+    {
+        var x = new BigFloat(v);
+        var y = BigFloat.AdjustAccuracy(x, inc);
+        Assert.True(x == y, $"Value changed: {x} vs {y}");
+    }
+
+    [Theory]
+    [InlineData(1.2345, -5)]
+    [InlineData(-1.2345, -20)]
+    [InlineData(123456789.0, -53)]
+    [InlineData(123.0, 64)]
+    public void AdjustAccuracy_Equals_AdjustPrecision(double v, int delta)
+    {
+        var x = new BigFloat(v);
+        var a = BigFloat.AdjustAccuracy(x, delta);
+        var p = BigFloat.AdjustPrecision(x, delta);
+        Assert.True(a.Equals(p), $"Mismatch: {a} vs {p}");
+    }
+
+    [Fact]
+    public void SetAccuracy_Matches_Other_Accuracy()
+    {
+        var a = new BigFloat(1.23456789012345);
+        var b = new BigFloat(6.789);
+        var b2 = BigFloat.SetAccuracy(b, a.Accuracy);
+        Assert.Equal(a.Accuracy, b2.Accuracy);
+    }
+
+    [Fact]
+    public void SetAccuracy_OnZero_PreservesZeroAndContext()
+    {
+        var z = BigFloat.ZeroWithAccuracy(100);     // existing API
+        var z2 = BigFloat.SetAccuracy(z, 10);
+        Assert.True(z2.IsZero);
+        Assert.Equal(10, z2.Accuracy);
+    }
+
     [Fact]
     public void Verify_IsPositive()
     {

@@ -1203,6 +1203,29 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Adjust accuracy by <paramref name="deltaBits"/>.
+    /// Positive delta increases fractional capacity; negative delta reduces it and rounds
+    /// using the same semantics as precision reduction.
+    /// Value-preserving when delta ≥ 0.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat AdjustAccuracy(BigFloat x, int deltaBits)
+        => AdjustPrecision(x, deltaBits);
+
+    /// <summary>
+    /// Set accuracy to <paramref name="newAccuracyBits"/> (in bits).
+    /// Internally computes <c>delta = newAccuracyBits - x.Accuracy</c> and delegates to
+    /// <see cref="AdjustAccuracy(BigFloat,int)"/>/<see cref="AdjustPrecision(BigFloat,int)"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat SetAccuracy(BigFloat x, int newAccuracyBits)
+    {
+        int current = -x.Scale;                // i.e., x.Accuracy
+        int delta = newAccuracyBits - current;
+        return delta == 0 ? x : AdjustPrecision(x, delta);
+    }
+
+    /// <summary>
     /// Sets the precision(and accuracy) of a number by appending 0 bits if too small or cropping bits if too large.
     /// This can be useful for extending whole or rational numbers precision. 
     /// No rounding is performed.
