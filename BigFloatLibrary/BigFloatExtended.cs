@@ -29,7 +29,10 @@ public readonly partial struct BigFloat
     public int Precision => _size - GuardBits;
 
     /// <summary>
-    /// Returns the accuracy of the BigFloat. The accuracy is equivalent to the opposite of the scale. A negative accuracy means the least significant bit is above the one place. A value of zero is equivalent to an integer. A positive value is the number of accurate places (in binary) to the right of the radix point.
+    /// Binary accuracy (fractional bit budget) of this value; defined as <c>-Scale</c>. 
+    /// A positive value is the number of binary accurate places to the right of the radix point.
+    /// A negative value means the least significant bit is above the one place. 
+    /// A value of zero is equivalent to an integer. 
     /// </summary>
     public int Accuracy => -Scale;
 
