@@ -10,8 +10,8 @@ public class BitAdjustTests
     public void IncrementThenDecrement_RestoresOriginal(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits + BigFloat.GuardBits, true);
-        var y = BigFloat.BitIncrement(x);
-        var z = BigFloat.BitDecrement(y);
+        var y = BigFloat.NextUp(x);
+        var z = BigFloat.NextDown(y);
 
         Assert.Equal(x.RawMantissa, z.RawMantissa);
         Assert.Equal(x.SizeWithGuardBits, z.SizeWithGuardBits);
@@ -24,33 +24,29 @@ public class BitAdjustTests
     public void DecrementThenIncrement_RestoresOriginal(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.BitDecrement(x);
-        var z = BigFloat.BitIncrement(y);
+        var y = BigFloat.NextDown(x);
+        var z = BigFloat.NextUp(y);
 
         Assert.Equal(x, z);
     }
 
     [Theory]
+    [InlineData(-2, -1)]
+    [InlineData(-1, 4)]
+    [InlineData(0, 0)]
+    [InlineData(1, 0)]
+    [InlineData(2, 0)]
     [InlineData(3, 0)]
     [InlineData(3, 5)]
     [InlineData(long.MaxValue, 0)]
     [InlineData(uint.MaxValue, 0)]
-    [InlineData(-1, 4)]
     [InlineData(-0x200000000000, -45)]
+    [InlineData(int.MaxValue, 0)]
     public void BitIncrement_MonotonicEqual(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.BitIncrement(x);
-        Assert.True(y == x, "BitIncrement usually does not impact compares - unless it causes the top GuardBit to set.");
-    }
-
-    [Theory]
-    [InlineData(int.MaxValue, 0)]
-    public void BitIncrement_MonotonicIncrease(long m, int scale)
-    {
-        var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.BitIncrement(x);
-        Assert.True(y > x, "BitIncrement usually does not impact compares - unless it causes the top GuardBit to set, like this one.");
+        var y = BigFloat.NextUp(x);
+        Assert.True(y == x, "Incrementing the GuardBit is not large enough to the value to not be equal.");
     }
 
     [Theory]
@@ -61,7 +57,7 @@ public class BitAdjustTests
     public void GuardBitDecrement_MonotonicDecrease(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.GuardBitDecrement(x);
+        var y = BigFloat.NextDownExtended(x);
         Assert.True(y < x, "BitDecrement should be strictly smaller");
     }
 
@@ -78,8 +74,8 @@ public class BitAdjustTests
         int oldSize = x.SizeWithGuardBits;
 
         var y = m < expectedMantissa
-            ? BigFloat.BitIncrement(x)
-            : BigFloat.BitDecrement(x);
+            ? BigFloat.NextUp(x)
+            : BigFloat.NextDown(x);
 
         Assert.Equal(new BigInteger(expectedMantissa), y.RawMantissa);
         Assert.Equal(oldSize + sizeDelta, y.SizeWithGuardBits);
@@ -94,11 +90,11 @@ public class BitAdjustTests
         var x = new BigFloat(big, 0, true);
         int oldSize = x.SizeWithGuardBits;
 
-        var inc = BigFloat.BitIncrement(x);
+        var inc = BigFloat.NextUp(x);
         Assert.Equal(big + BigInteger.One, inc.RawMantissa);
         Assert.Equal(oldSize, inc.SizeWithGuardBits);
 
-        var dec = BigFloat.BitDecrement(x);
+        var dec = BigFloat.NextDown(x);
         Assert.Equal(big - BigInteger.One, dec.RawMantissa);
         Assert.Equal(oldSize, dec.SizeWithGuardBits + 1);
     }
@@ -108,7 +104,7 @@ public class BitAdjustTests
     public void GuardBitIncrement_AdjustsMantissaByGuardDelta(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.GuardBitIncrement(x);
+        var y = BigFloat.NextUpExtended(x);
 
         long delta = (long)(y.RawMantissa - x.RawMantissa);
         Assert.Equal(1L << BigFloat.GuardBits, delta);
@@ -120,7 +116,7 @@ public class BitAdjustTests
     public void GuardBitDecrement_AdjustsMantissaByGuardDelta(long m, int scale)
     {
         var x = new BigFloat(new BigInteger(m), scale + BigFloat.GuardBits, true);
-        var y = BigFloat.GuardBitDecrement(x);
+        var y = BigFloat.NextDownExtended(x);
 
         long delta = (long)(x.RawMantissa - y.RawMantissa);
         Assert.Equal(1L << BigFloat.GuardBits, delta);

@@ -102,22 +102,39 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    // === Canonical API (preferred) ===
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat BitIncrement(in BigFloat x)
-       => BitAdjust(x, 1);
+    public static BigFloat NextUp(in BigFloat x) => BitAdjust(x, +1);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat BitDecrement(in BigFloat x)
-       => BitAdjust(x, -1);
+    public static BigFloat NextDown(in BigFloat x) => BitAdjust(x, -1);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat GuardBitIncrement(in BigFloat x)
-       => BitAdjust(x, 1L << GuardBits);
+    public static BigFloat NextUpExtended(in BigFloat x) => BitAdjust(x, +1L << GuardBits);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat GuardBitDecrement(in BigFloat x)
-       => BitAdjust(x, -(1L << GuardBits));
+    public static BigFloat NextDownExtended(in BigFloat x) => BitAdjust(x, -1L << GuardBits);
 
+    // === Compatibility shims (deprecated) ===
+    [System.Obsolete("Renamed: use NextUp(x) for final-precision ULP.", error: false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat BitIncrement(in BigFloat x) => NextUp(x);
+
+    [System.Obsolete("Renamed: use NextDown(x) for final-precision ULP.", error: false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat BitDecrement(in BigFloat x) => NextDown(x);
+
+    [System.Obsolete("Renamed: use NextUpExtended(x) for guard-bit ULP.", error: false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat GuardBitIncrement(in BigFloat x) => NextUpExtended(x);
+
+    [System.Obsolete("Renamed: use NextDownExtended(x) for guard-bit ULP.", error: false)]
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat GuardBitDecrement(in BigFloat x) => NextDownExtended(x);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigFloat BitAdjust(in BigFloat x, long delta)
