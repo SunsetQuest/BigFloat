@@ -42,8 +42,6 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public int CompareInPrecisionBitsTo(BigFloat other)
     {
-        if (CheckForQuickCompareWithExponentOrSign(other, out int result)) { return result; }
-
         // At this point, the exponent is equal or off by one because of a rollover.
 
         int sizeDiff = other.Scale - Scale;
