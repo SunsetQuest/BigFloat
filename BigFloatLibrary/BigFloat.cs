@@ -385,9 +385,8 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Tests to see if the number is in the format of "10000000..." after rounding.
+    /// Tests to see if the number is in the format of "10000000..." after rounding guard-bits.
     /// </summary>
-    //public bool IsOneBitFollowedByZeroBits => 
     public bool IsOneBitFollowedByZeroBits => BigInteger.IsPow2(BigInteger.Abs(_mantissa) >> (GuardBits - 1));
 
     /// <summary>
@@ -1311,32 +1310,6 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
         => AdjustPrecision(x, -reduceBy);
-
-
-    ///// <summary>
-    ///// Reduces the precision of the a number but keeps the value the same.
-    ///// i.e. Down-shifts the value but and increases the scale. 
-    ///// Example: ReducePrecision(0b1101.1101, 3) --> 0b1101.1; 
-    ///// No rounding is performed.
-    ///// Also see: TruncateByAndRound, RightShiftWithRoundWithCarry, RightShiftWithRound
-    ///// </summary>
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    //public static BigFloat ReducePrecision(BigFloat x, int reduceBy)
-    //{
-    //    return new BigFloat(x._mantissa >> reduceBy, x.Scale + reduceBy, x._size - reduceBy);
-    //}
-
-    ///// <summary>
-    ///// Extends the precision and accuracy of a number by appending 0 bits. 
-    ///// e.g. 1.1 --> 1.100000
-    ///// This can be useful for extending whole or rational numbers precision. 
-    ///// </summary>
-    //public static BigFloat ExtendPrecision(BigFloat x, int bitsToAdd)
-    //{
-    //    return bitsToAdd < 0
-    //        ? throw new ArgumentOutOfRangeException(nameof(bitsToAdd), "cannot be a negative number")
-    //        : new BigFloat(x._mantissa << bitsToAdd, x.Scale - bitsToAdd, x._size + bitsToAdd);
-    //}
 
     // Future: add a SetAccuracy, draft below
     // public static BigFloat SetAccuracy(BigFloat x, int accuracy) =>
