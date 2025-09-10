@@ -97,6 +97,7 @@ public readonly partial struct BigFloat
             else if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
             {
                 guardBitsIncluded = (guardBitsIncluded == int.MinValue) ? 0 : guardBitsIncluded;
+
                 return TryParseHex(numericString, out result, binaryScaler, guardBitsIncluded);
             }
             //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
@@ -418,7 +419,7 @@ public readonly partial struct BigFloat
     /// Supports the precision separator, '|'.  For example, '1.01|101' parses '1.01' as in-precision and '101' as out of precision bits stored in guard bits.
     /// It will also ignore spaces and tolerate values wrapped with double quotes and brackets.
     /// Allowed: 
-    ///  * ABCD/abcd    both uppercase/lowercases are supported
+    ///  * ABCD/abcd    both uppercase/lowercase are supported
     ///  * -ABC.DEF     leading minus or plus signs are supported
     ///  * 123 456 789  spaces or commas ignored
     ///  * {ABC.DEF}    wrapped in {..} or (..) or ".."
@@ -449,10 +450,53 @@ public readonly partial struct BigFloat
         int accuracyDelimiterPosition = -1;
         int expLocation = -1;
         int destinationLocation = 1;
+        bool isNeg = false;
+        int inputCurser = 0;
 
-        // skip negative or positive sign
-        bool isNeg = hexInput[0] == '-';
-        int inputCurser = (isNeg || hexInput[0] == '+') ? 1 : 0;
+        // skip +/- sign and "0x" or "0X" if present, and leading zeros
+        for (inputCurser = 0; inputCurser < hexInput.Length; inputCurser++)
+        {
+            char c = hexInput[inputCurser];
+            if (c == '0'
+                && ((inputCurser + 1) < hexInput.Length)
+                && (hexInput[inputCurser + 1] == 'x' || hexInput[inputCurser + 1] == 'X')
+                )
+            {
+                inputCurser++; // skip the 'x' or 'X'
+            }
+            else if (c == '-')
+            {
+                isNeg = !isNeg;
+            }
+            else if (char.IsWhiteSpace(c) || c == '+')
+            {
+
+            }
+            else // if something else then lets continue on
+            {
+                break;
+            }
+        }
+
+        // end and no digits found already, lets fail
+        if (inputCurser > hexInput.Length - 1)
+        {
+            result = Zero;
+            return false;
+        }
+
+        // at this point we skipped leading whitespace, a leading sign, and "0x" or "0X" if it was present. Now lets skip leading zeros.
+        bool noLeadingZerosFound = true;
+        while (hexInput[inputCurser] == '0')
+        {
+            inputCurser++;
+            if (inputCurser > hexInput.Length - 1)
+            {
+                result = Zero;
+                return true;
+            }
+            noLeadingZerosFound = false;
+        }
 
         Span<char> cleaned = stackalloc char[hexInput.Length - inputCurser + 1];
 
@@ -573,7 +617,7 @@ public readonly partial struct BigFloat
         }
 
         // check if no digits were found
-        if (destinationLocation <= 1)
+        if (destinationLocation <= 1 && noLeadingZerosFound)
         {
             result = Zero;
             return false;

@@ -2727,36 +2727,47 @@ public class BigFloatTests
     public void Verify_TryParseHex()
     {
         // Tests invalid sequences of TryParseHex...
-        Assert.False(BigFloat.TryParseHex(null, out _)); // @"BigFloat.TryParseHex(null) reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("", out _)); // @"BigFloat.TryParseHex("""") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("-", out _)); // @"BigFloat.TryParseHex(""-"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("+", out _)); // @"BigFloat.TryParseHex(""+"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("/", out _)); // @"BigFloat.TryParseHex(""/"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("G", out _)); // @"BigFloat.TryParseHex(""G"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex(".", out _)); // @"BigFloat.TryParseHex(""."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("-+", out _)); // @"BigFloat.TryParseHex(""-+"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0+", out _)); // @"BigFloat.TryParseHex(""0+"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0-", out _)); // @"BigFloat.TryParseHex(""0-"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex(".", out _)); // @"BigFloat.TryParseHex(""."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("-.", out _)); // @"BigFloat.TryParseHex(""-."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("1-", out _)); // @"BigFloat.TryParseHex(""1-"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0x", out _)); // @"BigFloat.TryParseHex(""0x"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("-0x", out _)); // @"BigFloat.TryParseHex(""-0x"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0.0.", out _)); // @"BigFloat.TryParseHex(""0.0."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("+.0.", out _)); // @"BigFloat.TryParseHex(""+.0."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("--1", out _)); // @"BigFloat.TryParseHex(""--1"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("1.01.", out _)); // @"BigFloat.TryParseHex(""1.01."") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex(".G1", out _)); // @"BigFloat.TryParseHex("".G1"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("2.G1", out _)); // @"BigFloat.TryParseHex(""2.G1"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0h-ABCD", out _)); // @"BigFloat.TryParseHex(""0h-ABCD"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("-+0x55", out _)); // @"BigFloat.TryParseHex(""-+0x55"") reported True but should be False."
-        Assert.False(BigFloat.TryParseHex("0x0", out _)); // @"BigFloat.TryParseHex(""0x0"") reported True but should be False."
+        Assert.False(BigFloat.TryParseHex(null, out _));
+        Assert.False(BigFloat.TryParseHex("", out _));
+        Assert.False(BigFloat.TryParseHex("-", out _));
+        Assert.False(BigFloat.TryParseHex("+", out _));
+        Assert.False(BigFloat.TryParseHex("/", out _));
+        Assert.False(BigFloat.TryParseHex("G", out _));
+        Assert.False(BigFloat.TryParseHex(".", out _));
+        Assert.False(BigFloat.TryParseHex("-+", out _));
+        Assert.False(BigFloat.TryParseHex("0+", out _));
+        Assert.False(BigFloat.TryParseHex("0-", out _));
+        Assert.False(BigFloat.TryParseHex(".", out _)); 
+        Assert.False(BigFloat.TryParseHex("-.", out _));
+        Assert.False(BigFloat.TryParseHex("1-", out _));
+        Assert.False(BigFloat.TryParseHex("0x", out _));
+        Assert.False(BigFloat.TryParseHex("-0x", out _)); 
+        Assert.False(BigFloat.TryParseHex("0.0.", out _));
+        Assert.False(BigFloat.TryParseHex("+.0.", out _));
+        Assert.False(BigFloat.TryParseHex("1.01.", out _));
+        Assert.False(BigFloat.TryParseHex(".G1", out _)); 
+        Assert.False(BigFloat.TryParseHex("2.G1", out _));
+        Assert.False(BigFloat.TryParseHex("0h-ABCD", out _));
 
         // Parse valid hex sequences and make sure the result is correct.
         Assert.True(BigFloat.TryParseHex("0", out BigFloat output));
-        Assert.Equal(output, 0); // @"BigFloat.TryParseHex(""0"") was not 0."
+        Assert.Equal(output, 0);
         Assert.True(BigFloat.TryParseHex("1", out output));
-        Assert.Equal(output, 1); // @"BigFloat.TryParseHex(""1"") was not 1."
+        Assert.Equal(output, 1);
+        Assert.True(BigFloat.TryParseHex("--1", out output));
+        Assert.Equal(output, 1);
+        Assert.True(BigFloat.TryParseHex("++1", out output));
+        Assert.Equal(output, 1);
+        Assert.True(BigFloat.TryParseHex("-+1", out output));
+        Assert.Equal(output, -1);
+        Assert.True(BigFloat.TryParseHex("-+0x55", out output));
+        Assert.Equal(output, -0x55);
+        Assert.True(BigFloat.TryParseHex("0x-5", out output));
+        Assert.Equal(output, -0x5);
+        Assert.True(BigFloat.TryParseHex("-0x5", out output));
+        Assert.Equal(output, -0x5);
+        Assert.True(BigFloat.TryParseHex("0x0", out output));
+        Assert.Equal(output, 0);
         Assert.True(BigFloat.TryParseHex("F", out output));
         Assert.Equal(output, 15); // @"BigFloat.TryParseHex(""F"") was not 15."
         Assert.True(BigFloat.TryParseHex("-1", out output));
