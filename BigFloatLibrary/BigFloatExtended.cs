@@ -136,6 +136,10 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat GuardBitDecrement(in BigFloat x) => NextDownExtended(x);
 
+    /// <summary>
+    /// For positive delta, the mantissa's GuardBits move toward +infinity. 
+    /// For negative delta, the mantissa's GuardBits move toward -infinity. 
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigFloat BitAdjust(in BigFloat x, long delta)
     {

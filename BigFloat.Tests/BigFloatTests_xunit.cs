@@ -4,7 +4,7 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
 
-// Ignore Spelling: Aprox
+// Ignore Spelling: Aprox Bitwise Sqrt Ulp Fractionals
 
 using System.Diagnostics;
 using System.Globalization;
@@ -7555,67 +7555,44 @@ public class BigFloatTests
         [Fact]
         public void Sin_Should_ReturnZero_When_InputIsZero()
         {
-            // Arrange
             var input = BigFloat.Zero;
             var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Sin(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Cos_Should_ReturnOne_When_InputIsZero()
         {
-            // Arrange
             var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
             var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Cos(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Sin_Should_ReturnOne_When_InputIsHalfPi()
         {
-            // Arrange
             var input = HalfPi;
             var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Sin(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Cos_Should_ReturnMinusOne_When_InputIsPi()
         {
-            // Arrange
             var input = Pi;
             var expected = -BigFloat.OneWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Cos(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Sin_Should_ReturnZero_When_InputIsPi()
         {
-            // Arrange
             var input = Pi;
             var expected = BigFloat.ZeroWithAccuracy(HighPrecision);
-
-            // Act
             var result = BigFloat.Sin(input);
 
             // Assert
@@ -7625,25 +7602,17 @@ public class BigFloatTests
         [Fact]
         public void Tan_Should_ReturnZero_When_InputIsZero()
         {
-            // Arrange
             var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
             var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Tan(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Tan_Should_ReturnOne_When_InputIsQuarterPi()
         {
-            // Arrange
             var input = QuarterPi;
             var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-
-            // Act
             var result = BigFloat.Tan(input);
 
             // Assert
@@ -7661,29 +7630,24 @@ public class BigFloatTests
         [InlineData(1.0)]
         public void Sin_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
         {
-            // Arrange
             var bigFloatInput = (BigFloat)input;
             var expectedFromStdLib = Math.Sin(input);
 
-            // Act
             var bigFloatResult = BigFloat.Sin(bigFloatInput);
             var actualDouble = (double)bigFloatResult;
 
-            // Assert
             Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
         }
 
         [Fact]
         public void Cos_Should_MatchHighPrecisionValue_When_InputIs0Point3()
         {
-            // Arrange
             const string inputStr = "0.30000000000000000000000000000000000000000000000000000000";
             const string expectedStr = "0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629";
 
             var input = BigFloat.Parse(inputStr);
             var expected = BigFloat.Parse(expectedStr);
 
-            // Act
             var result = BigFloat.Cos(input);
 
             // Assert
@@ -7700,15 +7664,12 @@ public class BigFloatTests
         [InlineData(0.7)]
         public void Tan_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
         {
-            // Arrange
             var bigFloatInput = (BigFloat)input;
             var expectedFromStdLib = Math.Tan(input);
 
-            // Act
             var bigFloatResult = BigFloat.Tan(bigFloatInput);
             var actualDouble = (double)bigFloatResult;
 
-            // Assert
             Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
         }
 
@@ -7721,15 +7682,12 @@ public class BigFloatTests
         [InlineData(1.0, "Larger angle approximation")]
         public void SinAprox_Should_BeWithinTolerance_When_ComparedToExactSin(double inputValue, string testCase)
         {
-            // Arrange
             var input = (BigFloat)inputValue;
 
-            // Act
             var exactResult = BigFloat.Sin(input);
             var approximateResult = BigFloat.SinAprox(input);
             var error = Math.Abs((double)(exactResult - approximateResult));
 
-            // Assert
             Assert.True(error < TaylorApproximationTolerance,
                 $"{testCase}: Error {error:E} exceeds tolerance {TaylorApproximationTolerance:E}");
 

@@ -4,7 +4,7 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
 
-// Ignore Spelling: Aprox
+// Ignore Spelling: Aprox Sqrt
 
 using System;
 using System.Numerics;
@@ -218,7 +218,7 @@ public readonly partial struct BigFloat
 
         // Apply exponent scaling adjustment if we decomposed the exponent earlier
         int leftShift = (Math.Abs(binaryExp) > 1020) ? binaryExp / root : 0;
-        int shrinkBy = (value._size < 53) ? 53 - value._size - GuardBits : 0;
+        int shrinkBy = (value._size < 53) ? 53 - value._size - GuardBits : 0;  // todo: change "-GuardBits" to ""+GuardBits" here? (because an input like "0|AAAAAAAAAA" will have a results like "ABA23ABC28|00000000000"
 
         long bits = BitConverter.DoubleToInt64Bits(approxRoot);
         long mantissa2 = (bits & 0xfffffffffffffL) | 0x10000000000000L;

@@ -128,6 +128,10 @@ public readonly partial struct BigFloat
         return new BigFloat(result, Scale, newSize);
     }
 
+    // Future: The current implementation rounds up only if any bits are set between the binary point(GuardBits - Scale) and halfway through the guard region(GuardBits / 2). Instead, Ceiling should always round up whenever fractional bits exist, regardless of position within the guard region.This ensures consistency with IsInteger(i.e., x.IsInteger implies x == (BigInteger) x or x == (int) x when representable) and avoids cases where x.IsInteger is true but x.Ceiling still increments. The semantics must strictly follow:
+    // If x.IsInteger is true, then x.Ceiling == x.
+    // If any fractional bits are set and x > 0, then x.Ceiling > x.
+    // If x < 0, truncate toward zero (no rounding up)
 
     /// <summary>
     /// Rounds to the next integer towards positive infinity. 
