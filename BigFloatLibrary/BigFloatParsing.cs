@@ -357,6 +357,7 @@ public readonly partial struct BigFloat
             return true;
         }
 
+        // Future: we should probably increment guardBits for ALL numbers, not just "1" (we can just do a "guardBits+=2", I propose the same for TryParseHex)
         // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
         if (guardBits == 0 && BigInteger.Abs(val).IsOne)
         {
@@ -477,7 +478,7 @@ public readonly partial struct BigFloat
                 break;
             }
         }
-
+        
         // end and no digits found already, lets fail
         if (inputCurser > hexInput.Length - 1)
         {
@@ -638,6 +639,12 @@ public readonly partial struct BigFloat
             radixLocation -= destinationLocation;
         }
 
+        // The 'accuracyDelimiterPosition', specified by '|', is currently measured from the MSB but it should be measured from the LSB, so subtract it from val's Length.
+        if (accuracyDelimiterPosition >= 0)
+        {
+            guardBitsIncluded = (destinationLocation - accuracyDelimiterPosition) * 4; //4 bits per hexadecimal place
+        }
+
         // hex are just bits of 4 so the scale is easy
         int newScale = (radixLocation * 4) + binaryScaler;
 
@@ -647,13 +654,15 @@ public readonly partial struct BigFloat
             return false;
         }
 
+        //guardBitsIncluded += 2; // todo: I think we should do a "+=1" or "+=2" because if the user request ParseHex("1") then, without this, they would get 1.00|0000.. however if they specify "1" then they probably intended 2-4 bits of precision.  We could only do this if accuracyDelimiterPosition is not specified(-1) AND guardBitsIncluded is not specified(0) however then it is not possible to do a guardBitsIncluded with 0 because it would always increment it. I think the solution is to just increment everything. (e.g C=C.00|000... AB0=AB0.00|000... ). Another reason to add the additional precision is if we didn't add it and did a "1 * F" we would get 0b1|111.000... and the user would get an answer of 2e1. While this would be correct in regards to precision, it would be confusing to users.
+
         asInt <<= GuardBits - guardBitsIncluded;
 
         if (isNeg)
         {
             asInt = BigInteger.Negate(asInt);
         }
-        result = new BigFloat(asInt, newScale - guardBitsIncluded, true);
+        result = new BigFloat(asInt, newScale + guardBitsIncluded, true);
         return true;
     }
 
