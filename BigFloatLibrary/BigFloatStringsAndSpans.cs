@@ -58,40 +58,58 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     }
 
     /// <summary>
-    /// Converts this BigFloat to a hexadecimal string.
+    /// Converts this BigFloat to a hexadecimal string with radix point.
     /// </summary>
-    public string ToHexString()
+    public string ToHexString(bool includeGuardBits = false)
     {
-        // --- 1.  ‘binExp’  tells us whether we have a fraction at all -----------
-        int binExp = Scale - GuardBits;          // =  power‑of‑two exponent
-
-        // a) nothing after the radix point, no rounding necessary
-        if (binExp >= 0)
+        int binExp = Scale - GuardBits;       // power-of-two exponent after guard
+        if (!includeGuardBits && binExp >= 0)
             return (_mantissa << binExp).ToString("X");
 
-        // b) still an integer, but part of the 32 guard bits ends up in it
-        if (Scale > -2)
+        // If we are NOT including guard bits and the fractional part is < 1 hex digit,
+        // round to an integer and return without a dot.
+        if (!includeGuardBits && binExp > -4)
             return BigIntegerTools.RoundingRightShift(_mantissa, -binExp).ToString("X");
-        
-        // --- 2.  real fraction ---------------------------------------------------
-        // how many *hex* digits contain real information?
-        int fracNibbles = (-Scale + 2) >> 2;     // == ceil(−Scale / 4)
 
-        // bits we must drop *before* rounding (always ≥ 0)
-        int shift = GuardBits - Scale - (fracNibbles << 2);
+        // --- fractional formatting ---
+        // base fractional nibbles from Scale (ceil(-Scale/4))
+        int fracNibbles = (-Scale + 2) >> 2;
+        if (fracNibbles < 0) fracNibbles = 0;
 
-        // --- 3.  build the textual representation -------------------------------
-        string hex = RoundingRightShift(_mantissa, shift).ToString("X");
+        // when including guard bits, expose them as additional hex digits
+        int guardNibbles = includeGuardBits ? (GuardBits + 3) >> 2 : 0;
+        int totalFracNibbles = fracNibbles + guardNibbles;
 
-        // make sure we have at least ‘fracNibbles’ characters to slice
-        if (hex.Length <= fracNibbles)
-            hex = new string('0', fracNibbles - hex.Length + 1) + hex;
+        // How many bits to drop before printing (≥0 ⇒ right shift, <0 ⇒ left shift)
+        int shift = GuardBits - Scale - (totalFracNibbles << 2);
 
-        int dotPos = hex.Length - fracNibbles;
+        System.Numerics.BigInteger shown =
+            shift >= 0
+                ? (includeGuardBits ? (_mantissa >> shift)            // no rounding
+                                    : BigIntegerTools.RoundingRightShift(_mantissa, shift))
+                : (_mantissa << -shift);                              // extend with zeros
+
+        string hex = shown.ToString("X").TrimStart('0');
+
+        // ensure we can insert the dot
+        if (hex.Length <= totalFracNibbles)
+            hex = new string('0', totalFracNibbles - hex.Length + 1) + hex;
+
+        int dotPos = hex.Length - totalFracNibbles;
         hex = hex.Insert(dotPos, ".");
 
-        // strip trailing zeros in the fraction; drop the dot if nothing is left
-        return hex.TrimStart('0');
+        if (!includeGuardBits)
+        {
+            // trim trailing zeros after the dot; drop dot if empty fraction
+            int end = hex.Length;
+            while (end > dotPos + 1 && hex[end - 1] == '0') end--;
+            if (end > dotPos && hex[end - 1] == '.') end--;
+            hex = hex.Substring(0, end);
+        }
+
+        // normalize leading zero before dot
+        if (hex.StartsWith(".")) hex = "0" + hex;
+        return hex;
     }
 
     /// <summary>
