@@ -236,6 +236,12 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>Defines an implicit conversion of a decimal to a BigFloat.</summary>
+    public static implicit operator BigFloat(decimal value)
+    {
+        return new BigFloat(value);
+    }
+
     /////////////////////////// Explicit CASTS ///////////////////////////
 
     /// <summary>Defines an explicit conversion of a System.Single to a BigFloat.</summary>
