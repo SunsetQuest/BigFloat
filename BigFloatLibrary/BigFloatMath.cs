@@ -218,7 +218,7 @@ public readonly partial struct BigFloat
 
         // Apply exponent scaling adjustment if we decomposed the exponent earlier
         int leftShift = (Math.Abs(binaryExp) > 1020) ? binaryExp / root : 0;
-        int shrinkBy = (value._size < 53) ? 53 - value._size - GuardBits : 0;  // todo: change "-GuardBits" to ""+GuardBits" here? (because an input like "0|AAAAAAAAAA" will have a results like "ABA23ABC28|00000000000"
+        int shrinkBy = (value._size < 53) ? 53 - value._size + GuardBits : 0;
 
         long bits = BitConverter.DoubleToInt64Bits(approxRoot);
         long mantissa2 = (bits & 0xfffffffffffffL) | 0x10000000000000L;
