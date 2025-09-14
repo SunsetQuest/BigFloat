@@ -666,12 +666,6 @@ public readonly partial struct BigFloat
             throw new DivideByZeroException("Division by zero");
         }
 
-        // Early exit for zero dividend
-        if (divisor.IsZero)
-        {
-            return Zero;
-        }
-
         // Use optimized algorithm for small numbers
         if (divisor._size < SMALL_NUMBER_THRESHOLD && dividend._size < SMALL_NUMBER_THRESHOLD)
         {
