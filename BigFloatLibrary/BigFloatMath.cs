@@ -288,11 +288,13 @@ public readonly partial struct BigFloat
             return NthRootAprox(value, root);
         }
 
+        int outputSize = value.SizeWithGuardBits;
+        value = AdjustPrecision(value, value.SizeWithGuardBits / 8); // "8" is adjustable - impacts precision and speed
 
         // Use double's hardware to get the first 53-bits
         long mantissa = (long)(BigInteger.Abs(value._mantissa)
-                        >> (value._size - 53))
-                    | (1L << 52);
+                        >> (value._size - 53)) | (1L << 52);
+
         int valExp = value.BinaryExponent;
 
         int shift = 0;
@@ -301,21 +303,21 @@ public readonly partial struct BigFloat
             shift = valExp - (valExp % root) + root;
             valExp -= shift;
         }
-        long expBits = (long)(valExp + 1023);
+        long expBits = valExp + 1023;
 
         // build double, take root
         double dubVal = BitConverter.Int64BitsToDouble(mantissa | (expBits << 52));
         double tempRoot = Math.Pow(dubVal, 1.0 / root);
 
         // back to BigFloat
-        BigFloat x = (BigFloat)tempRoot;
+        BigFloat x = ((BigFloat)tempRoot);
         if (shift != 0)
-            x <<= (shift / root);
+            x <<= (shift / root); // set the scale
 
-        //x = SetPrecision(x, x.Size + 100); //hack because precision runs out in while loop below because it loops too many times
+        x = SetPrecision(x, outputSize + 100); //hack because precision runs out in while loop below because it loops too many times
         // future: if value._size<53, we just use the 53 double value and return
 
-        //Future: we could use Newton Plus here to right size
+        //Future: we could use Newton Plus's pre-right trick here size
 
         // get a proper sized "root"
         BigFloat rt = new((BigInteger)root << value.Size, -value.Size);
@@ -330,7 +332,8 @@ public readonly partial struct BigFloat
             lastSize = t._size;
             t = Pow(x, root) - value;
         } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 5);
-        return x;
+        //x = NextDown(x);
+        return SetPrecisionWithRound(x, outputSize-32);
     }
 
 
