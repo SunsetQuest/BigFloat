@@ -133,6 +133,19 @@ public static class BigIntegerTools
         int headPosition = isNeg | input[0] == '+' ? 1 : 0;
 
         int periodLoc = input.LastIndexOf('.');
+
+        // We might have something like -.1 or .01. Return true only if any numbers found after the decimal.
+        if (headPosition == periodLoc)
+        {
+            result = new BigInteger(0);
+            headPosition++;
+            if (headPosition < inputLen)
+            {
+                return input[headPosition] is '0' or '1';
+            }
+            return false;
+        }
+
         int tailPosition = (periodLoc < 0 ? inputLen : periodLoc) - 1;
         for (; tailPosition >= headPosition; tailPosition--)
         {
