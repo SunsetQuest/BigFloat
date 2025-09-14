@@ -200,7 +200,7 @@ public readonly partial struct BigFloat
 
         // Optimized bit length calculation using hardware intrinsics when available
         _size = value switch
-        {
+    {
             > 0 => GetBitLength((ulong)value) + GuardBits + addedBinaryPrecision,
             < 0 => GetBitLength(~((ulong)value - 1)) + GuardBits + addedBinaryPrecision,
             _ => 0,
@@ -222,7 +222,7 @@ public readonly partial struct BigFloat
         if (Lzcnt.X64.IsSupported)
         {
             return 64 - (int)Lzcnt.X64.LeadingZeroCount(value);
-        }
+    }
 
         return BitOperations.Log2(value) + 1;
     }
@@ -389,21 +389,6 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool IsOneBitFollowedByZeroBits => BigInteger.IsPow2(BigInteger.Abs(_mantissa) >> (GuardBits - 1));
 
-    /// <summary>
-    /// Compares two BigFloats and returns negative if this instance is less, Zero if difference is 2^(GuardBits-1) or less, or Positive if this instance is greater
-    /// </summary>
-    public int CompareTo(BigFloat other)
-    {
-        // At this point, the exponent is equal or off by one because of a rollover.
-        int sizeDiff = other.Scale - Scale;
-
-        BigInteger diff = ((sizeDiff < 0) ? (other._mantissa << sizeDiff) : other._mantissa)
-            - ((sizeDiff > 0) ? (_mantissa >> sizeDiff) : _mantissa);
-
-        return diff.Sign >= 0 ?
-            -(diff >> (GuardBits - 1)).Sign :
-            (-diff >> (GuardBits - 1)).Sign;
-    }
 
     /// <summary>
     /// Returns the number of matching leading bits with rounding. e.g. 10.111 - 10.101 is 00.010 so returns 4
@@ -500,158 +485,7 @@ public readonly partial struct BigFloat
 
     ///////////////////////// Operator Overloads: BigFloat <--> BigInteger /////////////////////////
 
-    /// <summary>Returns true if the left side BigFloat is equal to the right side BigInteger.  If the BigFloat is not an integer then always returns false.</summary>
-    public static bool operator ==(BigFloat left, BigInteger right)
-    {
-        return left.IsInteger && new BigFloat(right).CompareTo(left) == 0;
-    }
 
-    /// <summary>Returns true if the left side BigInteger is equal to the right side BigFloat. If the BigFloat is not an integer then always returns false.</summary>
-    public static bool operator ==(BigInteger left, BigFloat right)
-    {
-        return right.IsInteger && new BigFloat(left).CompareTo(right) == 0;
-    }
-
-    /// <summary>Returns true if the left side BigFloat is not equal to the right side BigInteger. If the BigFloat is not an integer then always returns true.</summary>
-    public static bool operator !=(BigFloat left, BigInteger right)
-    {
-        return !(left == right);
-    }
-
-    /// <summary>Returns true if the left side BigInteger is not equal to the right side BigFloat. If the BigFloat is not an integer then always returns true.</summary>
-    public static bool operator !=(BigInteger left, BigFloat right)
-    {
-        return !(left == right);
-    }
-
-    ///////////////////////// Operator Overloads: BigFloat <--> ulong/long /////////////////////////
-
-    /// <summary>Returns true if the left side BigFloat is equal to the right side unsigned long.</summary>
-    public static bool operator ==(BigFloat left, ulong right)
-    {
-        return new BigFloat(right).CompareTo(left) == 0;
-    }
-
-    /// <summary>Returns true if the left side BigFloat is equal to the right side long.</summary>
-    public static bool operator ==(BigFloat left, long right)
-    {
-        return new BigFloat(right).CompareTo(left) == 0;
-    }
-
-    /// <summary>Returns true if the left side long is equal to the right side BigFloat.</summary>
-    public static bool operator ==(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) == 0;
-    }
-
-    /// <summary>Returns true if the left side unsigned long is equal to the right side BigFloat.</summary>
-    public static bool operator ==(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) == 0;
-    }
-
-    /// <summary>Returns true if the left side BigFloat is not equal to the right side unsigned long.</summary>
-    public static bool operator !=(BigFloat left, ulong right)
-    {
-        return new BigFloat(right).CompareTo(left) != 0;
-    }
-
-    /// <summary>Returns true if the left side unsigned long is not equal to the right side BigFloat.</summary>
-    public static bool operator !=(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) != 0;
-    }
-
-    /// <summary>Returns true if the left side BigFloat is equal to the right side unsigned long.</summary>
-    public static bool operator !=(BigFloat left, long right)
-    {
-        return new BigFloat(right).CompareTo(left) != 0;
-    }
-
-    public static bool operator !=(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) != 0;
-    }
-
-    public static bool operator <(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) < 0;
-    }
-
-    public static bool operator <(BigFloat left, long right)
-    {
-        return left.CompareTo(new BigFloat(right)) < 0;
-    }
-
-    public static bool operator <(BigFloat left, ulong right)
-    {
-        return left.CompareTo(new BigFloat(right)) < 0;
-    }
-
-    public static bool operator <(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) < 0;
-    }
-
-    public static bool operator >(BigFloat left, long right)
-    {
-        return left.CompareTo(new BigFloat(right)) > 0;
-    }
-
-    public static bool operator >(BigFloat left, ulong right)
-    {
-        return left.CompareTo(new BigFloat(right)) > 0;
-    }
-
-    public static bool operator >(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) > 0;
-    }
-
-    public static bool operator >(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) > 0;
-    }
-
-    public static bool operator <=(BigFloat left, long right)
-    {
-        return left.CompareTo(new BigFloat(right)) <= 0;
-    }
-
-    public static bool operator <=(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) <= 0;
-    }
-
-    public static bool operator <=(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) <= 0;
-    }
-
-    public static bool operator <=(BigFloat left, ulong right)
-    {
-        return left.CompareTo(new BigFloat(right)) <= 0;
-    }
-
-    public static bool operator >=(long left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) >= 0;
-    }
-
-    public static bool operator >=(BigFloat left, long right)
-    {
-        return left.CompareTo(new BigFloat(right)) >= 0;
-    }
-
-    public static bool operator >=(BigFloat left, ulong right)
-    {
-        return left.CompareTo(new BigFloat(right)) >= 0;
-    }
-
-    public static bool operator >=(ulong left, BigFloat right)
-    {
-        return new BigFloat(left).CompareTo(right) >= 0;
-    }
 
     /// <summary>
     /// Enhanced division with adaptive algorithm selection based on operand sizes
@@ -1152,7 +986,7 @@ public readonly partial struct BigFloat
     /// <see cref="AdjustAccuracy(BigFloat,int)"/>/<see cref="AdjustPrecision(BigFloat,int)"/>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat SetAccuracy(BigFloat x, int newAccuracyBits)
+    public static BigFloat SetAccuracy(BigFloat x, int newAccuracyBits) 
         => (newAccuracyBits + x.Scale) == 0 ? x : AdjustPrecision(x, newAccuracyBits + x.Scale);
 
     /// <summary>
@@ -1174,7 +1008,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat SetPrecisionWithRound(BigFloat x, int newSize) => 
         (x.Size - newSize) switch
-    {
+        {
             0 => x,
             > 0 => TruncateByAndRound(x, x.Size - newSize),
             < 0 => SetPrecision(x, newSize),
@@ -1263,9 +1097,8 @@ public readonly partial struct BigFloat
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat operator -(BigFloat r1, int r2)
+    public static BigFloat operator -(BigFloat r1, int r2) 
         => r1 + (-r2);
-    
 
     public static BigFloat PowerOf2(BigFloat val)
     {
@@ -1831,69 +1664,7 @@ public readonly partial struct BigFloat
         // future: supports denormalized values
     }
 
-    ///////////////////////// COMPARE FUNCTIONS /////////////////////////
 
-    // Examples (Assuming GuardBit Size Constant is 4)
-    // 11|1.1000  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-    // 111.|1000  Scale ==0 - when scale is 0, it is always an integer
-    // 111.10|00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
-
-    /// <summary>Returns a value that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
-    public bool Equals(long other)
-    {
-        // 'this' is too large, not possible to be equal. The only 64 bit long is long.MinValue
-        if (BinaryExponent > 62) { return BinaryExponent == 63 && other == long.MinValue; }
-        if (BinaryExponent < -1) { return other == 0; }
-        if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; } // too large by 1
-        if (!IsInteger) { return false; }
-
-        return other == (long)RoundingRightShift(_mantissa << Scale, GuardBits);
-    }
-
-    /// <summary>Returns a value that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
-    public bool Equals(ulong other)
-    {
-        if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
-        if (BinaryExponent < -1) { return other == 0; }
-        if ((_mantissa >> (GuardBits - 1)).Sign < 0) { return false; }   // is negative
-        if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; }// too large by 1
-        if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
-
-        return (ulong)RoundingRightShift(_mantissa << Scale, GuardBits) == other;
-    }
-
-    /// <summary>
-    /// Returns true if the integer part of the BigFloat matches 'other'. 
-    /// Examples:  1.1 == 1,  1.6 != 1,  0.6==1
-    /// </summary>
-    public bool Equals(BigInteger other)
-    {
-        return other.Equals(RoundingRightShift(_mantissa, GuardBits - Scale));
-    }
-
-    /// <summary>
-    /// Returns true if the parents BigFloat object have the same value (within the precision). 
-    /// Examples:  1.11 == 1.1,  1.00 == 1.0,  1.11 != 1.10,  1.1 == 1.01
-    /// </summary>
-    public bool Equals(BigFloat other)
-    {
-        return CompareTo(other) == 0;
-    }
-
-    /// <summary>
-    /// Returns true if the parent's BigFloat value has the same value of the object considering their precisions. 
-    /// </summary>
-    public override bool Equals([NotNullWhen(true)] object obj)
-    {
-        AssertValid();
-        return obj is BigFloat other && Equals(other);
-    }
-
-    /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
-    public override int GetHashCode()
-    {
-        return RoundingRightShift(_mantissa, GuardBits).GetHashCode() ^ Scale;
-    }
 
     /// <summary>
     /// Checks whether this BigFloat struct holds a valid internal state.

@@ -413,8 +413,7 @@ public class BigFloatRoundingTests
     {
         var bf = new BigFloat(3.14, -10); // Scale of -10
         var result = bf.CeilingPreservingAccuracy();
-
-        Assert.Equal(1, result);
+        Assert.Equal(0, result.CompareUlp(BigFloat.OneWithAccuracy(4)));
 
         // Should preserve the scale
         Assert.Equal(-53, result.Scale);

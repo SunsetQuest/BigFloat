@@ -308,7 +308,7 @@ public class BigFloatDecimalConversionTests
         Assert.Equal(bf1.Size + addedPrecision, bf2.Size);
 
         // Both should convert back to the same decimal
-        Assert.Equal(bf1, bf2);
+        Assert.True(bf1.EqualsUlp(bf2,1,false));
     }
 
     [Fact]
