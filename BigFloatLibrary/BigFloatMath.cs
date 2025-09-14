@@ -57,14 +57,13 @@ public readonly partial struct BigFloat
             };
         }
 
-        // Used a Genetic Algorithm in Excel to figure out the formulas below (2 options)
         int expectedFinalPrecision = value._size;
 
         // if the input precision is <53 bits AND the output will not overflow THEN we can fit this in a double.
-        if (expectedFinalPrecision < 53)
+        if (value._size < 53)
         {
             // Let's first make sure we would have some precision remaining after our exponent operation.
-            if (expectedFinalPrecision <= 0)
+            if (value._size <= 0)
             {
                 return Zero; // technically more of a "NA".
             }
@@ -92,7 +91,7 @@ public readonly partial struct BigFloat
         int powerBitCount = BitOperations.Log2(pwr) + 1;
 
         // First Loop
-        BigFloat product = ((pwr & 1) == 1) ? value : BigFloat.OneWithAccuracy(value.Size);
+        BigFloat product = ((pwr & 1) == 1) ? value : OneWithAccuracy(value.Size);
         BigFloat powers = value;
 
         for (int i = 1; i < powerBitCount; i++)
@@ -335,7 +334,6 @@ public readonly partial struct BigFloat
         //x = NextDown(x);
         return SetPrecisionWithRound(x, outputSize-32);
     }
-
 
     /// <summary>
     /// Returns the Log2 of a BigFloat number as a double. Log2 is equivalent to the number of bits between the radix point and the right side of the leading bit. (i.e. 100.0=2, 1.0=0, 0.1=-1)

@@ -235,6 +235,7 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    // future: maybe change addedBinaryPrecision to binaryPrecision. Set default to 45(53-8)
     // Note: changed the default 32(GuardBits) to 24 since double is not exact. There is no great solution to this but moving 8 bits of the mantissa into the GuardBit area is a good compromise. In the past we had zero mantissa bits stored in the GuardBit area and this created some issues.  If we move all 32 bits into the GuardBit area then we would just be left with 53-32 GuardBits= 21 bits. A balance of 8 bits was selected but it is best if the user selects the value.
     public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)
     {
@@ -658,18 +659,9 @@ public readonly partial struct BigFloat
         return new(value._mantissa, value.Scale - shift, value._size);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat operator +(BigFloat r)
-    {
-        return r;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat operator -(BigFloat r)
-    {
-        return new(-r._mantissa, r.Scale, r._size);
-    }
-
+    /// <summary>
+    /// Increments the integer part of a BigFloat by one.
+    /// </summary>
     public static BigFloat operator ++(BigFloat r)
     {
         // assuming GuardBits is 4:
@@ -702,6 +694,9 @@ public readonly partial struct BigFloat
         return new BigFloat(intVal, r.Scale, sizeVal);
     }
 
+    /// <summary>
+    /// Decrements the integer part of a BigFloat by one.
+    /// </summary>
     public static BigFloat operator --(BigFloat r)
     {
         int onesPlace = GuardBits - r.Scale;
@@ -723,6 +718,21 @@ public readonly partial struct BigFloat
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
 
         return new BigFloat(intVal, r.Scale, sizeVal);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat operator +(BigFloat r)
+    {
+        return r;
+    }
+
+    /// <summary>
+    /// Negates a BigFloat value (i.e. changes its sign).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat operator -(BigFloat r)
+    {
+        return new(-r._mantissa, r.Scale, r._size);
     }
 
     public static BigFloat operator +(BigFloat r1, BigFloat r2)

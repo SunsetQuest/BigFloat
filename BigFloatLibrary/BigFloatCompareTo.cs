@@ -646,7 +646,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         return other.Equals(RoundingRightShift(_mantissa, GuardBits - Scale));
     }
 
-    [Obsolete("Use IsBitwiseEqual.")]
+    [Obsolete("Use RoundsToNearest.")]
     public bool Equals(BigInteger other) => RoundsToNearest(other);
 
     /// <summary>
