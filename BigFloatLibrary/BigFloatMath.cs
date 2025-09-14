@@ -145,35 +145,65 @@ public readonly partial struct BigFloat
         return new BigFloat(root, retShift, (int)root.GetBitLength());
     }
 
-
     public static BigFloat CubeRoot(BigFloat value)
     {
-        // Similar to square root but optimized for cube root
-        int targetPrecision = value.Size + GuardBits;
-
-        // Get initial approximation 
-        BigFloat x = NthRootAprox(value, 3);
-        x = SetPrecision(x, targetPrecision);
-
-        // Newton's method for cube root: x_{n+1} = x_n * (2 + value/(x_n^3)) / 3
-        int maxIterations = 30;
-
-        for (int i = 0; i < maxIterations; i++)
+        if (value._mantissa.Sign <= 0)
         {
-            BigFloat xCubed = x * x * x;
-            BigFloat error = (xCubed - value) / value;
-
-            // Check convergence
-            if (error._size <= 5 || Math.Abs(error.BinaryExponent) <= -targetPrecision / 2)
-            {
-                break;
-            }
-
-            // Efficient update formula for cube root
-            x *= ((One * 2) - (xCubed - value) / (3 * x * x * value));
+            if (value._mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); }
+            return -NthRoot(-value, 3);
         }
 
-        return SetPrecision(x, targetPrecision - GuardBits);
+        if (value._size < 53)
+        {
+            return NthRootAprox(value, 3);
+        }
+
+        int outputSize = value.SizeWithGuardBits;
+        value = AdjustPrecision(value, value.SizeWithGuardBits / 4); // "8" is adjustable - impacts precision and speed
+
+        // Use double's hardware to get the first 53-bits
+        long mantissa = (long)(BigInteger.Abs(value._mantissa)
+                        >> (value._size - 53))
+                    | (1L << 52);
+        int valExp = value.BinaryExponent;
+
+        int shift = 0;
+        if (Math.Abs(valExp) > 1021)
+            {
+            shift = valExp - (valExp % 3) + 3;
+            valExp -= shift;
+            }
+
+        // build double, take root
+        double dubVal = BitConverter.Int64BitsToDouble(mantissa | (((long)valExp + 1023) << 52));
+        double tempRoot = Math.Pow(dubVal, 1.0 / 3);
+
+        // back to BigFloat
+        BigFloat x = ((BigFloat)tempRoot);
+        if (shift != 0)
+            x <<= (shift / 3);
+
+        x = SetPrecision(x, outputSize + 100); //hack because precision runs out in while loop below because it loops too many times
+        // future: if value._size<53, we just use the 53 double value and return
+
+        //Future: we could use Newton Plus's pre-right trick here size
+
+        // get a proper sized "root"
+        BigFloat rt = new((BigInteger)3 << value.Size, -value.Size);
+        BigFloat xSquared = Pow(x, 2);
+        BigFloat b = rt * xSquared; // Init the "b" and "t" for "oldX - (t / b)"
+        BigFloat t = xSquared * x - value;
+        int lastSize;
+        do
+        {
+            BigFloat tb = t / b;
+            x -= tb;
+            xSquared = Pow(x, 2);
+            b = rt * xSquared;
+            lastSize = t._size;
+            t = xSquared * x - value;
+        } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 2);
+        return SetPrecisionWithRound(x, outputSize-32); //return NextDown(x);
     }
 
     /// <summary>
