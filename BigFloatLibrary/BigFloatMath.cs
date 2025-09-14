@@ -263,7 +263,7 @@ public readonly partial struct BigFloat
     public static BigFloat NthRoot(BigFloat value, int root)
     {
         //future: add support for negative roots and values
-        if (root < 3)
+        if (root < 4)
         {
             if (root < 0) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be positive."); }
             if (root == 0) { return OneWithAccuracy(value.Size); }
