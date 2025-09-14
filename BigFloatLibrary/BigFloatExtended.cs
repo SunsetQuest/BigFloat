@@ -103,17 +103,41 @@ public readonly partial struct BigFloat
     }
 
     // === Canonical API (preferred) ===
+    /// <summary>
+    /// Increment the mantissa's GuardBit by 1 (0|00...001) in the +infinity direction.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat NextUp(in BigFloat x) => BitAdjust(x, +1);
 
+    /// <summary>
+    /// Decrement the mantissa's guard bits by 1 (0|00...001) in the -infinity direction.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat NextDown(in BigFloat x) => BitAdjust(x, -1);
 
+    /// <summary>
+    /// Increment the mantissa's in-precision bits by a full unit(1|00000) in the +infinity direction.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat NextUpExtended(in BigFloat x) => BitAdjust(x, +1L << GuardBits);
+    public static BigFloat NextUpInPrecisionBit(in BigFloat x) => BitAdjust(x, +1L << GuardBits);
 
+    /// <summary>
+    /// Decrement the in-precision area of the mantissa by a full unit(1|00000) in the -infinity direction.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat NextDownExtended(in BigFloat x) => BitAdjust(x, -1L << GuardBits);
+    public static BigFloat NextDownInPrecisionBit(in BigFloat x) => BitAdjust(x, -1L << GuardBits);
+
+    /// <summary>
+    /// Increment the mantissa's in-precision bits by a half unit(0|10000) in the +infinity direction.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat NextUpHalfInPrecisionBit(in BigFloat x) => BitAdjust(x, +1L << (GuardBits - 1));
+
+    /// <summary>
+    /// Decrement the mantissa's in-precision bits by a half unit(0|10000) in the -infinity direction.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat NextDownHalfInPrecisionBit(in BigFloat x) => BitAdjust(x, -1L << (GuardBits - 1));
 
     // === Compatibility shims (deprecated) ===
     [System.Obsolete("Renamed: use NextUp(x) for final-precision ULP.", error: false)]
@@ -129,12 +153,12 @@ public readonly partial struct BigFloat
     [System.Obsolete("Renamed: use NextUpExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat GuardBitIncrement(in BigFloat x) => NextUpExtended(x);
+    public static BigFloat GuardBitIncrement(in BigFloat x) => NextUpInPrecisionBit(x);
 
     [System.Obsolete("Renamed: use NextDownExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static BigFloat GuardBitDecrement(in BigFloat x) => NextDownExtended(x);
+    public static BigFloat GuardBitDecrement(in BigFloat x) => NextDownInPrecisionBit(x);
 
     /// <summary>
     /// For positive delta, the mantissa's GuardBits move toward +infinity. 
