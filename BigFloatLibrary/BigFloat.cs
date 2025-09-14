@@ -464,7 +464,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(BigFloat left, BigFloat right)
     {
-        return left.CompareTo(right) == 0;
+        return left.Equals(right);
     }
 
     /// <summary>Returns true if the left side BigFloat is not equal to the right BigFloat.</summary>
