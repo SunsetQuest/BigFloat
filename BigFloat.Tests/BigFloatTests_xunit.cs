@@ -296,7 +296,7 @@ public class BigFloatTests
                 BigInteger lowerInclusive = BigInteger.Pow(answer, e);
                 BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
                 BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, _rand);
-                BigInteger root = BigIntegerTools.NewtonNthRoot(x, e);
+                BigInteger root = BigIntegerTools.NthRoot(x, e);
                 Assert.Equal(answer, root);
             }
     }
@@ -502,40 +502,26 @@ public class BigFloatTests
         CheckBigFloatIsNRootMatch(12345UL, 17, "1.74050769110222722665765633697623428616287570913|15003850");
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000", 17, "1.740507691102227226657656336976234286162875709131500385023860882477");
         CheckStringIsNRoot("12345.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 17, "1.74050769110222722665765633697623428616287570913150038502386088247740340403658733159875598810534066889542420507076258417480");
+        root = BigIntegerTools.NthRoot(x, 2);
+        root = BigIntegerTools.NthRoot(x, 3);
+        root = BigIntegerTools.NthRoot(x, 2);
 
+        root = BigIntegerTools.NthRoot(x, 10);
 
         x = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
-        xInvAns = BigInteger.Parse("106320008476723.03289173589060496553301490112799226269814810324625245780595862095532563755174620423190764264|419660666834");
-        root = BigIntegerTools.NewtonNthRoot(x, 18);
+        xInvAns = BigInteger.Parse("106320008476723"); // 106320008476723.03289173589060496553301490112799226269814810324625245780595862095532563755174620423190764264|419660666834
+        root = BigIntegerTools.NthRoot(x, 18);
         Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
 
         x = BigInteger.Parse("8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974");
         xInvAns = BigInteger.Parse("76708292649963");
-        root = BigIntegerTools.NewtonNthRoot(x, 18);
+        root = BigIntegerTools.NthRoot(x, 18);
         Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
 
         x = BigInteger.Parse("70571123296489793781553712027899927780558056179673160447087318248032678626371547461506359424365874164665583058856159466155131437409959528764720285534060900017062263715144437342933055107384635613858949910104986257450521976082018068091106642658583149207845696158337073888727304442");
         xInvAns = BigInteger.Parse("78060504093987");
-        root = BigIntegerTools.NewtonNthRoot(x, 20);
+        root = BigIntegerTools.NthRoot(x, 20);
         Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
-
-        static void CheckStringIsNRoot(string stringInput, int inputRoot, string answerString)
-        {
-            CheckBigFloatIsNRootMatch(BigFloat.Parse(stringInput), inputRoot, answerString);
-        }
-
-        static void CheckBigFloatIsNRootMatch(BigFloat input, int inputRoot, string answerString)
-        {
-            BigFloat answer = BigFloat.Parse(answerString);
-            BigFloat result = BigFloat.NthRoot(input, inputRoot);
-            Assert.True(answer.EqualsUlp(result,-16),$"Failed with input({input}) and root({inputRoot}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}\r\n Answer2: {answerString}"); 
-        }
-        static void CheckIsNotNRoot(BigFloat input, int inputRoot, string answerString)
-        {
-            BigFloat answer = BigFloat.Parse(answerString, guardBitsIncluded: 0);
-            BigFloat result = BigFloat.NthRoot(input, inputRoot);
-            Assert.NotEqual(answer, result); // Failed with input({input}) and root({inputRoot}) with a result of\r\n Result:  {result}\r\n Answer:  {answer}\r\n Answer2: {answerString}
-        }
     }
 
 

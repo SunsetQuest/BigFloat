@@ -360,13 +360,16 @@ public static class BigIntegerTools
     }
 
 
+    [Obsolete("Use RoundsToNearest.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static BigInteger NewtonNthRoot(BigInteger x, int n) => NthRoot(x, n);
 
     /// <summary>
     /// Floor n-th root of a non-negative BigInteger (n ≥ 1).
     /// </summary>
-	/// <param name="x">The input value(or radicand) to find the nth root of.</param>
+    /// <param name="x">The input value(or radicand) to find the nth root of.</param>
     /// <param name="n">The input nth root(or index) that should be used.</param>
-    public static BigInteger NewtonNthRoot(BigInteger x, int n)
+    public static BigInteger NthRoot(BigInteger x, int n)
     {
         if (n <= 0) throw new ArgumentOutOfRangeException(nameof(n), "n ≥ 1");
         if (x.IsZero || x.IsOne || n == 1) return x;
@@ -375,7 +378,7 @@ public static class BigIntegerTools
         {
             if ((n & 1) == 0)
                 throw new ArgumentException("Even root of a negative number.");
-            return -NewtonNthRoot(BigInteger.Negate(x), n);
+            return -NthRoot(BigInteger.Negate(x), n);
         }
 
         // Use double's hardware to get the first approximation

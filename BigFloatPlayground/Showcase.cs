@@ -354,7 +354,7 @@ public static class Showcase
 
             //////// Let run our algorithm and benchmark it. ////////
             sw.Start();
-            BigInteger result = BigIntegerTools.NewtonNthRoot(val, n);
+            BigInteger result = BigIntegerTools.NthRoot(val, n);
             sw.Stop();
 
             swBase.Start();
