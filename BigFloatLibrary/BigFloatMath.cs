@@ -169,10 +169,10 @@ public readonly partial struct BigFloat
 
         int shift = 0;
         if (Math.Abs(valExp) > 1021)
-            {
+        {
             shift = valExp - (valExp % 3) + 3;
             valExp -= shift;
-            }
+        }
 
         // build double, take root
         double dubVal = BitConverter.Int64BitsToDouble(mantissa | (((long)valExp + 1023) << 52));
@@ -254,9 +254,9 @@ public readonly partial struct BigFloat
         long mantissa2 = (bits & 0xfffffffffffffL) | 0x10000000000000L;
         int exp = (int)((bits >> 52) & 0x7ffL);
 
-        BigInteger mantissa3 = new BigInteger(mantissa2) << (GuardBits- shrinkBy);
+        BigInteger mantissa3 = new BigInteger(mantissa2) << (GuardBits- shrinkBy); 
         int scale = exp - 1023 - 52 + shrinkBy + leftShift;
-        int size = 53 + GuardBits - shrinkBy;
+        int size = 53 + GuardBits - shrinkBy;                                      
         return new(mantissa3, scale, size);
     }
 
@@ -269,7 +269,7 @@ public readonly partial struct BigFloat
             if (root == 0) { return OneWithAccuracy(value.Size); }
             if (root == 1) { return value; }
             if (root == 2) { return Sqrt(value); }
-            if (root == 3) { return CubeRoot(value); }
+            if (root == 3) { return CubeRoot(value); } 
             // if (root == 4) { return Sqrt(Sqrt(value)); }
         }
         //if (root > 20) { throw new ArgumentOutOfRangeException(nameof(root), "Root must be below 22."); }

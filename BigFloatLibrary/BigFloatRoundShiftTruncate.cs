@@ -200,7 +200,7 @@ public readonly partial struct BigFloat
                             (int)intPart2.GetBitLength() + GuardBits);
     }
 
-
+    //todo: cleanup
     /// <summary>
     /// Rounds to the next integer towards positive infinity. 
     /// Removes all fractional bits, sets negative scales to zero, and resizes precision to just the integer part.
