@@ -6,7 +6,6 @@
 
 // Ignore Spelling: Aprox Bitwise Sqrt Ulp Fractionals Comparers
 
-using Microsoft.VisualStudio.TestPlatform.Utilities;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
@@ -137,12 +136,12 @@ public class BigFloatTests
         BigFloat pi200ref = bigConstants["Pi"];
         BigFloat pi200gen = BigFloat.Constants.GeneratePi(MAX_INT);
         Assert.Equal(0, pi200ref.CompareUlp(pi200gen)); // We got some Pi in our face. The generated pi does not match the literal constant Pi.
-        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(0))); // Issue with Constants.GeneratePi(0)   
-        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(1))); // Issue with Constants.GeneratePi(1)   
-        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(2))); // Issue with Constants.GeneratePi(2)   
+        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(0)));
+        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(1)));
+        Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(2)));
         for (int i = 3; i < MAX_INT; i *= 3)
         {
-            Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(i))); // Issue with Constants.GeneratePi({i})   
+            Assert.Equal(0, pi200ref.CompareUlp(BigFloat.Constants.GeneratePi(i))); 
         }
     }
 
@@ -249,14 +248,14 @@ public class BigFloatTests
         }
 
         success = BigFloat.ConstantBuilder.Const_1_4142.TryGetAsBigFloat(out bf, 200);
-        ans = BigFloat.ParseBinary("0.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedGuardBits: 32);
+        ans = BigFloat.ParseBinary("1.0110101000001001111001100110011111110011101111001100100100001000101100101111101100010011011001101110101010010101011111010011111000111010110111101100000101110101000100100111011101010000100110011101101000101111010110010000101100000110011001", includedGuardBits: 32);
         if (success)
         {
             Assert.True(bf.EqualsUlp(ans, 1, true));
         }
 
         success = BigFloat.ConstantBuilder.Const_2_6854.TryGetAsBigFloat(out bf, 300);
-        ans = BigFloat.ParseBinary("0.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedGuardBits: 32);
+        ans = BigFloat.ParseBinary("10.101011110111100111001000010001111000110110100001101011101111001011111101111100111110001110010100011001100111111110011100001100111001001011100000001000011110011000011000001010011101110111111010010011011000011100000110001110110011100101010", includedGuardBits: 32);
         if (success)
         {
             Assert.True(bf.EqualsUlp(ans, 1, true));
@@ -277,11 +276,7 @@ public class BigFloatTests
 
                 BigFloat toTest = BigFloat.Pow(answer, root);
                 BigFloat result = BigFloat.NthRoot(toTest, root);
-                if (!answer.EqualsUlp(result, 3, true))
-                    result = BigFloat.NthRoot(toTest, root);
-                //Assert.True(answer.EqualsUlp(result, 3, true), $"Failed with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-                if ((toTest.SizeWithGuardBits - result.SizeWithGuardBits) > 8)
-                    result = BigFloat.NthRoot(toTest, root);
+                Assert.True(answer.EqualsUlp(result, 3, true), $"Failed with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
                 Assert.True((toTest.SizeWithGuardBits - result.SizeWithGuardBits) < 32, $"Size difference too big with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
                 //Console.WriteLine($"{BigFloat.Log2(toTest)}, {root}, {result.ToString(true)}, {answer.ToString(true)}, {(result - answer).RawMantissa.ToString()},, {(result.SizeWithGuardBits - answer.SizeWithGuardBits)} ");
             }
@@ -401,7 +396,7 @@ public class BigFloatTests
         CheckBigFloatIsNRootMatch(1000000000000000, 5, "1000.000000000000|0000000000000000");
         CheckBigFloatIsNRootMatch(1000000000000000, 6, "316.2277660168379|3319988935444327");
         CheckBigFloatIsNRootMatch(100000000000000, 2, "10000000.0000000|00000000000000000");
-        CheckBigFloatIsNRootMatch(100000000000000, 3, "46415.8883361277|88924100763509194465");    
+        CheckBigFloatIsNRootMatch(100000000000000, 3, "46415.8883361277|88924100763509194465");
         CheckBigFloatIsNRootMatch(100000000000000, 4, "3162.27766016837|93319988935444327");
         CheckBigFloatIsNRootMatch(100000000000000, 5, "630.957344480193|24943436013662234");
         CheckBigFloatIsNRootMatch(100000000000000, 6, "215.443469003188|37217592935665193");
@@ -520,33 +515,18 @@ public class BigFloatTests
         x = BigInteger.Parse("3013492022294494701112467528834279612989475241481885582580357178128775476737882472877466538299201045661808254044666956298531967302683663287806564770544525741376406009675499599811737376447280514781982853743171880254654204663256389488374848354326247959780");
         xInvAns = BigInteger.Parse("106320008476723"); // 106320008476723.03289173589060496553301490112799226269814810324625245780595862095532563755174620423190764264|419660666834
         root = BigIntegerTools.NthRoot(x, 18);
-        Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
+        Assert.True(root.Equals(xInvAns), $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
 
         x = BigInteger.Parse("8455936174344049198992082184872666966731107113473720327342959157923960777027155092166004296976396745899372732161600125472145597271579050167588573589927115733699772616859452733842246230311261505226832037663884238446823173852461508201257850404486808974");
         xInvAns = BigInteger.Parse("76708292649963");
         root = BigIntegerTools.NthRoot(x, 18);
-        Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
+        Assert.True(root.Equals(xInvAns), $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
 
         x = BigInteger.Parse("70571123296489793781553712027899927780558056179673160447087318248032678626371547461506359424365874164665583058856159466155131437409959528764720285534060900017062263715144437342933055107384635613858949910104986257450521976082018068091106642658583149207845696158337073888727304442");
         xInvAns = BigInteger.Parse("78060504093987");
         root = BigIntegerTools.NthRoot(x, 20);
-        Assert.Equal(root, xInvAns); // Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})
+        Assert.True(root.Equals(xInvAns), $"Res: {root} Ans: {xInvAns} ({BigIntegerTools.ToBinaryString(root).Zip(BigIntegerTools.ToBinaryString(xInvAns), (c1, c2) => c1 == c2).TakeWhile(b => b).Count()} of {root.GetBitLength()})");
     }
-
-
-    ///// <summary>
-    ///// Verify that passing an explicit outputLen still returns the correct root.
-    ///// Here we ask for a 5‐bit result, but since the true root of 81^(1/4)=3 fits in fewer bits,
-    ///// the implementation should still return 3.
-    ///// </summary>
-    //[Fact]
-    //public void Verify_ExplicitOutputLength_IgnoredWhenTooSmall()
-    //{
-    //    BigInteger x = new BigInteger(81);
-    //    // request 5‐bit output (0–31), root is 3
-    //    BigInteger root = BigIntegerTools.NewtonNthRoot_Draft(ref x, 4, outputLen: 5);
-    //    Assert.Equal(new BigInteger(3), root);
-    //}
 
     [Fact]
     public void Verify_IsZero()
@@ -733,7 +713,6 @@ public class BigFloatTests
         Assert.Equal(hb - hb, BigFloat.ParseBinary("10000000000000000", -hb, 0, hb).Accuracy);        // 0.|00000000000000010000000000000000        (accuracy is 0)
         Assert.Equal(hb - hb, BigFloat.ParseBinary("1000000000000000000000000", -hb, 0, hb).Accuracy);// 0.|00000001000000000000000000000000        (accuracy is 0)
         Assert.Equal(hb - hb, BigFloat.ParseBinary("100000000000000000000000000000000", -hb, 0, hb).Accuracy);//1.|00000000000000000000000000000000(accuracy is 0)
-
         Assert.Equal(-hb, BigFloat.ParseBinary("100000000", 0, 0, hb).Accuracy);                        // 0|00000000000000000000000100000000.(accuracy is -32)
         Assert.Equal(-hb, BigFloat.ParseBinary("10000000000000000", 0, 0, hb).Accuracy);                // 0|00000000000000010000000000000000.(accuracy is -32)
         Assert.Equal(-hb, BigFloat.ParseBinary("1000000000000000000000000", 0, 0, hb).Accuracy);        // 0|00000001000000000000000000000000.(accuracy is -32)
@@ -1419,20 +1398,6 @@ public class BigFloatTests
                 BigFloat BigFloatToPOW = BigFloat.Pow((BigFloat)ii, jj);                    // Double->BigFloat->POW->String
                 BigFloat POWToBigFloatLo = (BigFloat)double.Pow(Math.BitDecrement(ii), jj); // Double->POW->BigFloat->String
                 BigFloat POWToBigFloatHi = (BigFloat)double.Pow(Math.BitIncrement(ii), jj); // Double->POW->BigFloat->String
-
-                //if (!miss.IsZero)
-                //    ne++;
-                //if (BigFloatToPOW < POWToBigFloatLo)
-                //    m2++;
-                //if (BigFloatToPOW == POWToBigFloatLo)
-                //    m1++;
-                //if (BigFloatToPOW > POWToBigFloatLo & BigFloatToPOW < POWToBigFloatHi)
-                //    eq++;
-                //if (BigFloatToPOW == POWToBigFloatHi)
-                //    p1++;
-                //if (BigFloatToPOW > POWToBigFloatHi)
-                //    p2++;
-
                 Assert.True(BigFloatToPOW.IsGreaterThanUlp(POWToBigFloatLo, 1, true),$"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}. It should be in the range {POWToBigFloatLo} to {POWToBigFloatHi}.");
                 Assert.True(BigFloatToPOW.IsLessThanUlp(POWToBigFloatHi, 1, true),$"Failed on: {ii}^{jj}, BigFloatToPOW:{BigFloatToPOW}. It should be in the range {POWToBigFloatLo} to {POWToBigFloatHi}.");
             }
@@ -1640,28 +1605,28 @@ public class BigFloatTests
                                                            //   ------
                                                            //      0|01 <-- so true is correct result
 
-        Assert.Equal(BigFloat.Pow(0, 3), 0);  // 0^3
-        Assert.Equal(BigFloat.Pow(1, 3), 1);  // 1^3
-        Assert.Equal(BigFloat.Pow(2, 3), 8);  // 2^3
-        Assert.Equal(BigFloat.Pow(3, 3), 27); // 3^3
+        Assert.Equal(BigFloat.Pow(0, 3), 0);  
+        Assert.Equal(BigFloat.Pow(1, 3), 1);  
+        Assert.Equal(BigFloat.Pow(2, 3), 8);  
+        Assert.Equal(BigFloat.Pow(3, 3), 27); 
 
-        Assert.Equal(BigFloat.Pow(-0, 3), -0); // 0^3
-        Assert.Equal(BigFloat.Pow(-1, 3), -1); // 1^3
-        Assert.Equal(BigFloat.Pow(-2, 3), -8); // 2^3
-        Assert.Equal(BigFloat.Pow(-3, 3), -27);// 3^3
+        Assert.Equal(BigFloat.Pow(-0, 3), -0);
+        Assert.Equal(BigFloat.Pow(-1, 3), -1);
+        Assert.Equal(BigFloat.Pow(-2, 3), -8);
+        Assert.Equal(BigFloat.Pow(-3, 3), -27);
 
-        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 2).EqualsZeroExtended(BigFloat.Parse("  0.25"  ))); // 0.5^2
-        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 2).EqualsZeroExtended(BigFloat.Parse("  2.25"  ))); // 1.5^2
-        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 2).EqualsZeroExtended(BigFloat.Parse("  6.25"  ))); // 2.5^2
-        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 2).EqualsZeroExtended(BigFloat.Parse(" 12.25"  ))); // 3.5^2
-        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 3).EqualsZeroExtended(BigFloat.Parse(" 0.125"  ))); // 0.5^3
-        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 3).EqualsZeroExtended(BigFloat.Parse(" 3.375"  ))); // 1.5^3
-        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 3).EqualsZeroExtended(BigFloat.Parse("15.625"  ))); // 2.5^3
-        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 3).EqualsZeroExtended(BigFloat.Parse("42.875"  ))); // 3.5^3
-        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 4).EqualsZeroExtended(BigFloat.Parse(" 0.0625" ))); // 0.5^4
-        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 4).EqualsZeroExtended(BigFloat.Parse(" 5.0625" ))); // 1.5^4
-        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 4).EqualsZeroExtended(BigFloat.Parse("39.0625" ))); // 2.5^4
-        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 4).EqualsZeroExtended(BigFloat.Parse("150.0625")));// 3.5^4
+        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 2).EqualsZeroExtended(BigFloat.Parse("  0.25"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 2).EqualsZeroExtended(BigFloat.Parse("  2.25"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 2).EqualsZeroExtended(BigFloat.Parse("  6.25"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 2).EqualsZeroExtended(BigFloat.Parse(" 12.25"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 3).EqualsZeroExtended(BigFloat.Parse(" 0.125"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 3).EqualsZeroExtended(BigFloat.Parse(" 3.375"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 3).EqualsZeroExtended(BigFloat.Parse("15.625"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 3).EqualsZeroExtended(BigFloat.Parse("42.875"  )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("0.5"), 4).EqualsZeroExtended(BigFloat.Parse(" 0.0625" )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("1.5"), 4).EqualsZeroExtended(BigFloat.Parse(" 5.0625" )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("2.5"), 4).EqualsZeroExtended(BigFloat.Parse("39.0625" )));
+        Assert.True(BigFloat.Pow(BigFloat.Parse("3.5"), 4).EqualsZeroExtended(BigFloat.Parse("150.0625")));
 
         // Test (poser < 3) section...
         Assert.True(BigFloat.Pow(new BigFloat("3.000" ),  0).EqualsZeroExtended(new BigFloat("1.00")));   
@@ -1687,15 +1652,15 @@ public class BigFloatTests
         BigFloat temp = new("1234.56");
         BigFloat powersOf2 = temp * temp;  // 2
         BigFloat total = powersOf2 * temp; // 2+1
-        Assert.Equal(BigFloat.Pow(temp, 3), total); // Pow(1234.56, 3)
+        Assert.Equal(BigFloat.Pow(temp, 3), total);
 
         powersOf2 *= powersOf2;  // 4
         total *= powersOf2;  // 1+2+4
-        Assert.Equal(BigFloat.Pow(temp, 7), total); // Pow(1234.56, 7)
+        Assert.Equal(BigFloat.Pow(temp, 7), total);
 
         powersOf2 *= powersOf2; // 8
         total *= powersOf2;  // 1+2+4+8
-        Assert.Equal(BigFloat.Pow(temp, 15), total); // Pow(1234.56, 15)
+        Assert.Equal(BigFloat.Pow(temp, 15), total);
 
         // Test (value._size < 53) where result >1e308 section...
         temp = new BigFloat("12345123451234.321234");
@@ -1704,28 +1669,28 @@ public class BigFloatTests
         powersOf2 = temp * temp;  // 2
         total = powersOf2 * temp; // 2+1
         t = BigFloat.Pow(temp, 3);
-        Assert.Equal(t, total); // Pow(12345123451234.321234, 3)
+        Assert.Equal(t, total);
 
         powersOf2 *= powersOf2;  // 4
         total *= powersOf2;  // 1+2+4
-        Assert.Equal(BigFloat.Pow(temp, 7), total); // Pow(12345123451234.321234, 7)
+        Assert.Equal(BigFloat.Pow(temp, 7), total); 
 
         powersOf2 *= powersOf2; // 8
         total *= powersOf2;  // 1+2+4+8
-        Assert.Equal(BigFloat.Pow(temp, 15), total); // Pow(12345123451234.321234, 15)
+        Assert.Equal(BigFloat.Pow(temp, 15), total);
 
         powersOf2 *= powersOf2; // 8
         total *= powersOf2;  // 1+2+4+8+16
-        Assert.Equal(BigFloat.Pow(temp, 31), total); // Pow(12345123451234.321234, 31)
+        Assert.Equal(BigFloat.Pow(temp, 31), total);
 
         powersOf2 *= powersOf2; // 8
         total *= powersOf2;  // 1+2+4+8+16+32
-        Assert.Equal(BigFloat.Pow(temp, 63), total); // Pow(12345123451234.321234, 63)
+        Assert.Equal(BigFloat.Pow(temp, 63), total);
 
         val = new BigFloat("100");
         ans = new BigFloat("1.00000000e+4");
         res = BigFloat.Pow(val, 2);
-        Assert.True(res.EqualsZeroExtended(ans)); // Pow(100, 2)
+        Assert.True(res.EqualsZeroExtended(ans));
 
         val = new BigFloat("100");
         ans = new BigFloat("1.00000000e+004");
@@ -2019,37 +1984,30 @@ public class BigFloatTests
     [Fact]
     public void Verify_Math_Modulus()
     {
-        ModVerify__True(new BigFloat("1.000"), new BigFloat("1.000"), new BigFloat("0.000"));
-        ModVerify__True(new BigFloat("1.000"), new BigFloat("2.000"), new BigFloat("1.000"));
-        ModVerify__True(new BigFloat("2.000"), new BigFloat("1.000"), new BigFloat("0.000"));
-        ModVerify__True(new BigFloat("3.000"), new BigFloat("2.000"), new BigFloat("1.000"));
-        ModVerify__True(new BigFloat("4.000"), new BigFloat("2.000"), new BigFloat("0.000"));
-        ModVerify__True(new BigFloat(14), new BigFloat(10), new BigFloat(4));
-        ModVerify__True(new BigFloat("0.14"), new BigFloat("0.10"), new BigFloat("0.04"));
+        ModVerify(new BigFloat("1.000"), new BigFloat("1.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat("1.000"), new BigFloat("2.000"), new BigFloat("1.000"));
+        ModVerify(new BigFloat("2.000"), new BigFloat("1.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat("3.000"), new BigFloat("2.000"), new BigFloat("1.000"));
+        ModVerify(new BigFloat("4.000"), new BigFloat("2.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat(14), new BigFloat(10), new BigFloat(4));
+        ModVerify(new BigFloat("0.14"), new BigFloat("0.10"), new BigFloat("0.04"));
 
         //     1111000010100011110101110000101001001 129192616265 actual mod output
         //     1111010111000010100011110101110000101 131941395333 hand written expected result of 0.24
         //     11111================================ (remove 32 bits) hand written expected result of 0.24(rounded version)
         // 0.00111100001010001111010111000010100011110101110000101000111101  precision answer of 0.235 if 1.555 and 0.44 were exact.  
         // for this to work we would need to not carry the extra bits in the:  precision=Log2(number)+extra bits 
-        ModVerify__True(new BigFloat("1.555"), new BigFloat("0.44"), new BigFloat("0.235"));
-        ModVerify__True(new BigFloat("1.555"), new BigFloat("0.444"), new BigFloat("0.223"));
-        ModVerify__True(new BigFloat("1.555"), new BigFloat("0.4444"), new BigFloat("0.2218"));
-        ModVerify__True(new BigFloat("1.555"), new BigFloat("0.44444"), new BigFloat("0.2217"));
+        ModVerify(new BigFloat("1.555"), new BigFloat("0.44"), new BigFloat("0.235"));
+        ModVerify(new BigFloat("1.555"), new BigFloat("0.444"), new BigFloat("0.223"));
+        ModVerify(new BigFloat("1.555"), new BigFloat("0.4444"), new BigFloat("0.2218"));
+        ModVerify(new BigFloat("1.555"), new BigFloat("0.44444"), new BigFloat("0.22168")); // 0.22168
+
+        ModVerify(new BigFloat("11"), new BigFloat("0.333"), new BigFloat("0.011"));
+        ModVerify(new BigFloat("11.000"), new BigFloat("0.33300"), new BigFloat("0.011"));
 
         // The next line fails because the result has zero precision remaining and is "around zero". "around zero" does not equal "0.011".
-        ModVerify_False(new BigFloat("11"), new BigFloat("0.333"), new BigFloat("0.011"));
-        ModVerify__True(new BigFloat("11.000"), new BigFloat("0.333"), new BigFloat("0.011"));
-
-        // The next line is true because the result has zero precision remaining and is "around zero". "around zero" equals "0"("around zero" also)
-        ModVerify__True(new BigFloat("11"), new BigFloat("0.333"), new BigFloat("0"));
-
-        // The next line fails because the result has zero precision remaining and is "around zero". "around zero" does not equal "0.011".
-        ModVerify_False(new BigFloat("3"), new BigFloat("0.222"), new BigFloat("0.114"));
-        ModVerify__True(new BigFloat("3.000"), new BigFloat("0.222"), new BigFloat("0.114"));
-
-        // The next line is true because the result has zero precision remaining and is "around zero". "around zero" equals "0"("around zero" also)
-        ModVerify__True(new BigFloat("3"), new BigFloat("0.222"), new BigFloat("0"));
+        ModVerify(new BigFloat("3"), new BigFloat("0.222"), new BigFloat("0.114"));
+        ModVerify(new BigFloat("3.000"), new BigFloat("0.2220"), new BigFloat("0.1140"));
 
         //  101011_.  (86)   (aka 101011|0.) 
         // % 1101__.  (52)   (a    1101|00.)
@@ -2058,36 +2016,19 @@ public class BigFloatTests
         //     --  (out of precision digits)
         BigFloat v = new(0b101011, 1, 0);
         BigFloat w = new(0b1101, 2, 0);
-        ModVerify__True(v, w, new BigFloat(0b100010, 0, 0)); // 1000.1<<2 == 100010<<0
-        ModVerify__True(v, w, new BigFloat(0b10001, 1, 0));  // 1000.1<<2 ==  10001<<1
-        ModVerify_False(v, w, new BigFloat(0b1000, 2, 0));   // 1000.1<<2 ==   1000<<2 or 1001!=1000  (if we do not round up)
-        // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
-        ModVerify_False(v, w, new BigFloat(0b1001, 2, 0));   // 1000.1<<2 ==   1001<<2 or 1001==1001  (if we do     round up) 
+        ModVerify(v, w, new BigFloat(0b100010, 0, 0)); // 1000.1<<2 == 100010<<0
 
-        // Below two tests are the same as above two tests.
-        // Assert.False(v % w == new BigFloat(0b1000, 2));  //reverse order:  1000<<2 == 1000.1<<2 or 1000!=1001  (if we do not round up)
-        // Assert.False(v % w == new BigFloat(0b1001, 2));  //reverse order:  1001<<2 == 1000.1<<2 or 1001=1001  (if we do     round up)
-        ModVerify__True(v, w, new BigFloat(0b100, 3, 0));    // 1000.1<<2 ==    100<<3   
-        ModVerify__True(v, w, new BigFloat(0b100011, 0, 0)); // 1000.1<<2 == 100011<<0 
-        // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 
-        ModVerify_False(v, w, new BigFloat(0b10010, 1, 0));  // 1000.1<<2 ==  10010<<1 ("1000|10 == 10010|0." can be considered 1001==1001 but questionable)
-        // Below test is the same as above test.
-        //ModVerify__True(v, w, new BigFloat(0b1001, 2));   // 1000.1<<2 !=   1001<<2 ("1000|10 == 1001|00." can be considered 1001==1001 but questionable)
-        ModVerify_False(v, w, new BigFloat(0b100000, 0, 0)); // 1000.1<<2 != 100000<<0
-        ModVerify_False(v, w, new BigFloat(0b011111, 0, 0)); // 1000.1<<2 !=  11111<<0
-        ModVerify_False(v, w, new BigFloat(0b1000, 2, 0));   // 1000.1<<2 !=   1000<<2
+        ModVerify(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat("-1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
 
-        ModVerify__True(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
-        ModVerify__True(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
-        ModVerify__True(new BigFloat("-1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
+        ModVerify(new BigFloat("-1.000"), new BigFloat("+2.000"), new BigFloat("-1.000"));
+        ModVerify(new BigFloat("+1.000"), new BigFloat("-2.000"), new BigFloat("+1.000"));
+        ModVerify(new BigFloat("-1.000"), new BigFloat("-2.000"), new BigFloat("-1.000"));
 
-        ModVerify__True(new BigFloat("-1.000"), new BigFloat("+2.000"), new BigFloat("-1.000"));
-        ModVerify__True(new BigFloat("+1.000"), new BigFloat("-2.000"), new BigFloat("+1.000"));
-        ModVerify__True(new BigFloat("-1.000"), new BigFloat("-2.000"), new BigFloat("-1.000"));
-
-        ModVerify__True(new BigFloat("-0.14"), new BigFloat("+0.10"), new BigFloat("-0.04"));
-        ModVerify__True(new BigFloat("+0.14"), new BigFloat("-0.10"), new BigFloat("+0.04"));
-        ModVerify__True(new BigFloat("-0.14"), new BigFloat("-0.10"), new BigFloat("-0.04"));
+        ModVerify(new BigFloat("-0.14"), new BigFloat("+0.10"), new BigFloat("-0.04"));
+        ModVerify(new BigFloat("+0.14"), new BigFloat("-0.10"), new BigFloat("+0.04"));
+        ModVerify(new BigFloat("-0.14"), new BigFloat("-0.10"), new BigFloat("-0.04"));
 
         ///////////////////////////// Modulus vs Remainder /////////////////////////////
         // Note: "%" is Remainder (not Mod) 
@@ -2106,16 +2047,10 @@ public class BigFloatTests
         Assert.Equal(BigFloat.Mod(new BigFloat(7), new BigFloat(-5)), -3); // 7 mod -5 should be -3.
         Assert.Equal(BigFloat.Remainder(new BigFloat(7), new BigFloat(-5)), 2); // 7 % -5 should be 2.
 
-        static void ModVerify__True(BigFloat inputVal0, BigFloat inputVal1, BigFloat expect)
+        static void ModVerify(BigFloat inputVal0, BigFloat inputVal1, BigFloat expect)
         {
             BigFloat output = inputVal0 % inputVal1;
-            Assert.Equal(0, output.CompareTo(expect)); // Mod ({inputVal0} % {inputVal1}) was {output} but expected {expect}.
-        }
-
-        static void ModVerify_False(BigFloat inputVal0, BigFloat inputVal1, BigFloat expect)
-        {
-            BigFloat output = inputVal0 % inputVal1;
-            Assert.NotEqual(0, output.CompareTo(expect)); // Mod ({inputVal0} % {inputVal1}) should not have been {output}.
+            Assert.True(output.EqualsUlp(expect,2,true), $"Mod ({inputVal0} % {inputVal1}) was {output} but expected {expect}."); 
         }
     }
 
@@ -2262,18 +2197,18 @@ public class BigFloatTests
         Assert.True(bf.IsInteger); // MinValue should be considered an integer
 
         // The top 16 bits of the GuardBits are used for IsInteger, Ceiling, and Floor 
-        bf = new BigFloat("0b101010101|1010101010101010.010");  // |16.
-        Assert.True(bf.IsInteger); // only the top 16 bits are considered GuardBits and all of these are above the point. 
-        bf = new BigFloat("0b101010101|1010101010101010.1010"); // |16.
-        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and all of these are above the point.
-        bf = new BigFloat("0b101010101|101010101010101.01010"); // |15.0
-        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
-        bf = new BigFloat("0b101010101|101010101010101.1010");  // |15.1
-        Assert.True(bf.IsInteger); // Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
-        bf = new BigFloat("0b101010101|10101010101010.101010"); // |14.10
-        Assert.False(bf.IsInteger); // The 2 bits after the point (10) are not uniform and in top 16 GuardBits so false.
-        bf = new BigFloat("0b101010101|10101010101010.001010"); // |14.00
-        Assert.True(bf.IsInteger); // The 2 bits after the point (10) are not uniform so true.
+        bf = new BigFloat("0b101010101|1010101010101010.010");  // |16.  Only the top 16 bits are considered GuardBits and all of these are above the point. 
+        Assert.True(bf.IsInteger);
+        bf = new BigFloat("0b101010101|1010101010101010.1010"); // |16.   Only the top 16 bits are considered GuardBits and all of these are above the point.
+        Assert.True(bf.IsInteger);
+        bf = new BigFloat("0b101010101|101010101010101.01010"); // |15.0   Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
+        Assert.True(bf.IsInteger);
+        bf = new BigFloat("0b101010101|101010101010101.1010");  // |15.1   Only the top 16 bits are considered GuardBits and only one bit after the decimal. If this one bit is all one or zero it is true.
+        Assert.True(bf.IsInteger);
+        bf = new BigFloat("0b101010101|10101010101010.101010"); // |14.10   The 2 bits after the point (10) are not uniform and in top 16 GuardBits so false.
+        Assert.False(bf.IsInteger);
+        bf = new BigFloat("0b101010101|10101010101010.001010"); // |14.00    The 2 bits after the point (10) are not uniform so true.
+        Assert.True(bf.IsInteger);
 
         bf = new BigFloat(double.Epsilon); Assert.False(bf.IsInteger); // {bf}.IsInteger is false because all top 8 GuardBits are not uniform.
         bf = new BigFloat(double.E); Assert.False(bf.IsInteger); // {bf}.IsInteger reported as true but should be false.
@@ -3190,6 +3125,7 @@ public class BigFloatTests
         Assert.False(BigFloat.TryParseBinary("+", out _, 0));
         Assert.False(BigFloat.TryParseBinary("/", out _, 0));
         Assert.False(BigFloat.TryParseBinary(".", out _, 0));
+        Assert.False(BigFloat.TryParseBinary("-.", out _, 0));
         Assert.False(BigFloat.TryParseBinary("-+", out _, 0));
         Assert.False(BigFloat.TryParseBinary("0+", out _, 0));
         Assert.False(BigFloat.TryParseBinary("0-", out _, 0));
@@ -3200,6 +3136,7 @@ public class BigFloatTests
         Assert.False(BigFloat.TryParseBinary("--1", out _, 0));
         Assert.False(BigFloat.TryParseBinary("1.01.", out _, 0));
         Assert.False(BigFloat.TryParseBinary(".41", out _, 0)); 
+        Assert.False(BigFloat.TryParseBinary("2", out _, 0));
 
         // Parse valid binary sequences and make sure the result is correct.
         Assert.True(BigIntegerTools.TryParseBinary("0", out BigInteger output));
@@ -3212,10 +3149,10 @@ public class BigFloatTests
         Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("+0", out output));
         Assert.Equal(output, 0);
-        // Assert.True(BigIntegerTools.TryParseBinary(".0", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0); 
-        // Assert.True(BigIntegerTools.TryParseBinary(".1", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0); 
+        Assert.True(BigIntegerTools.TryParseBinary(".0", out output)); 
+        Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary(".1", out output)); 
+        Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("00", out output));
         Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("01", out output));
@@ -3240,14 +3177,14 @@ public class BigFloatTests
         Assert.Equal(output, -2);
         Assert.True(BigIntegerTools.TryParseBinary("-11", out output));
         Assert.Equal(output, -3);
-        //Assert.True(BigIntegerTools.TryParseBinary(".00", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0);
-        //Assert.True(BigIntegerTools.TryParseBinary(".01", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0);
-        //Assert.True(BigIntegerTools.TryParseBinary(".10", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0);
-        //Assert.True(BigIntegerTools.TryParseBinary(".11", out output)); // This can go either way for BigInteger
-        //Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary(".00", out output));
+        Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary(".01", out output));
+        Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary(".10", out output));
+        Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary(".11", out output));
+        Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("0.0", out output));
         Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("0.1", out output));
@@ -3368,10 +3305,10 @@ public class BigFloatTests
         Assert.Equal(output, 1);
         Assert.True(BigIntegerTools.TryParseBinary("1.11", out output));
         Assert.Equal(output, 1);
-        //Assert.True(BigIntegerTools.TryParseBinary("-.000", out output));
-        //Assert.Equal(output, 0);
-        //Assert.True(BigIntegerTools.TryParseBinary("-.001", out output));
-        //Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary("-.000", out output));
+        Assert.Equal(output, 0);
+        Assert.True(BigIntegerTools.TryParseBinary("-.001", out output));
+        Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("-0.00", out output));
         Assert.Equal(output, 0);
         Assert.True(BigIntegerTools.TryParseBinary("-0.01", out output));
@@ -5473,68 +5410,68 @@ public class BigFloatTests
 
         BigFloat a = (BigFloat)0.414682509851111660248;         //0.0110101000101000101000100000101000001000101000100000100000101000...
         BigFloat d = (BigFloat)(double)0.414682509851111660248;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         BigFloat f = (BigFloat)(float)0.414682509851111660248;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("0.0111101100110000101100101011101100010100010110000010011001010010");
         d = (BigFloat)(double)0.481211825059603447497;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)0.481211825059603447497;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("10.1010111101111001110010000100011110001101101000011010111011110010");
         d = (BigFloat)(double)2.685452001065306445309;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)2.685452001065306445309;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("0.01010101010101010101010101010101010101010101010101010101010101010101");
         d = (BigFloat)(double)0.333333333333333333333333333;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)0.333333333333333333333333333;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("0.101010101010101010101010101010101010101010101010101010101010101010101");
         d = (BigFloat)(double)0.666666666666666666666666666;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)0.666666666666666666666666666;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("0.00000000000101010101010101010101010101010101010101010101010101");
         d = (BigFloat)(double)0.000325520833333333333333333;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)0.000325520833333333333333333;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("-0.00000000000101010101010101010101010101010101010101010101010101");
         d = (BigFloat)(double)-0.000325520833333333333333333;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)-0.000325520833333333333333333;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("-0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, BigFloat.GuardBits);
         d = (BigFloat)(double)-0.999999999999999999999999999;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)-0.999999999999999999999999999;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("-0.00000000000101010101010101010101010101010101010101010101010101");
         d = (BigFloat)(double)-0.000325520833333333333333333;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)-0.000325520833333333333333333;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         a = BigFloat.ParseBinary("0.1111111111111111111111111111111111111111111111111111111111111111", 0, 0, BigFloat.GuardBits);
         d = (BigFloat)(double)0.999999999999999999999999999;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
         f = (BigFloat)(float)0.999999999999999999999999999;
-        Assert.Equal(f, d);
+        Assert.True(f.EqualsUlp(d));
 
         //1.79769E+308
         a = BigFloat.ParseBinary("1111111111111111111000101011111001010100000101010111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
         d = (BigFloat)(double)179769000000000006323030492138942643493033036433685336215410983289126434148906289940615299632196609445533816320312774433484859900046491141051651091672734470972759941382582304802812882753059262973637182942535982636884444611376868582636745405553206881859340916340092953230149901406738427651121855107737424232448.0;
-        Assert.Equal(a, d);
+        Assert.True(a.EqualsUlp(d));
     }
 
 
@@ -5631,13 +5568,16 @@ public class BigFloatTests
         //b       10111110101111000010000000000000000000000000001000011000000000000000000000000 (subtract) using:24
         //32 GuardBits                                         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         //                                                                110111101111010000010
-        //area ignored for StrictCompareTo()                                             XXXXXX
-        //area ignored for Compare()                            XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        //area ignored for CompareUlp(other, 1, true)                                         X
+        //area ignored for Compare()                            ______________ALL______________ (after rounding)
         //area ignored for IsExactMatchOf()                     ______________ALL______________
 
         Assert.True(a.IsGreaterThanUlp(b, 1, true)); // String has more precision than double in guard bits
-        Assert.Equal(0, a.CompareTo(b)); // CompareTo ignores guard bit differences
-        Assert.False(a.EqualsZeroExtended(b)); // Different precision representations
+        Assert.False(a.EqualsUlp(b, 1, true)); // String has more precision than double in guard bits
+        Assert.False(a.IsLessThanOrEqualToUlp(b, 1, true)); // String has more precision than double in guard bits
+        Assert.False(a.CompareTo(b) == 0); // CompareTo ignores guard bit differences
+        Assert.False(a.EqualsZeroExtended(b)); // False - same GuardBits but allows zeros
+        Assert.False(a.IsBitwiseEqual(b)); // False - Different size
     }
 
     [Fact]
@@ -5832,9 +5772,9 @@ public class BigFloatTests
         inputVal++;
         Assert.Equal(inputVal, expect);
 
-        inputVal = new BigFloat("1.440000000000");
-        expect = new BigFloat("2.4400000000000");
+        inputVal = new BigFloat("1.4400000000000");
         inputVal++;
+        expect = new BigFloat("2.4400000000000");
         Assert.Equal(inputVal, expect);
 
         inputVal = new BigFloat("0.0000230000000");
@@ -5843,7 +5783,7 @@ public class BigFloatTests
         Assert.Equal(inputVal, expect);
 
         inputVal = new BigFloat("-0.0000230000000");
-        expect = new BigFloat("0.999977");
+        expect = new BigFloat(   "0.9999770000000");
         inputVal++;
         Assert.Equal(inputVal, expect);
 
