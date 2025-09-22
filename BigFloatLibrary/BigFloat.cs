@@ -781,7 +781,7 @@ public readonly partial struct BigFloat
     }
 
     public static BigFloat operator +(BigFloat r1, int r2) //ChatGPT o4-mini-high
-    {
+        {
         if (r2 == 0) { return r1; }
 
         BigInteger r2Bits = new BigInteger(r2) << GuardBits;
@@ -955,13 +955,13 @@ public readonly partial struct BigFloat
         int bitsToClear = GuardBits - Scale;
         
         if (bitsToClear <= 0) return this;
-        if (bitsToClear > _size) return ZeroWithAccuracy(Accuracy);
+        if (bitsToClear >= _size) return ZeroWithAccuracy(Accuracy); 
 
         return new BigFloat(ClearLowerNBits(_mantissa, bitsToClear), Scale, _size);
     }
 
     /// <summary>
-    /// Truncates towards zero. Removes all fractional bits, sets negative scales to zero, 
+    /// Truncates towards zero. Removes all fractional bits and sets negative scales to zero.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat Truncate()
@@ -969,10 +969,10 @@ public readonly partial struct BigFloat
         int bitsToClear = GuardBits - Scale;
 
         if (bitsToClear <= 0) return this;
-        if (bitsToClear >= _size) return Zero;
+        if (bitsToClear >= _size) return 0;
 
         BigInteger newMantissa = (_mantissa.Sign >= 0) ? _mantissa >> bitsToClear : -(-_mantissa >> bitsToClear);
-        return new BigFloat(newMantissa, Scale + bitsToClear, _size - bitsToClear);
+        return new BigFloat(newMantissa << GuardBits, Scale + bitsToClear- GuardBits, _size - bitsToClear + GuardBits);
     }
 
     /// <summary>
