@@ -462,7 +462,7 @@ public readonly partial struct BigFloat
         //        // The radix point is at least 16 bits into the guard area so it is very inconclusive, however these cases are considered integers.
         //        return true;
         //    }
-            
+
         //    int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
         //    return BitsAreUniformInRange(_mantissa, GuardBits - topBitsToCheck, end);
         //}
@@ -772,7 +772,7 @@ public readonly partial struct BigFloat
 
         BigInteger intVal = r._mantissa + (BigInteger.One << onesPlace);
         int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
-        // int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //perf: faster just to calc
+        // int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: for performance, faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
         return new BigFloat(intVal, r.Scale, sizeVal);
     }
@@ -862,7 +862,7 @@ public readonly partial struct BigFloat
     }
 
     public static BigFloat operator +(BigFloat r1, int r2) // Ryan
-        {
+    {
         if (int.Log2(int.Abs(r2)) + 1 + (GuardBits - r1.Scale) <= 0)
         {
             return r1;
@@ -986,9 +986,9 @@ public readonly partial struct BigFloat
         int bitsToClear = GuardBits - Scale;
 
         if (bitsToClear <= 0) return this;
-        if (bitsToClear > _size) 
+        if (bitsToClear > _size)
             return ZeroWithAccuracy(Accuracy);
-        if (bitsToClear == _size) 
+        if (bitsToClear == _size)
             return OneWithAccuracy(Accuracy);
 
         //BigInteger result= RightShiftWithRound(Mantissa, bitsToClear) << bitsToClear;

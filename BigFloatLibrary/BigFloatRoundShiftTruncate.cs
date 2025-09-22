@@ -91,23 +91,6 @@ public readonly partial struct BigFloat
         return (workingBelowPoint & mask) != 0;
     }
 
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool HasWorkingFractionBits0()
-    {
-        if (_mantissa.IsZero) return false;
-        if (Scale >= 0) return false;                       // '.' at or right of guard boundary → no working frac
-        int availableAboveGuard = _size - GuardBits;        // working-precision width
-        if (availableAboveGuard <= 0) return false;         // entirely out-of-precision
-        int k = Math.Min(-Scale, availableAboveGuard);      // count of working frac bits actually present
-        if (k <= 0) return false;
-
-        BigInteger mag = BigInteger.Abs(_mantissa);
-        BigInteger workingBelowPoint = mag >> GuardBits;    // align guard boundary to bit 0
-        BigInteger mask = (BigInteger.One << k) - 1;        // low-k bits = working fractional field
-        return (workingBelowPoint & mask) != 0;
-    }
-
     //public BigFloat Ceiling()
     //{
     //    if (_mantissa.IsZero) return this;
