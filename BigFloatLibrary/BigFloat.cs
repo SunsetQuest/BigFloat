@@ -126,11 +126,13 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns the default zero with with a zero size, precision, scale, and accuracy.
     /// </summary>
+    [Obsolete("Use the integer value 0 instead or ZeroWithAccuracy.")]
     public static BigFloat Zero => new(0, 0, 0);
 
     /// <summary>
     /// Returns a '1' with only 1 bit of precision. (1 << GuardBits)
     /// </summary>
+    [Obsolete("Use the integer value 1 instead or OneWithAccuracy.")]
     public static BigFloat One => new(BigInteger.One << GuardBits, 0, GuardBits + 1);
 
     const double LOG2_OF_10 = 3.32192809488736235;
