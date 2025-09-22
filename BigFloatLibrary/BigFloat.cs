@@ -780,44 +780,16 @@ public readonly partial struct BigFloat
         return new BigFloat(intVal, r1.Scale, sizeVal);
     }
 
-    public static BigFloat operator +(BigFloat r1, int r2) //ChatGPT o4-mini-high
+    public static BigFloat operator +(BigFloat r1, int r2) // Ryan
         {
-        if (r2 == 0) { return r1; }
-
-        BigInteger r2Bits = new BigInteger(r2) << GuardBits;
-        int r2Size = (int)BigInteger.Abs(r2Bits).GetBitLength();
-        int scaleDiff = r1.Scale;
-
-        // if r2 is too small to affect r1 at r1’s precision ⇒ drop it
-        if (scaleDiff > r2Size) { return r1; }
-
-        // if r1 is too small compared to r2 ⇒ result ≅ r2
-        if (-scaleDiff > r1._size) { return new BigFloat(r2Bits, 0, r2Size); }
-
-        // align mantissas and add
-        BigInteger sum;
-        int resScale;
-        if (r1.Scale == 0)
+        if (int.Log2(int.Abs(r2)) + 1 + (GuardBits - r1.Scale) <= 0)
         {
-            // same exponent
-            sum = r1._mantissa + r2Bits;
-            resScale = 0;
+            return r1;
         }
-        else if (r1.Scale < 0)
-        {
-            // r2 has larger exponent: shift r1 down
-            sum = RoundingRightShift(r1._mantissa, -scaleDiff) + r2Bits;
-            resScale = 0;
-        }
-        else
-        {
-            // r1 has larger exponent: shift r2 down
-            sum = r1._mantissa + RoundingRightShift(r2Bits, scaleDiff);
-            resScale = r1.Scale;
-        }
+        BigInteger addVal = (BigInteger)r2 << (GuardBits - r1.Scale);
+        addVal += r1._mantissa;
 
-        int resSize = (int)BigInteger.Abs(sum).GetBitLength();
-        return new BigFloat(sum, resScale, resSize);
+        return new BigFloat(addVal, r1.Scale, (int)BigInteger.Abs(addVal).GetBitLength());
     }
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
