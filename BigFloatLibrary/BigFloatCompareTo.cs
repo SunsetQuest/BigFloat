@@ -608,34 +608,44 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     [Obsolete("Use IsBitwiseEqual.")]
     public bool IsExactMatchOf(BigFloat other) => IsBitwiseEqual(other);
 
-    // Examples 
-    // 11|1.1000...00  Scale < 0 - false b/c inconclusive (any scale < 0 is invalid since the unit value is out of scope)
-    // 111.|1000...00  Scale ==0 - when scale is 0, it is always an integer
-    // 111.10|00...00  Scale > 0 - if after rounding, any bits between the radix and guard are '1' then not an integer 
-
-    /// <summary>Returns a value that indicates whether the current instance and a signed 64-bit integer have the same input.</summary>
     public bool Equals(long other)
     {
-        // 'this' is too large, not possible to be equal. The only 64 bit long is long.MinValue
-        if (BinaryExponent > 62) { return BinaryExponent == 63 && other == long.MinValue; }
-        if (BinaryExponent < -1) { return other == 0; }
-        if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; } // too large by 1
-        if (!IsInteger) { return false; }
+        if (_mantissa.IsZero) return other == 0;
 
-        return other == (long)RoundingRightShift(_mantissa << Scale, GuardBits);
+        // Align the ones place, then round away the guard field using the SAME rule
+        // your canonicalization uses (top-guard policy included).
+        BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
+        BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
+
+        // Exact Int64 range test, no heuristics.
+        // just do straight int32 test
+        // if (q < (BigInteger)long.MinValue || q > (BigInteger)long.MaxValue) return false;
+
+        return q == other;
     }
 
-    /// <summary>Returns a value that indicates whether the current instance and an unsigned 64-bit integer have the same input.</summary>
     public bool Equals(ulong other)
     {
+        if (_mantissa.IsZero) return other == 0;
         if (BinaryExponent >= 64) { return false; }  // 'this' is too large, not possible to be equal.
         if (BinaryExponent < -1) { return other == 0; }
-        if ((_mantissa >> (GuardBits - 1)).Sign < 0) { return false; }   // is negative
-        if (BinaryExponent == 63 && WouldRoundUp(_mantissa, GuardBits)) { return false; }// too large by 1
-        if (!IsInteger) { return false; } // are the top 1/4 of the guard bits zero?
 
-        return (ulong)RoundingRightShift(_mantissa << Scale, GuardBits) == other;
+        // Align the ones place, then round away the guard field using the SAME rule
+        // your canonicalization uses (top-guard policy included).
+        BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
+        BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
+
+        // Exact Int64 range test, no heuristics.
+        // just do straight int32 test
+        //if (q.GetBitLength() > 64) return false;
+
+        return q == other;
     }
+
+    public bool Equals(int other) => Equals((long)other);
+
+    public bool Equals(uint other) => Equals((ulong)other);
+
 
     /// <summary>
     /// Returns true if the integer part of the BigFloat matches 'other'. 
