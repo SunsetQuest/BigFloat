@@ -67,159 +67,219 @@ public readonly partial struct BigFloat
     /// </summary>
     public UInt128 Highest128Bits => (UInt128)((BigInteger.IsPositive(_mantissa) ? _mantissa : -_mantissa) >> (_size - 128));
 
-
     /// <summary>
-    /// Rounds towards positive infinity while preserving the scale (accuracy).
-    /// Fractional bits are set to zero but the scale and precision remain unchanged.
+    /// Returns true if any fractional bit exists in the working-precision window
+    /// (i.e., between '.' and the guard boundary). Guard bits are ignored.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat CeilingPreservingAccuracy()
+    private bool HasWorkingFractionBits()
     {
-        int bitsToClear = GuardBits - Scale;
+        if (_mantissa.IsZero) return false;
 
-        // Fast path: no fractional bits to clear
-        if (bitsToClear <= 0) return this;
+        // If '.' is at or to the right of the guard boundary, there are no working fractional bits.
+        if (Scale > 0) return false; //CHANGE: from >= to >
 
-        // Fast path: entire value is fractional
-        if (bitsToClear >= _size)
-        {
-            // For positive values, ceiling of 0.xxx is 1
-            // For negative/zero values, ceiling is 0
-            return _mantissa.Sign > 0
-                ? new BigFloat(BigInteger.One << (GuardBits - Scale), Scale, 1 + GuardBits - Scale)
-                : new BigFloat(BigInteger.Zero, Scale, 0); // Preserve scale for zero
-        }
+        int availableAboveGuard = _size - GuardBits;   // how many working bits exist at all
+        if (availableAboveGuard <= 0) return false;    // number is entirely out-of-precision -> treat as integer
 
-        // Fast path: zero value
-        if (_mantissa.IsZero) return this;
+        int k = Math.Min(-Scale, availableAboveGuard) +1; //CHANGE: added "+1"; number of working fractional bits that actually exist
+        if (k <= 0) return false;  
 
-        // Negative values: ceiling just clears fractional bits (rounds toward zero)
-        if (_mantissa.Sign < 0)
-        {
-            // For negative numbers, use shift operations to avoid two's complement issues
-            BigInteger truncated = -(-_mantissa >> bitsToClear) << bitsToClear;
-            return new BigFloat(truncated, Scale, _size);
-        }
-
-        // Positive values: need to check if rounding up is required
-        if (Scale >= GuardBits)
-        {
-            return new BigFloat((_mantissa >> bitsToClear) << bitsToClear, Scale, _size);
-        }
-
-        // At this point Scale < 0 and positive sign, we need to check sub-GuardBit precision
-        int halfGuard = GuardBits / 2;
-        BigInteger checkMask = ((BigInteger.One << (halfGuard - Scale)) - 1) << halfGuard;
-        bool roundsUp = (_mantissa & checkMask) > 0;
-
-        if (!roundsUp)
-        {
-            // Just clear the bits
-            return new BigFloat((_mantissa >> bitsToClear) << bitsToClear, Scale, _size);
-        }
-
-        // Round up: clear bits and add at guard position
-        BigInteger clearedBits = (_mantissa >> bitsToClear) << bitsToClear;
-        BigInteger result = clearedBits + (BigInteger.One << bitsToClear);
-
-        // Use bit scan to efficiently determine new size
-        int newSize = (int)result.GetBitLength();
-
-        return new BigFloat(result, Scale, newSize);
+        BigInteger mag = BigInteger.Abs(_mantissa);
+        BigInteger workingBelowPoint = mag >> (GuardBits-1);  //CHANGE:  dded "-1";align guard boundary to bit 0
+        BigInteger mask = (BigInteger.One << k) - 1;            // low k bits are the fractional field
+        return (workingBelowPoint & mask) != 0;
     }
 
-    // Future: The current implementation rounds up only if any bits are set between the binary point(GuardBits - Scale) and halfway through the guard region(GuardBits / 2). Instead, Ceiling should always round up whenever fractional bits exist, regardless of position within the guard region.This ensures consistency with IsInteger(i.e., x.IsInteger implies x == (BigInteger) x or x == (int) x when representable) and avoids cases where x.IsInteger is true but x.Ceiling still increments. The semantics must strictly follow:
-    // If x.IsInteger is true, then x.Ceiling == x.
-    // If any fractional bits are set and x > 0, then x.Ceiling > x.
-    // If x < 0, truncate toward zero (no rounding up)
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool HasWorkingFractionBits0()
+    {
+        if (_mantissa.IsZero) return false;
+        if (Scale >= 0) return false;                       // '.' at or right of guard boundary → no working frac
+        int availableAboveGuard = _size - GuardBits;        // working-precision width
+        if (availableAboveGuard <= 0) return false;         // entirely out-of-precision
+        int k = Math.Min(-Scale, availableAboveGuard);      // count of working frac bits actually present
+        if (k <= 0) return false;
+
+        BigInteger mag = BigInteger.Abs(_mantissa);
+        BigInteger workingBelowPoint = mag >> GuardBits;    // align guard boundary to bit 0
+        BigInteger mask = (BigInteger.One << k) - 1;        // low-k bits = working fractional field
+        return (workingBelowPoint & mask) != 0;
+    }
+
+    //public BigFloat Ceiling()
+    //{
+    //    if (_mantissa.IsZero) return this;
+
+    //    int s = GuardBits - Scale;                  // #fraction bits below the 1s place
+    //    if (s <= 0) return this;                    // already integer at this scale
+
+    //    // Entirely fractional: |x| < 1
+    //    if (s >= _size)
+    //        return _mantissa.Sign > 0
+    //            ? new BigFloat(BigInteger.One << GuardBits, 0, GuardBits + 1)
+    //            : Zero;
+
+    //    int sign = _mantissa.Sign;
+
+    //    if (sign < 0)
+    //    {
+    //        // Ceiling for negatives = truncate toward zero
+    //        BigInteger q = -(-_mantissa >> s);
+    //        int qBits = q.IsZero ? 0 : (int)BigInteger.Abs(q).GetBitLength();
+    //        return new BigFloat(q << GuardBits, 0, qBits + GuardBits);
+    //    }
+
+    //    // Positive: detect working-window fraction
+    //    bool hasWorkingFraction = false;
+    //    if (Scale < 0)
+    //    {
+    //        int k = Math.Min(-Scale, Math.Max(_size - GuardBits, 0));
+    //        if (k > 0)
+    //        {
+    //            var mag = BigInteger.Abs(_mantissa);
+    //            var workingBelowPoint = mag >> GuardBits;
+    //            var mask = (BigInteger.One << k) - 1;
+    //            hasWorkingFraction = (workingBelowPoint & mask) != 0;
+    //        }
+    //    }
+
+    //    // MSB of the entire fractional field (bit s-1) acts as “top guard” trigger
+    //    var magAll = BigInteger.Abs(_mantissa);
+    //    BigInteger fracMask = (BigInteger.One << s) - 1;
+    //    BigInteger frac = magAll & fracMask;
+    //    bool topFractionBit = ((frac >> (s - 1)) & BigInteger.One) == BigInteger.One;
+
+    //    BigInteger intUnits = magAll >> s;
+    //    if (hasWorkingFraction || topFractionBit) intUnits += BigInteger.One;
+    //    else return this; // Optional: Do we want Ceiling to round down if no increment? remove if so
+
+    //    int bits = intUnits.IsZero ? 0 : (int)intUnits.GetBitLength();
+    //    return new BigFloat(intUnits << GuardBits, 0, bits + GuardBits);
+    //}
 
     /// <summary>
-    /// Rounds to the next integer towards positive infinity. 
-    /// Removes all fractional bits, sets negative scales to zero, and resizes precision to just the integer part.
-    /// Round-up if any bits are set between the point(GuardBits-Scale) and halfway through the GuardBits(GuardBits/2).
+    /// Ceiling that never reduces the value.
+    /// - If there are working-precision fractional bits: step to the next integer (for positives).
+    /// - If there are no working-precision fractional bits (only guard fraction or none): return the input.
+    /// Preserves canonical “normalize once at precision boundary” behavior but avoids Ceil(x) < x.
     /// </summary>
     public BigFloat Ceiling()
     {
-        int bitsToClear = GuardBits - Scale;
-
-        // Fast path: already an integer with no fractional bits (Scale >= 16, 1010|1010101010101010.1010101010101010)
-        if (bitsToClear <= (GuardBits / 2)) return this;
-
-        int sign = _mantissa.Sign;
-
-        // Fast path: entire value is fractional
-        if (bitsToClear >= _size)
+        if (!HasWorkingFractionBits())
         {
-            return sign > 0
-                ? new BigFloat(BigInteger.One << GuardBits, 0, 1 + GuardBits)
-                : Zero;
+            // Sticky: treat guard-only fraction as already an integer; do not move down.
+            return this;
         }
 
-        // Fast path: zero
-        if (sign == 0) return Zero;
-
-        // Negative values: just truncate (round toward zero)
-        if (sign < 0)
-        {
-            BigInteger truncated = -(-_mantissa >> bitsToClear);
-            return new BigFloat(truncated << GuardBits, 0, _size + Scale);
-        }
-
-        // At this point Sign is positive AND Scale >= 0 (decimal is at in the in the GuardBits. i.e. 11|1.1000)
-        if (Scale < 0)
-        {
-            // Round-up if any bits are set between the point(GuardBits - Scale) and halfway through the GuardBits(GuardBits / 2).
-            bool roundsUp = (_mantissa & (((BigInteger.One << ((GuardBits / 2) - Scale)) - 1) << (GuardBits / 2))) > 0;
-
-            BigInteger intPart = _mantissa >> bitsToClear << GuardBits;
-
-            if (roundsUp)
-            {
-                intPart += BigInteger.One << GuardBits;
-            }
-
-            int newSize = roundsUp ? (int)intPart.GetBitLength() : _size + Scale; //future: optimize using bit scan operations when the rollover is predictable
-
-            return new BigFloat(intPart >> Scale, Scale, newSize - Scale);
-        }
-
-        // ---------------  Sign > 0   AND   Scale >= 0  ------------------
-
-        // Mask of all bits that are going to be discarded.
-        BigInteger mask = (BigInteger.One << bitsToClear) - 1;
-        bool hasFraction = (_mantissa & mask) != 0;        // true ⇢ something to round-up
-
-        // Remove the fractional field.
-        BigInteger intPart2 = _mantissa >> bitsToClear;
-
-        // Ceiling: if *any* fraction existed, add 1.
-        if (hasFraction) intPart2 += 1;
-
-        // Re-insert the guard word and build the result.
-        return new BigFloat(intPart2 << GuardBits, 0,
-                            (int)intPart2.GetBitLength() + GuardBits);
+        // Usual integer step based on sign
+        BigFloat integerPart = Truncate(); // Removes all fractional
+        return IsNegative ? integerPart : integerPart 
+            + new BigFloat(BigInteger.One << GuardBits, 0, GuardBits + 1);
     }
 
     /// <summary>
-    /// Rounds to the next integer towards negative infinity. Any fractional bits are removed, negative scales are set
-    /// to zero, and the precision(size) will be resized to just the integer part.
-    /// </summary>
-    public BigFloat FloorPreservingAccuracy()
+    /// Canonical Ceiling that preserves Scale/accuracy via identity.
+    /// Ceiling toward +∞:
+    /// - If IsInteger, return this (no increment).
+    /// - If sign < 0, truncate toward 0.
+    /// - If sign > 0 and any fractional bits exist, add 1.
+    /// Always returns an integer encoding (Scale==0) unless IsInteger short-circuit returns ‘this’.
+    ///</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat CeilingPreservingAccuracy()
     {
-        return -(-this).CeilingPreservingAccuracy();
+        if (!HasWorkingFractionBits())
+        {
+            // Sticky: treat guard-only fraction as already an integer; do not move down.
+            return this;
+        }
+
+        // Usual integer step based on sign
+        BigFloat integerPart = TruncateToIntegerKeepingAccuracy(); // preserves precision/accuracy
+        return IsNegative ? integerPart : integerPart + 1;
     }
 
+
+    ///// <summary>
+    ///// Canonical Ceiling that preserves Scale/accuracy via identity.
+    ///// Ceiling toward +∞:
+    ///// - If IsInteger, return this (no increment).
+    ///// - If sign < 0, truncate toward 0.
+    ///// - If sign > 0 and any fractional bits exist, add 1.
+    ///// Always returns an integer encoding (Scale==0) unless IsInteger short-circuit returns ‘this’.
+    /////</summary>
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public BigFloat CeilingPreservingAccuracy()
+    //{
+    //    int s = GuardBits - Scale;
+    //    if (_mantissa.IsZero || s <= 0) return this;
+
+    //    // Entirely fractional
+    //    if (s >= _size)
+    //        return _mantissa.Sign > 0
+    //            ? new BigFloat(BigInteger.One << (GuardBits - Scale), Scale, 1 + GuardBits - Scale)
+    //            : new BigFloat(BigInteger.Zero, Scale, 0);
+
+    //    // Negative: truncate toward zero
+    //    if (_mantissa.Sign < 0)
+    //    {
+    //        BigInteger res = -(-_mantissa >> s) << s;
+    //        int bits = res.IsZero ? 0 : (int)BigInteger.Abs(res).GetBitLength();
+    //        return new BigFloat(res, Scale, bits);
+    //    }
+
+    //    // Positive: working-fraction or top fractional bit triggers bump
+    //    var mag = BigInteger.Abs(_mantissa);
+    //    bool hasWorkingFraction = false;
+    //    if (Scale < 0)
+    //    {
+    //        int k = Math.Min(-Scale, Math.Max(_size - GuardBits, 0));
+    //        if (k > 0)
+    //        {
+    //            var workingBelowPoint = mag >> GuardBits;
+    //            var mask = (BigInteger.One << k) - 1;
+    //            hasWorkingFraction = (workingBelowPoint & mask) != 0;
+    //        }
+    //    }
+
+    //    BigInteger fracMask = (BigInteger.One << s) - 1;
+    //    BigInteger frac = mag & fracMask;
+    //    bool topFractionBit = ((frac >> (s - 1)) & BigInteger.One) == BigInteger.One;
+
+    //    BigInteger cleared = _mantissa & ~fracMask;
+
+
+    //    //BigInteger res2 = (hasWorkingFraction || topFractionBit) ? (cleared + (BigInteger.One << s)) : cleared;
+
+    //    BigInteger res2 = cleared;
+    //    if (hasWorkingFraction || topFractionBit) res2 += (BigInteger.One << s);
+    //    else return this; // Optional: Do we want Ceiling to round down if no increment? remove if so
+
+
+    //    int bits2 = res2.IsZero ? 0 : (int)BigInteger.Abs(res2).GetBitLength();
+    //    return new BigFloat(res2, Scale, bits2);
+    //}
+
+
     /// <summary>
-    /// Rounds towards negative infinity (complement of Ceiling).
+    /// Canonical Floor that preserves Scale/accuracy via identity
+    /// Rounds to the next integer towards negative infinity.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat FloorPreservingAccuracy() => -(-this).CeilingPreservingAccuracy();
+
+    /// <summary>
+    /// Canonical Floor (integer, rescaled) via identity.
+    /// Rounds towards negative infinity.
     /// Removes all fractional bits, sets negative scales to zero, 
     /// and resizes precision to just the integer part.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat Floor()
-    {
-        // Elegant implementation using ceiling
-        return _mantissa.Sign >= 0 ? -(-this).Ceiling() : -(-this).Ceiling();
-    }
+    public BigFloat Floor() => -(-this).Ceiling();
+
+
 
     /// <summary>
     /// Returns the fractional part of the BigFloat.
