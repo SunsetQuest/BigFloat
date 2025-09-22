@@ -1013,7 +1013,7 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
-    /// When reducing the least significant bit will rounded up if the most significant bit is set of the removed bits. 
+    /// When reducing, the least significant bit will rounded up if the most significant bit is set of the removed bits. 
     /// This can be used to reduce the precision of a number before prior to a calculation.
     /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Also see: SetPrecision, TruncateToAndRound
@@ -1640,13 +1640,79 @@ public readonly partial struct BigFloat
         return BitConverter.Int32BitsToSingle(floatBits);
     }
 
+    // todo: test
+    /// <summary>
+    /// Round-to-Nearest at '.' using only the first fractional bit (ignores guard bits), then truncate.
+    /// No round-to-even (ties go away-from-zero implicitly by using the top fractional bit only). (source ChatGPT 5T)
+    /// </summary>
+    public static int ToNearestInt(BigFloat x)
+    {
+        if (x.IsZero) return 0;
+
+        // Ignore guard bits entirely: drop them WITHOUT rounding
+        BigInteger mNoGuard = (x._mantissa.Sign >= 0)
+            ? (x._mantissa >> GuardBits)
+            : -((-x._mantissa) >> GuardBits);
+
+        if (x.Scale >= 0)
+        {
+            // No working fractional field; just scale up to an integer
+            BigInteger whole = mNoGuard << x.Scale;
+            return checked((int)whole);
+        }
+        else
+        {
+            int fracBits = -x.Scale;                 // # of working fractional bits
+            BigInteger trunc = (mNoGuard.Sign >= 0)  // truncate toward zero at '.'
+                ? (mNoGuard >> fracBits)
+                : -((-mNoGuard) >> fracBits);
+
+            // Look only at the first fractional bit right after '.'
+            bool roundUp = false;
+            if (fracBits > 0)
+            {
+                BigInteger abs = BigInteger.Abs(mNoGuard);
+                roundUp = ((abs >> (fracBits - 1)) & BigInteger.One) == BigInteger.One;
+            }
+
+            if (roundUp)
+            {
+                trunc += (mNoGuard.Sign >= 0) ? BigInteger.One : -BigInteger.One;
+            }
+
+            return checked((int)trunc);
+        }
+    }
+
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(BigFloat value)
     {
-        return (int)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
+        //if (value.IsZero) return 0;
+
+        // Step 1: round at the guard boundary and remove guard bits
+        BigInteger m = RoundingRightShift(value._mantissa, GuardBits);
+
+        // Step 2: drop working fractional bits (truncate toward zero)
+        if (value.Scale >= 0)
+        {
+            BigInteger whole = m << value.Scale;
+            return checked((int)whole);
+        }
+        else
+        {
+            int k = -value.Scale;
+            BigInteger whole = (m.Sign >= 0) ? (m >> k) : -((-m) >> k);
+            return checked((int)whole);
+        }
     }
 
+    //public static explicit operator int(BigFloat value)
+    //{
+    //    return (int)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
+    //}
+
+    // todo: update toUint and ToBigInteger to floor.
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
@@ -1675,8 +1741,6 @@ public readonly partial struct BigFloat
 
         // future: supports denormalized values
     }
-
-
 
     /// <summary>
     /// Checks whether this BigFloat struct holds a valid internal state.
