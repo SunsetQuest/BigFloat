@@ -411,19 +411,20 @@ public class BigFloatRoundingTests
     [Fact]
     public void CeilingWithScale_PreservesScale()
     {
-        var bf = new BigFloat(3.14, -10); // Scale of -10
-        var result = bf.CeilingPreservingAccuracy();
-        Assert.Equal(0, result.CompareUlp(BigFloat.OneWithAccuracy(4)));
+        var bf = new BigFloat(3.14, -10); // aka 0.00306640625|000000012143064
+        int accuracy = bf.Accuracy;
+        var result1 = bf.CeilingPreservingAccuracy();
+        var result2 = bf.Ceiling();
+        Assert.Equal(result1, BigFloat.OneWithAccuracy(accuracy));
+        Assert.Equal(result2, 1);
 
-        // Should preserve the scale
-        Assert.Equal(-53, result.Scale);
+        Assert.Equal(-53, result1.Scale);
+        Assert.Equal(0, result2.Scale);
 
-        // Should round up to 1.0
-        var normalCeiling = bf.Ceiling();
-        Assert.Equal(1.0, (double)normalCeiling);
-
-        // Scale should be 0
-        Assert.Equal(0, normalCeiling.Scale);
+        Assert.Equal(54, result1.Size);
+        Assert.Equal(1, result2.Size);
+        
+        Assert.Equal(1.0, (double)result2);
     }
 
     #endregion
