@@ -168,121 +168,228 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
     }
 
-    public void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0)
+    public void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0, bool showGuardBitsSeparator = false)
     {
         numberOfGuardBitsToInclude = Math.Clamp(numberOfGuardBitsToInclude, 0, GuardBits);
         charsWritten = 0;
 
-        // Handle zero mantissa special case
-        bool isZero = (_size == 0) || (_size <= (GuardBits - numberOfGuardBitsToInclude));
+        // --- Common fast-path info
+        int totalBits = _size;
+        int outputStart = totalBits - 1;                                 // inclusive
+        int outputEnd = GuardBits - numberOfGuardBitsToInclude;         // inclusive
 
+        // "Zero" per original semantics
+        bool isZero = (totalBits == 0) || (totalBits <= (GuardBits - numberOfGuardBitsToInclude));
+
+        // Sign only for non-zero
+        if (!isZero && _mantissa.Sign < 0) destination[charsWritten++] = '-';
+
+        // Helper state for streaming
+        bool sepNeeded = showGuardBitsSeparator;
+        bool sepWritten = false;
+        int bitIndex = 0;     // counts only '0'/'1' written (ignoring '.' and '|')
+
+        // Local inline to maybe write '|' before the next bit
+        void MaybeWriteSeparator(int sepIdx, Span<char> destination, ref int charsWritten)
+        {
+            if (sepNeeded && !sepWritten && bitIndex == sepIdx)
+            {
+                destination[charsWritten++] = '|';
+                sepWritten = true;
+            }
+        }
+
+        // ZERO CASE --------------------------------------------------------------------
         if (isZero)
         {
-            destination[charsWritten++] = '0';
+            // Bit structure: whole '0' then (optional) fractional zeros
+            int zerosToWrite = numberOfGuardBitsToInclude - Scale; // if > 0 we show '.' and that many '0's
+            int baseBitChars = 1 + (zerosToWrite > 0 ? zerosToWrite : 0);
 
-            // Add decimal point and trailing zeros if scale is negative
-            int zerosToWrite = numberOfGuardBitsToInclude - Scale;
-            if (zerosToWrite > 0)
+            // Separator index among bit chars (before any extra-leading zeros)
+            int sepIndex = int.MaxValue;
+            int extraLeadingZeros = 0;
+            if (sepNeeded)
             {
-                destination[charsWritten++] = '.';
-                for (int i = 0; i < zerosToWrite; i++)
-                {
-                    destination[charsWritten++] = '0';
-                }
+                int idx = baseBitChars - numberOfGuardBitsToInclude;
+                if (idx <= 0) { extraLeadingZeros = 1 - idx; idx = 1; baseBitChars += extraLeadingZeros; }
+                sepIndex = idx;
             }
+
+            // Dot index among bit chars (between whole and frac)
+            int dotIndex = (zerosToWrite > 0) ? (extraLeadingZeros + 1) : int.MaxValue;
+
+            // Write extra leading zeros (for the separator only)
+            for (int i = 0; i < extraLeadingZeros; i++)
+            {
+                MaybeWriteSeparator(sepIndex, destination, ref charsWritten);
+                destination[charsWritten++] = '0'; bitIndex++;
+            }
+
+            // Whole '0'
+            MaybeWriteSeparator(sepIndex, destination, ref charsWritten);
+            destination[charsWritten++] = '0'; bitIndex++;
+
+            // Dot (if any)
+            if (dotIndex != int.MaxValue && bitIndex == dotIndex) destination[charsWritten++] = '.';
+
+            // Fractional zeros
+            for (int i = 0; i < (zerosToWrite > 0 ? zerosToWrite : 0); i++)
+            {
+                MaybeWriteSeparator(sepIndex, destination, ref charsWritten);
+                destination[charsWritten++] = '0'; bitIndex++;
+            }
+
+            // Trailing separator (if at end)
+            if (sepNeeded && !sepWritten && bitIndex == sepIndex) { destination[charsWritten++] = '|'; sepWritten = true; }
             return;
         }
 
-        // Work with absolute value
+        // NON-ZERO CASE ----------------------------------------------------------------
         var absMantissa = BigInteger.Abs(_mantissa);
 
-        int totalBits = _size;
-
-        // Key insight: Scale determines how bits are interpreted
-        // Scale = 0: Real bits are whole, guard bits are fractional
-        // Scale > 0: More bits become whole (shift left)
-        // Scale < 0: Some real bits become fractional (shift right)
-
-        // Calculate which bits are whole vs fractional
-        int wholeBitCount = totalBits + (Scale - GuardBits);
-
-        // Determine output range based on guard bit inclusion
-        int outputStart = totalBits - 1;
-        int outputEnd = GuardBits - numberOfGuardBitsToInclude;
-
-        // Check if we have any bits to output
+        // If nothing to output from mantissa window, print a single '0' (per original)
         if (outputStart < outputEnd)
         {
-            destination[charsWritten++] = '0';
+            int baseBitChars = 1;
+            int sepIndex = int.MaxValue;
+            int extraLeadingZeros = 0;
+            if (sepNeeded)
+            {
+                int idx = baseBitChars - numberOfGuardBitsToInclude;
+                if (idx <= 0) { extraLeadingZeros = 1 - idx; idx = 1; baseBitChars += extraLeadingZeros; }
+                sepIndex = idx;
+            }
+
+            for (int i = 0; i < extraLeadingZeros; i++)
+            {
+                MaybeWriteSeparator(sepIndex, destination, ref charsWritten);
+                destination[charsWritten++] = '0'; bitIndex++;
+            }
+
+            MaybeWriteSeparator(sepIndex, destination, ref charsWritten);
+            destination[charsWritten++] = '0'; bitIndex++;
+
+            if (sepNeeded && !sepWritten && bitIndex == sepIndex) { destination[charsWritten++] = '|'; sepWritten = true; }
             return;
         }
 
-        // Handle sign
-        if (_mantissa.Sign < 0)
-        {
-            destination[charsWritten++] = '-';
-        }
+        // Compute whole/frac layout
+        int wholeBitCount = totalBits + (Scale - GuardBits);
 
-        // Determine if we need a decimal point
-        bool hasFracPart = wholeBitCount < totalBits && outputEnd < totalBits - wholeBitCount;
-
-        // Write whole part
+        // Whole part counts
+        int wholeCount = 0;         // number of whole-part bits (not including trailingZeros when > totalBits)
+        int trailingZeros = 0;
         if (wholeBitCount <= 0)
         {
-            destination[charsWritten++] = '0';
+            wholeCount = 1;         // single '0' whole part
         }
         else
         {
-            // Output whole bits
-            int wholeStart = outputStart;
-            //int wholeEnd = Math.Max(outputEnd, totalBits - wholeBitCount);
-            int wholeEnd = Math.Max(0, totalBits - wholeBitCount);
+            int wholeEnd = Math.Max(0, totalBits - wholeBitCount);     // inclusive
+            wholeCount = Math.Max(0, outputStart - wholeEnd + 1);
+            if (wholeBitCount > totalBits) trailingZeros = (wholeBitCount - totalBits);
+            wholeCount += trailingZeros;
+        }
 
-            if (wholeStart >= wholeEnd)
+        bool hasFracPart = (wholeBitCount < totalBits) && (outputEnd < totalBits - wholeBitCount);
+
+        // Fraction counts
+        int fracLeadZeros = hasFracPart && (wholeBitCount < 0) ? -wholeBitCount : 0;
+        int fracCount = 0;
+        if (hasFracPart)
+        {
+            int fracStart = Math.Min(outputStart, totalBits - wholeBitCount - 1);
+            int fracEnd = outputEnd;
+            if (fracStart >= fracEnd) fracCount = fracStart - fracEnd + 1;
+        }
+
+        // Total bit chars (no '.' yet, no extra-leading)
+        int baseBitChars2 = wholeCount + (hasFracPart ? (fracLeadZeros + fracCount) : 0);
+
+        // Separator index & extra leading zeros
+        int sepIndexNZ = int.MaxValue;
+        int extraLeadingZerosNZ = 0;
+        if (sepNeeded)
+        {
+            int idx = baseBitChars2 - numberOfGuardBitsToInclude;
+            if (idx <= 0) { extraLeadingZerosNZ = 1 - idx; idx = 1; baseBitChars2 += extraLeadingZerosNZ; }
+            sepIndexNZ = idx;
+        }
+
+        // Dot index among bit chars
+        int dotIndexNZ = hasFracPart ? (extraLeadingZerosNZ + wholeCount) : int.MaxValue;
+
+        // --- Stream write ---
+
+        // Extra leading zeros (separator-only)
+        for (int i = 0; i < extraLeadingZerosNZ; i++)
+        {
+            MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+            destination[charsWritten++] = '0'; bitIndex++;
+        }
+
+        // WHOLE PART
+        if (wholeBitCount <= 0)
+        {
+            MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+            destination[charsWritten++] = '0'; bitIndex++;
+        }
+        else
+        {
+            // Mantissa-sourced whole bits
+            int wholeEndMant = Math.Max(0, totalBits - wholeBitCount);     // inclusive
+            for (int pos = outputStart; pos >= wholeEndMant; pos--)
             {
-                for (int pos = wholeStart; pos >= wholeEnd; pos--)
-                {
-                    destination[charsWritten++] = GetBit(absMantissa, pos);
-                }
+                MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+                destination[charsWritten++] = GetBit(absMantissa, pos);
+                bitIndex++;
             }
 
-            // Add trailing zeros if scale extends beyond total bits
-            if (wholeBitCount > totalBits)
+            // Trailing zeros when wholeBitCount > totalBits
+            for (int i = 0; i < trailingZeros; i++)
             {
-                int trailingZeros = wholeBitCount - totalBits;
-                for (int i = 0; i < trailingZeros; i++)
-                {
-                    destination[charsWritten++] = '0';
-                }
+                MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+                destination[charsWritten++] = '0'; bitIndex++;
             }
         }
 
-        // Write fractional part
+        // If separator sits right before radix, place it now
+        if (sepNeeded && !sepWritten && bitIndex == sepIndexNZ)
+        {
+            destination[charsWritten++] = '|';
+            sepWritten = true;
+        }
+
+        // FRACTION
         if (hasFracPart)
         {
-            destination[charsWritten++] = '.';
+            // Radix point
+            if (dotIndexNZ != int.MaxValue && bitIndex == dotIndexNZ) destination[charsWritten++] = '.';
 
-            // Add leading zeros if needed
-            if (wholeBitCount < 0)
+            // Leading fractional zeros
+            for (int i = 0; i < fracLeadZeros; i++)
             {
-                int leadingZeros = -wholeBitCount;
-                for (int i = 0; i < leadingZeros; i++)
-                {
-                    destination[charsWritten++] = '0';
-                }
+                MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+                destination[charsWritten++] = '0'; bitIndex++;
             }
 
-            // Output fractional bits
-            int fracStart = Math.Min(outputStart, totalBits - wholeBitCount - 1);
-            int fracEnd = outputEnd;
-
-            if (fracStart >= fracEnd)
+            // Mantissa-sourced fractional bits
+            int fracStartPos = Math.Min(outputStart, totalBits - wholeBitCount - 1);
+            int fracEndPos = outputEnd;
+            for (int pos = fracStartPos; pos >= fracEndPos; pos--)
             {
-                for (int pos = fracStart; pos >= fracEnd; pos--)
-                {
-                    destination[charsWritten++] = GetBit(absMantissa, pos);
-                }
+                MaybeWriteSeparator(sepIndexNZ, destination, ref charsWritten);
+                destination[charsWritten++] = GetBit(absMantissa, pos);
+                bitIndex++;
             }
+        }
+
+        // Trailing separator if it belongs at the very end
+        if (sepNeeded && !sepWritten && bitIndex == sepIndexNZ)
+        {
+            destination[charsWritten++] = '|';
+            sepWritten = true;
         }
     }
 
@@ -292,61 +399,123 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return ((value >> bitPosition) & 1) == 1 ? '1' : '0';
     }
 
-    public string ToBinaryString(bool includeGuardBits = false)
+    public string ToBinaryString(bool includeGuardBits = false, bool showPrecisionSeparator = false)
     {
-        int guardBitsToInclude = includeGuardBits ? 32 : 0;
-        int bufferSize = CalculateBinaryStringLength(guardBitsToInclude);
-        Span<char> buffer = stackalloc char[bufferSize];
-        WriteBinaryToSpan(buffer, out int charsWritten, guardBitsToInclude);
-        return new string(buffer[..charsWritten]);
+        return ToBinaryString(includeGuardBits ? 32 : 0, showPrecisionSeparator);
     }
 
-    public string ToBinaryString(int numberOfGuardBitsToInclude)
+    public string ToBinaryString(int numberOfGuardBitsToInclude, bool showPrecisionSeparator = false)
     {
+        if (numberOfGuardBitsToInclude <= 0) showPrecisionSeparator = false;
         numberOfGuardBitsToInclude = Math.Clamp(numberOfGuardBitsToInclude, 0, 32);
-        int bufferSize = CalculateBinaryStringLength(numberOfGuardBitsToInclude);
+        int bufferSize = CalculateBinaryStringLength(numberOfGuardBitsToInclude, showPrecisionSeparator);
         Span<char> buffer = stackalloc char[bufferSize];
-        WriteBinaryToSpan(buffer, out int charsWritten, numberOfGuardBitsToInclude);
+        WriteBinaryToSpan(buffer, out int charsWritten, numberOfGuardBitsToInclude, showPrecisionSeparator);
         return new string(buffer[..charsWritten]);
     }
 
     /// <summary>
     /// Computes the total number of characters required for the binary representation.
     /// </summary>
-    private int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0)
+    private int CalculateBinaryStringLength(int numberOfGuardBitsToOutput = 0, bool showPrecisionSeparator = false)
     {
-        numberOfGuardBitsToOutput = int.Clamp(numberOfGuardBitsToOutput, 0, GuardBits);
-        //numberOfGuardBitsToOutput = int.Clamp(Scale - GuardBits, 0, 32);
-        int guardBitsToHide = GuardBits - numberOfGuardBitsToOutput;
+        numberOfGuardBitsToOutput = Math.Clamp(numberOfGuardBitsToOutput, 0, GuardBits);
 
-        int size = 0;
-        size += (_mantissa.Sign < 0) ? 1 : 0;    // add one if a leading '-' sign (-1.1)
-        size += 1;                               // add one in case rollover (only needed if rounding is enabled)
+        int totalBits = _size;                           // total stored bits
+        int outputStart = totalBits - 1;                   // inclusive
+        int outputEnd = GuardBits - numberOfGuardBitsToOutput; // inclusive
 
-        //if (((_size == 0) || (_size + Scale < guardBitsToHide))) //is zero
-        if ((_size == 0) || (_size <= 32 && numberOfGuardBitsToOutput == 0)) //is zero
-        {
-            //size += Math.Max(0, numberOfGuardBitsToOutput - Scale) + 1; //zerosToWrite and +1 for point
-            size += Math.Max(0, numberOfGuardBitsToOutput - Scale) + 1; //+1 for point
+        // "Zero" per writer semantics: nothing above the kept guard range
+        bool isZero = (totalBits == 0) || (totalBits <= (GuardBits - numberOfGuardBitsToOutput));
 
-            //size += Math.Max(0,-Scale) + 1; //+1 for point
-            if (Scale < 0) size++; //+1 for leading zero in '0.'
-        }
-        else if ((Scale- numberOfGuardBitsToOutput) >= 0)  // is Integer  (maybe subtract "GuardBits-numberOfGuardBitsToOutput)?????
+        int signChars = (!isZero && _mantissa.Sign < 0) ? 1 : 0;
+
+        int bitChars = 0;   // count of '0'/'1' characters only (no '.' and no sign)
+        int dotChars = 0;   // 1 if a radix point will be written, else 0
+
+        if (isZero)
         {
-            size += _size - (GuardBits - numberOfGuardBitsToOutput); //the bits themselves
-            size += Scale - numberOfGuardBitsToOutput; // trailing bits that are either GuardBits in the whole number range and/or 0 bits when GuardBits are exhausted. 
+            // Writer prints: "0" and, if needed, ".000..." where
+            // zerosToWrite = numberOfGuardBitsToOutput - Scale
+            bitChars = 1;
+            int zerosToWrite = numberOfGuardBitsToOutput - Scale;
+            if (zerosToWrite > 0)
+            {
+                dotChars = 1;
+                bitChars += zerosToWrite;
+            }
         }
-        else if (BinaryExponent <= 0) // numbers in the form: 0.1
+        else
         {
-            size += _size - guardBitsToHide - BinaryExponent + 2;   // leading zeros, 0.00000 and +2 for leading '0.'
+            // If nothing from mantissa falls in the output window, writer prints just "0"
+            if (outputStart < outputEnd)
+            {
+                bitChars = 1;
+                // no radix
+            }
+            else
+            {
+                // Partition by scale: how many bits are whole vs fractional conceptually
+                int wholeBitCount = totalBits + (Scale - GuardBits);
+
+                // Whole part
+                if (wholeBitCount <= 0)
+                {
+                    // Writer prints a single '0' for the whole part
+                    bitChars += 1;
+                }
+                else
+                {
+                    // Bits coming from mantissa for whole part
+                    int wholeEnd = Math.Max(0, totalBits - wholeBitCount); // inclusive
+                    int wholeCount = Math.Max(0, outputStart - wholeEnd + 1);
+                    bitChars += wholeCount;
+
+                    // Trailing zeros if wholeBitCount exceeds totalBits
+                    if (wholeBitCount > totalBits)
+                        bitChars += (wholeBitCount - totalBits);
+                }
+
+                // Fractional part?
+                bool hasFracPart = (wholeBitCount < totalBits) && (outputEnd < totalBits - wholeBitCount);
+                if (hasFracPart)
+                {
+                    dotChars = 1;
+
+                    // Leading fractional zeros if scale pushes radix left of all real bits
+                    if (wholeBitCount < 0)
+                        bitChars += (-wholeBitCount);
+
+                    // Mantissa-sourced fractional bits
+                    int fracStart = Math.Min(outputStart, totalBits - wholeBitCount - 1); // inclusive
+                    int fracEnd = outputEnd;                                            // inclusive
+                    int fracCount = Math.Max(0, fracStart - fracEnd + 1);
+                    bitChars += fracCount;
+                }
+            }
         }
-        else  // numbers in the form: 1.1
+
+        // Guard-bit separator '|' placement (ignoring the radix point):
+        // It is inserted so exactly numberOfGuardBitsToOutput bit characters lie to its right.
+        // If that puts it before all digits, we prepend enough leading zeros so there is
+        // at least one digit before the separator.
+        int extraLeadingZeros = 0;
+        if (showPrecisionSeparator)
         {
-            size += _size - (GuardBits - numberOfGuardBitsToOutput) + 1; // +1 for '.'
+            int sepIndex = bitChars - numberOfGuardBitsToOutput; // position BEFORE which '|' goes
+            if (sepIndex <= 0)
+            {
+                extraLeadingZeros = 1 - sepIndex; // make sepIndex == 1
+                bitChars += extraLeadingZeros;
+            }
         }
-        return size;
+
+        int separatorChars = showPrecisionSeparator ? 1 : 0;
+
+        // Total length = sign + digits (including any extra leading zeros) + optional '.' + optional '|'
+        return signChars + bitChars + dotChars + separatorChars;
     }
+
 
 
     /// <summary>
