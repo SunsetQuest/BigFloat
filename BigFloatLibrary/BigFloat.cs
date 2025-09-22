@@ -371,20 +371,101 @@ public readonly partial struct BigFloat
     ///  - it should not round-up based on GuardBits
     /// -  Ceiling() would not round-up and Floor() would not round-down.
     /// </summary>
-    public bool IsInteger  //v6 - check to see if all the bits between the point and the 16 most significant guard bits are uniform. (111.??|?)
+    public bool IsInteger  //v8 - check to see if all the bits between the point and the 16 most significant guard bits are uniform. (111.??|?)
     {
-        get
-        {
-            const int topBitsToCheck = 16;
-            if (Scale >= topBitsToCheck)
-            {
-                // The radix point is at least 16 bits into the guard area so it is very inconclusive, however these cases are considered integers.
-                return true;
-            }
+        get => Ceiling() == Floor();
+
+        //get
+        //{
+        //    if (_mantissa.IsZero) return true;
+
+        //    int fracInWorking = (Scale < 0) ? -Scale : 0;
+        //    if (fracInWorking == 0) return true;
+
+        //    int availableAboveGuard = _size - GuardBits;
+        //    if (availableAboveGuard <= 0) return true;
+
+        //    int k = Math.Min(fracInWorking, availableAboveGuard);
+
+        //    var mag = BigInteger.Abs(_mantissa);
+        //    var workingBelowPoint = mag >> GuardBits;
+        //    var mask = (BigInteger.One << k) - 1;
+        //    return (workingBelowPoint & mask) == 0;
+        //}
+
+        //get
+        //{
+        //    if (_mantissa.IsZero) return true;
+
+        //    int s = GuardBits - Scale;          // # fractional bits below the ones place
+        //    if (s <= 0) return true;            // no fractional field at this scale
+
+        //    // Entirely fractional (|x| < 1): only zero is integer.
+        //    if (s >= _size) return false;
+
+        //    var mag = BigInteger.Abs(_mantissa);
+
+        //    // Working-precision fractional bits inside the window?
+        //    bool hasWorkingFraction = false;
+        //    if (Scale < 0)
+        //    {
+        //        int availableAboveGuard = _size - GuardBits;
+        //        if (availableAboveGuard > 0)
+        //        {
+        //            int k = Math.Min(-Scale, availableAboveGuard);
+        //            if (k > 0)
+        //            {
+        //                var workingBelowPoint = mag >> GuardBits;
+        //                var mask = (BigInteger.One << k) - 1;
+        //                hasWorkingFraction = (workingBelowPoint & mask) != 0;
+        //            }
+        //        }
+        //    }
+        //    if (hasWorkingFraction) return false;
+
+        //    // Top fractional bit (MSB of the whole fractional field) acts as a tie-breaker.
+        //    bool topFractionBit = ((mag >> (s - 1)) & BigInteger.One) == BigInteger.One;
+        //    return !topFractionBit;
+        //}
+
+        //get // v7 — integer after rounding to working precision (guard bits only affect rounding), ChatGPT5Thinking 
+        //{
+        //    // Fractional bits that lie INSIDE the working-precision window.
+        //    // Scale < 0 means the binary point is left of the guard boundary,
+        //    // so -Scale bits of fraction live in the working window.
+        //    int fracInWorking = (Scale < 0) ? -Scale : 0;
+
+        //    // If the binary point is at or to the right of the guard boundary,
+        //    // there are no working-precision fractional bits. Rounds to an integer.
+        //    if (fracInWorking == 0) return true;
+
+        //    // If the mantissa doesn't even extend above the guard field, nothing fractional exists there.
+        //    int availableAboveGuard = _size - GuardBits;
+        //    if (availableAboveGuard <= 0) return true;
+
+        //    // Only bits that actually exist can be nonzero.
+        //    int k = Math.Min(fracInWorking, availableAboveGuard);
+
+        //    // Test the k bits immediately above the guard field.
+        //    // Any 1 here means a nonzero fractional part that survives at working precision.
+        //    var mag = BigInteger.Abs(_mantissa);
+        //    var workingBelowPoint = mag >> GuardBits;           // align bit GuardBits to bit 0
+        //    var mask = (BigInteger.One << k) - 1; // low k bits
+        //    return (workingBelowPoint & mask) == 0;
+        //}
+
+        //get
+        //{
+        //    const int topBitsToCheck = 16;
+        //    if (Scale >= topBitsToCheck)
+        //    {
+        //        // The radix point is at least 16 bits into the guard area so it is very inconclusive, however these cases are considered integers.
+        //        return true;
+        //    }
             
-            int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
-            return BitsAreUniformInRange(_mantissa, GuardBits - topBitsToCheck, end);
-        }
+        //    int end = GuardBits + Math.Min(-Scale, topBitsToCheck + _size);
+        //    return BitsAreUniformInRange(_mantissa, GuardBits - topBitsToCheck, end);
+        //}
     }
 
     /// <summary>
