@@ -527,6 +527,76 @@ public readonly partial struct BigFloat
         return newSize - (int)BigInteger.Log2(BigInteger.Abs(temp)) - 1;
     }
 
+    ///////////////////////// Min / Max /////////////////////////
+
+    /// <summary>
+    /// Returns the smaller of two <see cref="BigFloat"/> values.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Min(in BigFloat x, in BigFloat y)
+        => SelectMinMax(in x, in y, pickMin: true);
+
+    /// <summary>
+    /// Returns the larger of two <see cref="BigFloat"/> values.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Max(in BigFloat x, in BigFloat y)
+        => SelectMinMax(in x, in y, pickMin: false);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat SelectMinMax(in BigFloat x, in BigFloat y, bool pickMin)
+    {
+        if (x.Scale == y.Scale && x._size == y._size && x._mantissa == y._mantissa)
+        {
+            return x;
+        }
+
+        if (x._size > GuardBits && y._size > GuardBits)
+        {
+            int sx = x._mantissa.Sign;
+            int sy = y._mantissa.Sign;
+            if (sx != sy)
+            {
+                if (pickMin)
+                {
+                    return sx < sy ? x : y;
+                }
+
+                return sx > sy ? x : y;
+            }
+        }
+
+        int cmp = Compare(in x, in y);
+
+        if (cmp == 0)
+        {
+            return TieBreakEqual(in x, in y);
+        }
+
+        if (pickMin)
+        {
+            return cmp < 0 ? x : y;
+        }
+
+        return cmp > 0 ? x : y;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat TieBreakEqual(in BigFloat x, in BigFloat y)
+    {
+        if (x._size != y._size)
+        {
+            return x._size >= y._size ? x : y;
+        }
+
+        if (x.Scale != y.Scale)
+        {
+            return x.Scale <= y.Scale ? x : y;
+        }
+
+        return x;
+    }
+
     ///////////////////////// Operator Overloads: BigFloat <--> BigFloat /////////////////////////
 
     /// <summary>Returns true if the left side BigFloat is equal to the right side BigFloat.</summary>
