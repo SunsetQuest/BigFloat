@@ -411,6 +411,15 @@ public readonly partial struct BigFloat
         }
     }
 
+    // future: add ", bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
+    public static BigFloat ParseHex(string binaryInput, int binaryScaler = 0, int includedGuardBits = 0)
+    {
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(binaryInput);
+
+        return !TryParseHex(binaryInput.AsSpan(), out BigFloat result, binaryScaler, includedGuardBits)
+            ? throw new ArgumentException("Unable to convert the hexadecimal string to a BigFloat.", binaryInput)
+            : result;
+    }
 
     /// <summary>
     /// Parses a hex string to a BigFloat. It supports a binaryScaler (base-2 point shifting) and negative numbers. 
