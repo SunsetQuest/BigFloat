@@ -958,22 +958,22 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Rounds to nearest integer, preserving precision.
     /// </summary>
-    public BigFloat RoundToInteger()
+    public static BigFloat Round(BigFloat x)
     {
-        int bitsToClear = GuardBits - Scale;
+        int bitsToClear = GuardBits - x.Scale;
 
-        if (bitsToClear <= 0) return this;
-        if (bitsToClear > _size)
-            return ZeroWithAccuracy(Accuracy);
-        if (bitsToClear == _size)
-            return OneWithAccuracy(Accuracy);
+        if (bitsToClear <= 0) return x;
+        if (bitsToClear > x._size)
+            return ZeroWithAccuracy(x.Accuracy);
+        if (bitsToClear == x._size)
+            return OneWithAccuracy(x.Accuracy);
 
         //BigInteger result= RightShiftWithRound(Mantissa, bitsToClear) << bitsToClear;
         //return new BigFloat(result, Scale, _size);
 
         //// below keeps the same size (it does not rollover to 1 bit larger)
-        (BigInteger result, bool carry) = RoundingRightShiftWithCarry(_mantissa, bitsToClear);
-        return new BigFloat(result << bitsToClear, Scale + (carry ? 1 : 0), _size);
+        (BigInteger result, bool carry) = RoundingRightShiftWithCarry(x._mantissa, bitsToClear);
+        return new BigFloat(result << bitsToClear, x.Scale + (carry ? 1 : 0), x._size);
     }
 
     /// <summary>
