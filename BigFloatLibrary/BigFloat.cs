@@ -125,7 +125,7 @@ public readonly partial struct BigFloat
     /// Returns the default zero with with a zero size, precision, scale, and accuracy.
     /// </summary>
     [Obsolete("Use the integer value 0 instead or ZeroWithAccuracy.")]
-    public static BigFloat Zero => new(0, 0, 0);
+    public static BigFloat Zero => new(BigInteger.Zero, 0, 0);
 
     /// <summary>
     /// Returns a '1' with only 1 bit of precision. (1 << GuardBits)
@@ -143,7 +143,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ZeroWithAccuracy(int accuracy)
     {
-        return new BigFloat(0, -accuracy, 0);
+        return new BigFloat(BigInteger.Zero, -accuracy, 0);
     }
 
     /// <summary>
