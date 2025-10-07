@@ -198,6 +198,48 @@ public readonly partial struct BigFloat
         return new BigFloat(newVal, x.Scale, size);
     }
 
+    /// <summary>
+    /// Returns true if this <see cref="BigFloat"/> can be represented as a
+    /// normalized IEEE 754 double-precision value without exponent overflow
+    /// or underflow. Precision loss due to rounding is ignored.
+    /// </summary>
+    public bool FitsInADouble
+        => (BinaryExponent + 1023) is (>= 1 and <= 2046);
+
+    /// <summary>
+    /// Returns true if this <see cref="BigFloat"/> can be represented as an
+    /// IEEE 754 double-precision value, allowing both normalized and
+    /// denormalized (subnormal) forms. Precision loss due to rounding is ignored. 
+    /// </summary>
+    public bool FitsInADoubleWithDenormalization
+        => (BinaryExponent + 1023) is (>= -51 and <= 2046);
+
+    /// <summary>
+    /// Returns true if this <see cref="BigFloat"/> can be represented as a
+    /// normalized IEEE 754 single-precision (float) value without exponent
+    /// overflow or underflow. Precision loss due to rounding is ignored.
+    /// </summary>
+    public bool FitsInAFloat
+        => (BinaryExponent + 127) is (>= 1 and <= 254);
+
+    /// <summary>
+    /// Returns true if this <see cref="BigFloat"/> can be represented as an
+    /// IEEE 754 single-precision (float) value, allowing both normalized and
+    /// denormalized (subnormal) forms. Precision loss due to rounding is ignored.
+    /// </summary>
+    public bool FitsInAFloatWithDenormalization
+        => (BinaryExponent + 127) is (>= -22 and <= 254);
+
+
+    /// <summary>
+    /// Returns true if this <see cref="BigFloat"/> can be represented as an
+    /// IEEE 754 base-10 decimal value. Precision loss due to rounding is ignored.
+    /// </summary>
+    public bool FitsInADecimal
+        => IsZero
+           || ((_size - GuardBits) <= 96
+               && BinaryExponent is >= -95 and <= 96);
+
 
     /////////////////////////// Implicit CASTS ///////////////////////////
 

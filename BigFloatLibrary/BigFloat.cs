@@ -1756,22 +1756,6 @@ public readonly partial struct BigFloat
         return RoundingRightShift(value._mantissa, GuardBits - value.Scale);
     }
 
-    /// <summary>Checks to see if a BigFloat's value would fit into a normalized double without the exponent overflowing or underflowing. 
-    /// Since BigFloats can be any precision and doubles have fixed 53-bits precision, precision is ignored.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool FitsInADouble(bool allowDenormalized = false)
-    {
-        if (allowDenormalized)
-        {
-            // Denormalized values are allowed, so we check the exponent range for denormalized numbers
-            return (BinaryExponent + 1023) is (>= -51 and <= 2046);
-        }
-        // Normalized values only, so we check the exponent range for normalized numbers
-        return (BinaryExponent + 1023) is (>= 1 and <= 2046);
-
-        // future: supports denormalized values
-    }
-
     /// <summary>
     /// Checks whether this BigFloat struct holds a valid internal state.
     /// Returns true if valid; otherwise false.
