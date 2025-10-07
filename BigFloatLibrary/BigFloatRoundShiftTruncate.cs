@@ -159,6 +159,9 @@ public readonly partial struct BigFloat
             + new BigFloat(BigInteger.One << GuardBits, 0, GuardBits + 1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Ceiling(BigFloat x) => x.Ceiling();
+
     /// <summary>
     /// Canonical Ceiling that preserves Scale/accuracy via identity.
     /// Ceiling toward +∞:
@@ -180,7 +183,6 @@ public readonly partial struct BigFloat
         BigFloat integerPart = TruncateToIntegerKeepingAccuracy(); // preserves precision/accuracy
         return IsNegative ? integerPart : integerPart + 1;
     }
-
 
     ///// <summary>
     ///// Canonical Ceiling that preserves Scale/accuracy via identity.
@@ -259,7 +261,8 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat Floor() => -(-this).Ceiling();
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Floor(BigFloat x) => -(-x).Ceiling();
 
     /// <summary>
     /// Returns the fractional part of the BigFloat.
