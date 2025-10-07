@@ -977,6 +977,19 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Rounds to nearest integer, preserving precision.
+    /// </summary> 
+    public BigFloat Round() => Round(this);
+
+    /// <summary>
+    /// Rounds to nearest integer, preserving precision.
+    /// </summary>
+    [Obsolete("Use BigFloat.Round(BigFloat x) myBigFloat.Round()")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static BigFloat RoundToInteger(BigFloat x) => Round(x);
+
+
+    /// <summary>
     /// Truncates towards zero, preserving precision.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1004,6 +1017,9 @@ public readonly partial struct BigFloat
         BigInteger newMantissa = (_mantissa.Sign >= 0) ? _mantissa >> bitsToClear : -(-_mantissa >> bitsToClear);
         return new BigFloat(newMantissa << GuardBits, Scale + bitsToClear- GuardBits, _size - bitsToClear + GuardBits);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Truncate(BigFloat x) => x.Truncate();
 
     /// <summary>
     /// Adjust the scale of a value
