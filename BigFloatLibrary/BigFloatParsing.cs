@@ -677,8 +677,7 @@ public readonly partial struct BigFloat
     /// <returns>A BigFloat result of the input binary string.</returns>
     public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue)
     {
-        ArgumentException.ThrowIfNullOrEmpty(binaryInput); // .Net 7 or later
-        //ArgumentNullException.ThrowIfNullOrWhiteSpace(input); // .Net 8 or later
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(binaryInput);
 
         return !TryParseBinary(binaryInput.AsSpan(), out BigFloat result, binaryScaler, forceSign, includedGuardBits)
             ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", binaryInput)
