@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 
 namespace BigFloatLibrary;
 
@@ -37,67 +38,267 @@ public readonly partial struct BigFloat
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
-    public BigFloat(uint value, int scale = 0)
+    public BigFloat(sbyte value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
     {
-        _mantissa = (BigInteger)value << GuardBits;
-        Scale = scale;
-        _size = value == 0 ? 0 : BitOperations.Log2(value) + 1 + GuardBits;
-        AssertValid();
-    }
-
-    public BigFloat(char integerPart, int binaryScaler = 0)
-    {
-        _mantissa = (BigInteger)integerPart << GuardBits;
-        Scale = binaryScaler;
-
-        // Special handling required for int.MinValue
-        _size = integerPart >= 0
-            ? integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + GuardBits
-            : integerPart != char.MinValue
-                ? integerPart == 0 ? 0 : BitOperations.Log2((byte)-integerPart) + 1 + GuardBits
-                : 7 + GuardBits;
-
-        AssertValid();
-    }
-
-    public BigFloat(byte integerPart, int binaryScaler = 0)
-    {
-        _mantissa = (BigInteger)integerPart << GuardBits;
-        Scale = binaryScaler;
-        _size = integerPart == 0 ? 0 : BitOperations.Log2(integerPart) + 1 + GuardBits;
-        AssertValid();
-    }
-
-    public BigFloat(Int128 integerPart, int binaryScaler = 0)
-    {
-        _mantissa = (BigInteger)integerPart << GuardBits;
-        Scale = binaryScaler;
-
-        _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + GuardBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + GuardBits : 0;
-
-        AssertValid();
-    }
-
-    public BigFloat(Int128 integerPart, int binaryScaler, bool valueIncludesGuardBits)
-    {
-        _mantissa = (BigInteger)integerPart << GuardBits;
-        Scale = binaryScaler;
-
-        _size = integerPart > Int128.Zero
-            ? (int)Int128.Log2(integerPart) + 1 + GuardBits
-            : integerPart < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(integerPart - 1)) + GuardBits : 0;
-
-        AssertValid();
-
         int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
-        // we need Abs() so items that are a negative power of 2 have the same size as the positive version.
-        _size = (int)((BigInteger)(integerPart >= 0 ? integerPart : -integerPart)).GetBitLength() + applyGuardBits;
-        _mantissa = integerPart << applyGuardBits;
-        Scale = binaryScaler; // DataBits of zero can have scale
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size =  (value == 0) ? 0 : (int)sbyte.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
+
+    public BigFloat(byte value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = value == 0 ? 0 : byte.Log2(value) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+    public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = (value == 0) ? 0 : (int)short.Log2(value) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+    public BigFloat(ushort value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = (value == 0) ? 0 : (int)ushort.Log2(value) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+    public BigFloat(uint value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = (value == 0) ? 0 : (int)uint.Log2(value) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+    public BigFloat(Int128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = value > Int128.Zero
+            ? (int)Int128.Log2(value) + 1 + applyGuardBits
+            : value < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
+        AssertValid();
+    }
+
+    public BigFloat(UInt128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    {
+        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler;
+        _size = value == 0 ? 0 : (int)UInt128.Log2(value) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+    /////////// DELETE BELOW //////
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat(int integerPart, int binaryScaler/* = 0,*/, int addedBinaryPrecision/* = 32*/) : this((long)integerPart, binaryScaler, addedBinaryPrecision) { }
+
+    public BigFloat(long value, int binaryScaler/* = 0*/, int addedBinaryPrecision/* = 64*/)
+    {
+        _mantissa = (BigInteger)value << (GuardBits + addedBinaryPrecision);
+
+        // Optimized bit length calculation using hardware intrinsics when available
+        _size = value switch
+        {
+            > 0 => GetBitLength((ulong)value) + GuardBits + addedBinaryPrecision,
+            < 0 => GetBitLength(~((ulong)value - 1)) + GuardBits + addedBinaryPrecision,
+            _ => 0,
+        };
+
+        Scale = binaryScaler - addedBinaryPrecision;
+        AssertValid();
+    }
+
+    /////////// DELETE ABOVE //////
+
+
+    //todo: add addedBinaryPrecision to all constructors
+
+
+    ///////////// todo: MOVE BACK to BigFloat.cs ////////////////////////////////////////
+    /// <summary>
+    /// Constructs a BigFloat using its elemental parts. A starting <paramref name="value"/> on how may binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
+    /// </summary>
+    /// <param name="value">The integer part of the BigFloat that will have a <paramref name="binaryScaler"/> applied to it. </param>
+    /// <param name="binaryScaler">How much should the <paramref name="value"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="value"/>.</param>
+    /// <param name="valueIncludesGuardBits">if true, then the guard bits should be included in the integer part.</param>
+    public BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
+    {
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        _mantissa = value << applyGuardBits;
+        Scale = binaryScaler - addedBinaryPrecision;
+        _size = (int)BigInteger.Abs(_mantissa).GetBitLength();
+        AssertValid();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 32) : this((long)value, binaryScaler, valueIncludesGuardBits, addedBinaryPrecision) { }
+
+    public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 64)
+    {
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        _mantissa = (BigInteger)value << applyGuardBits;
+
+        // Optimized bit length calculation using hardware intrinsics when available
+        _size = value > Int128.Zero
+            ? (int)long.Log2(value) + 1 + applyGuardBits
+            : value < 0 ? 64 - (int)long.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
+        //_size = value switch {
+        //    > 0 => GetBitLength((ulong)value) + applyGuardBits,
+        //    < 0 => GetBitLength(~((ulong)value - 1)) + applyGuardBits,  
+        //    _ => 0  };
+
+        Scale = binaryScaler - addedBinaryPrecision;
+        AssertValid();
+    }
+
+    public BigFloat(ulong value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 64)
+    {
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler - addedBinaryPrecision;
+        _size = ((value == 0) ? 0 : (int)ulong.Log2(value) + 1 + applyGuardBits);
+        //_size = value == 0 ? 0 : (GetBitLength(value) + GuardBits + addedBinaryPrecision);
+        AssertValid();
+    }
+
+    // future: maybe change addedBinaryPrecision to binaryPrecision. Set default to 45(53-8)
+    // Note: changed the default 32(GuardBits) to 24 since double is not exact. There is no great solution to this but moving 8 bits of the mantissa into the GuardBit area is a good compromise. In the past we had zero mantissa bits stored in the GuardBit area and this created some issues.  If we move all 32 bits into the GuardBit area then we would just be left with 53-32 GuardBits= 21 bits. A balance of 8 bits was selected but it is best if the user selects the value.
+    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)
+    {
+        long bits = BitConverter.DoubleToInt64Bits(value);
+        long mantissa = bits & 0xfffffffffffffL;
+        int exp = (int)((bits >> 52) & 0x7ffL);
+
+        if (exp == 2047)  // 2047 represents inf or NAN
+        { //special values
+            if (double.IsNaN(value))
+            {
+                ThrowInvalidInitializationException("Value is NaN");
+            }
+            else if (double.IsInfinity(value))
+            {
+                ThrowInvalidInitializationException("Value is infinity");
+            }
+        }
+        else if (exp != 0)
+        {
+            mantissa |= 0x10000000000000L;
+            if (value < 0)
+            {
+                mantissa = -mantissa;
+            }
+            _mantissa = new BigInteger(mantissa) << addedBinaryPrecision;
+            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - addedBinaryPrecision;
+            _size = 53 + addedBinaryPrecision; //_size = BitOperations.Log2((ulong)Int);
+        }
+        else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
+        {
+            // 0.00000000000|00...0001 -> smallest value (Epsilon)  Int:1, Scale: Size:1
+            if (mantissa == 0)
+            {
+                _mantissa = 0;
+                Scale = binaryScaler + GuardBits - addedBinaryPrecision;
+                _size = 0;
+            }
+            else
+            {
+                int size = GetBitLength((ulong)mantissa);
+                if (value < 0)
+                {
+                    mantissa = -mantissa;
+                }
+                _mantissa = (new BigInteger(mantissa)) << addedBinaryPrecision;
+                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - addedBinaryPrecision;
+                _size = size + addedBinaryPrecision;
+            }
+        }
+
+        AssertValid();
+    }
+
+    public BigFloat(float value, int binaryScaler = 0)
+    {
+        int bits = BitConverter.SingleToInt32Bits(value);
+        int mantissa = bits & 0x007fffff;
+        int exp = (int)((bits >> 23) & 0xffL);
+
+        if (exp != 0)
+        {
+            if (exp == 255)
+            { //special values
+                if (float.IsNaN(value))
+                {
+                    ThrowInvalidInitializationException("Value is NaN");
+                }
+                else if (float.IsInfinity(value))
+                {
+                    ThrowInvalidInitializationException("Value is infinity");
+                }
+            }
+            // Add leading 1 bit
+            mantissa |= 0x800000;
+            if (value < 0)
+            {
+                mantissa = -mantissa;
+            }
+            _mantissa = new BigInteger(mantissa) << GuardBits;
+            Scale = exp - 127 - 23 + binaryScaler;
+            _size = 24 + GuardBits;
+        }
+        else // exp is 0 so this is a denormalized(Subnormal) float (leading "1" is "0" instead)
+        {
+            if (mantissa == 0)
+            {
+                _mantissa = 0;
+                Scale = binaryScaler;
+                _size = 0;
+            }
+            else
+            {
+                BigInteger mant = new(value >= 0 ? mantissa : -mantissa);
+                _mantissa = mant << GuardBits;
+                Scale = -126 - 23 + binaryScaler; //hack: 23 is a guess
+                _size = GuardBits - BitOperations.LeadingZeroCount((uint)mantissa) + GuardBits;
+            }
+        }
+
+        AssertValid();
+    }
+
+
+    /// <summary>
+    /// Bit length calculation using hardware intrinsics when available
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int GetBitLength(ulong value)
+    {
+        if (value == 0) return 0;
+
+        // Use hardware intrinsics for better performance when available
+        if (Lzcnt.X64.IsSupported)
+        {
+            return 64 - (int)Lzcnt.X64.LeadingZeroCount(value);
+        }
+
+        return BitOperations.Log2(value) + 1;
+    }
+
+    //////////////////////// end of move back bigfloat.cs /////////////////////////////////////////
 
     // === Canonical API (preferred) ===
     /// <summary>
@@ -182,12 +383,12 @@ public readonly partial struct BigFloat
         if (delta == mant.Sign)
         {
             if ((absNew & (absNew - BigInteger.One)).IsZero)
-                size ++;
+                size++;
         }
         else if (delta == -mant.Sign)
         {
             if ((BigInteger.Abs(mant) & (BigInteger.Abs(mant) - BigInteger.One)).IsZero)
-                size --;
+                size--;
         }
         else
         {
@@ -245,6 +446,11 @@ public readonly partial struct BigFloat
 
     /// <summary>Defines an implicit conversion of an 8-bit signed integer to a BigFloat.</summary>
     public static implicit operator BigFloat(sbyte value)
+    {
+        return new BigFloat(value);
+    }
+    /// <summary>Defines an implicit conversion of an 8-bit unsigned integer to a BigFloat.</summary>
+    public static implicit operator BigFloat(byte value)
     {
         return new BigFloat(value);
     }
