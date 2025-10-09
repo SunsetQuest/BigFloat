@@ -38,74 +38,89 @@ public readonly partial struct BigFloat
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
-    public BigFloat(sbyte value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(sbyte value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 7)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size =  (value == 0) ? 0 : (int)sbyte.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
-    public BigFloat(byte value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(byte value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 8)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = value == 0 ? 0 : byte.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
-    public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 15)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = (value == 0) ? 0 : (int)short.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
-    public BigFloat(ushort value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(ushort value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 16)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = (value == 0) ? 0 : (int)ushort.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
-    public BigFloat(uint value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(uint value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 32)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = (value == 0) ? 0 : (int)uint.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
-    public BigFloat(Int128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(Int128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 127)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = value > Int128.Zero
             ? (int)Int128.Log2(value) + 1 + applyGuardBits
             : value < Int128.Zero ? 128 - (int)Int128.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
         AssertValid();
     }
 
-    public BigFloat(UInt128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false)
+    public BigFloat(UInt128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 128)
     {
-        int applyGuardBits = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler;
+        Scale = binaryScaler - addedBinaryPrecision;
         _size = value == 0 ? 0 : (int)UInt128.Log2(value) + 1 + applyGuardBits;
         AssertValid();
     }
 
     /////////// DELETE BELOW //////
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //public BigFloat(int integerPart, int binaryScaler/* = 0,*/, int addedBinaryPrecision/* = 32*/) : this((long)integerPart, binaryScaler, addedBinaryPrecision) { }
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat(int integerPart, int binaryScaler/* = 0,*/, int addedBinaryPrecision/* = 32*/) : this((long)integerPart, binaryScaler, addedBinaryPrecision) { }
+    public BigFloat(int integerPart, int binaryScaler/* = 0,*/, int addedBinaryPrecision/* = 32*/)
+    {
+        //todo: this should be deleted
+        int applyGuardBits = GuardBits + addedBinaryPrecision;
+        _mantissa = (BigInteger)integerPart << applyGuardBits;
+        Scale = binaryScaler - addedBinaryPrecision;
+        _size = (integerPart == 0) ? 0 : int.Log2(integerPart) + 1 + applyGuardBits;
+        AssertValid();
+    }
+
+
+
 
     public BigFloat(long value, int binaryScaler/* = 0*/, int addedBinaryPrecision/* = 64*/)
     {
@@ -126,9 +141,6 @@ public readonly partial struct BigFloat
     /////////// DELETE ABOVE //////
 
 
-    //todo: add addedBinaryPrecision to all constructors
-
-
     ///////////// todo: MOVE BACK to BigFloat.cs ////////////////////////////////////////
     /// <summary>
     /// Constructs a BigFloat using its elemental parts. A starting <paramref name="value"/> on how may binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
@@ -145,10 +157,16 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 32) : this((long)value, binaryScaler, valueIncludesGuardBits, addedBinaryPrecision) { }
+    public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 31)
+    {
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        _mantissa = (BigInteger)value << applyGuardBits;
+        Scale = binaryScaler - addedBinaryPrecision;
+        _size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
+        AssertValid();
+    }
 
-    public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 64)
+    public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 63)
     {
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
@@ -157,10 +175,16 @@ public readonly partial struct BigFloat
         _size = value > Int128.Zero
             ? (int)long.Log2(value) + 1 + applyGuardBits
             : value < 0 ? 64 - (int)long.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
-        //_size = value switch {
-        //    > 0 => GetBitLength((ulong)value) + applyGuardBits,
-        //    < 0 => GetBitLength(~((ulong)value - 1)) + applyGuardBits,  
-        //    _ => 0  };
+
+        _size = value switch
+        {
+            > 0 => GetBitLength((ulong)value) + applyGuardBits,
+            < 0 => GetBitLength(~((ulong)value - 1)) + applyGuardBits,
+            _ => 0
+        };
+
+        // _size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
+
 
         Scale = binaryScaler - addedBinaryPrecision;
         AssertValid();
