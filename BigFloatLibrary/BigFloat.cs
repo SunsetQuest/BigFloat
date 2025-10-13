@@ -500,7 +500,7 @@ public readonly partial struct BigFloat
             // Optional fast path when divisor has ≥ s trailing zeros:
             int tz = (int)BigInteger.TrailingZeroCount(BigInteger.Abs(m));
             if (scaleDiff <= tz)
-        {
+            {
                 BigInteger r = dividend._mantissa % (m >> scaleDiff);
                 return new(r, dividend.Scale, true);
             }
