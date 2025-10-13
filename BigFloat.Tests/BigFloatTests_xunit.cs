@@ -1,8 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 // Ignore Spelling: Aprox Bitwise Sqrt Ulp Fractionals
 
@@ -15,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace BigFloatLibrary.Tests;
 
-public class BigFloatTests
+public class OriginalBigFloatTests
 {
     /// <summary>
     /// Target time for each test. Time based on release mode on 16 core x64 CPU.
@@ -624,90 +621,136 @@ public class BigFloatTests
     }
 
     [Fact]
-    public void Verify_IsStrictZero()
+    public void IsStrictZero_WhenResultFromFloatingPointArithmetic_ShouldHandleRoundingErrors()
     {
+        // Arrange & Act
         BigFloat result = ((BigFloat)1.3 * (BigFloat)2) - (BigFloat)2.6;
-        Assert.True(result.IsStrictZero); // okay to be either way
-        Assert.True(result.IsZero);
 
-        result = 0;
-        Assert.True(result.IsStrictZero);
-        Assert.True(result.IsZero);
-
-        // |000...(31 zeros)...0001.
-        result = BigFloat.ParseBinary("1", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |000...(30 zeros)...001.0
-        result = BigFloat.ParseBinary("1", 0, 0, BigFloat.GuardBits - 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        //-|000...(30 zeros)...001.0
-        result = BigFloat.ParseBinary("-1", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |1.000...(31 zeros)...0000
-        result = BigFloat.ParseBinary("1", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        result = BigFloat.ParseBinary("-1", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |000...(31 zeros)...000.1
-        result = BigFloat.ParseBinary(".1", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |000...(30 zeros)...00.10
-        result = BigFloat.ParseBinary(".1", 0, 0, BigFloat.GuardBits - 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        //-|000...(30 zeros)...00.10
-        result = BigFloat.ParseBinary("-.1", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |.1000...(30 zeros)...0000
-        result = BigFloat.ParseBinary(".1", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        //-|.1000...(30 zeros)...0000
-        result = BigFloat.ParseBinary("-.1", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        // |000...(30 zeros)...000.01
-        result = BigFloat.ParseBinary(".01", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.True(result.IsZero);
-
-        // |000...(29 zeros)...00.010
-        result = BigFloat.ParseBinary(".01", 0, 0, BigFloat.GuardBits - 1);
-        Assert.False(result.IsStrictZero);
-        Assert.True(result.IsZero);
-
-        //-|000...(29 zeros)...00.010
-        result = BigFloat.ParseBinary("-.01", 0, 0, BigFloat.GuardBits);
-        Assert.False(result.IsStrictZero);
-        Assert.True(result.IsZero);
-
-        // .0|100...(31 zeros)...000 (rounds to .1)
-        result = BigFloat.ParseBinary(".01", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
-
-        //-.0|100...(31 zeros)...000 (rounds to -.1)
-        result = BigFloat.ParseBinary("-.01", 0, 0, 1);
-        Assert.False(result.IsStrictZero);
-        Assert.False(result.IsZero);
+        // Assert
+        Assert.True(result.IsZero, "Result should be considered zero despite potential floating-point arithmetic errors");
+        // Note: IsStrictZero behavior for arithmetic results may vary based on implementation
     }
+
+    [Fact]
+    public void IsStrictZero_WhenExactZero_ShouldReturnTrue()
+    {
+        // Arrange & Act
+        BigFloat result = 0;
+
+        // Assert
+        Assert.True(result.IsStrictZero, "Exact zero should be strict zero");
+        Assert.True(result.IsZero, "Exact zero should be considered zero");
+    }
+
+    [Theory]
+    [InlineData("1", "Smallest representable positive value")]
+    [InlineData("-1", "Smallest representable negative value")]
+    public void IsStrictZero_WhenSmallestRepresentableValue_ShouldReturnFalse(string binaryValue, string description)
+    {
+        // Arrange & Act
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, BigFloat.GuardBits);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero");
+        Assert.False(result.IsZero, $"{description} should not be considered zero");
+    }
+
+    [Theory]
+    [InlineData("1", "Positive value with guard bits - 1")]
+    [InlineData("-1", "Negative value with guard bits - 1")]
+    public void IsStrictZero_WhenValueWithReducedGuardBits_ShouldReturnFalse(string binaryValue, string description)
+    {
+        // Arrange & Act
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, BigFloat.GuardBits - 1);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero");
+        Assert.False(result.IsZero, $"{description} should not be considered zero");
+    }
+
+    [Theory]
+    [InlineData("1", "Positive normalized value")]
+    [InlineData("-1", "Negative normalized value")]
+    public void IsStrictZero_WhenNormalizedValues_ShouldReturnFalse(string binaryValue, string description)
+    {
+        // Arrange & Act
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, 1);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero");
+        Assert.False(result.IsZero, $"{description} should not be considered zero");
+    }
+
+    [Theory]
+    [InlineData(".1", BigFloat.GuardBits, "Fractional value with full guard bits")]
+    [InlineData(".1", BigFloat.GuardBits - 1, "Fractional value with reduced guard bits")]
+    [InlineData("-.1", BigFloat.GuardBits, "Negative fractional value with full guard bits")]
+    [InlineData(".1", 1, "Fractional value with minimal precision")]
+    [InlineData("-.1", 1, "Negative fractional value with minimal precision")]
+    public void IsStrictZero_WhenFractionalValues_ShouldReturnFalse(string binaryValue, int precision, string description)
+    {
+        // Arrange & Act
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, precision);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero");
+        Assert.False(result.IsZero, $"{description} should not be considered zero");
+    }
+
+    [Theory]
+    [InlineData(".01", BigFloat.GuardBits, "Small fractional value with full guard bits")]
+    [InlineData(".01", BigFloat.GuardBits - 1, "Small fractional value with reduced guard bits")]
+    [InlineData("-.01", BigFloat.GuardBits, "Negative small fractional value")]
+    public void IsZero_WhenVerySmallFractionalValues_ShouldReturnTrueButNotStrictZero(string binaryValue, int precision, string description)
+    {
+        // Arrange & Act
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, precision);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero");
+        Assert.True(result.IsZero, $"{description} should be considered zero due to precision limits");
+    }
+
+    [Theory]
+    [InlineData(".01", "Positive small value that rounds up")]
+    [InlineData("-.01", "Negative small value that rounds down")]
+    public void IsZero_WhenSmallValuesRoundToSignificantValues_ShouldReturnFalse(string binaryValue, string description)
+    {
+        // Arrange & Act - Using minimal precision causes rounding to significant values
+        BigFloat result = BigFloat.ParseBinary(binaryValue, 0, 0, 1);
+
+        // Assert
+        Assert.False(result.IsStrictZero, $"{description} should not be strict zero after rounding");
+        Assert.False(result.IsZero, $"{description} should not be considered zero after rounding to significant value");
+    }
+
+    [Fact]
+    public void IsStrictZero_ComparisonMatrix_ShouldDemonstrateAllScenarios()
+    {
+        // This test provides a comprehensive overview of all zero-checking scenarios
+        var testCases = new (BigFloat Value, bool? ExpectedStrictZero, bool ExpectedZero, string Description)[]
+        {
+            ((BigFloat)0, true, true, "Exact zero"),
+            (((BigFloat)1.3 * (BigFloat)2) - (BigFloat)2.6, null, true, "Arithmetic result (implementation dependent)"),
+            (BigFloat.ParseBinary("1", 0, 0, BigFloat.GuardBits), false, false, "Smallest positive"),
+            (BigFloat.ParseBinary("-1", 0, 0, BigFloat.GuardBits), false, false, "Smallest negative"),
+            (BigFloat.ParseBinary(".01", 0, 0, BigFloat.GuardBits), false, true, "Very small positive"),
+            (BigFloat.ParseBinary("-.01", 0, 0, BigFloat.GuardBits), false, true, "Very small negative"),
+        };
+
+        foreach (var testCase in testCases)
+        {
+            if (testCase.ExpectedStrictZero.HasValue)
+            {
+                Assert.True(testCase.ExpectedStrictZero.Value == testCase.Value.IsStrictZero,
+                    $"IsStrictZero failed for: {testCase.Description}");
+            }
+
+            Assert.True(testCase.ExpectedZero == testCase.Value.IsZero,
+                $"IsZero failed for: {testCase.Description}");
+        }
+    }
+
 
     [Fact]
     public void Verify_GetPrecision()
@@ -2206,6 +2249,32 @@ public class BigFloatTests
         ceil = bf.Ceiling();
         Assert.True(bf.IsInteger);
         Assert.True(ceil.EqualsUlp((long)bf));
+    }
+
+    [Theory]
+    [InlineData("0b101|0.010")]
+    [InlineData("0b1010|.010")]
+    [InlineData("0b1010.|010")]
+    [InlineData("0b1010.0|10")]
+    [InlineData("0b101|0.10")]
+    [InlineData("0b1010|.10")]
+    [InlineData("0b1010.|10")]
+    [InlineData("0b1010.1|0")]
+    [InlineData("0b1|1.11")]
+    [InlineData("0b11|.11")]
+    [InlineData("0b11.|11")]
+    [InlineData("0b11.1|1")]
+    [InlineData("0b|010.00")]
+    [InlineData("0b|10.00")]
+    [InlineData("0b1|0.00")]
+    [InlineData("0b10|.00")]
+    [InlineData("0b10.|00")]
+    [InlineData("0b10.0|0")]
+
+    public void IsIntegerConsistentWithCeilingAndFloor(string input)
+    {
+        BigFloat bf = new(input); 
+        Assert.True(bf.IsInteger == (bf.Ceiling() == bf.Floor()));
     }
 
     [Fact]
@@ -5660,30 +5729,30 @@ public class BigFloatTests
     [Fact]
     public void Verify_FitsInADouble()
     {
-        Assert.True(new BigFloat("1.000").FitsInADouble());
-        Assert.True(new BigFloat("1.000").FitsInADouble());
-        Assert.True(new BigFloat("0.000").FitsInADouble());
-        Assert.True(new BigFloat("-99.000").FitsInADouble());
-        Assert.True(new BigFloat("0.00000001").FitsInADouble());
-        Assert.True(new BigFloat("-0.00000001").FitsInADouble());
-        Assert.True(new BigFloat(double.E).FitsInADouble());
-        Assert.True(new BigFloat(double.MaxValue).FitsInADouble());
-        Assert.True(new BigFloat(double.MinValue).FitsInADouble());
-        Assert.True(new BigFloat(double.MinValue).FitsInADouble());
-        Assert.False((new BigFloat(double.MinValue) << 1).FitsInADouble());
-        Assert.False((new BigFloat(double.MaxValue) << 1).FitsInADouble());
-        Assert.False(((new BigFloat(double.MinValue)) * (new BigFloat("1.1"))).FitsInADouble());
-        Assert.True(new BigFloat(double.Epsilon).FitsInADouble(true));
-        Assert.False((new BigFloat(double.Epsilon) >> 1).FitsInADouble(true));
-        Assert.True(new BigFloat(double.NegativeZero).FitsInADouble());
-        Assert.True(new BigFloat(0).FitsInADouble());
-        Assert.True(new BigFloat("0.000000000000000001").FitsInADouble());
-        Assert.True(new BigFloat("1000000000000000000").FitsInADouble());
-        Assert.True(new BigFloat(-1).FitsInADouble());
-        Assert.True(new BigFloat(1).FitsInADouble());
+        Assert.True(new BigFloat("1.000").FitsInADouble);
+        Assert.True(new BigFloat("1.000").FitsInADouble);
+        Assert.True(new BigFloat("0.000").FitsInADouble);
+        Assert.True(new BigFloat("-99.000").FitsInADouble);
+        Assert.True(new BigFloat("0.00000001").FitsInADouble);
+        Assert.True(new BigFloat("-0.00000001").FitsInADouble);
+        Assert.True(new BigFloat(double.E).FitsInADouble);
+        Assert.True(new BigFloat(double.MaxValue).FitsInADouble);
+        Assert.True(new BigFloat(double.MinValue).FitsInADouble);
+        Assert.True(new BigFloat(double.MinValue).FitsInADouble);
+        Assert.False((new BigFloat(double.MinValue) << 1).FitsInADouble);
+        Assert.False((new BigFloat(double.MaxValue) << 1).FitsInADouble);
+        Assert.False(((new BigFloat(double.MinValue)) * (new BigFloat("1.1"))).FitsInADouble);
+        Assert.True(new BigFloat(double.Epsilon).FitsInADoubleWithDenormalization);
+        Assert.False((new BigFloat(double.Epsilon) >> 1).FitsInADoubleWithDenormalization);
+        Assert.True(new BigFloat(double.NegativeZero).FitsInADouble);
+        Assert.True(new BigFloat(0).FitsInADouble);
+        Assert.True(new BigFloat("0.000000000000000001").FitsInADouble);
+        Assert.True(new BigFloat("1000000000000000000").FitsInADouble);
+        Assert.True(new BigFloat(-1).FitsInADouble);
+        Assert.True(new BigFloat(1).FitsInADouble);
 
-        Assert.False((new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble()); // Failed on: (new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble()
-        Assert.False((new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble()); // Failed on: (new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble()
+        Assert.False((new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble); // Failed on: (new BigFloat(double.MaxValue) * (BigFloat)1.0001).FitsInADouble
+        Assert.False((new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble); // Failed on: (new BigFloat(double.MinValue) * (BigFloat)1.0001).FitsInADouble()
     }
 
     [Fact]
