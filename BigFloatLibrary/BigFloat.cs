@@ -475,12 +475,49 @@ public readonly partial struct BigFloat
         if ((scaleDiff > 0 ? divisor._mantissa : (divisor._mantissa >> -scaleDiff)) == 0)
             throw new DivideByZeroException();
 
-        return scaleDiff switch
+        //return scaleDiff switch
+        //{
+        //    > 0 => new(((dividend._mantissa << scaleDiff) % divisor._mantissa) >> scaleDiff, dividend.Scale, true),
+        //    < 0 => new((dividend._mantissa % (divisor._mantissa << -scaleDiff)) >> -scaleDiff, divisor.Scale, true),
+        //    0 => new(dividend._mantissa % divisor._mantissa, divisor.Scale, true),
+        //};
+
+        if (scaleDiff == 0)
+            return new(dividend._mantissa % divisor._mantissa, divisor.Scale, true);
+
+        if (scaleDiff < 0)
         {
-            > 0 => new(((dividend._mantissa << scaleDiff) % divisor._mantissa) >> scaleDiff, dividend.Scale, true),
-            < 0 => new((dividend._mantissa % (divisor._mantissa >> -scaleDiff)) << -scaleDiff, divisor.Scale, true),
-            0 => new(dividend._mantissa % divisor._mantissa, divisor.Scale, true),
-        };
+            int t = -scaleDiff;
+            // ((A % (B<<t)) >> t) == ((A >> t) % B)  — no giant left shifts
+            BigInteger r = (dividend._mantissa >> t) % divisor._mantissa;
+            return new(r, divisor.Scale, true);
+        }
+        else
+        {
+            // s > 0
+            BigInteger m = divisor._mantissa;
+
+            // Optional fast path when divisor has ≥ s trailing zeros:
+            int tz = (int)BigInteger.TrailingZeroCount(BigInteger.Abs(m));
+            if (scaleDiff <= tz)
+        {
+                BigInteger r = dividend._mantissa % (m >> scaleDiff);
+                return new(r, dividend.Scale, true);
+            }
+
+            // General path: ((A<<s) % m) >> s  →  ((|A| % |m|) * (2^s mod |m|) % |m|) with sign(A), then >> s
+            int u = scaleDiff - tz;
+            BigInteger mOdd = m >> tz;                  // strip 2^tz from modulus
+            BigInteger mAbs = BigInteger.Abs(mOdd);
+
+            BigInteger aRem = dividend._mantissa % mOdd;        // sign matches dividend
+            BigInteger pow2 = BigInteger.ModPow(2, u, mAbs);    // O(log s), no big temps
+            BigInteger tRem = (BigInteger.Abs(aRem) * pow2) % mAbs;
+            if (aRem.Sign < 0) tRem = -tRem;
+
+            BigInteger r2 = tRem >> u;
+            return new(r2, dividend.Scale, true);
+        }
     }
 
     /// <summary>
