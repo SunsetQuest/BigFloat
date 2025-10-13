@@ -151,6 +151,16 @@ public readonly partial struct BigFloat
     public BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
     {
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        
+        if (value.IsZero)
+        {
+            _mantissa = BigInteger.Zero;
+            Scale = binaryScaler - (valueIncludesGuardBits ? GuardBits : 0) - applyGuardBits;
+            _size = 0;
+            AssertValid();
+            return;
+        }
+        
         _mantissa = value << applyGuardBits;
         Scale = binaryScaler - addedBinaryPrecision;
         _size = (int)BigInteger.Abs(_mantissa).GetBitLength();
@@ -162,7 +172,10 @@ public readonly partial struct BigFloat
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - addedBinaryPrecision;
-        _size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
+        //_size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
+        _size = value > Int128.Zero
+            ? int.Log2(value) + 1 + applyGuardBits
+            : value < 0 ? 32 - int.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
         AssertValid();
     }
 
@@ -176,12 +189,12 @@ public readonly partial struct BigFloat
             ? (int)long.Log2(value) + 1 + applyGuardBits
             : value < 0 ? 64 - (int)long.LeadingZeroCount(~(value - 1)) + applyGuardBits : 0;
 
-        _size = value switch
-        {
-            > 0 => GetBitLength((ulong)value) + applyGuardBits,
-            < 0 => GetBitLength(~((ulong)value - 1)) + applyGuardBits,
-            _ => 0
-        };
+        //_size = value switch
+        //{
+        //    > 0 => GetBitLength((ulong)value) + applyGuardBits,
+        //    < 0 => GetBitLength(~((ulong)value - 1)) + applyGuardBits,
+        //    _ => 0
+        //};
 
         // _size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
 
