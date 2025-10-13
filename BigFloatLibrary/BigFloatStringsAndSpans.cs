@@ -565,6 +565,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         int scale = val.Scale;
         int valSize = val._size;
 
+        //if (intVal.IsZero) return "0";
+
         if (includeGuardBits)
         {
             intVal <<= GuardBits;
