@@ -39,13 +39,13 @@ public class OriginalBigFloatTests
         for (int i = 0; i > -1073; i--)
         {
             // issues at BigFloat(1, -1071).ToString() and BigFloat(1, -8).ToString()
-            BigFloat value = new(1, i, addedBinaryPrecision: 0);
+            BigFloat value = new(1, i, binaryPrecision: 0);
             Assert.False(new BigFloat(value.ToString()).IsOutOfPrecision); // 0.000...1->BigFloat->String->BigInteger should never be zero.
             Assert.False(value.IsOutOfPrecision); // 0.000...1->BigFloat->OutOfPrecision should never be zero.
         }
 
-        Assert.Equal(new BigFloat(1, -8, addedBinaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
-        Assert.Equal(new BigFloat(1, -1074, addedBinaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
+        Assert.Equal(new BigFloat(1, -8, binaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
+        Assert.Equal(new BigFloat(1, -1074, binaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
         Assert.False(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, addedBinaryPrecision: 0));  // 0 != -1.0
 
         BigFloat temp = new(ulong.MaxValue);
@@ -1662,7 +1662,7 @@ public class OriginalBigFloatTests
         Assert.Equal(BigFloat.Pow(1, 2), 1);
         Assert.Equal(BigFloat.Pow(2, 2), 4);
 
-        BigFloat three = new(3, addedBinaryPrecision: 0);
+        BigFloat three = new(3, binaryPrecision: 0);
         Assert.Equal(BigFloat.Pow(three, 2), 8); // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
         Assert.True(BigFloat.Pow(three, 2).EqualsZeroExtended(9));
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 9/7/2025 - brought back as True with ulp=0
@@ -4169,15 +4169,15 @@ public class OriginalBigFloatTests
         //                             12345678901234567890123456789012345678901234567890123  (expect 1+52= 53 significant bits)
         //  expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
 
-        bf = new(1230000000, addedBinaryPrecision: 0);
+        bf = new(1230000000, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("1001001010100000100111110000000", str); // Verify_ToStringFormat on 1230000000
 
-        bf = new(123, 5, addedBinaryPrecision: 0);
+        bf = new(123, 5, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("111101100000", str); // Verify_ToStringFormat on 123 * 2^5
 
-        bf = new(123, 40, addedBinaryPrecision: 0);
+        bf = new(123, 40, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("11110110000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 123 * 2^5
 
@@ -4203,20 +4203,20 @@ public class OriginalBigFloatTests
         str = bf.ToString("B");
         Assert.Equal("-1001001010100000100111110000000.00000000000000", str); // Verify_ToStringFormat on 1230000000
 
-        bf = new(-123, 5, addedBinaryPrecision: 0);
+        bf = new(-123, 5, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("-111101100000", str); // Verify_ToStringFormat on 123 * 2^5
 
-        bf = new(-123, 40, addedBinaryPrecision: 0);
+        bf = new(-123, 40, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("-11110110000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 123 * 2^5
 
         //////////////// Int conversions ////////////////
-        bf = new(1230000000, addedBinaryPrecision: 0);
+        bf = new(1230000000, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("1001001010100000100111110000000", str); // Verify_ToStringFormat on 1230000000
 
-        bf = new(-1230000000, addedBinaryPrecision: 0);
+        bf = new(-1230000000, binaryPrecision: 0);
         str = bf.ToString("B");
         Assert.Equal("-1001001010100000100111110000000", str); // Verify_ToStringFormat on -1230000000
 
@@ -6110,32 +6110,32 @@ public class OriginalBigFloatTests
         expect.DebugPrint();
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
-        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  //  5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(5555, addedBinaryPrecision: 0);   //      -5555  
+        inputVal0 = new BigFloat(2119, 18, binaryPrecision: 0);  //  5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(5555, binaryPrecision: 0);   //      -5555  
         output = inputVal0 - inputVal1;                  //= 5555_____
         expect = new BigFloat("555572222");  // expected: 555572222 result:555483136  OK
         Assert.True(output.EqualsUlp(expect), $"Add({inputVal0} - {inputVal1}) was {output} but expected {expect}."); 
 
-        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(555555, addedBinaryPrecision: 0); //          -10000111101000100011    -555555  
+        inputVal0 = new BigFloat(2119, 18, binaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(555555, binaryPrecision: 0); //          -10000111101000100011    -555555  
         output = inputVal0 - inputVal1;                  //=100001000101                    5549_____
         expect = new BigFloat(2117, 18);
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
-        inputVal0 = new BigFloat(2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(-555555, addedBinaryPrecision: 0);//          +10000111101000100011    +555555              +555555
+        inputVal0 = new BigFloat(2119, 18, binaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(-555555, binaryPrecision: 0);//          +10000111101000100011    +555555              +555555
         output = inputVal0 - inputVal1;                  //=100001001001                    5561_____            556038691
         expect = new BigFloat(2121, 18);
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
-        inputVal0 = new BigFloat(-2119, 18, addedBinaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(555555, addedBinaryPrecision: 0);//          +10000111101000100011    +555555              +555555
+        inputVal0 = new BigFloat(-2119, 18, binaryPrecision: 0);  // 100001000111                    5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(555555, binaryPrecision: 0);//          +10000111101000100011    +555555              +555555
         output = inputVal0 - inputVal1;                  //=100001001001                    5561_____            556038691
         expect = new BigFloat(-2121, 18);
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
-        inputVal0 = new BigFloat(-2119, 18, addedBinaryPrecision: 0);  // -100001000111                   -5555_____ (stored as 555483136)
-        inputVal1 = new BigFloat(-555555, addedBinaryPrecision: 0); //           +10000111101000100011    +555555  
+        inputVal0 = new BigFloat(-2119, 18, binaryPrecision: 0);  // -100001000111                   -5555_____ (stored as 555483136)
+        inputVal1 = new BigFloat(-555555, binaryPrecision: 0); //           +10000111101000100011    +555555  
         output = inputVal0 - inputVal1;                   //=-100001000101                   -5549_____
         expect = new BigFloat(-2117, 18);
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}

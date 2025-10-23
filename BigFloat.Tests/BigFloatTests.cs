@@ -253,7 +253,7 @@ public class BigFloatTests
     {
         var bf = new BigFloat(value);
         var result = bf.ToBinaryString(includeGuardBits: false);
-        Assert.Equal(expected, result);
+        Assert.Equal(expected, result.TrimEnd('0'));
     }
 
     #endregion

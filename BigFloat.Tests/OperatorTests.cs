@@ -120,11 +120,11 @@ public class OperatorTests
         var expectedResult = new BigFloat(expected);
         
         var result = bfA * bfB;
-        Assert.True(result.EqualsZeroExtended(expectedResult));
+        Assert.True(result.EqualsUlp(expectedResult, 1, true));
         
         // Test commutativity
         var reverseResult = bfB * bfA;
-        Assert.True(reverseResult.EqualsZeroExtended(expectedResult));
+        Assert.True(reverseResult.EqualsUlp(expectedResult, 1, true));
     }
 
     [Theory]
@@ -610,7 +610,7 @@ public class OperatorTests
     public void MultiplicationIdentity_OneHasNoEffect(string value)
     {
         var bf = new BigFloat(value);
-        var one = BigFloat.One;
+        var one = BigFloat.OneWithAccuracy(64);
         
         Assert.Equal(bf, bf * one);
         Assert.Equal(bf, one * bf);

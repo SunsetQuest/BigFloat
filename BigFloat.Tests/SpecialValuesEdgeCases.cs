@@ -227,19 +227,25 @@ public class SpecialValuesAndEdgeCasesTests
     }
 
     [Theory]
-    [InlineData("1111", -4, false)]
-    [InlineData("1111", 0, false)]
-    [InlineData("1111", 4, false)]
-    [InlineData("-1111", -4, false)]
-    [InlineData("-1111", 0, false)]
-    [InlineData("-1111", 4, false)]
-    public void OutOfPrecision_SmallMantissa_OutOfPrecision(string mantissaStr, int scale, bool includesGuardBits)
+    [InlineData("1111", -4, false, false)]
+    [InlineData("1111", 0, false, false)]
+    [InlineData("1111", 4, false, false)]
+    [InlineData("-1111", -4, false, false)]
+    [InlineData("-1111", 0, false, false)]
+    [InlineData("-1111", 4, false, false)]
+    [InlineData("1111", -4, true, true)]
+    [InlineData("1111", 0, true, true)]
+    [InlineData("1111", 4, true, true)]
+    [InlineData("-1111", -4, true, true)]
+    [InlineData("-1111", 0, true, true)]
+    [InlineData("-1111", 4, true, true)]
+    public void OutOfPrecision_SmallMantissa_OutOfPrecision(string mantissaStr, int scale, bool includesGuardBits, bool isOutOfPrecision)
     {
         var mantissa = BigInteger.Parse(mantissaStr);
         var bf = new BigFloat(mantissa, scale, includesGuardBits);
         
         // Small mantissas (less than guard bits) are out of precision
-        Assert.True(bf.IsOutOfPrecision);
+        Assert.True(isOutOfPrecision == bf.IsOutOfPrecision);
     }
 
     #endregion

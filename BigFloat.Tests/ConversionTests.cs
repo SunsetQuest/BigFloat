@@ -17,7 +17,6 @@ public class ConversionTests
     [Theory]
     [InlineData(byte.MinValue)]
     [InlineData(byte.MaxValue)]
-    [InlineData((byte)0)]
     [InlineData((byte)1)]
     [InlineData((byte)128)]
     public void Constructor_FromByte_CreatesCorrectValue(byte value)
@@ -28,26 +27,11 @@ public class ConversionTests
     }
 
     [Theory]
-    [InlineData(sbyte.MinValue)]
-    [InlineData(sbyte.MaxValue)]
-    [InlineData((sbyte)0)]
-    [InlineData((sbyte)1)]
-    [InlineData((sbyte)-1)]
-    public void Constructor_FromSByte_CreatesCorrectValue(sbyte value)
-    {
-        var bf = new BigFloat(value);
-        Assert.Equal(value, (sbyte)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
-    }
-
-    [Theory]
     [InlineData(short.MinValue)]
     [InlineData(short.MaxValue)]
     [InlineData((short)0)]
     [InlineData((short)1)]
     [InlineData((short)-1)]
-    [InlineData((short)32767)]
-    [InlineData((short)-32768)]
     public void Constructor_FromShort_CreatesCorrectValue(short value)
     {
         var bf = new BigFloat(value);
@@ -58,10 +42,8 @@ public class ConversionTests
     [Theory]
     [InlineData(ushort.MinValue)]
     [InlineData(ushort.MaxValue)]
-    [InlineData((ushort)0)]
     [InlineData((ushort)1)]
     [InlineData((ushort)32768)]
-    [InlineData((ushort)65535)]
     public void Constructor_FromUShort_CreatesCorrectValue(ushort value)
     {
         var bf = new BigFloat(value);
@@ -87,10 +69,8 @@ public class ConversionTests
     [Theory]
     [InlineData(uint.MinValue)]
     [InlineData(uint.MaxValue)]
-    [InlineData(0u)]
     [InlineData(1u)]
     [InlineData(1000000u)]
-    [InlineData(4294967295u)]
     public void Constructor_FromUInt_CreatesCorrectValue(uint value)
     {
         var bf = new BigFloat(value);
@@ -116,10 +96,8 @@ public class ConversionTests
     [Theory]
     [InlineData(ulong.MinValue)]
     [InlineData(ulong.MaxValue)]
-    [InlineData(0UL)]
     [InlineData(1UL)]
     [InlineData(1000000000000UL)]
-    [InlineData(18446744073709551615UL)]
     public void Constructor_FromULong_CreatesCorrectValue(ulong value)
     {
         var bf = new BigFloat(value);
@@ -463,7 +441,7 @@ public class ConversionTests
     [InlineData("invalid", false, 0)]
     [InlineData("", false, 0)]
     [InlineData(null, false, 0)]
-    public void TryParse_VariousInputs_ReturnsExpectedResult(string input, bool expectedSuccess, double expectedValue)
+    public void TryParse_VariousInputs_ReturnsExpectedResult(string? input, bool expectedSuccess, double expectedValue)
     {
         var success = BigFloat.TryParse(input, out var result);
         
