@@ -516,8 +516,6 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return signChars + bitChars + dotChars + separatorChars;
     }
 
-
-
     /// <summary>
     /// Provides custom format-string support for BigFloat.
     /// This is the standard .NET entry point when users call
@@ -792,16 +790,19 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         StringBuilder sb = new();
 
         BigInteger intVal = _mantissa;
+
         if (!showInTwosComplement && _mantissa.Sign < 0)
         {
             _ = sb.Append('-');
             intVal = -intVal;
         }
         _ = sb.Append($"{intVal >> GuardBits:X}");
+
         if (includeGuardBits)
         {
             _ = sb.Append($":{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
         }
+
         if (showSize)
         {
             _ = sb.Append($"[{Size}]");
@@ -886,7 +887,6 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         {
             Console.WriteLine($"   or -{-_mantissa >> GuardBits:X4}:{(-_mantissa & (((ulong)1 << GuardBits) - 1)).ToString("X8")[^8..]}");
         }
-
         Console.WriteLine($"    |Bits: {_mantissa}");
         Console.WriteLine($"   Scale : {Scale}");
         Console.WriteLine();
