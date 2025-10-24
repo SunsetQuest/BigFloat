@@ -182,27 +182,32 @@ public readonly partial struct BigFloat
 
     public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 31)
     {
-        if (value == 0) { _mantissa = 0; _size = 0; Scale = binaryScaler - binaryPrecision; return; } 
+        if (value == 0)
+        {
+            _mantissa = BigInteger.Zero;
+            _size = 0;
+            Scale = binaryScaler - binaryPrecision;
+            AssertValid();
+            return;
+        }
 
-        int valueSize = value > 0 // what about int.IsPositive(value)
-            ? int.Log2(value) + 1
-            : 32 - int.LeadingZeroCount(~(value - 1));
+        if (binaryPrecision < 0)
+        {
+            ThrowInvalidInitializationException($"binaryPrecision ({binaryPrecision}) cannot be negative.");
+        }
 
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + binaryPrecision - valueSize;
+        uint magnitude = value > 0
+            ? (uint)value
+            : unchecked((uint)(-value));
+
+        int valueSize = BitOperations.Log2(magnitude) + 1;
+        int effectivePrecision = Math.Max(binaryPrecision, valueSize);
+        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler - binaryPrecision + valueSize;
-        //_size = (value == 0) ? 0 : BitOperations.Log2((uint)int.Abs(value)) + 1 + applyGuardBits;
-        _size = binaryPrecision + GuardBits;
+        Scale = binaryScaler - effectivePrecision + valueSize;
+        _size = effectivePrecision + GuardBits;
 
-
-        int realSize = (int)BigInteger.Abs(_mantissa).GetBitLength();
-        bool valid = _size == realSize;
-
-        if (!valid)
-        {
-            ThrowInvalidInitializationException($"BigFloat initialization error: calculated size {_size} does not match actual size {realSize}.");
-        }
         AssertValid();
     }
 
