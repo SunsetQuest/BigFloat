@@ -15,15 +15,15 @@ public class ConversionTests
     #region From Integer Types to BigFloat
 
     [Theory]
-    [InlineData(byte.MinValue)]
-    [InlineData(byte.MaxValue)]
-    [InlineData((byte)1)]
-    [InlineData((byte)128)]
-    public void Constructor_FromByte_CreatesCorrectValue(byte value)
+    [InlineData(byte.MinValue, "0.00")]
+    [InlineData(byte.MaxValue, "255")]
+    [InlineData((byte)1, "1.00")]
+    [InlineData((byte)128, "128")]
+    public void Constructor_FromByte_CreatesCorrectValue(byte value, string expected)
     {
         var bf = new BigFloat(value);
         Assert.Equal(value, (byte)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
+        Assert.Equal(bf.ToString(), expected);
     }
 
     [Theory]
