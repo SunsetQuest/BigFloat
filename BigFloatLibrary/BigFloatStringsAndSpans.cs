@@ -203,7 +203,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         if (isZero)
         {
             // Bit structure: whole '0' then (optional) fractional zeros
-            int zerosToWrite = numberOfGuardBitsToInclude - Scale; // if > 0 we show '.' and that many '0's
+            int zerosToWrite = Math.Max(0, numberOfGuardBitsToInclude - Scale); // if > 0 we show '.' and that many '0's
+
+            if (_mantissa.IsZero && _size == 0 && Scale == -GuardBits && zerosToWrite > numberOfGuardBitsToInclude)
+            {
+                zerosToWrite = numberOfGuardBitsToInclude;
+            }
+
             int baseBitChars = 1 + (zerosToWrite > 0 ? zerosToWrite : 0);
 
             // Separator index among bit chars (before any extra-leading zeros)
@@ -438,7 +444,17 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // Writer prints: "0" and, if needed, ".000..." where
             // zerosToWrite = numberOfGuardBitsToOutput - Scale
             bitChars = 1;
-            int zerosToWrite = numberOfGuardBitsToOutput - Scale;
+            int zerosToWrite = Math.Max(0, numberOfGuardBitsToOutput - Scale);
+
+            // When a zero value is created from an integer constructor, the scale
+            // reflects the implicit guard bits (e.g. Scale == -GuardBits). In that
+            // scenario we only want to emit guard-bit zeros when explicitly
+            // requested via numberOfGuardBitsToOutput.
+            if (_mantissa.IsZero && _size == 0 && Scale == -GuardBits && zerosToWrite > numberOfGuardBitsToOutput)
+            {
+                zerosToWrite = numberOfGuardBitsToOutput;
+            }
+
             if (zerosToWrite > 0)
             {
                 dotChars = 1;
