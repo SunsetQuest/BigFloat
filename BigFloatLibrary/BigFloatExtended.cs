@@ -153,8 +153,9 @@ public readonly partial struct BigFloat
             return;
         }
 
-        Int128 absValue = Int128.Abs(value);
-        int valueSize = (int)Int128.Log2(absValue) + 1;
+        int valueSize = value == Int128.MinValue
+            ? 128
+            : (int)Int128.Log2(Int128.Abs(value)) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
 
