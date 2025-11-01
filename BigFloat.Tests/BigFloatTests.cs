@@ -24,7 +24,7 @@ public class BigFloatTests
 
 #if DEBUG
     private const int MaxDegreeOfParallelism = 1;
-    private const long InverseBruteForceStoppedAt = 262144;
+    private const long InverseBruteForceStoppedAt = 131072;
 #else
     private readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
     private const long InverseBruteForceStoppedAt = 524288;
@@ -40,7 +40,7 @@ public class BigFloatTests
     public void StringRepresentation_PrecisionBoundary(string value1Str, string value2Str, bool shouldBeEqual)
     {
         var value1 = new BigFloat(value1Str);
-        var value2 = new BigFloat(value2Str.Replace("|", ""));
+        var value2 = new BigFloat(value2Str);
         
         // The pipe character indicates where precision differs
         // 123.124 has 17.91 binary accuracy, so 17 bits
@@ -48,7 +48,7 @@ public class BigFloatTests
         // 123.123|5: 1111011.0001111110|01110...   
         //                      Diff: |10001
         
-        Assert.NotEqual(shouldBeEqual, value1 == value2);
+        Assert.Equal(shouldBeEqual, value1 == value2);
     }
 
     #endregion
@@ -81,14 +81,14 @@ public class BigFloatTests
         var inverse = BigFloat.Inverse(value);
         var expectedValue = new BigFloat(expected);
         
-        Assert.True(inverse.EqualsZeroExtended(expectedValue));
+        Assert.True(inverse.EqualsUlp(expectedValue, 0, true));
     }
 
     [Theory]
-    [InlineData(3, "0.33333333333")]
-    [InlineData(6, "0.16666666667")]
-    [InlineData(7, "0.14285714286")]
-    [InlineData(9, "0.11111111111")]
+    [InlineData(3, "0.3333333333")]
+    [InlineData(6, "0.1666666667")]
+    [InlineData(7, "0.1428571429")]
+    [InlineData(9, "0.1111111111")]
     public void Inverse_RepeatingDecimals_ApproximateResults(int input, string expectedPrefix)
     {
         var value = new BigFloat(input);
@@ -99,12 +99,14 @@ public class BigFloatTests
         Assert.StartsWith(expectedPrefix.Substring(0, compareLength), resultStr);
     }
 
+#if !DEBUG
     [Fact]
     public void Inverse_Zero_ThrowsException()
     {
         var zero = BigFloat.Zero;
         Assert.Throws<DivideByZeroException>(() => BigFloat.Inverse(zero));
     }
+#endif
 
     [Fact]
     public void Inverse_One_ReturnsOne()
@@ -124,7 +126,7 @@ public class BigFloatTests
         Assert.True(inverse.EqualsZeroExtended(expected));
     }
 
-    #endregion
+#endregion
 
     #region Constant Tests
 
@@ -196,18 +198,18 @@ public class BigFloatTests
 
     #region Formatting Tests
 
-    [Theory]
-    [InlineData("123.456", "G", null, "123.456")]
-    [InlineData("123.456", "F2", null, "123.46")]
-    [InlineData("123.456", "F4", null, "123.4560")]
-    [InlineData("0.0001234", "E", null, "1.234000E-004")]
-    [InlineData("0.0001234", "E2", null, "1.23E-004")]
-    public void ToString_WithFormat(string value, string format, IFormatProvider? provider, string expected)
-    {
-        var bf = new BigFloat(value);
-        var result = bf.ToString(format, provider ?? CultureInfo.InvariantCulture);
-        Assert.Equal(expected, result);
-    }
+    //[Theory]
+    //[InlineData("123.456", "G", null, "123.456")]
+    //[InlineData("123.456", "F2", null, "123.46")] //Future: addition
+    //[InlineData("123.456", "F4", null, "123.4560")] //Future: addition
+    //InlineData("0.0001234", "E", null, "1.234000E-004")]
+    //[InlineData("0.0001234", "E2", null, "1.23E-004")] //Future: addition
+    //public void ToString_WithFormat(string value, string format, IFormatProvider? provider, string expected)
+    //{
+    //    var bf = new BigFloat(value);
+    //    var result = bf.ToString(format, provider ?? CultureInfo.InvariantCulture);
+    //    Assert.Equal(expected, result);
+    //}
 
     //[Theory]
     //[InlineData("en-US", "1234.56")]

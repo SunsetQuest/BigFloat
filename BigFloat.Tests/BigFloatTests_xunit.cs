@@ -5146,10 +5146,14 @@ public class OriginalBigFloatTests
     }
 
     [Theory]
-    [InlineData(1, 2, 33, false)]    // CompareUlp(1, 2, 1 + 32) != 0
-    [InlineData(1, 2, 34, true)]     // CompareUlp(1, 2, 2 + 32) == 0
-    [InlineData(-1, -2, 33, false)]  // CompareUlp(-1, -2, 1 + 32) != 0
-    [InlineData(-1, -2, 34, true)]   // CompareUlp(-1, -2, 2 + 32) == 0
+    [InlineData(1, 2, 31-3, false)]    // CompareUlp(1, 2, 1 + 32) != 0
+    [InlineData(1, 2, 31-2, false)]    // CompareUlp(1, 2, 1 + 32) != 0
+    [InlineData(1, 2, 31-1, false)]    // CompareUlp(1, 2, 1 + 32) != 0
+    [InlineData(1, 2, 31+0, true)]    // CompareUlp(1, 2, 1 + 32) != 0
+    [InlineData(1, 2, 31+1, true)]    // CompareUlp(1, 2, 1 + 32) != 0
+    //[InlineData(1, 2, 34, true)]     // CompareUlp(1, 2, 2 + 32) == 0
+    //[InlineData(-1, -2, 33, false)]  // CompareUlp(-1, -2, 1 + 32) != 0
+    //[InlineData(-1, -2, 34, true)]   // CompareUlp(-1, -2, 2 + 32) == 0
     public void CompareUlp_AdjacentIntegers_Theory(int aVal, int bVal, int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat(aVal);

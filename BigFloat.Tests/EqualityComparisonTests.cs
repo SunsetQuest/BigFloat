@@ -218,10 +218,10 @@ public class EqualityAndComparisonTests
     #region ULP Comparison Tests
 
     [Theory]
-    [InlineData(1, 2, 33, false)]    // Different at tolerance 33
-    [InlineData(1, 2, 34, true)]     // Equal at tolerance 34
-    [InlineData(-1, -2, 33, false)]  // Different at tolerance 33
-    [InlineData(-1, -2, 34, true)]   // Equal at tolerance 34
+    [InlineData(1, 2, 30, false)]    // Integer has 31 bits of precision
+    [InlineData(1, 2, 31, true)]    
+    [InlineData(-1, -2, 30, false)] 
+    [InlineData(-1, -2, 31, true)]  
     public void CompareUlp_AdjacentIntegers(int aVal, int bVal, int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat(aVal);

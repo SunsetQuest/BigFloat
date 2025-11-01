@@ -274,51 +274,60 @@ public class MathOperationsTests
     [InlineData("0", -10, false, "0.000",true)]
     [InlineData("0", 0, false, "0", true)]
     [InlineData("0", 10, false, "0e+3", true)]
-    [InlineData("0", -10, true, "0.0000000000000", true)] // 12.6
-    [InlineData("0", 0, true, "0.0000000000", true)]      // 9.6
-    [InlineData("0", 10, true, "0.000000", true)]         // 6.6
-    [InlineData("0", 30, true, "0.0", true)]
-    [InlineData("0", 32, true, "0", true)]
-    [InlineData("0", 33, true, "0", true)]
-    [InlineData("1111", -4, false, "0.00",false)]
-    [InlineData("1111", 0, false, "0",false)]
-    [InlineData("1111", 4, false, "0",false)]
-    [InlineData("-1111", -4, false, "0.0000",false)]
-    [InlineData("-1111", 0, false, "0",false)]
-    [InlineData("-1111", 4, false, "0",false)]
+    [InlineData("0", -10, true, "0.000", true)] // 12.6
+    [InlineData("0", 0, true, "0", true)]       // 9.6
+    [InlineData("0", 10, true, "0e+3", true)]   // (10)/log2(10) -> 3 zeros
+    [InlineData("0", 30, true, "0e+9", true)]   // (30)/log2(10) -> 9 zeros
+    [InlineData("0", 32, true, "0e+10", true)]  // (32)/log2(10) -> 9-10 zeros
+    [InlineData("0", 33, true, "0e+10", true)]  // (32)/log2(10) -> 10 zeros
+
+    [InlineData("1111", -4, false, "69.4", false)]
+    [InlineData("1111", 0, false, "1111", false)]
+    [InlineData("1111", 4, false, "1.778e+4", false)]
+    [InlineData("-1111", -4, false, "-69.4", false)]
+    [InlineData("-1111", 0, false, "-1111", false)]
+    [InlineData("-1111", 4, false, "-1.778e+4", false)]
+
+    [InlineData("1111", -4, true, "0.0", true)]
+    [InlineData("1111", 0, true, "0", true)]
+    [InlineData("1111", 4, true, "0e+1", true)]
+    [InlineData("-1111", -4, true, "0.0", true)]
+    [InlineData("-1111", 0, true, "0", true)]
+    [InlineData("-1111", 4, true, "0e+1", true)]
     public void OutOfPrecision_ZeroValues(string mantissaStr, int scale, bool includesGuardBits, string expectedToString, bool isOutOfPrecision)
     {
         var mantissa = BigInteger.Parse(mantissaStr);
         var value = new BigFloat(mantissa, scale, includesGuardBits);
         
         Assert.True(isOutOfPrecision == value.IsOutOfPrecision);
-        Assert.Equal(expectedToString, value.ToString());
+        var stringValue = value.ToString();
+        Assert.Equal(expectedToString, stringValue);
     }
 
     [Theory]
-    [InlineData("111111111111111111111111111111111", 1, false, "11")]
-    [InlineData("111111111111111111111111111111111", 2, false, "111")]
-    [InlineData("111111111111111111111111111111111", -1, false, "0.1")]
-    //[InlineData("111111111111", 32, true, "111111111111")]
-    [InlineData("111111111111", 0, true, "0.00000000000000000000111111111111")]
-    [InlineData("1111", 32, true, "1111")]
-    [InlineData("1111", 33, true, "2222")]
-    [InlineData("1111", 34, true, "4444")]
-    [InlineData("1111", 36, true, "17776")]
-    [InlineData("1111111", 36, true, "17777776")]
-    [InlineData("1111", 31, true, "555.5")]
-    [InlineData("1111", 28, true, "69.4375")]
-    [InlineData("-1111", 32, true, "-1111")]
-    [InlineData("-1111", 33, true, "-2222")]
-    [InlineData("-1111", 36, true, "-17776")]
-    [InlineData("-1111", 31, true, "-555.5")]
-    [InlineData("-1111", 28, true, "-69.4375")]
+    [InlineData("1111111111111111111111111111111111", 1, true, "5.1740143034193250868056e+23")]
+    [InlineData("1111111111111111111111111111111111", 2, true, "1.03480286068386501736111e+24")]
+    [InlineData("1111111111111111111111111111111111", -1, true, "129350357585483127170139")]
+    [InlineData("111111111111", 0, false, "111111111111")]
+    [InlineData("111111111111", -32, true, "0.0000000060")] // 10 digits go into the guard bits
+    [InlineData("1111111", 4, false, "1.777778e+7")]
+    [InlineData("1111", 0, false, "1111")]
+    [InlineData("1111", 1, false, "2.22e+3")] // or 2.222e+3
+    [InlineData("1111", 2, false, "4.44e+3")] // or 4.444e+3
+    [InlineData("1111", 4, false, "1.778e+4")]
+    [InlineData("1111", -1, false, "556")]
+    [InlineData("1111", -4, false, "69.4")]  
+    [InlineData("-1111", 0, false, "-1111")]
+    [InlineData("-1111", 1, false, "-2.22e+3")]
+    [InlineData("-1111", 4, false, "-1.778e+4")]
+    [InlineData("-1111", -1, false, "-556")]
+    [InlineData("-1111", -4, false, "-69.4")] 
     public void ToString_NonZeroValues(string mantissaStr, int scale, bool includesGuardBits, string expectedToString)
     {
         var mantissa = BigInteger.Parse(mantissaStr);
         var value = new BigFloat(mantissa, scale, includesGuardBits);
-        
-        Assert.Equal(expectedToString, value.ToString());
+        string valueStr = value.ToString();
+        Assert.Equal(expectedToString, valueStr);
     }
 
     #endregion
