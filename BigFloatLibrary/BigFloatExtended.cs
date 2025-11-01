@@ -241,18 +241,17 @@ public readonly partial struct BigFloat
     public BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
     {
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
-        
+        Scale = binaryScaler - addedBinaryPrecision;
+
         if (value.IsZero)
         {
             _mantissa = BigInteger.Zero;
-            Scale = binaryScaler - (valueIncludesGuardBits ? GuardBits : 0) - applyGuardBits;
             _size = 0;
             AssertValid();
             return;
         }
         
         _mantissa = value << applyGuardBits;
-        Scale = binaryScaler - addedBinaryPrecision;
         _size = (int)BigInteger.Abs(_mantissa).GetBitLength();
 
         AssertValid();
