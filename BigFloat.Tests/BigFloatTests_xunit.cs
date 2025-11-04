@@ -5760,6 +5760,43 @@ public class OriginalBigFloatTests
     }
 
     [Fact]
+    public void SmallestSubnormal_HasExpectedBitPattern()
+    {
+        // Smallest positive subnormal: 2^-1074
+        var d = (double)new BigFloat(1, binaryScaler: -1074);
+        Assert.Equal(0x0000_0000_0000_0001L, BitConverter.DoubleToInt64Bits(d));
+    }
+
+    [Fact]
+    public void HalfwayRoundsToEven_MinNormalBitPattern()
+    {
+        // Half-way below the smallest normal; ties-to-even → min normal
+        var eps = new BigFloat(1, binaryScaler: -1075);
+        var near = new BigFloat(1, binaryScaler: -1022) - eps;
+        var d = (double)near;
+
+        Assert.Equal(0x0010_0000_0000_0000L, BitConverter.DoubleToInt64Bits(d));
+    }
+
+    [Fact]
+    public void Overflow_ProducesPositiveInfinity()
+    {
+        // Overflow path
+        var d = (double)new BigFloat(1, binaryScaler: 2000);
+        Assert.True(double.IsPositiveInfinity(d));
+    }
+
+    [Fact]
+    public void NegativeTinyUnderflow_ProducesNegativeZero()
+    {
+        // Negative tiny underflow → -0.0 (sign preserved even though magnitude → 0)
+        var d = (double)(-new BigFloat(1, binaryScaler: -2000));
+        const long ans = unchecked((long)0x8000_0000_0000_0000UL);
+        var intVal = BitConverter.DoubleToInt64Bits(d);
+        Assert.Equal(ans, intVal);
+    }
+
+    [Fact]
     public void Verify_CompareTo_BigInteger()
     {
         BigFloat a;
