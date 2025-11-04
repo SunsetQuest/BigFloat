@@ -56,11 +56,12 @@ public readonly partial struct BigFloat
 
         int valueSize = (int)BigInteger.Abs((BigInteger)value).GetBitLength();
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -83,11 +84,12 @@ public readonly partial struct BigFloat
 
         int valueSize = BitOperations.Log2((uint)value) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -128,11 +130,12 @@ public readonly partial struct BigFloat
 
         int valueSize = BitOperations.Log2(value) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -157,11 +160,13 @@ public readonly partial struct BigFloat
             ? 128
             : (int)Int128.Log2(Int128.Abs(value)) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
         _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -184,11 +189,12 @@ public readonly partial struct BigFloat
 
         int valueSize = (int)UInt128.Log2(value) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -291,11 +297,12 @@ public readonly partial struct BigFloat
 
         int valueSize = BitOperations.Log2(magnitude) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -319,11 +326,12 @@ public readonly partial struct BigFloat
         BigInteger absValue = BigInteger.Abs((BigInteger)value);
         int valueSize = (int)absValue.GetBitLength();
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -346,11 +354,12 @@ public readonly partial struct BigFloat
 
         int valueSize = BitOperations.Log2(value) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + (effectivePrecision - valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
+        _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
     }
@@ -592,7 +601,7 @@ public readonly partial struct BigFloat
     /// denormalized (subnormal) forms. Precision loss due to rounding is ignored. 
     /// </summary>
     public bool FitsInADoubleWithDenormalization
-        => (BinaryExponent + 1023) is (>= -51 and <= 2046);
+        => (BinaryExponent + 1023) is (>= -1074 and <= 2046);
 
     /// <summary>
     /// Returns true if this <see cref="BigFloat"/> can be represented as a
@@ -608,7 +617,7 @@ public readonly partial struct BigFloat
     /// denormalized (subnormal) forms. Precision loss due to rounding is ignored.
     /// </summary>
     public bool FitsInAFloatWithDenormalization
-        => (BinaryExponent + 127) is (>= -22 and <= 254);
+        => (BinaryExponent + 127) is (>= -149 and <= 254);
 
 
     /// <summary>
