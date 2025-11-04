@@ -389,30 +389,30 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Enhanced division with adaptive algorithm selection based on operand sizes
     /// </summary>
-    public static BigFloat operator /(BigFloat divisor, BigFloat dividend)
+    public static BigFloat operator /(BigFloat numerator, BigFloat denominator)
     {
         const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
         
         // Early exit for zero divisor
-        if (dividend.IsStrictZero)
+        if (denominator.IsStrictZero)
         {
             throw new DivideByZeroException("Division by zero");
         }
 
         // Use optimized algorithm for small numbers
-        if (divisor._size < SMALL_NUMBER_THRESHOLD && dividend._size < SMALL_NUMBER_THRESHOLD)
+        if (numerator._size < SMALL_NUMBER_THRESHOLD && denominator._size < SMALL_NUMBER_THRESHOLD)
         {
-            return DivideSmallNumbers(divisor, dividend);
+            return DivideSmallNumbers(numerator, denominator);
         }
 
         // Use advanced division algorithms for large numbers
-        if (divisor._size > BURNIKEL_ZIEGLER_THRESHOLD || dividend._size > BURNIKEL_ZIEGLER_THRESHOLD)
+        if (numerator._size > BURNIKEL_ZIEGLER_THRESHOLD || denominator._size > BURNIKEL_ZIEGLER_THRESHOLD)
         {
-            return DivideLargeNumbers(divisor, dividend);
+            return DivideLargeNumbers(numerator, denominator);
         }
 
         // Standard division algorithm
-        return DivideStandard(divisor, dividend);
+        return DivideStandard(numerator, denominator);
     }
 
     /// <summary>
