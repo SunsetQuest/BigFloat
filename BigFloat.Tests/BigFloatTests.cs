@@ -41,14 +41,39 @@ public class BigFloatTests
     {
         var value1 = new BigFloat(value1Str);
         var value2 = new BigFloat(value2Str);
-        
+
         // The pipe character indicates where precision differs
         // 123.124 has 17.91 binary accuracy, so 17 bits
-        // 123.124:   1111011.0001111110|11111...   
-        // 123.123|5: 1111011.0001111110|01110...   
+        // 123.124:   1111011.0001111110|11111...
+        // 123.123|5: 1111011.0001111110|01110...
         //                      Diff: |10001
-        
+
         Assert.Equal(shouldBeEqual, value1 == value2);
+    }
+
+    [Fact]
+    public void ToString_SupportsStandardNumericFormatStrings()
+    {
+        var value = new BigFloat(12345);
+
+        var general = value.ToString("G");
+        Assert.Equal(value.ToString(), general);
+
+        var scientific = value.ToString("E");
+        Assert.Equal(value.ToString("E", CultureInfo.InvariantCulture), scientific);
+    }
+
+    [Theory]
+    [InlineData("0.0001234", "E")]
+    [InlineData("12345.6789", "G")]
+    [InlineData("-9876.54321", "e")]
+    public void ToString_WithStandardFormatSpecifier_ShouldMatchInvariantProvider(string value, string format)
+    {
+        var bigFloat = new BigFloat(value);
+        var expected = bigFloat.ToString(format, CultureInfo.InvariantCulture);
+        var result = bigFloat.ToString(format);
+
+        Assert.Equal(expected, result);
     }
 
     #endregion
