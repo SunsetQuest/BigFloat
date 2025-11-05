@@ -167,7 +167,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // 0) Sign checks (no allocations; matches existing semantics).
         int s1 = _mantissa.Sign;
         int s2 = other._mantissa.Sign;
-        if (s1 != s2) return s1 < 0 ? -1 : 1;
+        if (s1 != s2) return s1 < s2 ? -1 : 1;
         if (s1 == 0) return 0; // both zero encodings compare equal
 
         // 1) Raw effective exponent (no rounding): Scale + (main-size).
