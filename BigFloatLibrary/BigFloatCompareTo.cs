@@ -157,20 +157,38 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     #region Primary Comparison Methods
     /// <summary>
     /// Standard numeric comparison (IComparable).
-    /// Compares values after canonicalization: guard bits are rounded away using the library’s rule,
-    /// then magnitudes are aligned by effective exponent. Ignores representation/precision differences
-    /// that do not change the rounded value.
-    /// Returns -1 if this < other, 0 if numerically equal, 1 if this > other.
+    /// Fast path: if the raw effective exponents differ by ≥ 2 (taking sign into account),
+    /// we can decide without paying the cost of canonicalization. Otherwise, we fall back
+    /// to the canonicalized alignment/compare path to preserve exact semantics.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int CompareTo(BigFloat other)
     {
-        var a = GetCanonicalComponents();
+        // 0) Sign checks (no allocations; matches existing semantics).
+        int s1 = _mantissa.Sign;
+        int s2 = other._mantissa.Sign;
+        if (s1 != s2) return s1 < 0 ? -1 : 1;
+        if (s1 == 0) return 0; // both zero encodings compare equal
+
+        // 1) Raw effective exponent (no rounding): Scale + (main-size).
+        //    _size is the mantissa bit-length INCLUDING guard bits.
+        //    mainSize = max(0, _size - GuardBits); when _size==0 the value is zero (handled above).
+        int aMainRaw = (_size > 0) ? (_size - GuardBits) : 0;
+        int bMainRaw = (other._size > 0) ? (other._size - GuardBits) : 0;
+        long e1Raw = (long)Scale + aMainRaw;
+        long e2Raw = (long)other.Scale + bMainRaw;
+        long de = e1Raw - e2Raw;
+
+        // 2) Rounding guard bits can change the effective exponent by at most ±1.
+        //    If |de| >= 2, the ordering cannot flip under canonicalization.
+        if (de <= -2) return s1 > 0 ? -1 : 1;  // this is definitely smaller (or larger if negative)
+        if (de >= +2) return s1 > 0 ? 1 : -1; // this is definitely larger (or smaller if negative)
+
+        // 3) Close exponents (equal/adjacent): pay the canonicalization cost only now.
+        var a = GetCanonicalComponents();   // rounds away guard bits, handles carry and scale adjust
         var b = other.GetCanonicalComponents();
 
-        int s1 = a.Mant.Sign, s2 = b.Mant.Sign;
-        if (s1 != s2) return s1 < s2 ? -1 : 1;
-        if (s1 == 0) return 0;
-
+        // Signs can’t change under canonicalization; compare aligned canonicals.
         int core = CmpAligned(a, b);
         return s1 > 0 ? core : -core;
     }
