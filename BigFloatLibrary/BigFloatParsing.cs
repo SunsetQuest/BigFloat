@@ -4,6 +4,7 @@
 using System;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace BigFloatLibrary;
 
@@ -392,15 +393,14 @@ public readonly partial struct BigFloat
         result.AssertValid();
         return true;
 
-        static bool Helper_OnlyWhitespaceRemaining(ReadOnlySpan<char> numericSpan, ref int inputCurser)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool Helper_OnlyWhitespaceRemaining(ReadOnlySpan<char> s, ref int i)
         {
-            // only whitespace is allowed after closing brace/bracket/param
-            while (inputCurser < numericSpan.Length && char.IsWhiteSpace(numericSpan[inputCurser]))
-            {
-                inputCurser++;
-            }
-
-            return inputCurser >= numericSpan.Length;
+            int len = s.Length;
+            int k = i + 1;
+            while (k < len && char.IsWhiteSpace(s[k])) k++;
+            i = k - 1;                 
+            return k >= len;           // true if only whitespace remained
         }
     }
 
