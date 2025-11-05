@@ -117,7 +117,7 @@ public class ConversionTests
     [InlineData(-3.14159f)]
     [InlineData(float.MinValue)]
     [InlineData(float.MaxValue)]
-    [InlineData(float.Epsilon)]
+    [InlineData(float.Epsilon)] 
     public void Constructor_FromFloat_CreatesCorrectValue(float value)
     {
         if (float.IsFinite(value))
