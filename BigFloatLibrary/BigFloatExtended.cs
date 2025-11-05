@@ -94,12 +94,34 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 15)
+    public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 15)
     {
-        int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
+        if (value == 0)
+        {
+            this = default;
+            Scale = binaryScaler - binaryPrecision;
+            AssertValid();
+            return;
+        }
+
+        if (binaryPrecision < 0)
+        {
+            ThrowInvalidInitializationException($"binaryPrecision ({binaryPrecision}) cannot be negative.");
+        }
+
+        uint magnitude = value > 0
+            ? (uint)value
+            : unchecked((uint)(-value));
+
+        int valueSize = BitOperations.Log2(magnitude) + 1;
+        int effectivePrecision = Math.Max(binaryPrecision, valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
+
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler - addedBinaryPrecision;
-        _size = (value == 0) ? 0 : (int)short.Log2(value) + 1 + applyGuardBits;
+        Scale = binaryScaler - effectivePrecision + valueSize;
+        _size = guardBitsToAdd + effectivePrecision;
+
         AssertValid();
     }
 
@@ -580,7 +602,7 @@ public readonly partial struct BigFloat
         }
         else
         {
-            // fallback to your existing GetBitLength (rarely hit)
+            // fallback to GetBitLength (rarely hit)
             size = (int)absNew.GetBitLength();
         }
 
