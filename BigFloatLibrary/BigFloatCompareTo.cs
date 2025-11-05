@@ -114,8 +114,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         in (BigInteger Mant, int Scale, int Size) a,
         in (BigInteger Mant, int Scale, int Size) b)
     {
-        long e1 = (long)a.Scale + a.Size;
-        long e2 = (long)b.Scale + b.Size;
+        // Use effective exponent based on MAIN size (exclude GuardBits).
+        // a.Size/b.Size here include GuardBits unless zero; subtract them out.
+        int aMain = a.Size == 0 ? 0 : a.Size - BigFloat.GuardBits;
+        int bMain = b.Size == 0 ? 0 : b.Size - BigFloat.GuardBits;
+
+        long e1 = (long)a.Scale + aMain;
+        long e2 = (long)b.Scale + bMain;
         if (e1 != e2) return e1 < e2 ? -1 : 1;
 
         BigInteger am = BigInteger.Abs(a.Mant);
@@ -133,7 +138,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger aHi = am >> d;
             int cmp = aHi.CompareTo(bm);
             if (cmp != 0) return cmp;
-            bool sticky = (aHi << d) != am;           // magnitude-based
+            bool sticky = (aHi << d) != am;
             return sticky ? 1 : 0;
         }
         else
@@ -143,7 +148,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger bHi = bm >> d;
             int cmp = am.CompareTo(bHi);
             if (cmp != 0) return cmp;
-            bool sticky = (bHi << d) != bm;           // magnitude-based
+            bool sticky = (bHi << d) != bm;
             return sticky ? -1 : 0;
         }
     }
