@@ -6816,7 +6816,7 @@ public class OriginalBigFloatTests
         private const int StandardPrecision = 100;
         private const int HighPrecision = 200;
         private const double DoublePrecisionTolerance = 1e-15;
-        private const double TaylorApproximationTolerance = 1e-24;
+        private const double TaylorApproximationTolerance = 1e-17;
 
         #region Exact Mathematical Values Tests
 

@@ -113,6 +113,7 @@ public class ComparerTests
     [InlineData(5.5, 10.2)]
     [InlineData(-3.7, 2.1)]
     [InlineData(0.0, 1.0)]
+    [InlineData(-1.0, 0.0)]
     public void ComparisonOperators_WorkCorrectly(double smaller, double larger)
     {
         var a = (BigFloat)(decimal)smaller;

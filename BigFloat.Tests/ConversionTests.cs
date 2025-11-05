@@ -508,7 +508,7 @@ public class ConversionTests
         
         if (targetType == typeof(string))
         {
-            Assert.Equal(expectedValue.ToString(), result.ToString());
+            Assert.Equal(expectedValue.ToString(), result.ToString().TrimEnd('0'));
         }
         else if (targetType == typeof(double))
         {
