@@ -71,7 +71,7 @@ public readonly partial struct BigFloat
         //string orgValue = numericString;
         if (string.IsNullOrEmpty(numericString))
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
 
@@ -79,7 +79,7 @@ public readonly partial struct BigFloat
         int locAfterSign = (numericString[0] is '-' or '+') ? 1 : 0;
         if (numericString.Length == locAfterSign)    //[-,+][END] - fail  
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
         else if (numericString[locAfterSign] == '0')  //[-,+]0___
@@ -122,43 +122,37 @@ public readonly partial struct BigFloat
     ///  * {{123.456}}  limit of one only
     ///  * 123,456 789  mismatched separators will fail
     /// </summary>
-    /// <param name="numericString">The value to parse.</param>
+    /// <param name="numericSpan">The value to parse.</param>
     /// <param name="result">(out) The returned result.</param>
     /// <param name="binaryScaler">(optional) Any additional power-of-two scale amount to include. Negative values are okay.</param>
+    /// <param name="guardBitsIncluded">(optional) The amount of guard bits included in <paramref name="numericSpan"/>.</param>
     /// <returns>Returns true if successful.</returns>
-    public static bool TryParseDecimal(string numericString, out BigFloat result, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
+    public static bool TryParseDecimal(ReadOnlySpan<char> numericSpan, out BigFloat result, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
     {
-        //// Add at the beginning of the function:
-        if (numericString is null)
-        {
-            result = Zero;
-            return false;
-        }
-
         bool usedCommaAlready = false;
         bool usedSpaceAlready = false;
         int decimalLocation = -1;
         int sign = 0;
-        int braceTypeAndStatus  = 0;  // 0=not used, positive if opening found, negative if closed.
+        int braceTypeAndStatus = 0;  // 0=not used, positive if opening found, negative if closed.
         int accuracyDelimiterPosition = -1;
         int expLocation = -1;
         int exp = 0;
         int expSign = 0;
         int destinationLocation = 0;
-        int xCount  = 0;
+        int xCount = 0;
 
-        int bufferLength = numericString.Length;
+        int bufferLength = numericSpan.Length;
         Span<char> cleaned = stackalloc char[bufferLength];
 
         for (int inputCurser = 0; inputCurser < bufferLength; inputCurser++)
         {
-            char c = numericString[inputCurser];
+            char c = numericSpan[inputCurser];
             switch (c)
             {
                 case >= '0' and <= '9':
-                    if (xCount  > 0 || destinationLocation >= bufferLength)
+                    if (xCount > 0 || destinationLocation >= bufferLength)
                     {   // digits should not appear after an 'X'
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     cleaned[destinationLocation++] = c;
@@ -166,7 +160,7 @@ public readonly partial struct BigFloat
                 case '.':
                     if (decimalLocation >= 0 || expLocation > 0)
                     {   // decimal point already found earlier OR following 'e'
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     decimalLocation = destinationLocation;
@@ -174,7 +168,7 @@ public readonly partial struct BigFloat
                 case 'e' or 'E':
                     if (expLocation >= 0)
                     {   // 'e' point already found earlier OR position 0
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     expLocation = destinationLocation;
@@ -185,7 +179,7 @@ public readonly partial struct BigFloat
                     {  // a '-' is allowed in the leading place
                         if (sign != 0)
                         {   // Lets make sure we did not try to add a sign already
-                            result = Zero;
+                            result = default;
                             return false;
                         }
                         sign = signVal;
@@ -195,21 +189,21 @@ public readonly partial struct BigFloat
 
                         if (expSign != 0)
                         {   // but not if a sign was already found
-                            result = Zero;
+                            result = default;
                             return false;
                         }
                         expSign = signVal;
                     }
                     else
                     {
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     break;
                 case '|':
                     if (accuracyDelimiterPosition >= 0 || expLocation > 0)
                     {   // accuracy delimiter already found earlier OR following 'e'
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     accuracyDelimiterPosition = destinationLocation;
@@ -222,26 +216,18 @@ public readonly partial struct BigFloat
                     if (accuracyDelimiterPosition < 0)
                         accuracyDelimiterPosition = destinationLocation;
                     break;
-                case ' ':
+                case ' ' or ',' or '_':
                     if (usedCommaAlready)
                     {   // already using Commas
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     usedSpaceAlready = true;
                     break;
-                case ',':
-                    if (usedSpaceAlready)
-                    {   // already using Spaces
-                        result = Zero;
-                        return false;
-                    }
-                    usedCommaAlready = true;
-                    break;
                 case '{' or '(' or '[':
-                    if (braceTypeAndStatus != 0)
+                    if (braceTypeAndStatus != 0 || destinationLocation != 0)
                     {   // already using Spaces
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     braceTypeAndStatus = c;
@@ -252,15 +238,15 @@ public readonly partial struct BigFloat
                         (c == ']' && braceTypeAndStatus != '['))
                     {
                         // The closing type should match.
-                        result = Zero;
+                        result = default;
                         return false;
                     }
-                    if (!Helper_OnlyWhitespaceRemaining(numericString, ref inputCurser))
+                    if (!Helper_OnlyWhitespaceRemaining(numericSpan, ref inputCurser))
                     {
-                        result = Zero;
+                        result = default;
                         return false;
                     }
-                    braceTypeAndStatus  = -c;
+                    braceTypeAndStatus = -c;
                     break;
                 case '"' or '\'':
                     if (braceTypeAndStatus == 0)
@@ -270,22 +256,29 @@ public readonly partial struct BigFloat
                     else if ((c == '"' && braceTypeAndStatus == '"') ||
                          (c == '\'' && braceTypeAndStatus == '\''))
                     {
-                        if (!Helper_OnlyWhitespaceRemaining(numericString, ref inputCurser))
+                        if (!Helper_OnlyWhitespaceRemaining(numericSpan, ref inputCurser))
                         {
-                            result = Zero;
+                            result = default;
                             return false;
                         }
                         braceTypeAndStatus = -c;
                     }
                     else
                     {   // Should be either 0 (for not used) or c (for closing)
-                        result = Zero;
+                        result = default;
+                        return false;
+                    }
+                    break;
+                case '\t' or '\n' or '\r' or '\f' or '\v':
+                    if (!Helper_OnlyWhitespaceRemaining(numericSpan, ref inputCurser))
+                    {
+                        result = default;
                         return false;
                     }
                     break;
                 default:
                     // fail: unexpected char found
-                    result = Zero;
+                    result = default;
                     return false;
             }
         }
@@ -293,7 +286,7 @@ public readonly partial struct BigFloat
         // Check to make sure for an opening brace/bracket/param that was not closed.
         if (braceTypeAndStatus > 0)
         {
-            result = Zero;
+            result = default;
             return false;
         }
 
@@ -305,7 +298,7 @@ public readonly partial struct BigFloat
             // 'X' cannot be used with 'e' notation
             if (expLocation > 0)
             {
-                result = Zero;
+                result = default;
                 return false;
             }
             exp = xCount;
@@ -317,7 +310,7 @@ public readonly partial struct BigFloat
             Span<char> expString = cleaned[expLocation..];
             if (!int.TryParse(expString, out exp))
             {   // unable to parse exp after 'e'
-                result = Zero;
+                result = default;
                 return false;
             }
             if (expSign < 0) { exp = -exp; }
@@ -328,7 +321,7 @@ public readonly partial struct BigFloat
         // Lets extract the actual base-10 number
         if (!BigInteger.TryParse(cleaned, out BigInteger val))
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
 
@@ -340,7 +333,7 @@ public readonly partial struct BigFloat
             (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
 
         if (sign < 0) { val = BigInteger.Negate(val); }
-        
+
         // No decimal point found, so place it at the end.
         if (decimalLocation < 0)
         {
@@ -399,15 +392,15 @@ public readonly partial struct BigFloat
         result.AssertValid();
         return true;
 
-        static bool Helper_OnlyWhitespaceRemaining(string numericString, ref int inputCurser)
+        static bool Helper_OnlyWhitespaceRemaining(ReadOnlySpan<char> numericSpan, ref int inputCurser)
         {
-            // only whitespace is allowed after closing brace/bracket/param 
-            while (inputCurser < numericString.Length && char.IsWhiteSpace(numericString[inputCurser]))
+            // only whitespace is allowed after closing brace/bracket/param
+            while (inputCurser < numericSpan.Length && char.IsWhiteSpace(numericSpan[inputCurser]))
             {
                 inputCurser++;
             }
 
-            return inputCurser >= numericString.Length;
+            return inputCurser >= numericSpan.Length;
         }
     }
 
@@ -488,7 +481,7 @@ public readonly partial struct BigFloat
         // end and no digits found already, lets fail
         if (inputCurser > hexInput.Length - 1)
         {
-            result = Zero;
+            result = default;
             return false;
         }
 
@@ -521,7 +514,7 @@ public readonly partial struct BigFloat
                     if (radixLocation != 0)
                     {
                         // radix point already found earlier
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     radixLocation = destinationLocation;
@@ -529,7 +522,7 @@ public readonly partial struct BigFloat
                 case '|':
                     if (accuracyDelimiterPosition >= 0 || expLocation > 0)
                     {   // accuracy delimiter already found earlier OR following 'e'
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     accuracyDelimiterPosition = destinationLocation;
@@ -538,7 +531,7 @@ public readonly partial struct BigFloat
                     if (usedCommaAlready)
                     {
                         // already using Commas
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     usedSpaceAlready = true;
@@ -547,7 +540,7 @@ public readonly partial struct BigFloat
                     if (usedSpaceAlready)
                     {
                         // already using Spaces
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     usedCommaAlready = true;
@@ -556,7 +549,7 @@ public readonly partial struct BigFloat
                     if (BraceTypeAndStatus != 0)
                     {
                         // already using Spaces
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     BraceTypeAndStatus = 1;
@@ -565,7 +558,7 @@ public readonly partial struct BigFloat
                     if (BraceTypeAndStatus != 1)
                     {
                         // fail: no had leading '{' or another type used
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     BraceTypeAndStatus = -1;
@@ -574,7 +567,7 @@ public readonly partial struct BigFloat
                     if (BraceTypeAndStatus != 0)
                     {
                         // already using Spaces
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     BraceTypeAndStatus = 3;
@@ -583,7 +576,7 @@ public readonly partial struct BigFloat
                     if (BraceTypeAndStatus != 3)
                     {
                         // fail: no had leading '(' or another type used
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     BraceTypeAndStatus = -3;
@@ -592,7 +585,7 @@ public readonly partial struct BigFloat
                     if (BraceTypeAndStatus is not 0 or 4)
                     {
                         // already using Spaces
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                     if (BraceTypeAndStatus == 4)
@@ -602,7 +595,7 @@ public readonly partial struct BigFloat
                     break;
                 default:
                     // fail: unexpected char found
-                    result = Zero;
+                    result = default;
                     return false;
             }
 
@@ -615,7 +608,7 @@ public readonly partial struct BigFloat
                     if (!char.IsWhiteSpace(hexInput[inputCurser]))
                     {
                         // only whitespace expected after closing brace
-                        result = Zero;
+                        result = default;
                         return false;
                     }
                 }
@@ -626,7 +619,7 @@ public readonly partial struct BigFloat
         // check if no digits were found
         if (destinationLocation <= 1 && noLeadingZerosFound)
         {
-            result = Zero;
+            result = default;
             return false;
         }
 
@@ -656,7 +649,7 @@ public readonly partial struct BigFloat
 
         if (!BigInteger.TryParse(cleaned, NumberStyles.AllowHexSpecifier, null, out BigInteger asInt))
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
 
@@ -711,7 +704,7 @@ public readonly partial struct BigFloat
 
         if (inputLen == 0)
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
 
@@ -757,7 +750,7 @@ public readonly partial struct BigFloat
                     // Let's make sure the radix was not already found.
                     if (radixPointFound)
                     {
-                        result = new BigFloat(0);
+                        result = default;
                         return false; // Function was not successful - duplicate '.'
                     }
                     radixPointFound = true;
@@ -768,20 +761,20 @@ public readonly partial struct BigFloat
                     if (accuracyDelimiterPosition >= 0)
                     {
                         // multiple precision spacers found (| or :)
-                        result = new BigFloat(0);
+                        result = default;
                         return false;
                     }
                     accuracyDelimiterPosition = destinationLocation;
                     break;
                 default:
-                    result = new BigFloat(0);
+                    result = default;
                     return false; // Function was not successful - unsupported char found
             }
         }
 
         if (destinationLocation == 0)
         {
-            result = new BigFloat(0);
+            result = default;
             return false;
         }
 
