@@ -43,18 +43,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <returns>The value as a string.</returns>
     public string ToString(string format)
     {
-        if (string.IsNullOrEmpty(format))
-        {
-            return ToString(); // default decimal conversion
-        }
-
-        // Use an invariant upper-case switch to select the conversion.
-        return format.ToUpperInvariant() switch
-        {
-            "X" => ToHexString(),
-            "B" => ToBinaryString(),
-            _ => throw new FormatException($"The {format} format string is not supported.")
-        };
+        return ToString(format, null);
     }
 
     /// <summary>
@@ -121,17 +110,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <param name="format">A format specifier (if empty, default decimal conversion is used).</param>
     /// <param name="provider">Format provider (ignored in this implementation).</param>
     /// <returns>True if the formatting fits in the destination span; otherwise, false.</returns>
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    public bool TryFormat(Span<char> destination, out int charsWritten,
+                          ReadOnlySpan<char> format, IFormatProvider? provider)
     {
         if (format.IsEmpty)
         {
-            // Default decimal formatting.
-            string s = ToString();
-            if (s.Length > destination.Length)
-            {
-                charsWritten = 0;
-                return false;
-            }
+            var s = ToString();
+            if (s.Length > destination.Length) { charsWritten = 0; return false; }
             s.AsSpan().CopyTo(destination);
             charsWritten = s.Length;
             return true;
@@ -141,32 +126,31 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         switch (fmt)
         {
             case 'X':
-                {
-                    string hex = ToHexString();
-                    if (hex.Length > destination.Length)
-                    {
-                        charsWritten = 0;
-                        return false;
-                    }
-                    hex.AsSpan().CopyTo(destination);
-                    charsWritten = hex.Length;
-                    return true;
-                }
+                var hex = ToHexString();
+                if (hex.Length > destination.Length) { charsWritten = 0; return false; }
+                hex.AsSpan().CopyTo(destination);
+                charsWritten = hex.Length;
+                return true;
+
             case 'B':
-                {
-                    int required = CalculateBinaryStringLength();
-                    if (required > destination.Length)
-                    {
-                        charsWritten = 0;
-                        return false;
-                    }
-                    WriteBinaryToSpan(destination, out charsWritten);
-                    return true;
-                }
+                int required = CalculateBinaryStringLength();
+                if (required > destination.Length) { charsWritten = 0; return false; }
+                WriteBinaryToSpan(destination, out charsWritten);
+                return true;
+
+            case 'E':
+            case 'G':
+            case 'R':
             default:
-                throw new FormatException($"The {format.ToString()} format string is not supported.");
+                // Fallback to IFormattable semantics
+                var s = ToString(format.ToString(), provider);
+                if (s.Length > destination.Length) { charsWritten = 0; return false; }
+                s.AsSpan().CopyTo(destination);
+                charsWritten = s.Length;
+                return true;
         }
     }
+
 
     public void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0, bool showGuardBitsSeparator = false)
     {
