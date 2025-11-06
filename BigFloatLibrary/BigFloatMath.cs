@@ -60,7 +60,7 @@ public readonly partial struct BigFloat
             // Let's first make sure we would have some precision remaining after our exponent operation.
             if (value._size <= 0)
             {
-                return Zero; // technically more of a "NA".
+                return default; // technically more of a "NA".
             }
 
             int removedExp = value.BinaryExponent;

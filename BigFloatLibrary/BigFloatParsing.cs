@@ -439,7 +439,7 @@ public readonly partial struct BigFloat
     {
         if (hexInput.IsEmpty)
         {
-            result = Zero;
+            result = default;
             return false;
         }
 
@@ -492,7 +492,7 @@ public readonly partial struct BigFloat
             inputCurser++;
             if (inputCurser > hexInput.Length - 1)
             {
-                result = Zero;
+                result = default;
                 return true;
             }
             noLeadingZerosFound = false;

@@ -166,7 +166,7 @@ public class BigFloatGuardBitsTests
     public void ToBinaryString_WithZeroValue_ShouldHandleGuardBitsCorrectly()
     {
         // Arrange
-        var bigFloat = BigFloat.Zero;
+        BigFloat bigFloat = BigFloat.ZeroWithAccuracy(0);
 
         // Act
         string resultWithGuardBits = bigFloat.ToBinaryString(includeGuardBits: true);

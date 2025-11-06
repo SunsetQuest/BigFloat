@@ -17,7 +17,7 @@ public class SpecialValuesAndEdgeCasesTests
     [Fact]
     public void Zero_BehavesCorrectly()
     {
-        var zero = BigFloat.Zero;
+        var zero = BigFloat.ZeroWithAccuracy(0);
         
         // Basic properties
         Assert.True(zero.IsZero);
@@ -494,7 +494,7 @@ public class SpecialValuesAndEdgeCasesTests
     [Fact]
     public void NextUp_AtZero_ProducesSmallestPositive()
     {
-        var zero = BigFloat.Zero;
+        var zero = BigFloat.ZeroWithAccuracy(0);
         var nextUp = BigFloat.NextUp(zero);
         
         Assert.True(nextUp == zero); // rounds GuardBits first so false;

@@ -429,8 +429,8 @@ public class EqualityAndComparisonTests
     [Fact]
     public void Equals_WithObject()
     {
-        Assert.True(new BigFloat(1).Equals((object)BigFloat.One));
-        Assert.True(new BigFloat(0).Equals((object)BigFloat.Zero));
+        Assert.True(new BigFloat(1).Equals((object)BigFloat.OneWithAccuracy(0)));
+        Assert.True(new BigFloat(0).Equals((object)BigFloat.ZeroWithAccuracy(0)));
         Assert.False(new BigFloat(1).Equals(null));
         Assert.False(new BigFloat(1).Equals((object)1));
     }

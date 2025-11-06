@@ -272,7 +272,7 @@ public readonly partial struct BigFloat
     {
         int bitsToClear = GuardBits - Scale;
 
-        if (bitsToClear <= 0) return Zero;
+        if (bitsToClear <= 0) return ZeroWithAccuracy(-Scale);
         if (bitsToClear >= _size) return this;
 
         BigInteger mask = (BigInteger.One << (bitsToClear - 1)) - 1;

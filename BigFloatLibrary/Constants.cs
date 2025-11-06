@@ -753,7 +753,7 @@ public readonly partial struct BigFloat
             // Not in cache, lets fetch by ConstantInfo
             if (!Catalog.TryGetInfo(constantId, out ConstantInfo info))
             {
-                return Zero; // Constant not found
+                return default; // Constant not found
             }
 
             // Try to get the constant with the requested precision
@@ -772,7 +772,7 @@ public readonly partial struct BigFloat
                 return generatedPi;
             }
 
-            return Zero; // Couldn't get with requested precision
+            return default; // Couldn't get with requested precision
         }
 
         private static BigFloat TryGetFromCache(string constantId, int precisionInBits)
@@ -810,7 +810,7 @@ public readonly partial struct BigFloat
                     }
                 }
 
-                return Zero; // Not found in cache
+                return default; // Not found in cache
             }
             finally
             {

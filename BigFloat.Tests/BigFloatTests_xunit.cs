@@ -194,7 +194,7 @@ public class OriginalBigFloatTests
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
         Assert.True(bigFloatTotal.EqualsUlp(((BigFloat)doubleTotal), 23, ulpScopeIncludeGuardBits:true)); // edge case
 
-        double BigFloatZero1 = (double)BigFloat.Zero;
+        double BigFloatZero1 = (double)BigFloat.ZeroWithAccuracy(0);
         double BigFloatZero2 = (double)BigFloat.ZeroWithAccuracy(50);
         Assert.Equal(BigFloatZero2, BigFloatZero1); // Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)
 
@@ -1642,22 +1642,22 @@ public class OriginalBigFloatTests
 
 
         BigFloat val, res, ans;
-        Assert.Equal(BigFloat.Pow(BigFloat.Zero, 0), 1);
-        Assert.Equal(BigFloat.Pow(BigFloat.One, 0), 1);
+        Assert.Equal(BigFloat.Pow(BigFloat.ZeroWithAccuracy(0), 0), 1);
+        Assert.Equal(BigFloat.Pow(BigFloat.OneWithAccuracy(0), 0), 1);
         Assert.Equal(BigFloat.Pow(0, 0), 1);
         Assert.Equal(BigFloat.Pow(1, 0), 1);
         Assert.Equal(BigFloat.Pow(2, 0), 1);
         Assert.Equal(BigFloat.Pow(3, 0), 1);
 
-        Assert.Equal(BigFloat.Pow(BigFloat.Zero, 1), 0);
-        Assert.Equal(BigFloat.Pow(BigFloat.One, 1), 1); 
+        Assert.Equal(BigFloat.Pow(BigFloat.ZeroWithAccuracy(0), 1), 0);
+        Assert.Equal(BigFloat.Pow(BigFloat.OneWithAccuracy(0), 1), 1);
         Assert.Equal(BigFloat.Pow(0, 1), 0);
         Assert.Equal(BigFloat.Pow(1, 1), 1);
         Assert.Equal(BigFloat.Pow(2, 1), 2);
         Assert.Equal(BigFloat.Pow(3, 1), 3);
 
-        Assert.Equal(BigFloat.Pow(BigFloat.Zero, 2), 0);
-        Assert.Equal(BigFloat.Pow(BigFloat.One, 2), 1); 
+        Assert.Equal(BigFloat.Pow(BigFloat.ZeroWithAccuracy(0), 2), 0);
+        Assert.Equal(BigFloat.Pow(BigFloat.OneWithAccuracy(0), 2), 1);
         Assert.Equal(BigFloat.Pow(0, 2), 0);
         Assert.Equal(BigFloat.Pow(1, 2), 1);
         Assert.Equal(BigFloat.Pow(2, 2), 4);
@@ -2041,11 +2041,11 @@ public class OriginalBigFloatTests
     public void Verify_BigFloatConstants()
     {
         // BigFloat.Zero  BigFloat.One
-        Assert.Equal(BigFloat.Zero, 0); // Failed on: BigFloat.ZeroWithNoPrecision == 0
-        Assert.Equal(BigFloat.One, 1); // Failed on: BigFloat.One == 1
-        Assert.Equal(BigFloat.Zero, BigFloat.One - BigFloat.One); // Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.One - BigFloat.One
-        Assert.Equal(BigFloat.Zero, BigFloat.Zero); // Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision
-        Assert.Equal(BigFloat.One - BigFloat.Zero, BigFloat.Zero + BigFloat.One); // Failed on: BigFloat.ZeroWithNoPrecision - BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecisionBigFloat.One
+        Assert.Equal(BigFloat.ZeroWithAccuracy(0), 0); // Failed on: BigFloat.ZeroWithNoPrecision == 0
+        Assert.Equal(BigFloat.OneWithAccuracy(0), 1); // Failed on: BigFloat.One == 1
+        Assert.Equal(BigFloat.ZeroWithAccuracy(0), BigFloat.OneWithAccuracy(0) - BigFloat.OneWithAccuracy(0)); // Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.One - BigFloat.One
+        Assert.Equal(BigFloat.ZeroWithAccuracy(0), BigFloat.ZeroWithAccuracy(0)); // Failed on: BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecision
+        Assert.Equal(BigFloat.OneWithAccuracy(0) - BigFloat.ZeroWithAccuracy(0), BigFloat.ZeroWithAccuracy(0) + BigFloat.OneWithAccuracy(0)); // Failed on: BigFloat.ZeroWithNoPrecision - BigFloat.ZeroWithNoPrecision == BigFloat.ZeroWithNoPrecisionBigFloat.One
     }
 
     [Fact]
@@ -4982,8 +4982,8 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_EqualsWithObject()
     {
-        Assert.True(new BigFloat(1).Equals((object)BigFloat.One));
-        Assert.True(new BigFloat(0).Equals((object)BigFloat.Zero));
+        Assert.True(new BigFloat(1).Equals((object)BigFloat.OneWithAccuracy(0)));
+        Assert.True(new BigFloat(0).Equals((object)BigFloat.ZeroWithAccuracy(0)));
         Assert.False(new BigFloat(1).Equals(null));
         Assert.False(new BigFloat(1).Equals((object)1));
     }
@@ -7227,7 +7227,7 @@ public class OriginalBigFloatTests
     {
         Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(-5)));
         Assert.Equal(new BigFloat(5), BigFloat.Abs(new BigFloat(5)));
-        Assert.Equal(BigFloat.Zero, BigFloat.Abs(BigFloat.Zero));
+        Assert.Equal(BigFloat.ZeroWithAccuracy(0), BigFloat.Abs(BigFloat.ZeroWithAccuracy(0)));
     }
 
     [Theory]

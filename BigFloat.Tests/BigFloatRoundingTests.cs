@@ -46,7 +46,7 @@ public class BigFloatRoundingTests
     [Fact]
     public void Ceiling_Zero_ReturnsZero()
     {
-        var bf = BigFloat.Zero;
+        var bf = BigFloat.ZeroWithAccuracy(0);
         var result = bf.Ceiling();
         Assert.True(result.IsZero);
     }
@@ -130,7 +130,7 @@ public class BigFloatRoundingTests
     [Fact]
     public void Floor_Zero_ReturnsZero()
     {
-        var bf = BigFloat.Zero;
+        var bf = BigFloat.ZeroWithAccuracy(0);
         var result = bf.Floor();
         Assert.True(result.IsZero);
     }
@@ -306,7 +306,7 @@ public class BigFloatRoundingTests
     [Fact]
     public void FractionalPart_Zero_ReturnsZero()
     {
-        var bf = BigFloat.Zero;
+        var bf = BigFloat.ZeroWithAccuracy(0);
         var result = bf.FractionalPart();
         Assert.True(result.IsZero);
     }

@@ -552,6 +552,7 @@ public readonly partial struct BigFloat
         return rem + divisor;
     }
 
+
     /// <summary>
     /// Splits the BigFloat into integer and fractional parts. (i.e. ModF)
     /// </summary>
@@ -559,8 +560,8 @@ public readonly partial struct BigFloat
     {
         int bitsToClear = GuardBits - Scale;
 
-        if (bitsToClear <= 0) return (this, Zero);
-        if (bitsToClear >= _size) return (Zero, this);
+        if (bitsToClear <= 0) return (this, ZeroWithAccuracy(0));
+        if (bitsToClear >= _size) return (ZeroWithAccuracy(0), this);
 
         // For integer part, use shift operations to avoid two's complement issues
         BigInteger intPart = ClearLowerNBits(_mantissa, bitsToClear);
@@ -568,7 +569,7 @@ public readonly partial struct BigFloat
 
         return (
             new BigFloat(intPart, Scale, _size),
-            fracPart.IsZero ? Zero : new BigFloat(fracPart, Scale, (int)fracPart.GetBitLength())
+            fracPart.IsZero ? ZeroWithAccuracy(0) : new BigFloat(fracPart, Scale, (int)fracPart.GetBitLength())
         );
     }
 
@@ -1175,7 +1176,7 @@ public readonly partial struct BigFloat
         {
             return b switch
             {
-                0 => Zero,         // exactly 0  
+                0 => ZeroWithAccuracy(a.Accuracy),         // exactly 0  
                 1 => a,            // unchanged  
                 -1 => -a,          // flip sign  
                 2 => a << 1,

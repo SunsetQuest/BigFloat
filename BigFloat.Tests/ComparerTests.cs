@@ -178,14 +178,14 @@ public class ComparerTests
     [Fact]
     public void Compare_Zero_HandledCorrectly()
     {
-        var zero = BigFloat.Zero;
+        var zero = BigFloat.ZeroWithAccuracy(0);
         var positive = new BigFloat(1);
         var negative = new BigFloat(-1);
 
         Assert.True(zero > negative);
         Assert.True(zero < positive);
-        Assert.True(zero == BigFloat.Zero);
-        Assert.Equal(0, zero.CompareTo(BigFloat.Zero));
+        Assert.True(zero == BigFloat.ZeroWithAccuracy(0));
+        Assert.Equal(0, zero.CompareTo(BigFloat.ZeroWithAccuracy(0)));
     }
 
     [Fact]
