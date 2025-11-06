@@ -631,7 +631,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (_mantissa.IsZero) return other == 0;
 
         // Align the ones place, then round away the guard field using the SAME rule
-        // your canonicalization uses (top-guard policy included).
+        // canonicalization uses (top-guard policy included).
         BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
         BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
 
@@ -649,7 +649,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (BinaryExponent < -1) { return other == 0; }
 
         // Align the ones place, then round away the guard field using the SAME rule
-        // your canonicalization uses (top-guard policy included).
+        // canonicalization uses (top-guard policy included).
         BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
         BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
 
