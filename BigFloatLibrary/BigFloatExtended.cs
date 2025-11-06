@@ -178,16 +178,14 @@ public readonly partial struct BigFloat
             return;
         }
 
-        int valueSize = value == Int128.MinValue
-            ? 128
-            : (int)Int128.Log2(Int128.Abs(value)) + 1;
+        UInt128 mag = (UInt128)(value ^ (value >> 127)) - (UInt128)(value >> 127);
+        int valueSize = (int)UInt128.Log2(mag) + 1;
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
         int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
         int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
         Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = effectivePrecision + GuardBits;
         _size = guardBitsToAdd + effectivePrecision;
 
         AssertValid();
