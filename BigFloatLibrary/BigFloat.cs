@@ -529,15 +529,27 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Performs a Modulus operation. 
-    /// For positive values, Modulus is identical to Remainder, for negatives, Modulus and Remainder differ. 
-    /// The remainder is slightly faster.
+    /// Mathematical modulo operation. 
+    /// The result has the same sign as <paramref name="divisor"/>.
+    /// For positive values, modulo is identical to Remainder
+    /// Implemented as: r = Remainder(dividend, divisor); if (r == 0 or sign(r)==sign(divisor)) return r; else return r + divisor.
     /// </summary>
-    public static BigFloat Mod(BigFloat dividend, BigFloat divisor)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Mod(in BigFloat dividend, in BigFloat divisor)
     {
-        return Remainder(dividend, divisor) + ((dividend < 0) ^ (divisor > 0) ?
-            Zero :
-            divisor);
+        // Remainder is scale-aware and avoids huge shifts; it throws on divide-by-zero. 
+        // (See implementation in this file.) 
+        var rem = Remainder(dividend, divisor);  
+
+        // Exact multiple ⇒ keep exact zero (and its accuracy context).
+        if (rem._mantissa.IsZero) return rem;
+
+        // Already the right sign (same as divisor) ⇒ done.
+        // Uses raw mantissa signs to avoid CompareTo/Zero construction or rounding.
+        if (rem._mantissa.Sign == divisor._mantissa.Sign) return rem;
+
+        // Otherwise, shift into the correct range by adding one divisor.
+        return rem + divisor;
     }
 
     /// <summary>
