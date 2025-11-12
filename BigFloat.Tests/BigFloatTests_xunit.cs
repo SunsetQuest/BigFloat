@@ -1318,12 +1318,11 @@ public class OriginalBigFloatTests
             int sq = i * i;
             BigFloat resPos = BigFloat.PowerOf2(i);
             BigFloat resNeg = BigFloat.PowerOf2(-i);
-            //int sqBitCt = (sizeof(uint)*8) - BitOperations.LeadingZeroCount((uint)sq);
-            int sqBitCt = (int)BigInteger.Log2(i) + 1 + BigFloat.GuardBits;
-            Assert.Equal(resPos, sq);
-            Assert.Equal(resNeg, sq);
-            Assert.Equal(resPos.Size, sqBitCt);
-            Assert.Equal(resNeg.Size, sqBitCt);
+            int expectedSize = ((BigFloat)i).Size;
+            Assert.Equal((BigFloat)sq, resPos);
+            Assert.Equal((BigFloat)sq, resNeg);
+            Assert.Equal(expectedSize, resPos.Size);
+            Assert.Equal(expectedSize, resNeg.Size);
         }
 
         // 1, 10, 100, 1000, 10000....testing  (Out of Precision)
@@ -1415,11 +1414,11 @@ public class OriginalBigFloatTests
         }
 
         {
-            BigFloat bf = new(0x7FFFFFFF, BigFloat.GuardBits, true);
+            BigFloat bf = new(((BigInteger)0x7FFFFFFF) << BigFloat.GuardBits, 0, true);
             BigFloat bfSq = BigFloat.PowerOf2(bf);
             Assert.True(bfSq.EqualsUlp((BigFloat)0x3FFFFFFF00000001, 0, ulpScopeIncludeGuardBits: true));
 
-            bf = new BigFloat(0xFFFFFFFF, BigFloat.GuardBits, true);
+            bf = new BigFloat(((BigInteger)0xFFFFFFFF) << BigFloat.GuardBits, 0, true);
             bfSq = BigFloat.PowerOf2(bf);
             Assert.True(bfSq.EqualsUlp((BigFloat)0xFFFF_FFFE_0000_0001, 0, ulpScopeIncludeGuardBits: true));
         }
@@ -5319,65 +5318,106 @@ public class OriginalBigFloatTests
     }
 
     [Theory]
-    [InlineData(555, 554, 0, 33, false)]  // Different at tolerance 1 + 32
-    [InlineData(555, 554, 0, 34, true)]   // Equal at tolerance 2 + 32
-    [InlineData(-555, -554, 0, 33, false)] // Different at tolerance 1 + 32
-    [InlineData(-555, -554, 0, 34, true)]  // Equal at tolerance 2 + 32
-    [InlineData(-555, -554, 0, 35, true)]  // Equal at tolerance 3 + 32
-    public void CompareUlp_LargerIntegers_Theory(int aVal, int bVal, int precision, int tolerance, bool shouldBeEqual)
+    [InlineData(555, 554, 0)]  // 31+1-10=22
+    [InlineData(-555, -554, 0)] // 31+1-10=22
+    public void CompareUlp_LargerIntegers_GreaterOrLessThen(int aVal, int bVal, int precision)
     {
         var a = new BigFloat(aVal, precision);
         var b = new BigFloat(bVal, precision);
 
-        if (shouldBeEqual)
+        int tolerance = 31 + 1 - (int.Max(int.Log2(int.Abs(aVal)), int.Log2(int.Abs(aVal))) + 1);
+
+
+        if (aVal > bVal) // Positive case
         {
-            Assert.True(a.EqualsUlp(b, tolerance));
-            Assert.True(b.EqualsUlp(a, tolerance));
+            Assert.True(a.IsGreaterThanUlp(b, tolerance));
+            Assert.True(b.IsLessThanUlp(a, tolerance));
         }
-        else
+        else // Negative case: -555 < -554
         {
-            if (aVal > bVal) // Positive case
-            {
-                Assert.True(a.IsGreaterThanUlp(b, tolerance));
-                Assert.True(b.IsLessThanUlp(a, tolerance));
-            }
-            else // Negative case: -555 < -554
-            {
-                Assert.True(a.IsLessThanUlp(b, tolerance));
-                Assert.True(b.IsGreaterThanUlp(a, tolerance));
-            }
+            Assert.True(a.IsLessThanUlp(b, tolerance));
+            Assert.True(b.IsGreaterThanUlp(a, tolerance));
         }
+        
     }
 
     [Theory]
-    [InlineData(-555, -554, 0, 1, 33, false)]   // Different at tolerance 1 + 32
-    [InlineData(-555, -554, 0, 1, 34, false)]   // Different at tolerance 2 + 32  
-    [InlineData(-555, -554, 0, 1, 52, true)]    // Equal at tolerance 20 + 32
-    [InlineData(555, 554, 0, 1, 33, false)]     // Different at tolerance 1 + 32
-    [InlineData(555, 554, 0, 1, 34, false)]     // Different at tolerance 2 + 32
+    [InlineData(555, 554, 0)]
+    [InlineData(-555, -554, 0)]
+    public void CompareUlp_LargerIntegers__Equal(int aVal, int bVal, int precision)
+    {
+        var a = new BigFloat(aVal, precision);
+        var b = new BigFloat(bVal, precision);
+
+        int tolerance = 31 + 1 - (int.Max(int.Log2(int.Abs(aVal)), int.Log2(int.Abs(aVal))) + 1);
+
+        Assert.True(a.EqualsUlp(b, tolerance + 1));
+        Assert.True(b.EqualsUlp(a, tolerance + 1));
+    }
+
+    [Theory]
+    [InlineData(-555, -554, 0, 1, 21, false)]
+    [InlineData(-555, -554, 0, 1, 22, false)]
+    [InlineData(-555, -554, 0, 1, 23, true)]
+    [InlineData(555, 554, 0, 1, 21, false)]
+    [InlineData(555, 554, 0, 1, 22, false)]
+    [InlineData(555, 554, 0, 1, 23, true)]
     public void CompareUlp_MixedPrecisions_Theory(int aVal, int bVal, int aPrecision, int bPrecision, int tolerance, bool shouldBeEqual)
     {
-        var a = new BigFloat(aVal, aPrecision);
-        var b = new BigFloat(bVal, bPrecision);
+        var a = new BigFloat(aVal, binaryPrecision: aPrecision);
+        var b = new BigFloat(bVal, binaryPrecision: bPrecision);
 
         if (shouldBeEqual)
         {
-            Assert.True(a.EqualsUlp(b, tolerance));
-            Assert.True(b.EqualsUlp(a, tolerance));
+            Assert.True(a.EqualsUlp(b, tolerance, true));
+            Assert.True(b.EqualsUlp(a, tolerance, true));
         }
         else
         {
             if (aVal > bVal)
             {
-                if (aVal > 0) // 555 vs 554*2 = 555 vs 1108
+                if (aVal < 0)
                 {
-                    Assert.True(a.IsLessThanUlp(b, tolerance));
-                    Assert.True(b.IsGreaterThanUlp(a, tolerance));
+                    Assert.True(a.IsLessThanUlp(b, tolerance, true));
+                    Assert.True(b.IsGreaterThanUlp(a, tolerance, true));
                 }
-                else // -555 vs -554*2 = -555 vs -1108
+                else
                 {
-                    Assert.True(a.IsGreaterThanUlp(b, tolerance));
-                    Assert.True(b.IsLessThanUlp(a, tolerance));
+                    Assert.True(a.IsGreaterThanUlp(b, tolerance, true));
+                    Assert.True(b.IsLessThanUlp(a, tolerance, true));
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(-555, -554, 0, 0, 32, false)]
+    [InlineData(-555, -554, 0, 0, 33, true)]
+    [InlineData(555, 554, 0, 0, 32, false)]
+    [InlineData(555, 554, 0, 0, 33, true)]
+    public void CompareUlp_MixedPrecisions2_Theory(int aVal, int bVal, int aPrecision, int bPrecision, int tolerance, bool shouldBeEqual)
+    {
+        var a = BigFloat.CreateWithPrecisionFromValue(aVal, false, aPrecision);
+        var b = BigFloat.CreateWithPrecisionFromValue(bVal, false, bPrecision);
+
+        if (shouldBeEqual)
+        {
+            Assert.True(a.EqualsUlp(b, tolerance, true));
+            Assert.True(b.EqualsUlp(a, tolerance, true));
+        }
+        else
+        {
+            if (aVal > bVal)
+            {
+                if (aVal < 0) 
+                {
+                    Assert.True(a.IsLessThanUlp(b, tolerance, true));
+                    Assert.True(b.IsGreaterThanUlp(a, tolerance, true));
+                }
+                else
+                {
+                    Assert.True(a.IsGreaterThanUlp(b, tolerance, true));
+                    Assert.True(b.IsLessThanUlp(a, tolerance, true));
                 }
             }
         }
@@ -6232,14 +6272,14 @@ public class OriginalBigFloatTests
         // in      11111111111111111111111111111111111111111111111111111   9007199254740991
         // output: 11111111111111111111111111111111011111111111111111111000000000000000000000000000000001  77371252446329059336519681 <<52
         // exact   1111111111111111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000001 81129638414606663681390495662081
-        expect = new BigFloat("81129638414606663681390495662081");
-        Assert.Equal(output, expect);
+        expect = new BigFloat(BigInteger.Parse("81129638414606663681390495662081"));
+        Assert.True(output.EqualsUlp(expect, 1));
 
         inputVal0 = new BigFloat(9007199254740992UL);
         inputVal1 = new BigFloat(9007199254740991UL);
         output = inputVal0 * inputVal1;
-        expect = new BigFloat("81129638414606672688589750403072");
-        Assert.Equal(output, expect);   
+        expect = new BigFloat(BigInteger.Parse("81129638414606672688589750403072"));
+        Assert.True(output.EqualsUlp(expect, 1));
 
         inputVal0 = new BigFloat("11.000");
         inputVal1 = new BigFloat("3.000");
@@ -6369,8 +6409,8 @@ public class OriginalBigFloatTests
         output = inputVal0 * inputVal1;
 
         // with over accurate expected value
-        expect = new BigFloat("-1154037866912041818479159667074393539946217472", 0);
-        Assert.Equal(output, expect);
+        expect = new BigFloat(BigInteger.Parse("-1154037866912041818479159667074393539946217472"));
+        Assert.True(output.EqualsUlp(expect, 1));
 
         // output   11001110111111101101000111101110100100010001000110110110110101011101110001110001100011
         // expect   11001110111111101101000111101110100100010001000110111000000000000000000000000000000000

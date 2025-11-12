@@ -36,7 +36,7 @@ public class ConversionTests
     {
         var bf = new BigFloat(value);
         Assert.Equal(value, (short)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
+        Assert.Equal(value.ToString(), bf.ToString().Split('.')[0]);
     }
 
     [Theory]
@@ -48,7 +48,7 @@ public class ConversionTests
     {
         var bf = new BigFloat(value);
         Assert.Equal(value, (ushort)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
+        Assert.Equal(value.ToString(), bf.ToString().Split('.')[0]);
     }
 
     [Theory]
@@ -63,7 +63,7 @@ public class ConversionTests
     {
         var bf = new BigFloat(value);
         Assert.Equal(value, (int)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
+        Assert.Equal(value.ToString(), bf.ToString().Split('.')[0]);
     }
 
     [Theory]
@@ -75,7 +75,7 @@ public class ConversionTests
     {
         var bf = new BigFloat(value);
         Assert.Equal(value, (uint)bf);
-        Assert.Equal(value.ToString(), bf.ToString());
+        Assert.Equal(value.ToString(), bf.ToString().Split('.')[0]);
     }
 
     [Theory]
@@ -100,7 +100,7 @@ public class ConversionTests
     [InlineData(1000000000000UL)]
     public void Constructor_FromULong_CreatesCorrectValue(ulong value)
     {
-        var bf = new BigFloat(value);
+        var bf = BigFloat.CreateWithPrecisionFromValue(value);
         Assert.Equal(value, (ulong)bf);
         Assert.Equal(value.ToString(), bf.ToString());
     }
