@@ -316,7 +316,6 @@ public readonly partial struct BigFloat
             : unchecked((uint)(-value));
 
         int valueSize = BitOperations.Log2(magnitude) + 1;
-        int effectivePrecision = binaryPrecision; // Math.Max(binaryPrecision, valueSize);
         int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
         int applyGuardBits = guardBitsToAdd + (binaryPrecision - valueSize);
 
@@ -325,6 +324,53 @@ public readonly partial struct BigFloat
         _size = guardBitsToAdd + binaryPrecision;
 
         AssertValid();
+    }
+
+    public static BigFloat CreateWithPrecisionFromValue(long value, bool valueIncludesGuardBits = false, int adjustBinaryPrecision = 0, int binaryScaler = 0)
+    {
+        if (value == 0)
+        {
+            return new BigFloat(BigInteger.Zero, binaryScaler - adjustBinaryPrecision, 0);
+        }
+
+        ulong magnitude = value > 0
+            ? (ulong)value
+            : unchecked((ulong)(-value));
+
+        int valueSize = (int)ulong.Log2(magnitude) + 1;
+
+        //if (valueSize + adjustBinaryPrecision < 0)
+        //{
+        //    return new BigFloat(BigInteger.Zero, 0, 0);
+        //}
+
+        int effectivePrecision = valueSize + adjustBinaryPrecision; // Math.Max(binaryPrecision, valueSize);
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
+
+        BigInteger _mantissa = (BigInteger)value << applyGuardBits;
+        return new BigFloat(_mantissa, 
+            binaryScaler - effectivePrecision + valueSize,
+            guardBitsToAdd + effectivePrecision);
+    }
+
+    public static BigFloat CreateWithPrecisionFromValue(ulong value, bool valueIncludesGuardBits = false, int adjustBinaryPrecision = 0, int binaryScaler = 0)
+    {
+        if (value == 0)
+        {
+            return new BigFloat(BigInteger.Zero, binaryScaler - adjustBinaryPrecision, 0);
+        }
+
+        int valueSize = (int)ulong.Log2(value) + 1;
+
+        int effectivePrecision = valueSize + adjustBinaryPrecision; 
+        int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
+        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
+
+        BigInteger _mantissa = (BigInteger)value << applyGuardBits;
+        return new BigFloat(_mantissa,
+            binaryScaler - effectivePrecision + valueSize,
+            guardBitsToAdd + effectivePrecision);
     }
 
     public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 63)
