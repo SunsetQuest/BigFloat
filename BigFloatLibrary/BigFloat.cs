@@ -475,13 +475,6 @@ public readonly partial struct BigFloat
         if ((scaleDiff > 0 ? divisor._mantissa : (divisor._mantissa >> -scaleDiff)) == 0)
             throw new DivideByZeroException();
 
-        //return scaleDiff switch
-        //{
-        //    > 0 => new(((dividend._mantissa << scaleDiff) % divisor._mantissa) >> scaleDiff, dividend.Scale, true),
-        //    < 0 => new((dividend._mantissa % (divisor._mantissa << -scaleDiff)) >> -scaleDiff, divisor.Scale, true),
-        //    0 => new(dividend._mantissa % divisor._mantissa, divisor.Scale, true),
-        //};
-
         if (scaleDiff == 0)
             return new(dividend._mantissa % divisor._mantissa, divisor.Scale, true);
 
