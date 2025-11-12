@@ -316,13 +316,13 @@ public readonly partial struct BigFloat
             : unchecked((uint)(-value));
 
         int valueSize = BitOperations.Log2(magnitude) + 1;
-        int effectivePrecision = Math.Max(binaryPrecision, valueSize);
+        int effectivePrecision = binaryPrecision; // Math.Max(binaryPrecision, valueSize);
         int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
-        int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
+        int applyGuardBits = guardBitsToAdd + (binaryPrecision - valueSize);
 
         _mantissa = (BigInteger)value << applyGuardBits;
-        Scale = binaryScaler - effectivePrecision + valueSize;
-        _size = guardBitsToAdd + effectivePrecision;
+        Scale = binaryScaler - binaryPrecision + valueSize;
+        _size = guardBitsToAdd + binaryPrecision;
 
         AssertValid();
     }
