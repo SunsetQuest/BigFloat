@@ -1576,7 +1576,10 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(BigFloat value)
     {
-        //if (value.IsZero) return 0;
+        if (value.BinaryExponent > 31)
+        {
+            throw new OverflowException("BigFloat was either too large or too small for an Int32.");
+        }
 
         // Step 1: round at the guard boundary and remove guard bits
         BigInteger m = RoundingRightShift(value._mantissa, GuardBits);
