@@ -1334,6 +1334,39 @@ public readonly partial struct BigFloat
         return (short)GetRoundedMantissa(value._mantissa << value.Scale);
     }
 
+    /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator int(BigFloat value)
+    {
+        if (value.BinaryExponent > 31)
+        {
+            throw new OverflowException("BigFloat was either too large or too small for an Int32.");
+        }
+
+        // Step 1: round at the guard boundary and remove guard bits
+        BigInteger m = RoundingRightShift(value._mantissa, GuardBits);
+
+        // Step 2: drop working fractional bits (truncate toward zero)
+        if (value.Scale >= 0)
+        {
+            BigInteger whole = m << value.Scale;
+            return checked((int)whole);
+        }
+        else
+        {
+            int k = -value.Scale;
+            BigInteger whole = (m.Sign >= 0) ? (m >> k) : -((-m) >> k);
+            return checked((int)whole);
+        }
+    }
+
+    // todo: update toUint and ToBigInteger to floor.
+    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
+    public static explicit operator uint(BigFloat value)
+    {
+        return (uint)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
+    }
+
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
     /// The fractional part (including GuardBits) are simply discarded.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1364,6 +1397,27 @@ public readonly partial struct BigFloat
     public static explicit operator Int128(BigFloat value)
     {
         return (Int128)GetRoundedMantissa(value._mantissa << value.Scale);
+    }
+
+    /// <summary>Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator BigInteger(BigFloat value)
+    {
+        int bitsToClear = GuardBits - value.Scale;
+        BigInteger mantissa = value._mantissa;
+
+        if (bitsToClear > 0)
+        {
+            mantissa = (mantissa.Sign >= 0)
+                ? mantissa >> bitsToClear
+                : -((-mantissa) >> bitsToClear);
+        }
+        else if (bitsToClear < 0)
+        {
+            mantissa <<= -bitsToClear;
+        }
+
+        return mantissa;
     }
 
     /// <summary>
@@ -1570,60 +1624,6 @@ public readonly partial struct BigFloat
 
             return checked((int)trunc);
         }
-    }
-
-    /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static explicit operator int(BigFloat value)
-    {
-        if (value.BinaryExponent > 31)
-        {
-            throw new OverflowException("BigFloat was either too large or too small for an Int32.");
-        }
-
-        // Step 1: round at the guard boundary and remove guard bits
-        BigInteger m = RoundingRightShift(value._mantissa, GuardBits);
-
-        // Step 2: drop working fractional bits (truncate toward zero)
-        if (value.Scale >= 0)
-        {
-            BigInteger whole = m << value.Scale;
-            return checked((int)whole);
-        }
-        else
-        {
-            int k = -value.Scale;
-            BigInteger whole = (m.Sign >= 0) ? (m >> k) : -((-m) >> k);
-            return checked((int)whole);
-        }
-    }
-
-    // todo: update toUint and ToBigInteger to floor.
-    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
-    public static explicit operator uint(BigFloat value)
-    {
-        return (uint)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
-    }
-
-    /// <summary>Casts a BigFloat to a BigInteger. The fractional part (including guard bits) are simply discarded.</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static explicit operator BigInteger(BigFloat value)
-    {
-        int bitsToClear = GuardBits - value.Scale;
-        BigInteger mantissa = value._mantissa;
-
-        if (bitsToClear > 0)
-        {
-            mantissa = (mantissa.Sign >= 0)
-                ? mantissa >> bitsToClear
-                : -((-mantissa) >> bitsToClear);
-        }
-        else if (bitsToClear < 0)
-        {
-            mantissa <<= -bitsToClear;
-        }
-
-        return mantissa;
     }
 
     /// <summary>
