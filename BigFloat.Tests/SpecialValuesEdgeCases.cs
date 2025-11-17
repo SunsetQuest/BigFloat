@@ -146,9 +146,9 @@ public class SpecialValuesAndEdgeCasesTests
         Assert.False(bf.IsInteger);
         
         // Multiplication by reciprocal should yield ~1
-        var reciprocal = BigFloat.One / bf;
+        var reciprocal = 1 / bf;
         var product = bf * reciprocal;
-        Assert.True(product.EqualsUlp(BigFloat.One, 2));
+        Assert.True(product.EqualsUlp(1, 2));
     }
 
     [Theory]

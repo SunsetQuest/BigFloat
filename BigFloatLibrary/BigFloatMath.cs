@@ -44,7 +44,7 @@ public readonly partial struct BigFloat
         {
             return exponent switch
             {
-                0 => One,
+                0 => OneWithAccuracy(value.Accuracy),
                 1 => value,
                 -1 => Inverse(value),
                 2 => value * value,

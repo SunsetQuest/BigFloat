@@ -136,9 +136,9 @@ public class BigFloatTests
     [Fact]
     public void Inverse_One_ReturnsOne()
     {
-        var one = BigFloat.One;
+        BigFloat one = 1;
         var inverse = BigFloat.Inverse(one);
-        Assert.Equal(BigFloat.One, inverse);
+        Assert.Equal((BigFloat)1, inverse);
     }
 
     [Fact]
