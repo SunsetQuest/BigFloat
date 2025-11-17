@@ -130,11 +130,10 @@ public readonly partial struct BigFloat
     /// <returns>Returns true if successful.</returns>
     public static bool TryParseDecimal(ReadOnlySpan<char> numericSpan, out BigFloat result, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
     {
-        bool usedCommaAlready = false;
-        bool usedSpaceAlready = false;
         int decimalLocation = -1;
         int sign = 0;
         int braceTypeAndStatus = 0;  // 0=not used, positive if opening found, negative if closed.
+        int spacerTypeAndStatus = 0;  // 0=not used or ',' or ' ' or '_'
         int accuracyDelimiterPosition = -1;
         int expLocation = -1;
         int exp = 0;
@@ -145,7 +144,19 @@ public readonly partial struct BigFloat
         int bufferLength = numericSpan.Length;
         Span<char> cleaned = stackalloc char[bufferLength];
 
-        for (int inputCurser = 0; inputCurser < bufferLength; inputCurser++)
+        // travel backward on bufferLength and skip trailing spaces by reducing bufferLength
+        while (bufferLength > 0 && (numericSpan[bufferLength - 1] == ' ' || numericSpan[bufferLength - 1] == '_' || numericSpan[bufferLength - 1] == ','))
+        {
+            bufferLength--;
+        }
+        // travel forward on bufferLength and skip trailing spaces by increasing inputCurser
+        int inputCurser = 0;
+        while (inputCurser < bufferLength && (numericSpan[inputCurser] == ' ' || numericSpan[inputCurser] == '_' || numericSpan[inputCurser] == ','))
+        {
+            inputCurser++;
+        }
+
+        for (; inputCurser < bufferLength; inputCurser++)
         {
             char c = numericSpan[inputCurser];
             switch (c)
@@ -218,12 +229,12 @@ public readonly partial struct BigFloat
                         accuracyDelimiterPosition = destinationLocation;
                     break;
                 case ' ' or ',' or '_':
-                    if (usedCommaAlready)
-                    {   // already using Commas
+                    if (spacerTypeAndStatus != 0 && c != spacerTypeAndStatus)
+                    {   // already using another (comma/space/underscore)
                         result = default;
                         return false;
                     }
-                    usedSpaceAlready = true;
+                    spacerTypeAndStatus = c;
                     break;
                 case '{' or '(' or '[':
                     if (braceTypeAndStatus != 0 || destinationLocation != 0)
