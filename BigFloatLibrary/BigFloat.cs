@@ -807,11 +807,24 @@ public readonly partial struct BigFloat
     /// </summary>
     public readonly BigInteger RawMantissa => _mantissa;
 
-
     /// <summary>
     /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
     /// </summary>
     public readonly BigInteger RoundedMantissa => RoundingRightShift(_mantissa, GuardBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigInteger GetIntegralValue(BigFloat value)
+    {
+        if (value.Scale >= 0)
+        {
+            BigInteger mantissaWithScale = value._mantissa << value.Scale;
+            return RoundingRightShift(mantissaWithScale, GuardBits);
+        }
+
+        BigInteger mantissa = RoundingRightShift(value._mantissa, GuardBits);
+        int fractionalBits = -value.Scale;
+        return (mantissa.Sign >= 0) ? (mantissa >> fractionalBits) : -((-mantissa) >> fractionalBits);
+    }
 
     /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
@@ -1308,14 +1321,14 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator byte(BigFloat value)
     {
-        return (byte)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((byte)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a signed byte.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator sbyte(BigFloat value)
     {
-        return (sbyte)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((sbyte)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 16-bit integer. 
@@ -1323,7 +1336,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator ushort(BigFloat value)
     {
-        return (ushort)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((ushort)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 16-bit signed integer. 
@@ -1331,40 +1344,21 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator short(BigFloat value)
     {
-        return (short)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((short)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 32-bit signed integer.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator int(BigFloat value)
     {
-        if (value.BinaryExponent > 31)
-        {
-            throw new OverflowException("BigFloat was either too large or too small for an Int32.");
-        }
-
-        // Step 1: round at the guard boundary and remove guard bits
-        BigInteger m = RoundingRightShift(value._mantissa, GuardBits);
-
-        // Step 2: drop working fractional bits (truncate toward zero)
-        if (value.Scale >= 0)
-        {
-            BigInteger whole = m << value.Scale;
-            return checked((int)whole);
-        }
-        else
-        {
-            int k = -value.Scale;
-            BigInteger whole = (m.Sign >= 0) ? (m >> k) : -((-m) >> k);
-            return checked((int)whole);
-        }
+        return checked((int)GetIntegralValue(value));
     }
 
     // todo: update toUint and ToBigInteger to floor.
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
-        return (uint)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
+        return checked((uint)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 64-bit integer. 
@@ -1372,7 +1366,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator ulong(BigFloat value)
     {
-        return (ulong)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((ulong)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a 64-bit signed integer. 
@@ -1380,7 +1374,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator long(BigFloat value)
     {
-        return (long)GetRoundedMantissa(value._mantissa << value.Scale);
+        return checked((long)GetIntegralValue(value));
     }
 
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 128-bit integer. 
@@ -1403,21 +1397,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigInteger(BigFloat value)
     {
-        int bitsToClear = GuardBits - value.Scale;
-        BigInteger mantissa = value._mantissa;
-
-        if (bitsToClear > 0)
-        {
-            mantissa = (mantissa.Sign >= 0)
-                ? mantissa >> bitsToClear
-                : -((-mantissa) >> bitsToClear);
-        }
-        else if (bitsToClear < 0)
-        {
-            mantissa <<= -bitsToClear;
-        }
-
-        return mantissa;
+        return GetIntegralValue(value);
     }
 
     /// <summary>
