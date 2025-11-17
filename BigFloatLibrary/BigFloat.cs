@@ -1598,11 +1598,6 @@ public readonly partial struct BigFloat
         }
     }
 
-    //public static explicit operator int(BigFloat value)
-    //{
-    //    return (int)RoundingRightShift(value._mantissa, GuardBits - value.Scale);
-    //}
-
     // todo: update toUint and ToBigInteger to floor.
     /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
@@ -1614,7 +1609,21 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator BigInteger(BigFloat value)
     {
-        return RoundingRightShift(value._mantissa, GuardBits - value.Scale);
+        int bitsToClear = GuardBits - value.Scale;
+        BigInteger mantissa = value._mantissa;
+
+        if (bitsToClear > 0)
+        {
+            mantissa = (mantissa.Sign >= 0)
+                ? mantissa >> bitsToClear
+                : -((-mantissa) >> bitsToClear);
+        }
+        else if (bitsToClear < 0)
+        {
+            mantissa <<= -bitsToClear;
+        }
+
+        return mantissa;
     }
 
     /// <summary>
