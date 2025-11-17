@@ -6202,13 +6202,9 @@ public class OriginalBigFloatTests
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
         inputVal0 = new BigFloat("0.0000000012101"); // 0.00000000121005    0.00000000121015
-        inputVal0.DebugPrint();
         inputVal1 = new BigFloat("0.00000000512");   // 0.000000005125      0.000000005115  
-        inputVal1.DebugPrint();
         output = inputVal0 - inputVal1;              //-0.00000000391495  -0.00000000390485  so, -0.0000000039  (okay would also be the avg -0.00000000391)  
-        output.DebugPrint();
         expect = new BigFloat("-0.00000000391");
-        expect.DebugPrint();
         Assert.Equal(output, expect); // Add({inputVal0} - {inputVal1}) was {output} but expected {expect}
 
         inputVal0 = new BigFloat(2119, 18, binaryPrecision: 0);  //  5555_____ (stored as 555483136)

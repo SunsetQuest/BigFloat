@@ -401,15 +401,14 @@ public class ConversionTests
         Assert.Equal((byte)(1000000 % 256), result);
     }
 
+#if !DEBUG
     [Fact]
     public void ExplicitCast_ToInt_VeryLargeNumber_Overflows()
     {
         var bf = new BigFloat("999999999999999999999999999999");
-        var result = (int)bf;
-        // Result will be truncated/overflow - exact value depends on implementation
-        // Just ensure it doesn't throw
-        _ = result;
+        Assert.Throws<OverflowException>(() => { var result = (int)bf });
     }
+#endif
 
     [Fact]
     public void ExplicitCast_ToDouble_InfiniteValue_ReturnsInfinity()
