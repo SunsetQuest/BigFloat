@@ -797,7 +797,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
         if (includeGuardBits)
         {
-            _ = sb.Append($":{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
+            _ = sb.Append($"|{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
         }
 
         if (showSize)
@@ -848,10 +848,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         {
             string bottom8HexChars = (BigInteger.Abs(_mantissa) & ((BigInteger.One << GuardBits) - 1)).ToString("X8").PadLeft(8)[^8..];
             StringBuilder sb = new(32);
-            _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
+            _ = sb.Append($"{ToString(true)},"); //  integer part using ToString()
             _ = sb.Append($"{(_mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(_mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
             //_ = sb.Append($"{ToBinaryString()}"); // hex part
-            if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits} GuardBits]"); }
+            if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits}]"); }
             if (_size == GuardBits) { _ = sb.Append($"[{GuardBits}]"); }
             if (_size < GuardBits)  { _ = sb.Append($"[{_size} - Out Of Precision!]"); }
 
@@ -867,25 +867,34 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <param name="varName">Prints an optional name of the variable.</param>
     public void DebugPrint(string? varName = null)
     {
+        Console.Write(ToDebugString(varName));
+    }
+
+    /// <summary>
+    /// Formats debug information for the BigFloat instead of writing to the console.
+    /// </summary>
+    /// <param name="varName">Optional name of the variable.</param>
+    public string ToDebugString(string? varName = null)
+    {
+        var sb = new StringBuilder(256);
+
         string shift = $"{((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}";
         if (!string.IsNullOrEmpty(varName))
         {
-            Console.WriteLine($"{varName + ":"}");
+            sb.AppendLine($"{varName + ":"}");
         }
 
-        Console.WriteLine($"   Debug : {DebuggerDisplay}");
-        Console.WriteLine($"  String : {ToString()}");
-        //Console.WriteLine($"  Int|hex: {DataBits >> GuardBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard-bits round {(WouldRound() ? "up" : "down")})");
-        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard-bits round {(WouldRoundUp() ? "up" : "down")})");
-        Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
-        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}{((double)(_mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
-        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}:{_mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
-        if (_mantissa < 0)
-        {
-            Console.WriteLine($"   or -{-_mantissa >> GuardBits:X4}:{(-_mantissa & (((ulong)1 << GuardBits) - 1)).ToString("X8")[^8..]}");
-        }
-        Console.WriteLine($"    |Bits: {_mantissa}");
-        Console.WriteLine($"   Scale : {Scale}");
-        Console.WriteLine();
+        sb.AppendLine($"   Debug : {DebuggerDisplay}");
+        sb.AppendLine($"  String : {ToString()}");
+        //sb.AppendLine($"  Int|hex: {DataBits >> GuardBits:X}|{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard rounded: {(WouldRound() ? "up" : "down")})");
+        sb.AppendLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard rounded: {(WouldRoundUp() ? "up" : "down")})");
+        //sb.AppendLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
+        sb.AppendLine($"    |Dec : {_mantissa >> GuardBits}{((double)(_mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
+        //sb.AppendLine($"    |Dec : {_mantissa >> GuardBits}, Guard: {_mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
+        sb.AppendLine($"    |Bits: {ToBinaryString(true, true)} ");
+        sb.AppendLine($"Mantissa : {_mantissa}");
+        //sb.AppendLine($"   Scale : {Scale}");
+        sb.AppendLine($"  BinExp : {BinaryExponent}");
+        return sb.ToString();
     }
 }
