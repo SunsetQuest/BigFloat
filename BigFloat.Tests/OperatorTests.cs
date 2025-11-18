@@ -639,10 +639,10 @@ public class OperatorTests
     public void MultiplicativeInverse_ProductIsOne(string value)
     {
         var bf = new BigFloat(value);
-        var inverse = BigFloat.One / bf;
+        var inverse = 1 / bf;
         
         var product = bf * inverse;
-        Assert.True(product.EqualsUlp(BigFloat.One, 2));
+        Assert.True(product.EqualsUlp(1, 2));
     }
 
     #endregion
