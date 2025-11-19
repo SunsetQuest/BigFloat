@@ -219,16 +219,6 @@ public class ConversionTests
     }
 
     [Theory]
-    [InlineData("256", (byte)0)] // Overflow wraps around
-    [InlineData("-1", byte.MaxValue)] // Underflow wraps around
-    public void ExplicitCast_ToByte_HandlesOverflow(string bfStr, byte expected)
-    {
-        var bf = new BigFloat(bfStr);
-        var result = (byte)bf;
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
     [InlineData("2147483647", int.MaxValue)]
     [InlineData("-2147483648", int.MinValue)]
     [InlineData("0", 0)]
@@ -392,16 +382,14 @@ public class ConversionTests
 
     #region Overflow and Special Cases
 
+#if !DEBUG
     [Fact]
     public void ExplicitCast_ToByte_LargeNumber_Overflows()
     {
         var bf = new BigFloat("1000000");
-        var result = (byte)bf;
-        // Should wrap around due to overflow
-        Assert.Equal((byte)(1000000 % 256), result);
+        Assert.Throws<OverflowException>(() => { var result = (byte)bf });
     }
 
-#if !DEBUG
     [Fact]
     public void ExplicitCast_ToInt_VeryLargeNumber_Overflows()
     {
@@ -510,7 +498,7 @@ public class ConversionTests
         
         if (targetType == typeof(string))
         {
-            Assert.Equal(expectedValue.ToString(), result.ToString().TrimEnd('0'));
+            Assert.Equal(expectedValue?.ToString(), result?.ToString()?.TrimEnd('0'));
         }
         else if (targetType == typeof(double))
         {

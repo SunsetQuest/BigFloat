@@ -46,7 +46,7 @@ public class OriginalBigFloatTests
 
         Assert.Equal(new BigFloat(1, -8, binaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
         Assert.Equal(new BigFloat(1, -1074, binaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
-        Assert.False(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, addedBinaryPrecision: 0));  // 0 != -1.0
+        Assert.False(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, binaryPrecision: 0));  // 0 != -1.0
 
         BigFloat temp = new(ulong.MaxValue);
         temp++;
@@ -1111,8 +1111,8 @@ public class OriginalBigFloatTests
     public void Verify_IntWithAddedPrecision()
     {
         int hb = BigFloat.GuardBits;
-        Assert.True(BigFloat.OneWithAccuracy(10).EqualsZeroExtended(BigFloat.One));
-        Assert.True(BigFloat.IntWithAccuracy(1, 10).EqualsZeroExtended(BigFloat.One));
+        Assert.True(BigFloat.OneWithAccuracy(10).EqualsZeroExtended(1));
+        Assert.True(BigFloat.IntWithAccuracy(1, 10).EqualsZeroExtended(1));
         Assert.True(BigFloat.IntWithAccuracy(2, 10).EqualsZeroExtended(new BigFloat(2)));
 
         BigFloat a = BigFloat.IntWithAccuracy(2, 10);
@@ -2080,9 +2080,9 @@ public class OriginalBigFloatTests
         //=========
         //   100010.  (34)   (aka  1000|10.) 
         //     --  (out of precision digits)
-        BigFloat v = new(0b101011, 1, 0);
-        BigFloat w = new(0b1101, 2, 0);
-        ModVerify(v, w, new BigFloat(0b100010, 0, 0)); // 1000.1<<2 == 100010<<0
+        BigFloat v = new(0b101011, 1, false, 0);
+        BigFloat w = new(0b1101, 2, false, 0);
+        ModVerify(v, w, new BigFloat(0b100010, 0, false, 0)); // 1000.1<<2 == 100010<<0
 
         ModVerify(new BigFloat("-1.000"), new BigFloat("+1.000"), new BigFloat("0.000"));
         ModVerify(new BigFloat("+1.000"), new BigFloat("-1.000"), new BigFloat("0.000"));
@@ -6859,9 +6859,8 @@ public class OriginalBigFloatTests
         [Fact]
         public void Sin_Should_ReturnZero_When_InputIsZero()
         {
-            var input = BigFloat.Zero;
             var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
-            var result = BigFloat.Sin(input);
+            var result = BigFloat.Sin(0);
             Assert.Equal(expected, result);
         }
 
