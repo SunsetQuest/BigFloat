@@ -36,15 +36,20 @@ public class OriginalBigFloatTests
     public void Verify_Misc()
     {
         // Make sure that a "1" bit never rounds to zero in a ToString or OutOfPrecision operation.
-        for (int i = 0; i > -1073; i--)
+        BigFloat value = new(1, 0, valueIncludesGuardBits: true, binaryPrecision: 31);
+        Assert.True(value.IsOutOfPrecision); // 0.000...1->BigFloat->OutOfPrecision should never be zero.
+        value = new(1, 0, valueIncludesGuardBits: true, binaryPrecision: 32);
+        Assert.False(value.IsOutOfPrecision); // 0.000...1->BigFloat->OutOfPrecision should never be zero.
+
+        foreach (int i in new int[] { 0, -1, -999 })
         {
-            // issues at BigFloat(1, -1071).ToString() and BigFloat(1, -8).ToString()
-            BigFloat value = new(1, i, binaryPrecision: 0);
-            Assert.False(new BigFloat(value.ToString()).IsOutOfPrecision); // 0.000...1->BigFloat->String->BigInteger should never be zero.
-            Assert.False(value.IsOutOfPrecision); // 0.000...1->BigFloat->OutOfPrecision should never be zero.
+            value = new(1, i, valueIncludesGuardBits: true, binaryPrecision: 31);
+            string strValue = value.ToString();
+            Assert.False(strValue == "0" || strValue == "0.0" || strValue == "0.00"); // 0.000...1->BigFloat->ToString should never be zero.
         }
 
-        Assert.Equal(new BigFloat(1, -8, binaryPrecision: 0) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
+
+        Assert.Equal(new BigFloat(1, -8), (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
         Assert.Equal(new BigFloat(1, -1074, binaryPrecision: 0) % 1, 0);   // 0   == 0.000...001
         Assert.False(new BigFloat(0, 0) == new BigFloat(-4503599627370496, -52, binaryPrecision: 0));  // 0 != -1.0
 
@@ -5103,9 +5108,9 @@ public class OriginalBigFloatTests
 
     [Theory]
     [InlineData(1, 0, 1, true)]      // CompareUlp(1, 0, 1) == +1
-    [InlineData(1, 0, 32, true)]     // CompareUlp(1, 0, 0 + 32) == +1
-    [InlineData(1, 0, 33, true)]     // CompareUlp(1, 0, 1 + 32) == +1
-    [InlineData(1, 0, 34, false)]    // CompareUlp(1, 0, 2 + 32) == 0
+    [InlineData(1, 0, 31, true)]     // CompareUlp(1, 0, 31) == +1
+    [InlineData(1, 0, 32, false)]     // CompareUlp(1, 0, 32) == +1
+    [InlineData(1, 0, 33, false)]    // CompareUlp(1, 0, 33) == 0
     public void CompareUlp_OneVsZero_Theory(int aVal, int bVal, int tolerance, bool aGreaterThanB)
     {
         var a = new BigFloat(aVal);
@@ -5124,9 +5129,10 @@ public class OriginalBigFloatTests
     }
 
     [Theory]
-    [InlineData(-1, 0, 34, true)]    // CompareUlp(-1, 0, 2 + 32) == 0
-    [InlineData(-1, 2, 35, true)]    // CompareUlp(-1, 2, 3 + 32) == 0
-    [InlineData(-1, 2, 34, false)]   // CompareUlp(-1, 2, 2 + 32) != 0
+    [InlineData(-1, 0, 31, false)]   // CompareUlp(-1, 0, 31) == 0
+    [InlineData(-1, 0, 32, true)]    // CompareUlp(-1, 0, 32) != 0
+    [InlineData(-1, 2, 31, false)]   // CompareUlp(-1, 2, 32) == 0
+    [InlineData(-1, 2, 32, true)]    // CompareUlp(-1, 2, 33) != 0
     public void CompareUlp_NegativeComparisons_Theory(int aVal, int bVal, int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat(aVal);

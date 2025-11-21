@@ -1628,8 +1628,8 @@ public readonly partial struct BigFloat
         return checked((int)GetIntegralValue(value));
     }
 
-    // todo: update toUint and ToBigInteger to floor.
-    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. The fractional part (including guard bits) are simply discarded.</summary>
+    /// <summary>Defines an explicit conversion of a BigFloat to a unsigned 32-bit integer input. 
+    /// The fractional part (including guard bits) are simply discarded.</summary>
     public static explicit operator uint(BigFloat value)
     {
         return checked((uint)GetIntegralValue(value));

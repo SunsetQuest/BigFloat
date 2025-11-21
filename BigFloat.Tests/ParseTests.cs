@@ -254,42 +254,49 @@ public class ParseTests
     public void TryParseBinary_GuardBitSeparator_PipeInMiddle()
     {
         Assert.True(BigFloat.TryParseBinary("100000000000000|0.", out var output));
-        Assert.True(output.EqualsZeroExtended(new BigFloat((BigInteger)32768 << BigFloat.GuardBits, 0, valueIncludesGuardBits: true)));
+        Assert.True(output.EqualsZeroExtended(32768));
+        BigFloat val = new BigFloat((BigInteger)32768 << (BigFloat.GuardBits-1), 1, valueIncludesGuardBits: true);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeWithFractional()
     {
         Assert.True(BigFloat.TryParseBinary("100000000000000|0.0", out var output));
-        Assert.True(output.EqualsZeroExtended(new BigFloat((BigInteger)32768 << (BigFloat.GuardBits - 1), 1, valueIncludesGuardBits: true)));
+        BigFloat val = new BigFloat((BigInteger)32768 << (BigFloat.GuardBits - 1), 1, valueIncludesGuardBits: true);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_FractionalWithGuardBits()
     {
         Assert.True(BigFloat.TryParseBinary("10000000000.0000|00", out var output));
-        Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)32768 << (BigFloat.GuardBits - 1), -4, true)));
+        BigFloat val = BigFloat.CreateWithPrecisionFromValue((ulong)32768 << (BigFloat.GuardBits - 1), true, 0, binaryScaler:-4);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterFirstBit()
     {
         Assert.True(BigFloat.TryParseBinary("1|000000000000000.", out var output));
-        Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 15, true)));
+        BigFloat val = BigFloat.CreateWithPrecisionFromValue((ulong)1 << BigFloat.GuardBits, true, 0, binaryScaler: 15);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterDot()
     {
         Assert.True(BigFloat.TryParseBinary("1.|000000000000000", out var output));
-        Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 0, true)));
+        BigFloat val = BigFloat.CreateWithPrecisionFromValue((ulong)1 << BigFloat.GuardBits, true, 0, binaryScaler: 0);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterDotWithFractional()
     {
         Assert.True(BigFloat.TryParseBinary("1|.000000000000000", out var output));
-        Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 0, true)));
+        BigFloat val = BigFloat.CreateWithPrecisionFromValue((ulong)1 << BigFloat.GuardBits, true, 0, binaryScaler: 0);
+        Assert.Equal(0, output.CompareTotalOrderBitwise(val));
     }
 
     #endregion
