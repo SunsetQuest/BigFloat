@@ -7396,4 +7396,17 @@ public class OriginalBigFloatTests
         Assert.True(orig.Size == actual2.Size);
         Assert.True(orig.Size >= actual.Size);
     }
+
+    [Fact]
+    public void ToStringDecimal_RetainsDigitWhenPositiveScaleRoundsToZero()
+    {
+        // Arrange
+        BigFloat value = new(new BigInteger(0x80000000), binaryScaler: 1, valueIncludesGuardBits: true);
+
+        // Act
+        string result = BigFloat.ToStringDecimal(value);
+
+        // Assert
+        Assert.Equal("1e+1", result);
+    }
 }
