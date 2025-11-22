@@ -655,12 +655,21 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+        BigInteger coarseMantissa = RoundingRightShift(intVal, GuardBits);
 
         // Applies the scale to the number and rounds from bottom bit
         BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
-        
+
+        // When rounding wipes out all significant digits (e.g. very small mantissa
+        // combined with a positive scale), preserve a single digit so the exponent
+        // still reflects the magnitude instead of returning "0e+N" for non-zero values.
+        if (resScaled.IsZero && !resUnScaled.IsZero && !coarseMantissa.IsZero)
+        {
+            resScaled = intVal.Sign >= 0 ? BigInteger.One : -BigInteger.One;
+        }
+
         // #########e+NN   ->  want  D.DDDDDDe+MMM
         // maskSize is the "raw" decimal exponent,
         // resScaled is the integer part you’ve currently computed.
@@ -744,11 +753,20 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+        BigInteger coarseMantissa = RoundingRightShift(intVal, GuardBits);
 
         // Applies the scale to the number and rounds from bottom bit
         BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
+
+        // When rounding wipes out all significant digits (e.g. very small mantissa
+        // combined with a positive scale), preserve a single digit so the exponent
+        // still reflects the magnitude instead of returning "0e+N" for non-zero values.
+        if (resScaled.IsZero && !resUnScaled.IsZero && !coarseMantissa.IsZero)
+        {
+            resScaled = intVal.Sign >= 0 ? BigInteger.One : -BigInteger.One;
+        }
 
         // #########e+NN   ->  want  D.DDDDDDe+MMM
         // maskSize is the "raw" decimal exponent,
