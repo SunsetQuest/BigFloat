@@ -299,7 +299,7 @@ public readonly partial struct BigFloat
         int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
         // if the precision is shrunk to a size of zero it cannot contain any data bits
         return accuracyBits < -(GuardBits + intSize)
-            ? Zero
+            ? ZeroWithAccuracy(0)
             : new(intVal << (GuardBits + accuracyBits), -accuracyBits, GuardBits + intSize + accuracyBits);
         // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
     }
@@ -312,7 +312,7 @@ public readonly partial struct BigFloat
     {
         int size = int.Log2(int.Abs(intVal)) + 1 + GuardBits;
         return accuracyBits < -size
-            ? Zero
+            ? ZeroWithAccuracy(0)
             : new(((BigInteger)intVal) << (GuardBits + accuracyBits), -accuracyBits, size + accuracyBits);
     }
 

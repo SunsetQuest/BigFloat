@@ -128,7 +128,7 @@ public class BigFloatTests
     [Fact]
     public void Inverse_Zero_ThrowsException()
     {
-        var zero = BigFloat.Zero;
+        var zero = BigFloat.ZeroWithAccuracy(10);
         Assert.Throws<DivideByZeroException>(() => BigFloat.Inverse(zero));
     }
 #endif
