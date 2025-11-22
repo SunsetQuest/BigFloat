@@ -746,7 +746,7 @@ public readonly partial struct BigFloat
     public static BigFloat Remainder(BigFloat dividend, BigFloat divisor)
     {
         int scaleDiff = dividend.Scale - divisor.Scale;
-        if ((scaleDiff > 0 ? divisor._mantissa : (divisor._mantissa >> -scaleDiff)) == 0)
+        if (divisor._mantissa == 0)
             throw new DivideByZeroException();
 
         if (scaleDiff == 0)
