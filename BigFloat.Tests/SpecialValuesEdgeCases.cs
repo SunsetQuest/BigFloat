@@ -3,6 +3,7 @@
 
 using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace BigFloatLibrary.Tests;
@@ -686,23 +687,23 @@ public class SpecialValuesAndEdgeCasesTests
     #region Thread Safety Tests
 
     [Fact]
-    public void Constants_ThreadSafe()
+    public async Task Constants_ThreadSafe()
     {
         // Constants should be immutable and thread-safe
-        var tasks = new System.Threading.Tasks.Task[10];
+        var tasks = new Task[10];
         var results = new BigFloat[10];
-        
+
         for (int i = 0; i < tasks.Length; i++)
         {
             int index = i;
-            tasks[index] = System.Threading.Tasks.Task.Run(() =>
+            tasks[index] = Task.Run(() =>
             {
                 results[index] = (BigFloat)1 + (BigFloat)0 + (BigFloat)2 + (BigFloat)10;
             });
         }
-        
-        System.Threading.Tasks.Task.WaitAll(tasks);
-        
+
+        await Task.WhenAll(tasks);
+
         // All results should be the same
         var expected = new BigFloat(13);
         foreach (var result in results)
