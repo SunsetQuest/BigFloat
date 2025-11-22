@@ -1050,6 +1050,7 @@ public readonly partial struct BigFloat
         return isPos ^ ((isPos ? val : val - 1) >>> (bottomBitsRemoved - 1)).IsEven;
     }
 
+
     /// <summary>
     /// Computes the rounded mantissa without guard bits for any BigInteger input.
     /// Rounding is applied based on the guard bits; assumes the input is non-negative (mantissa is typically unsigned).
@@ -1061,6 +1062,9 @@ public readonly partial struct BigFloat
     {
         return RoundingRightShift(x, GuardBits);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigInteger GetRoundedMantissa() => GetRoundedMantissa(_mantissa);
 
     /// <summary>
     /// Computes the rounded mantissa without guard bits, also updating the size (e.g., bit length or exponent)
@@ -1101,6 +1105,12 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Gets the integer part of the BigFloat with no scaling is applied. GuardBits are rounded and removed.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigInteger GetIntegralValue() => GetIntegralValue(this);
+
+    /// <summary>
     /// Truncates a value by a specified number of bits by increasing the scale and reducing the precision.
     /// If the most significant bit of the removed bits is set then the least significant bit will increment away from zero. 
     /// e.g. 10.10010 << 2 = 10.101
@@ -1125,8 +1135,11 @@ public readonly partial struct BigFloat
         return new(b, newScale, size);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat TruncateByAndRound(int targetBitsToRemove) => TruncateByAndRound(this, targetBitsToRemove);
+
     /// <summary>
-    /// Rounds to nearest integer, preserving precision.
+    /// Rounds to nearest integer, preserving accuracy.
     /// </summary> 
     public static BigFloat Round(BigFloat x)
     {
@@ -1147,7 +1160,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Rounds to nearest integer, preserving precision.
+    /// Rounds to nearest integer, preserving accuracy.
     /// </summary> 
     public BigFloat Round() => Round(this);
 
@@ -1160,7 +1173,7 @@ public readonly partial struct BigFloat
 
 
     /// <summary>
-    /// Truncates towards zero, preserving precision.
+    /// Truncates towards zero, preserving accuracy.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat TruncateToIntegerKeepingAccuracy()
@@ -1172,6 +1185,12 @@ public readonly partial struct BigFloat
 
         return new BigFloat(ClearLowerNBits(_mantissa, bitsToClear), Scale, _size);
     }
+
+    /// <summary>
+    /// Truncates towards zero, preserving accuracy.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat TruncateToIntegerKeepingAccuracy(BigFloat x) => x.TruncateToIntegerKeepingAccuracy();
 
     /// <summary>
     /// Truncates towards zero. Removes all fractional bits and sets negative scales to zero.
@@ -1188,6 +1207,9 @@ public readonly partial struct BigFloat
         return new BigFloat(newMantissa << GuardBits, Scale + bitsToClear- GuardBits, _size - bitsToClear + GuardBits);
     }
 
+    /// <summary>
+    /// Truncates towards zero. Removes all fractional bits and sets negative scales to zero.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat Truncate(BigFloat x) => x.Truncate();
 
@@ -1199,6 +1221,12 @@ public readonly partial struct BigFloat
         => new(x._mantissa, x.Scale + changeScaleAmount, x._size);
 
     /// <summary>
+    /// Adjust the scale of a value
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat AdjustScale(int changeScaleAmount) => AdjustScale(this, changeScaleAmount);
+
+    /// <summary>
     /// Adjust accuracy by <paramref name="deltaBits"/>.
     /// Positive delta increases fractional capacity; negative delta reduces it and rounds
     /// using the same semantics as precision reduction.
@@ -1207,6 +1235,9 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat AdjustAccuracy(BigFloat x, int deltaBits)
         => AdjustPrecision(x, deltaBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat AdjustAccuracy(int deltaBits) => AdjustAccuracy(this, deltaBits);
 
     /// <summary>
     /// Set accuracy to <paramref name="newAccuracyBits"/> (in bits).
@@ -1218,6 +1249,14 @@ public readonly partial struct BigFloat
         => (newAccuracyBits + x.Scale) == 0 ? x : AdjustPrecision(x, newAccuracyBits + x.Scale);
 
     /// <summary>
+    /// Set accuracy to <paramref name="newAccuracyBits"/> (in bits).
+    /// Internally computes <c>delta = newAccuracyBits - x.Accuracy</c> and delegates to
+    /// <see cref="AdjustAccuracy(BigFloat,int)"/>/<see cref="AdjustPrecision(BigFloat,int)"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat SetAccuracy(int newAccuracyBits) => SetAccuracy(this, newAccuracyBits);
+
+    /// <summary>
     /// Sets the precision(and accuracy) of a number by appending 0 bits if too small or cropping bits if too large.
     /// This can be useful for extending whole or rational numbers precision. 
     /// No rounding is performed.
@@ -1226,6 +1265,9 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat SetPrecision(BigFloat x, int newSize) =>
         new (x._mantissa << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + GuardBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat SetPrecision(int newSize) => SetAccuracy(this, newSize);
 
     /// <summary>
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
@@ -1241,6 +1283,9 @@ public readonly partial struct BigFloat
             > 0 => TruncateByAndRound(x, x.Size - newSize),
             < 0 => SetPrecision(x, newSize),
         };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat SetPrecisionWithRound(int newSize) => SetPrecisionWithRound(this, newSize);
 
     /// <summary>
     /// Adjusts precision by shifting the mantissa and compensating the scale.
@@ -1284,6 +1329,9 @@ public readonly partial struct BigFloat
             );
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat AdjustPrecision(int deltaBits) => AdjustPrecision(this, deltaBits);
 
     /// <summary>
     /// [Obsolete] Extends the precision and accuracy of a number by appending 0 bits (no rounding).
