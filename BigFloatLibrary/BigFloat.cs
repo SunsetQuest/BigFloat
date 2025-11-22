@@ -382,6 +382,19 @@ public readonly partial struct BigFloat
                 _mantissa = (new BigInteger(mantissa)) << addedBinaryPrecision;
                 Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - addedBinaryPrecision;
                 _size = size + addedBinaryPrecision;
+
+                // Ensure at least one in-precision bit exists outside of the guard area so that
+                // subnormal inputs (e.g., double.Epsilon) are not represented entirely within
+                // the guard bits. When that happens, Size becomes zero and the value is reported
+                // as an integer. Shift the mantissa until we have one precision bit and adjust
+                // the scale so the numeric value remains unchanged.
+                int deficit = GuardBits + 1 - _size;
+                if (deficit > 0)
+                {
+                    _mantissa <<= deficit;
+                    _size += deficit;
+                    Scale -= deficit;
+                }
             }
         }
 
