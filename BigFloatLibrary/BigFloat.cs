@@ -51,12 +51,12 @@ public readonly partial struct BigFloat
     private readonly BigInteger _mantissa;
 
     /// <summary>
-    /// _size are the number of precision bits. It is equal to "ABS(DataBits).GetBitLength()". The ABS is for 
-    ///       power-of-two negative BigIntegers (-1,-2,-4,-8...) so it is the same whether positive or negative.
-    /// _size INCLUDES GuardBits (the Property Size subtracts out GuardBits)
-    /// _size does not include rounding from GuardBits. (11[111...111] (where [111...111] is GuardBits) is still 2 bits. So the user will see it as 0b100 with a size of 2.)
-    /// _size is 0 only when 'DataBits==0'
-    /// When BigFloat is Zero, the size is zero.
+    /// _size is the count of precision bits and equals ABS(DataBits).GetBitLength(). Using ABS handles power-of-two negatives
+    /// consistently for positive and negative values.
+    /// _size includes GuardBits (the Size property subtracts them).
+    /// _size does not include rounding from GuardBits; for example 11[111...111] (where [111...111] represents the guard bits)
+    /// is still 2 bits, so the user will see 0b100 with a size of 2.
+    /// _size is 0 only when 'DataBits==0'. When BigFloat is Zero, the size is zero.
     /// </summary>
     internal readonly int _size;
 
@@ -64,8 +64,8 @@ public readonly partial struct BigFloat
     ///// <summary>
     ///// When positive, it's the number of least significant digits in DataBits that repeat.
     /////    Example: DataBits:11.001(with _extraPrecOrRepeat = 3) would be 11.001001001001...
-    ///// When negative, it is the number of extra virtual zeros tacked on the end of the internal DataBits for better precision and accuracy.  
-    ///// Example: 11.001(with _extraPrecOrRepeat = -3) would be the same as 11.001000  
+    ///// When negative, it is the number of extra virtual zeros tacked on the end of the internal DataBits for better precision and accuracy.
+    ///// Example: 11.001(with _extraPrecOrRepeat = -3) would be the same as 11.001000
     /////   For the above example "000" would not take up any space and is also guaranteed to be all 0 bits.
     ///// When zero, this feature does not get used. (Default)
     ///// </summary>
