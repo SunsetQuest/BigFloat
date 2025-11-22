@@ -330,10 +330,10 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns true if this <see cref="BigFloat"/> can be represented as an
     /// IEEE 754 double-precision value, allowing both normalized and
-    /// denormalized (subnormal) forms. Precision loss due to rounding is ignored. 
+    /// denormalized (subnormal) forms. Precision loss due to rounding is ignored.
     /// </summary>
     public bool FitsInADoubleWithDenormalization
-        => (BinaryExponent + 1023) is (>= -1074 and <= 2046);
+        => BinaryExponent is (>= -1074 and <= 1023);
 
     /// <summary>
     /// Returns true if this <see cref="BigFloat"/> can be represented as a

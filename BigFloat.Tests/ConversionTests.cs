@@ -147,6 +147,16 @@ public class ConversionTests
         }
     }
 
+    [Fact]
+    public void Constructor_FromDoubleEpsilon_PlacesBitOutsideGuardBits()
+    {
+        var bf = new BigFloat(double.Epsilon);
+
+        Assert.Equal(1, bf.Size);                 // ensure at least one precision bit
+        Assert.Equal(-1074, bf.BinaryExponent);    // matches IEEE-754 exponent for epsilon
+        Assert.Contains("0x1|00000000", bf.DebuggerDisplay);
+    }
+
     [Theory]
     [InlineData("0")]
     [InlineData("1")]

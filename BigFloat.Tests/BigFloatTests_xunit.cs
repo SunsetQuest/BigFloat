@@ -1666,7 +1666,8 @@ public class OriginalBigFloatTests
         Assert.Equal(BigFloat.Pow(2, 2), 4);
 
         BigFloat three = new(3, binaryPrecision: 0);
-        Assert.Equal(BigFloat.Pow(three, 2), 8); // Min:1100^2=10010000 Max(exclusive):1110^2=11000100
+        var powThreeSquared = BigFloat.Pow(three, 2);
+        Assert.Equal(9.0, (double)powThreeSquared); // Preserve value when re-scaling internal precision
         Assert.True(BigFloat.Pow(three, 2).EqualsZeroExtended(9));
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 9/7/2025 - brought back as True with ulp=0
         Assert.True(BigFloat.Pow(three, 2).EqualsUlp(10)); // 9 == 10 is false, but with 9 being 10|01 then it is true
@@ -2514,11 +2515,11 @@ public class OriginalBigFloatTests
     [Fact]
     public void Floor_Ceiling_EpsilonValues()
     {
-        // odd case were Epsilon does not produce in-precision bits so is considered an integer
-        AssertFloorCeilingBehavior(double.Epsilon, expectedFloor: 0, expectedCeiling: 0, shouldBeInteger: true);
-        AssertFloorCeilingBehavior(-double.Epsilon, expectedFloor: 0, expectedCeiling: 0, shouldBeInteger: true);
-        AssertFloorCeilingBehavior(double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 0, shouldBeInteger: true);
-        AssertFloorCeilingBehavior(-double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 0, shouldBeInteger: true);
+        // Subnormal values should retain fractional precision rather than collapsing into guard bits
+        AssertFloorCeilingBehavior(double.Epsilon, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(-double.Epsilon, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(double.Epsilon * 128, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
+        AssertFloorCeilingBehavior(-double.Epsilon * 128, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
         
         AssertFloorCeilingBehavior(double.Epsilon * 256, expectedFloor: 0, expectedCeiling: 1, shouldBeInteger: false);
         AssertFloorCeilingBehavior(-double.Epsilon * 256, expectedFloor: -1, expectedCeiling: 0, shouldBeInteger: false);
