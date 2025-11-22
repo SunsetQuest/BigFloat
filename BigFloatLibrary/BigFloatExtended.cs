@@ -325,7 +325,7 @@ public readonly partial struct BigFloat
     /// or underflow. Precision loss due to rounding is ignored.
     /// </summary>
     public bool FitsInADouble
-        => (BinaryExponent + 1023) is (>= 1 and <= 2046);
+        => BinaryExponent is (>= -1022 and <= 1023);
 
     /// <summary>
     /// Returns true if this <see cref="BigFloat"/> can be represented as an
@@ -341,7 +341,7 @@ public readonly partial struct BigFloat
     /// overflow or underflow. Precision loss due to rounding is ignored.
     /// </summary>
     public bool FitsInAFloat
-        => (BinaryExponent + 127) is (>= 1 and <= 254);
+        => BinaryExponent is (>= -126 and <= 127);
 
     /// <summary>
     /// Returns true if this <see cref="BigFloat"/> can be represented as an
@@ -349,7 +349,7 @@ public readonly partial struct BigFloat
     /// denormalized (subnormal) forms. Precision loss due to rounding is ignored.
     /// </summary>
     public bool FitsInAFloatWithDenormalization
-        => (BinaryExponent + 127) is (>= -149 and <= 254);
+        => BinaryExponent is (>= -149 and <= 127);
 
 
     /// <summary>
