@@ -202,20 +202,24 @@ public class BigFloatTests
     }
 
     [Theory]
-    [InlineData(double.MaxValue / 2, true)]
-    [InlineData(double.MinValue / 2, true)]
-    [InlineData(1e100, false)]
-    [InlineData(-1e100, false)]
-    public void FitsInDouble_BoundaryValues(double value, bool expected)
+    [InlineData(double.MaxValue, true)]
+    [InlineData(double.MinValue, true)]
+    [InlineData(double.Epsilon, false)]
+    [InlineData(1e100, true)]
+    [InlineData(-1e100, true)]
+    public void FitsInDouble_BoundaryValues(double value, bool FitsInADouble)
     {
-        var bf = new BigFloat(value.ToString());
-        
-        // For values created from doubles, they should fit
-        // For values beyond double range, they shouldn't
-        if (double.IsFinite(value))
+        var directBf = new BigFloat(value);
+        var fromStringBf = new BigFloat(directBf.ToString());
+        if (FitsInADouble)
         {
-            var directBf = new BigFloat(value);
             Assert.True(directBf.FitsInADouble);
+            Assert.True(fromStringBf.FitsInADouble);
+        }
+        else
+        {
+            Assert.False(directBf.FitsInADouble);
+            Assert.False(fromStringBf.FitsInADouble);
         }
     }
 

@@ -397,14 +397,14 @@ public class ConversionTests
     public void ExplicitCast_ToByte_LargeNumber_Overflows()
     {
         var bf = new BigFloat("1000000");
-        Assert.Throws<OverflowException>(() => { var result = (byte)bf });
+        Assert.Throws<OverflowException>(() => { var result = (byte)bf; });
     }
 
     [Fact]
     public void ExplicitCast_ToInt_VeryLargeNumber_Overflows()
     {
         var bf = new BigFloat("999999999999999999999999999999");
-        Assert.Throws<OverflowException>(() => { var result = (int)bf });
+        Assert.Throws<OverflowException>(() => { var result = (int)bf; });
     }
 #endif
 

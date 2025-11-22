@@ -61,7 +61,7 @@ public class ParseTests
     [InlineData("-.")]
     [InlineData(".-")]
     [InlineData("+.")]
-    public void TryParse_InvalidInput_ReturnsFalse(string input)
+    public void TryParse_InvalidInput_ReturnsFalse(string? input)
     {
         Assert.False(BigFloat.TryParse(input, out _));
     }
@@ -88,7 +88,7 @@ public class ParseTests
     [InlineData("1.01.")]
     [InlineData(".41")]
     [InlineData("2")]
-    public void TryParseBinary_InvalidInput_ReturnsFalse(string input)
+    public void TryParseBinary_InvalidInput_ReturnsFalse(string? input)
     {
         Assert.False(BigFloat.TryParseBinary(input, out _, 0));
     }
@@ -413,7 +413,7 @@ public class ParseTests
     [InlineData(".G1")]
     [InlineData("2.G1")]
     [InlineData("0h-ABCD")]
-    public void TryParseHex_InvalidInput_ReturnsFalse(string input)
+    public void TryParseHex_InvalidInput_ReturnsFalse(string? input)
     {
         Assert.False(BigFloat.TryParseHex(input, out _));
     }

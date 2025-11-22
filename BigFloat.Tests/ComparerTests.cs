@@ -119,6 +119,7 @@ public class ComparerTests
         var a = (BigFloat)(decimal)smaller;
         var b = (BigFloat)(decimal)larger;
 
+        #pragma warning disable CS1718
         // Less than
         Assert.True(a < b);
         Assert.False(b < a);
@@ -146,6 +147,7 @@ public class ComparerTests
         // Inequality
         Assert.True(a != b);
         Assert.False(a != a);
+        #pragma warning restore CS1718
     }
 
     #endregion
