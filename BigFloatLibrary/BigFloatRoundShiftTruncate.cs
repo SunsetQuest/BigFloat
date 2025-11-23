@@ -20,7 +20,7 @@ public readonly partial struct BigFloat
 
             if (_mantissa.Sign < 0)
             {
-                raw = ~raw + (ulong)(((_size >> 64) > 0) ? 1 : 0);
+                raw = ~raw + (_size > 64 ? 1UL : 0UL);
             }
             return raw;
         }
@@ -74,16 +74,16 @@ public readonly partial struct BigFloat
         if (_mantissa.IsZero) return false;
 
         // If '.' is at or to the right of the guard boundary, there are no working fractional bits.
-        if (Scale > 0) return false; //CHANGE: from >= to >
+        if (Scale > 0) return false;
 
         int availableAboveGuard = _size - GuardBits;   // how many working bits exist at all
         if (availableAboveGuard <= 0) return false;    // number is entirely out-of-precision -> treat as integer
 
-        int k = Math.Min(-Scale, availableAboveGuard) +1; //CHANGE: added "+1"; number of working fractional bits that actually exist
-        if (k <= 0) return false;  
+        int k = Math.Min(-Scale, availableAboveGuard) + 1; // number of working fractional bits that actually exist
+        if (k <= 0) return false;
 
         BigInteger mag = BigInteger.Abs(_mantissa);
-        BigInteger workingBelowPoint = mag >> (GuardBits-1);  //CHANGE:  dded "-1";align guard boundary to bit 0
+        BigInteger workingBelowPoint = mag >> (GuardBits - 1);  // align guard boundary to bit 0
         BigInteger mask = (BigInteger.One << k) - 1;            // low k bits are the fractional field
         return (workingBelowPoint & mask) != 0;
     }
