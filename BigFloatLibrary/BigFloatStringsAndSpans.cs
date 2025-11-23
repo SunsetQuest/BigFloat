@@ -788,7 +788,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
                                 : "");
 
         // final string: [−]D.ddddDe+EEE
-        return (isNegative ? "-" : "")
+        return (isNegative ? "-" : "+")
              + mantissa
              + "e+"
              + adjustedExponent;
