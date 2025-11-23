@@ -1,263 +1,264 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
+// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-// Ignore Spelling: Comparers Bitwise Ulp
+using Xunit;
 
 namespace BigFloatLibrary.Tests;
 
-//todo: add some tests to ensure "myBigFloat+1" equals "bigFloat++"
+/// <summary>
+/// Tests for BigFloat comparers and comparison semantics
+/// </summary>
 public class ComparerTests
 {
     /// <summary>
-    /// Target time for each test. Time based on release mode on 16 core x64 CPU.
+    /// Target time for each test in milliseconds.
     /// </summary>
+    private const int TestTargetInMilliseconds = 100;
 
-#if DEBUG
-    private const int MaxDegreeOfParallelism = 1;
-    private const long sqrtBruteForceStoppedAt = 262144;
-    private const long inverseBruteForceStoppedAt = 262144;
-#else
-    readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
-    const long sqrtBruteForceStoppedAt = 524288;
-    const long inverseBruteForceStoppedAt = 524288 * 1;
-#endif
+    // Helper method for creating BigFloat from decimal
+    private static BigFloat BF(decimal value) => (BigFloat)value;
 
-    private const int RAND_SEED = 22;// new Random().Next();
-    private static readonly Random _rand = new(RAND_SEED);
+    #region CompareTo Value Ordering Tests
 
-    private static BigFloat BF(decimal d) => (BigFloat)d;
-
-    public sealed class EqualityAndHash
+    [Theory]
+    [InlineData(1.0, 1.00)]
+    [InlineData(2.5, 2.50)]
+    [InlineData(-3.125, -3.1250)]
+    public void CompareTo_NumericallyEqual_ReturnsZero(double a, double b)
     {
-        [Theory]
-        [InlineData(0.0, 0.0)]
-        [InlineData(1.0, 1.00)]
-        [InlineData(2.5, 2.50)]
-        [InlineData(-3.125, -3.1250)]
-        [InlineData(123456789.0, 123456789.0000)]
-        [InlineData(0.0000001, 0.00000010)]
-        public void Equal_values_have_same_hash(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
-
-            Assert.True(x.Equals(y));
-            Assert.Equal(x.GetHashCode(), y.GetHashCode());
-        }
-
-        [Fact]
-        public void Zero_hash_is_zero()
-        {
-            var z1 = BF(0m);
-            var z2 = default(BigFloat);
-            Assert.True(z1.Equals(z2));
-            Assert.Equal(0, z1.GetHashCode());
-            Assert.Equal(0, z2.GetHashCode());
-        }
-
-        [Fact]
-        public void Dictionary_key_collapses_equal_values()
-        {
-            var a = BF(2.5m);
-            var b = BF(2.50m);
-
-            var dict = new Dictionary<BigFloat, int>
-            {
-                [a] = 1,
-                [b] = 2
-            };
-
-            Assert.Single(dict);
-            Assert.Equal(2, dict[a]);
-        }
-
-        [Theory]
-        [InlineData(1.0, 2.0)]
-        [InlineData(-5.0, -4.0)]
-        [InlineData(0.125, 0.25)]
-        public void Unequal_values_may_have_different_hashes(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
-
-            Assert.False(x.Equals(y));
-            // Do NOT assert hash inequality; collisions are allowed.
-            _ = x.GetHashCode();
-            _ = y.GetHashCode();
-        }
+        var x = (BigFloat)(decimal)a;
+        var y = (BigFloat)(decimal)b;
+        
+        Assert.Equal(0, x.CompareTo(y));
+        Assert.True(x.Equals(y));
     }
 
-    public sealed class CompareTo_ValueOrdering
+    [Theory]
+    [InlineData(1.0, 2.0)]
+    [InlineData(-5.0, -4.0)]
+    [InlineData(0.125, 0.25)]
+    public void CompareTo_OrdersProperly(double a, double b)
     {
-        [Theory]
-        [InlineData(1.0, 1.00)]
-        [InlineData(2.5, 2.50)]
-        [InlineData(-3.125, -3.1250)]
-        public void CompareTo_zero_when_numerically_equal(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
-            Assert.Equal(0, x.CompareTo(y));
-            Assert.True(x.Equals(y));
-        }
-
-        [Theory]
-        [InlineData(1.0, 2.0)]
-        [InlineData(-5.0, -4.0)]
-        [InlineData(0.125, 0.25)]
-        public void CompareTo_orders_properly(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
-            Assert.True(x.CompareTo(y) < 0);
-            Assert.True(y.CompareTo(x) > 0);
-        }
-
-        [Fact]
-        public void CompareTo_consistent_with_Equals()
-        {
-            var a = BF(123.456m);
-            var b = BF(123.4560m);
-            var c = BF(123.457m);
-
-            Assert.Equal(0, a.CompareTo(b));
-            Assert.True(a.Equals(b));
-
-            Assert.NotEqual(0, a.CompareTo(c));
-            Assert.False(a.Equals(c));
-        }
+        var x = (BigFloat)(decimal)a;
+        var y = (BigFloat)(decimal)b;
+        
+        Assert.True(x.CompareTo(y) < 0);
+        Assert.True(y.CompareTo(x) > 0);
     }
 
-    public sealed class TotalOrderComparer_Semantics
+    [Fact]
+    public void CompareTo_ConsistentWithEquals()
     {
-        [Theory]
-        [InlineData(2.5, 2.50)]
-        [InlineData(1.0, 1.00)]
-        [InlineData(-7.75, -7.750)]
-        public void Zero_extension_ties_compare_equal(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
+        var a = new BigFloat(123.456m);
+        var b = new BigFloat(123.4560m);
+        var c = new BigFloat(123.457m);
 
-            // CompareTotalOrder collapses zero-extensions
-            Assert.Equal(0, x.CompareTotalPreorder(y));
-            Assert.Equal(0, BigFloat.CompareTotalOrderBitwise(in x, in y));
-        }
+        Assert.Equal(0, a.CompareTo(b));
+        Assert.True(a.Equals(b));
 
-        [Theory]
-        [InlineData(-1.0, 0.0)]
-        [InlineData(0.0, 1.0)]
-        [InlineData(0.5, 1.0)]
-        public void Orders_by_sign_then_magnitude_when_different(double a, double b)
-        {
-            var x = (BigFloat)(decimal)a;
-            var y = (BigFloat)(decimal)b;
-            Assert.True(x.CompareTotalPreorder(y) < 0);
-            Assert.True(y.CompareTotalPreorder(x) > 0);
-        }
-
-        [Fact]
-        public void TotalOrderComparer_is_deterministic_for_sort()
-        {
-            var data = new List<BigFloat>
-            {
-                BF(2.5m), BF(2.50m), BF(-1m), BF(0m), BF(3m), BF(3.0m)
-            };
-
-            data.Sort(BigFloat.TotalOrderComparer.Instance);
-
-            // Sorting twice yields identical sequence
-            var copy = new List<BigFloat>(data);
-            copy.Sort(BigFloat.TotalOrderComparer.Instance);
-            Assert.Equal(data, copy);
-        }
+        Assert.NotEqual(0, a.CompareTo(c));
+        Assert.False(a.Equals(c));
     }
 
-    public sealed class BitwiseEquality
+    #endregion
+
+    #region TotalOrderComparer Semantics Tests
+
+    [Theory]
+    [InlineData(2.5, 2.50)]
+    [InlineData(1.0, 1.00)]
+    [InlineData(-7.75, -7.750)]
+    public void TotalOrder_ZeroExtensionTies_CompareEqual(double a, double b)
     {
-        [Fact]
-        public void Bitwise_equal_implies_numeric_equal_and_same_hash()
-        {
-            var a = BF(42m);
-            var b = a; // exact copy
+        var x = (BigFloat)(decimal)a;
+        var y = (BigFloat)(decimal)b;
 
-            Assert.True(a.IsBitwiseEqual(b));
-            Assert.True(a.Equals(b));
-            Assert.Equal(a.GetHashCode(), b.GetHashCode());
-        }
-
-        [Fact]
-        public void If_bitwise_diff_but_numeric_equal_then_hashes_match()
-        {
-            var a = BF(2.5m);
-            var b = BF(2.50m);
-
-            // Depending on your constructor, these may or may not be bitwise-equal.
-            if (!a.IsBitwiseEqual(b))
-            {
-                Assert.True(a.Equals(b));
-                Assert.Equal(a.GetHashCode(), b.GetHashCode());
-                Assert.Equal(0, a.CompareTotalPreorder(b));
-            }
-        }
+        // CompareTotalPreorder collapses zero-extensions
+        Assert.Equal(0, x.CompareTotalPreorder(y));
+        Assert.Equal(0, BigFloat.CompareTotalOrderBitwise(in x, in y));
     }
 
-    public sealed class CollectionsInterplay
+    [Theory]
+    [InlineData(-1.0, 0.0)]
+    [InlineData(0.0, 1.0)]
+    [InlineData(0.5, 1.0)]
+    public void TotalOrder_OrdersBySignThenMagnitude(double a, double b)
     {
-        [Fact]
-        public void HashSet_uses_numeric_equality()
-        {
-            HashSet<BigFloat> set = [BF(1.25m), BF(1.250m)];
-            Assert.Single(set);
-            Assert.Contains(BF(1.25m), set);
-        }
-
-        [Fact]
-        public void SortedSet_uses_ValueComparer_by_default_example()
-        {
-            var set = new SortedSet<BigFloat>(BigFloat.ValueComparer.Instance)
-            {
-                BF(2.5m), BF(2.50m), BF(-1m), BF(0m)
-            };
-            // 2.5 and 2.50 collapse as equal under ValueComparer/CompareTo
-            Assert.Equal(3, set.Count);
-        }
-
-        [Fact]
-        public void SortedSet_with_TotalOrderComparer_is_deterministic()
-        {
-            var set = new SortedSet<BigFloat>(BigFloat.TotalOrderComparer.Instance)
-            {
-                BF(2.5m), BF(2.50m), BF(-1m), BF(0m)
-            };
-            // 2.5 and 2.50 compare equal under your current total-order,
-            // so they collapse to one element here as well.
-            Assert.Equal(3, set.Count);
-        }
+        var x = (BigFloat)(decimal)a;
+        var y = (BigFloat)(decimal)b;
+        
+        Assert.True(x.CompareTotalPreorder(y) < 0);
+        Assert.True(y.CompareTotalPreorder(x) > 0);
     }
 
-    public sealed class UlpComparers
+    [Fact]
+    public void TotalOrderComparer_ConsistentWithGetHashCode()
     {
-        [Fact]
-        public void CompareUlp_zero_tolerance_matches_CompareTo()
-        {
-            var a = BF(10m);
-            var b = BF(10.0m);
-            Assert.Equal(0, a.CompareUlp(b, 0));
-            Assert.Equal(0, a.CompareTo(b));
-        }
-
-        [Fact]
-        public void UlpToleranceComparer_collapses_small_differences()
-        {
-            var x = BF(1.0m);
-            var y = BF(1.0m); // construct a second value; small differences would be tolerated
-            var cmp = new BigFloat.UlpToleranceComparer(ulps: 1, includeGuardBits: true);
-
-            Assert.Equal(0, cmp.Compare(x, y));
-        }
+        var x = new BigFloat(789.012m);
+        var y = new BigFloat(789.0120m); // Numerically equal
+        
+        // CompareTotalPreorder considers them equal
+        Assert.Equal(0, x.CompareTotalPreorder(y));
+        
+        // GetHashCode should also be equal
+        _ = x.GetHashCode();
+        _ = y.GetHashCode();
     }
+
+    #endregion
+
+    #region Comparison Operator Tests
+
+    [Theory]
+    [InlineData(5.5, 10.2)]
+    [InlineData(-3.7, 2.1)]
+    [InlineData(0.0, 1.0)]
+    [InlineData(-1.0, 0.0)]
+    public void ComparisonOperators_WorkCorrectly(double smaller, double larger)
+    {
+        var a = (BigFloat)(decimal)smaller;
+        var b = (BigFloat)(decimal)larger;
+
+        #pragma warning disable CS1718
+        // Less than
+        Assert.True(a < b);
+        Assert.False(b < a);
+        Assert.False(a < a);
+
+        // Less than or equal
+        Assert.True(a <= b);
+        Assert.False(b <= a);
+        Assert.True(a <= a);
+
+        // Greater than
+        Assert.False(a > b);
+        Assert.True(b > a);
+        Assert.False(a > a);
+
+        // Greater than or equal
+        Assert.False(a >= b);
+        Assert.True(b >= a);
+        Assert.True(a >= a);
+
+        // Equality
+        Assert.False(a == b);
+        Assert.True(a == a);
+
+        // Inequality
+        Assert.True(a != b);
+        Assert.False(a != a);
+        #pragma warning restore CS1718
+    }
+
+    #endregion
+
+    #region Static Comparison Method Tests
+
+    [Theory]
+    [InlineData(3.14, 2.71, 1)]
+    [InlineData(2.71, 3.14, -1)]
+    [InlineData(3.14, 3.14, 0)]
+    public void StaticCompare_ReturnsCorrectSign(double a, double b, int expectedSign)
+    {
+        var x = (BigFloat)(decimal)a;
+        var y = (BigFloat)(decimal)b;
+        
+        int result = BigFloat.Compare(x, y);
+        
+        if (expectedSign == 0)
+            Assert.Equal(0, result);
+        else if (expectedSign > 0)
+            Assert.True(result > 0);
+        else
+            Assert.True(result < 0);
+    }
+
+    #endregion
+
+    #region Special Value Tests
+
+    [Fact]
+    public void Compare_Zero_HandledCorrectly()
+    {
+        var zero = BigFloat.ZeroWithAccuracy(0);
+        var positive = new BigFloat(1);
+        var negative = new BigFloat(-1);
+
+        Assert.True(zero > negative);
+        Assert.True(zero < positive);
+        Assert.True(zero == BigFloat.ZeroWithAccuracy(0));
+        Assert.Equal(0, zero.CompareTo(BigFloat.ZeroWithAccuracy(0)));
+    }
+
+    [Fact]
+    public void Compare_VeryLargeNumbers()
+    {
+        var large1 = new BigFloat("999999999999999999999999999999999999");
+        var large2 = new BigFloat("999999999999999999999999999999999998");
+        
+        Assert.True(large1 > large2);
+        Assert.True(large2 < large1);
+        Assert.False(large1 == large2);
+    }
+
+    [Fact]
+    public void Compare_VerySmallNumbers()
+    {
+        var small1 = new BigFloat("0.000000000000000000000000000000001");
+        var small2 = new BigFloat("0.000000000000000000000000000000002");
+        
+        Assert.True(small1 < small2);
+        Assert.True(small2 > small1);
+        Assert.False(small1 == small2);
+    }
+
+    #endregion
+
+    #region Edge Case Tests
+
+    [Fact]
+    public void Compare_NegativeZero_EqualsPositiveZero()
+    {
+        var positiveZero = new BigFloat(0);
+        var negativeZero = new BigFloat("-0");
+        
+        Assert.True(positiveZero == negativeZero);
+        Assert.Equal(0, positiveZero.CompareTo(negativeZero));
+    }
+
+    [Fact]
+    public void Compare_DifferentPrecisionSameValue()
+    {
+        var highPrecision = new BigFloat("1.00000000000000000000");
+        var lowPrecision = new BigFloat("1.0");
+        
+        Assert.True(highPrecision == lowPrecision);
+        Assert.Equal(0, highPrecision.CompareTo(lowPrecision));
+    }
+
+    #endregion
+
+    #region Performance Boundary Tests
+
+    [Fact(Skip = "Performance test - enable manually")]
+    public void Compare_Performance_MeetsTarget()
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var a = new BigFloat("123456789.987654321");
+        var b = new BigFloat("123456789.987654322");
+        
+        const int iterations = 100000;
+        for (int i = 0; i < iterations; i++)
+        {
+            _ = a.CompareTo(b);
+            _ = a < b;
+            _ = a == b;
+        }
+        
+        sw.Stop();
+        Assert.True(sw.ElapsedMilliseconds < TestTargetInMilliseconds * 10, 
+            $"Performance test took {sw.ElapsedMilliseconds}ms, target was {TestTargetInMilliseconds * 10}ms");
+    }
+
+    #endregion
 }

@@ -1,10 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
-
-// Ignore Spelling: Aprox Sqrt
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System;
 using System.Numerics;
@@ -21,7 +16,7 @@ public readonly partial struct BigFloat
     {
         int resScalePart = -x.Scale - (2 * (x._size - 1)) + GuardBits + GuardBits;
         BigInteger resIntPartNew = BigIntegerTools.Inverse(x._mantissa, x._size);
-        BigFloat resultNew = new(resIntPartNew, resIntPartNew.IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithGuardBits);
+        BigFloat resultNew = new(resIntPartNew, BigInteger.Abs(resIntPartNew).IsPowerOfTwo ? resScalePart : resScalePart - 1, x.SizeWithGuardBits);
         return resultNew;
     }
 
@@ -49,7 +44,7 @@ public readonly partial struct BigFloat
         {
             return exponent switch
             {
-                0 => One,
+                0 => OneWithAccuracy(value.Accuracy),
                 1 => value,
                 -1 => Inverse(value),
                 2 => value * value,
@@ -65,7 +60,7 @@ public readonly partial struct BigFloat
             // Let's first make sure we would have some precision remaining after our exponent operation.
             if (value._size <= 0)
             {
-                return Zero; // technically more of a "NA".
+                return default; // technically more of a "NA".
             }
 
             int removedExp = value.BinaryExponent;

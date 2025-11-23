@@ -1,418 +1,237 @@
 # BigFloat Library Specification
 
-*Updated: August 2025 - Comprehensive specification for AI systems and developers*
+*Updated: November 2025 — technical reference for developers and AI systems*
 
-## Overview
-
-The BigFloat library is a high-performance C# implementation of arbitrary-precision floating-point arithmetic, designed for numerical computations requiring precision beyond standard IEEE floating-point types. The library uses `System.Numerics.BigInteger` as its underlying mantissa representation with a base-2 scaling system for flexible precision control.
-
-## Architecture and Design Philosophy
-
-### Core Design Principles
-
-1. **Arbitrary Precision**: Unlimited precision constrained only by available memory
-2. **Guard Bits Strategy**: 32 least-significant guard bits for enhanced accuracy during chained operations
-3. **Base-2 Internal Representation**: All operations performed in binary for maximum efficiency
-4. **Immutable Struct Design**: Thread-safe, value-type semantics with zero heap allocation for the struct itself
-5. **IEEE-Compatible Interface**: Familiar operators and methods for seamless adoption
-
-### Key Innovations
-
-- **Newton-Plus Algorithm**: Optimized square root computation 2-10x faster than traditional methods
-- **Intelligent Precision Management**: Automatic precision adjustment based on operation requirements
-- **Comprehensive Constants Library**: Pre-computed mathematical constants with up to 1M decimal digits
-- **Multi-Format Parsing**: Support for decimal, hexadecimal, and binary input formats with precision separators
-- **Advanced Rounding System**: `RoundingRightShift` method for precise bit-level rounding operations
-
-## Recent Developments (July-August 2025)
-
-### New Core Features
-
-#### FitsInADouble Functionality
-- **Purpose**: Determines if a BigFloat value can be accurately represented as a standard double
-- **Usage**: `bool canFit = bigFloat.FitsInADouble(allowDenormalized: false)`
-- **Precision**: Handles edge cases including very small numbers, denormalized values, and extreme ranges
-- **Testing**: Comprehensive test coverage for edge cases, including `double.MaxValue`, `double.MinValue`, and epsilon values
-
-#### Enhanced Floor and Ceiling Operations
-- **Methods**: `FloorPreservingAccuracy()` and `CeilingPreservingAccuracy()`
-- **Precision-Aware**: Maintains full BigFloat precision rather than converting to standard types
-- **Comprehensive Testing**: Extensive validation for integer values, fractional values, negative numbers, and extreme ranges
-- **Edge Case Handling**: Proper behavior for zero, epsilon values, and very large numbers
-
-#### Improved IsInteger Detection
-- **Algorithm**: Uses 16-bit GuardBits for better alignment with Ceiling and Floor operations
-- **Performance**: Optimized for both accuracy and speed
-- **Consistency**: Ensures uniform behavior across all integer detection scenarios
-
-### Performance Optimizations
-
-#### ToHexString Enhancements
-- **Algorithm**: Completely rewritten for better performance and accuracy
-- **Features**: 
-  - Optimized radix point placement for fractional values
-  - Efficient handling of guard bits in hexadecimal representation
-  - Proper rounding and trailing zero elimination
-  - Support for very large and very small numbers
-
-#### RoundingRightShift Method
-- **Renamed**: From `RightShiftWithRound` for better clarity
-- **Usage**: Core primitive for all rounding operations throughout the library
-- **Performance**: Optimized for common bit shift patterns
-
-#### Additional Optimizations
-- **IsOneBitFollowedByZeroBits**: 2x performance improvement using `IsPow2` instead of `TrailingZeroCount`
-- **ToDecimal Conversion**: Performance boost using `_size` instead of `GetBitLength()`
-- **Binary Operations**: Streamlined internal calculations for better throughput
-
-## File Organization and Components
-
-### Core Implementation Files
-
-#### `BigFloat.cs` (Primary Structure)
-- **Purpose**: Main struct definition and fundamental operations
-- **Key Components**:
-  - Struct definition: `Mantissa` (BigInteger), `Scale` (int), `_size` (int)
-  - Constructors for all numeric types (int, long, double, BigInteger, UInt128, Int128)
-  - Fundamental arithmetic operators (+, -, *, /, %) with precision management
-  - Comparison operators with multiple comparison modes
-  - Type conversion operators (explicit/implicit) with bounds checking
-  - Core properties: `Size`, `BinaryExponent`, `IsZero`, `Sign`, `IsInteger`, `FitsInADouble`
-
-#### `BigFloatMath.cs` (Mathematical Functions)
-- **Purpose**: Advanced mathematical operations and transcendental functions
-- **Key Functions**:
-  - `Inverse()`: High-precision reciprocal calculation with Newton's method
-  - `Pow()`: Integer exponentiation with binary exponentiation optimization
-  - `Sqrt()`: Newton-Plus square root algorithm with adaptive precision
-  - `NthRoot()`: General nth root computation with convergence optimization
-  - `CubeRoot()`: Specialized cube root with enhanced performance
-  - Trigonometric functions: `Sin()`, `Cos()`, `Tan()` with Payne-Hanek reduction
-  - `Log2()`: Base-2 logarithm with hardware acceleration for smaller values
-  - `FloorPreservingAccuracy()`, `CeilingPreservingAccuracy()`: Precision-aware floor/ceiling
-
-#### `BigFloatStringsAndSpans.cs` (String Representation)
-- **Purpose**: String formatting, parsing, and display functionality
-- **Key Features**:
-  - `ToString()` overloads with comprehensive formatting options
-  - `IFormattable` and `ISpanFormattable` implementations for .NET integration
-  - Support for multiple output formats:
-    - Decimal: Default with precision indicators (`XXXXX` for out-of-precision)
-    - Hexadecimal: `ToString("X")` with optimized radix point handling
-    - Binary: `ToString("B")` with efficient bit representation
-    - Scientific: `ToString("E")` for very large/small numbers
-  - Enhanced `ToHexString()` with performance optimizations
-  - Precision-aware formatting showing vs. hiding guard bits
-  - Debug visualization with `DebugPrint()` and `DebuggerDisplay`
-
-#### `BigFloatParsing.cs` (Input Processing)
-- **Purpose**: Parse strings into BigFloat representations with comprehensive format support
-- **Supported Formats**:
-  - Decimal: `"123.456"`, `"1.23e+10"`, `"-456.789e-20"`
-  - Hexadecimal: `"0xABC.DEF"`, `"-0x123.456"`
-  - Binary: `"0b1101.1011"`, `"0b-110.101"`
-  - Precision separator: `"123.456|789"` (precise digits | guard bits)
-- **Key Functions**:
-  - `Parse()` and `TryParse()` methods with comprehensive error handling
-  - `ParseBinary()`, `TryParseBinary()` with binary precision control
-  - `TryParseDecimal()`, `TryParseHex()` with format validation
-  - Support for scientific notation and exponential formats
-  - Whitespace handling and bracket/quote tolerance
-
-#### `BigFloatCompareTo.cs` (Comparison Operations)
-- **Purpose**: Comprehensive comparison and equality operations
-- **Key Methods**:
-  - `CompareTo()`: Standard IComparable implementation
-  - `CompareInPrecisionBitsTo()`: Precision-aware comparison
-  - `StrictCompareTo()`: Exact bit-level comparison
-  - `FullPrecisionCompareTo()`: Comparison accounting for all precision bits
-  - `CompareToIgnoringLeastSigBits()`: Comparison with tolerance
-  - Enhanced integer comparison with BigInteger types
-
-#### `BigFloatExtended.cs` (Additional Functionality)
-- **Purpose**: Extended properties, conversions, and utility functions
-- **Key Features**:
-  - Additional constructors (UInt128, Int128, extended precision types)
-  - `FitsInADouble()`: Range validation for double conversion
-  - Extended comparison operations
-  - Utility methods for precision management
-  - Debug and diagnostic functions
-
-## Mathematical Operations
-
-### Arithmetic Operations
-
-- **Addition/Subtraction**: Scale alignment with precision-aware rounding and guard bit management
-- **Multiplication**: Size-based optimization with automatic precision adjustment
-- **Division**: Precision-preserving algorithm with proper remainder handling
-- **Modulus**: Supports both mathematical and programming semantics with sign handling
-
-### Advanced Mathematical Functions
-
-- **Power Functions**: Optimized for integer exponents using binary exponentiation
-- **Root Functions**: Newton-Plus algorithm for square roots, general nth roots with adaptive convergence
-- **Floor/Ceiling**: `FloorPreservingAccuracy()` and `CeilingPreservingAccuracy()` maintain full precision
-- **Integer Detection**: Enhanced `IsInteger` with 16-bit GuardBits alignment
-- **Trigonometric**: High-precision sin/cos/tan with Payne-Hanek argument reduction
-- **Logarithmic**: Base-2 logarithm with hardware acceleration for smaller values
-
-### Precision Management
-
-- **Automatic Precision**: Operations automatically determine appropriate output precision
-- **Guard Bits**: 32 extra bits maintain accuracy through operation chains (>10²¹ operations)
-- **Rounding**: Proper rounding to nearest with `RoundingRightShift` primitive
-- **Precision Control**: Manual precision adjustment with `SetPrecision()`, `TruncateByAndRound()`
-- **Range Validation**: `FitsInADouble()` for safe conversion to standard types
-
-## Parsing and Formatting
-
-### Input Formats Supported
-
-1. **Decimal**: `"123.456"`, `"1.23e+10"`, `"-456.789e-20"`
-2. **Hexadecimal**: `"0xABC.DEF"`, `"-0x123.456"`
-3. **Binary**: `"0b1101.1011"`, `"0b-110.101"`
-4. **Precision Separator**: `"123.456|789"` (precise|guard digits)
-5. **Scientific Notation**: Full support for exponential formats
-
-### Output Formats
-
-1. **Decimal**: Default format with precision indicators (`XXXXX` for out-of-precision)
-2. **Scientific**: `ToString("E")` for very large/small numbers (`1.23e+100`)
-3. **Hexadecimal**: `ToString("X")` - optimized hexadecimal with precise radix point placement
-4. **Binary**: `ToString("B")` - binary with radix point and trailing zero elimination
-5. **Debug**: Detailed internal state visualization with `DebuggerDisplay`
-
-### Special Formatting Features
-
-- **Precision Masking**: Out-of-precision digits shown as 'X' or scientific notation
-- **Optimized ToHexString**: Performance-enhanced with proper guard bit handling
-- **Digit Grouping**: Optional grouping for readability
-- **Guard Bit Display**: Optional inclusion of guard bits in output
-- **IFormattable/ISpanFormattable**: Full .NET formatting interface support
-
-## Constants System Architecture
-
-### Hierarchical Organization
-
-The constants system is organized into logical categories:
-
-```
-Constants
-├── Fundamental (π, e, √2, φ, γ)
-├── NumberTheory (Twin Prime, Apéry, Conway)
-├── Analysis (Catalan, Khintchine, Omega)
-├── Physics (Fine Structure)
-├── Derived (π², e², π^e, etc.)
-├── Trigonometric (sin/cos values)
-└── Misc (Plastic number, etc.)
-```
-
-### Precision Management
-
-- **Base64 Encoding**: Efficient storage of pre-computed digits
-- **External Files**: Support for ultra-high precision (1M+ digits)
-- **Caching System**: Performance optimization for repeated access
-- **Precision Cutoff**: Intelligent truncation at trailing zeros
-
-### Usage Patterns
-
-```csharp
-// Direct access
-BigFloat pi = Constants.Fundamental.Pi;
-
-// Configured precision
-BigFloat pi = Constants.WithConfig(precisionInBits: 5000).Get("Pi");
-
-// Category access
-var fundamentals = Constants.WithConfig(2000).GetCategory(["Pi", "E", "Sqrt2"]);
-
-// Computational generation
-BigFloat pi = Constants.GeneratePi(accuracyInBits: 10000);
-```
-
-## Performance Considerations
-
-### Algorithmic Optimizations
-
-1. **Newton-Plus Square Root**: 2-10x faster than traditional Newton's method
-2. **Binary Exponentiation**: Efficient integer power computation with early termination
-3. **Scale Alignment**: Minimal BigInteger operations for arithmetic operations
-4. **Size-Based Optimization**: Different algorithms based on operand sizes
-5. **RoundingRightShift**: Optimized bit-level rounding primitive
-6. **IsOneBitFollowedByZeroBits**: 2x performance using `IsPow2` optimization
-
-### Memory Management
-
-- **Immutable Structs**: Zero heap allocation for the struct itself
-- **BigInteger Efficiency**: Leverages .NET's optimized BigInteger implementation
-- **Caching**: Constants cached to avoid recomputation
-- **Stackalloc**: Used for temporary operations where possible
-- **Size Tracking**: Internal `_size` field for performance optimization
-
-### Precision Trade-offs
-
-- **Guard Bits**: 32 bits chosen as optimal balance between accuracy and performance
-- **Operation Chaining**: Gradual precision loss over ~10²¹ operations
-- **Early Termination**: Algorithms stop when precision requirements are met
-- **Adaptive Precision**: Dynamic precision adjustment based on operation complexity
-
-## Usage Examples and Common Patterns
-
-### Basic Arithmetic
-
-```csharp
-BigFloat a = new("123456789.012345678901234");
-BigFloat b = new(1234.56789012345678);
-BigFloat result = a + b * Constants.Fundamental.Pi;
-
-// Check if result fits in standard double
-if (result.FitsInADouble())
-{
-    double standardResult = (double)result;
-}
-```
-
-### High-Precision Computation
-
-```csharp
-BigFloat pi = Constants.WithConfig(50000).Get("Pi");
-BigFloat area = pi * radius * radius;
-
-// Precision-preserving floor/ceiling
-BigFloat floor = area.FloorPreservingAccuracy();
-BigFloat ceiling = area.CeilingPreservingAccuracy();
-```
-
-### Precision Control and Validation
-
-```csharp
-BigFloat value = BigFloat.SetPrecisionWithRound(largeValue, 1000);
-BigFloat extended = BigFloat.ExtendPrecision(smallValue, 500);
-
-// Integer detection
-if (value.IsInteger)
-{
-    // Handle as integer
-    BigFloat floor = value.FloorPreservingAccuracy();
-    Debug.Assert(floor == value.CeilingPreservingAccuracy());
-}
-```
-
-### Advanced String Formatting
-
-```csharp
-BigFloat value = new("123.456789|abcdef"); // precision separator
-Console.WriteLine(value.ToString());     // Decimal: 123.456789XXXXX
-Console.WriteLine(value.ToString("X"));  // Hex: 7B.75...
-Console.WriteLine(value.ToString("B"));  // Binary: 1111011.011...
-Console.WriteLine(value.ToString("E"));  // Scientific: 1.23456789e+02
-```
-
-### Random Number Generation
-
-```csharp
-BigFloat random = BigFloat.RandomInRange(min: 0, max: 1, logarithmic: false);
-BigFloat logRandom = BigFloat.RandomWithMantissaBits(1000, -100, 100, logarithmic: true);
-```
-
-## Special Considerations and Limitations
-
-### Precision Loss Scenarios
-
-1. **Decimal Conversion**: Most decimal numbers have infinite binary representations
-2. **Operation Chaining**: Gradual precision loss over many operations (>10²¹)
-3. **Mixed Sizes**: Operations between very different sized numbers
-4. **Rounding Accumulation**: Non-perfect rounding in some mathematical functions
-
-### Known Issues and Workarounds
-
-1. **Base-10 vs Base-2**: `5.4` decimal ≠ exact binary representation
-2. **Rounding Inconsistencies**: Some functions don't implement perfect rounding
-3. **Performance**: Very high precision operations can be computationally intensive
-4. **Memory Usage**: Large precision numbers consume significant memory
-
-### Conversion Safety
-
-- **FitsInADouble()**: Always check before converting to double
-- **Range Validation**: Built-in checks for standard type conversions
-- **Precision Warnings**: Out-of-precision indicators in string representations
-- **Guard Bit Management**: Automatic handling of precision boundaries
-
-## Implementation Quality and Testing
-
-### Code Quality Features
-
-- **Comprehensive Documentation**: XML documentation for all public APIs
-- **Debug Assertions**: Validation of internal state consistency with `AssertValid()`
-- **Error Handling**: Appropriate exceptions for invalid operations
-- **Thread Safety**: Immutable design ensures thread safety
-- **Performance Monitoring**: Built-in benchmarking and profiling support
-
-### Recent Testing Enhancements (July-August 2025)
-
-- **FitsInADouble Testing**: Comprehensive edge case validation
-- **Floor/Ceiling Testing**: Extensive parameterized tests for all numeric ranges
-- **IsInteger Testing**: Validation across integer boundaries and fractional values
-- **ToHexString Testing**: Performance and accuracy validation
-- **Conversion Testing**: Enhanced validation for all type conversions
-- **Edge Case Coverage**: Special values (zero, infinity, very large/small numbers)
-
-### Validation and Testing
-
-- **Mathematical Correctness**: Algorithms validated against known mathematical results
-- **Precision Verification**: Guard bit effectiveness verified through operation chains
-- **Performance Benchmarking**: Optimizations validated through comprehensive testing
-- **Edge Case Handling**: Special values properly handled with comprehensive test coverage
-- **Regression Testing**: Continuous validation of recent optimizations and changes
-
-## AI Integration Guidelines
-
-### For AI Systems Working with BigFloat
-
-1. **Precision Awareness**: Always consider precision requirements before operations
-2. **Type Safety**: Use `FitsInADouble()` before converting to standard types
-3. **Format Selection**: Choose appropriate string formats based on intended use
-4. **Performance**: Consider algorithmic complexity for high-precision operations
-5. **Validation**: Leverage comprehensive testing patterns for custom implementations
-
-### Common Patterns for AI Implementation
-
-```csharp
-// Safe conversion pattern
-public double SafeToDouble(BigFloat value)
-{
-    if (!value.FitsInADouble())
-        throw new OverflowException("Value exceeds double precision range");
-    return (double)value;
-}
-
-// Precision-aware comparison
-public bool AreEqual(BigFloat a, BigFloat b, int toleranceBits = 0)
-{
-    return toleranceBits == 0 
-        ? a.StrictCompareTo(b) == 0
-        : a.CompareToIgnoringLeastSigBits(b, toleranceBits) == 0;
-}
-
-// Integer handling
-public BigFloat ProcessNumber(BigFloat input)
-{
-    if (input.IsInteger)
-        return input.FloorPreservingAccuracy(); // Normalize to integer
-    else
-        return input; // Maintain fractional precision
-}
-```
-
-## Browser/Web Limitations
-
-- **No localStorage**: Browser storage APIs not supported in Claude.ai artifacts
-- **Memory-Only**: All state must be maintained in JavaScript variables/React state
-- **Session Persistence**: No cross-session data persistence in web environments
-- **Performance**: JavaScript BigInt operations may be slower than native C# BigInteger
+> **Scope.** This document specifies the behavior, data model, key APIs, rounding/comparison semantics, parsing/formatting, math functions, precision control, and range/convertibility characteristics of **BigFloat** as implemented in the current sources. It supersedes the August 2025 draft. 
 
 ---
 
-This specification provides a comprehensive understanding of the BigFloat library's architecture, recent enhancements, capabilities, and usage patterns, suitable for both human developers and AI systems working with the codebase.
+## What’s new since 2025‑08‑05 (high level)
 
-*This document reflects the state of the BigFloat library as of August 2025, incorporating all recent optimizations, new features, and testing enhancements.*
+* **Constructor refactor & precision knobs.** All primitive‑type constructors now expose precision controls (`binaryPrecision`) and a `valueIncludesGuardBits` switch; zero‑inputs short‑circuit with correct metadata. Edge cases for `Int128.MinValue` were fixed.
+* **Rounding/Truncation suite.** Canonical `Round`, `TruncateByAndRound`, `TruncateToIntegerKeepingAccuracy`, and related helpers; `Ceiling/CeilingPreservingAccuracy` were rewritten to avoid lowering values when only guard bits are set.
+* **Comparison overhaul.** Clear split of value equality (`CompareTo/Equals`), ULP‑tolerant comparisons (`CompareUlp`/`EqualsUlp`), and deterministic total orders (bitwise vs. zero‑extension). New comparer types included. 
+* **Binary/hex/decimal formatting.** Binary writer gained optional guard‑bit separator (`|`) and exact buffer sizing; hex/scientific paths reworked for correctness and performance. 
+* **Parsing.** Decimal parsing now maps precision delimiter `|` to guard bits; supports `X` placeholders, exponential forms, brackets/quotes, and `0x…` / `0b…`. 
+* **Range helpers.** Introduced `FitsInADouble`, `FitsInADoubleWithDenormalization`, `FitsInAFloat`, `FitsInAFloatWithDenormalization`, and `FitsInADecimal`. *(Note: these are properties, not a method with parameters.)* 
+* **IConvertible.** `BigFloat` implements `IConvertible` with safe overflow checks and a `ToType` dispatcher.
+* **Arithmetic touch‑ups.** Safer/faster remainder path; multiply short‑circuits strict zero; divide keeps hooks for adaptive algorithms while using the standard path. 
+* **Packaging.** NuGet metadata bumped **v2.2.0** in Aug 2025; ongoing fixes through Oct–Nov per change log. 
+
+---
+
+## Data model & invariants
+
+**Representation.** A `BigFloat` encodes an integer mantissa `BigInteger _mantissa` **including** guard bits, a base‑2 **Scale** (shift of the radix point), and `_size` (bit‑length of the mantissa, including guard bits). Guard bit width is a library constant:
+
+```text
+GuardBits = 32
+```
+
+* **Mantissa (with guard).** `_mantissa` stores data plus 32 guard bits (LSBs). 
+* **Scale / Accuracy.** `Scale` is the base‑2 exponent applied to `_mantissa`; **Accuracy** is defined as `-Scale` (fractional‑bit budget).
+* **Size & precision.** `Size` = `max(0, _size − GuardBits)`; `SizeWithGuardBits` = `_size`; **Precision** = `_size − GuardBits`.
+* **Binary exponent.** `BinaryExponent = Scale + _size − GuardBits − 1`. 
+* **Zero semantics.** `IsZero` uses `_size` and `Scale` so denormalized “near‑zero” encodings normalize to zero; `IsStrictZero` checks `_mantissa.IsZero`. `Sign` collapses to 0 for zeros.
+* **Canonicalization hook.** Rounding that removes guard bits is done via `BigIntegerTools.RoundingRightShift(…, GuardBits)` and is the basis for comparisons and many conversions. (See Formatting and Comparison sections.)
+
+---
+
+## Construction & conversion
+
+### Constructors (selected)
+
+Each primitive overload supports optional precision configuration; zero inputs return early with correct scale/size. Examples:
+
+* `BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 31)`
+* `BigFloat(long value, …, int binaryPrecision = 63)`; `BigFloat(ulong value, …, int binaryPrecision = 64)`
+* `BigFloat(Int128 value, …, int binaryPrecision = 127)`; `BigFloat(UInt128 value, …, int binaryPrecision = 128)`
+* `BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)` *(subnormals handled; NaN/∞ rejected)*
+* `BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)`
+  All constructors ensure `_size` matches the real bit length and call `AssertValid()` in DEBUG. 
+
+**Accuracy context helpers.**
+`ZeroWithAccuracy(int accuracy)` and `OneWithAccuracy(int accuracy)` produce canonical zeros/ones carrying an explicit accuracy (least‑precision) context. 
+
+### Casts and `IConvertible`
+
+* **Implicit from** `sbyte`,`byte`,`short`,`ushort`,`int`,`uint`,`long`,`ulong`,`Int128`,`UInt128`,`decimal`. 
+* **Explicit to** integral types and `BigInteger`; casts remove guard bits with rounding at the guard boundary and truncate working fraction as required. The explicit `int` path documents that rounding at the guard boundary precedes truncation; a convenience `ToNearestInt` is provided. 
+* **Explicit to double/float** implement full IEEE‑754 bit synthesis: normal, subnormal, overflow → ±∞, tiny → ±0. 
+* **`IConvertible`**:
+
+  * `ToDouble/ToSingle` check exponent ranges (`biasedExp`), throwing `OverflowException` on overflow; subnormals/underflow reach ±0. `ToDecimal` delegates the decimal cast; unsupported casts (Boolean/Char/DateTime) throw. `ToType` handles known primitives and otherwise delegates through `Convert.ChangeType((double)this, …)`.
+
+### Range/fit helpers
+
+* `FitsInADouble`, `FitsInADoubleWithDenormalization`, `FitsInAFloat`, `FitsInAFloatWithDenormalization`, `FitsInADecimal` provide quick range checks (precision loss ignored). *(These are boolean properties.)* 
+
+---
+
+## Arithmetic & precision management
+
+### Core operators
+
+* **Addition/Subtraction.** Scales are aligned; smaller operand may be rounded right to avoid huge shifts. Several fast‑paths short‑circuit when one operand is below the other’s precision window. 
+* **Multiplication.** Adaptive strategy with small size‑difference elision; strict‑zero short‑circuit returns a zero that **preserves the tighter input accuracy**. 
+* **Division.** Hooks for size‑adaptive algorithms (`DivideSmallNumbers`/`DivideLargeNumbers`) exist; the **standard path** is used currently, with output size targeted from operand sizes. Division by strict zero throws. 
+* **Remainder/Mod.** Remainder is scale‑aware and uses modular arithmetic to avoid oversized shifts (trailing‑zero optimizations included). `Mod` adjusts sign semantics from remainder as expected. 
+* **Bit shifts.** `<<`/`>>` adjust only `Scale` (precision unchanged). Mantissa‑only shifts are exposed as `LeftShiftMantissa`/`RightShiftMantissa`.
+
+### Precision/accuracy APIs
+
+* **Set/adjust.** `SetAccuracy`, `AdjustAccuracy` (aliases for precision control), `SetPrecision`, `SetPrecisionWithRound`, `AdjustPrecision(deltaBits)` with documented semantics (left shift to extend; rounded drop to reduce). 
+* **Rounding & truncation.** `Round()`, `Truncate()`, `TruncateByAndRound(x, bits)`, `TruncateToIntegerKeepingAccuracy()`. `Ceiling()` and `CeilingPreservingAccuracy()` were rewritten so values with *only guard‑fraction* do not move down; floors are expressed via negation for canonical form.
+* **Next/Prev ULP.** `NextUp/NextDown` step the guard area by ±1; `NextUpInPrecisionBit/NextDownInPrecisionBit` step by one **in‑precision** unit; half‑unit helpers also provided. 
+
+---
+
+## Comparisons & equality
+
+BigFloat exposes three distinct semantics:
+
+1. **Canonical value semantics** (`CompareTo`, `Equals`, operators): guard bits are rounded away using the library rule, carry is handled, and magnitudes are aligned. Use for .NET value semantics and hashing. 
+2. **ULP‑tolerant numerics** (`CompareUlp`, `EqualsUlp`, plus `Is*Ulp` helpers): align scales, then ignore a caller‑specified number of LSBs (optionally counting guard bits). Use for stopping criteria and “close enough” tests. A faster, coarser `CompareUlpFast` is available. 
+3. **Deterministic ordering**:
+
+   * `CompareTotalOrderBitwise` is a strict total order over the **encoding** (distinguishes 2.5 vs 2.50).
+   * `CompareTotalPreorder` collapses **zero‑extensions** of the same value (2.5 ≡ 2.50) for stable sort keys.
+     Comparer types (`ValueComparer`, `TotalOrderComparer`, `UlpToleranceComparer`, `BitwiseEqualityComparer`) are provided. 
+
+Integer equality overloads are available (e.g., `== long/ulong/BigInteger`) and route through the canonicalized paths or integer‑rounding helpers. 
+
+---
+
+## Parsing
+
+`Parse`/`TryParse` accept decimal/hex/binary, optional sign, radix point, exponent (`e`/`E`), and a **precision separator** `|` that splits in‑precision vs guard bits (e.g., `1.01|101`). Inputs can include spaces/commas/underscores and be wrapped in quotes/brackets. Decimal parsing supports **`X` placeholders** as out‑of‑precision decimal digits (e.g., `123XXX` behaves like 123×10³). Errors throw or return `false` depending on API. 
+
+* `TryParseDecimal` computes guard bits from `|`, maps `X` to base‑10 scaling, and preserves accuracy on zeros (`ZeroWithAccuracy`). 
+* `TryParseHex` tolerates `0x` prefixes and uses hex‑nibble math for precise scaling; `|` counts hex guard nibbles. 
+* `TryParseBinary` accepts `0b` inputs, separators, and `|`; negative values use two’s‑complement bit building internally before converting to `BigInteger`. 
+
+---
+
+## Formatting & spans
+
+`BigFloat` implements `IFormattable` and `ISpanFormattable`. Supported format specifiers:
+
+* **Decimal** (`"G"`/`"R"`/default): precision‑aware decimal with optional *digit‑masking* (out‑of‑precision tail as `X…`). 
+* **Hex** (`"X"`): optimized radix‑point placement; optional inclusion of guard bits; trailing zeros trimmed. 
+* **Binary** (`"B"`): efficient streaming writer with optional **guard‑bit separator** `|` and exact buffer sizing; helper `ToBinaryString(int numberOfGuardBitsToInclude, bool showPrecisionSeparator)`. 
+* **Scientific** (`"E"`): normalized mantissa × 10^exp; used for very large/small magnitudes and by explicit call `ToStringExponential`. 
+
+Debug views (`DebuggerDisplay`, `DebugPrint()`) show combined decimal/hex/binary snapshots and guard rounding direction. 
+
+---
+
+## Mathematical functions
+
+* **Inverse / Abs.** High‑precision reciprocal and absolute value. 
+* **Exponentiation.** `Pow(BigFloat, int)` uses binary exponentiation; for small precisions it opportunistically leverages `double` for a seed and then restores scale/precision. `PowerOf2` has a capped‑precision variant for performance.
+* **Roots.** `Sqrt` implements a Newton‑Plus integer‑root core with carefully normalized inputs; `NthRoot`/`CubeRoot` include scaling and fast double‑seeded starts, iterating to convergence under precision control. 
+* **Logarithms.** `Log2(BigFloat)` returns `double`, combining exponent with a normalized mantissa; `Log2Int` returns the integer exponent and rejects non‑positive inputs. 
+* **Trig.** `Sin`, `Cos` use Payne–Hanek‑style range reduction with π from the constants subsystem, then select either a **Taylor** kernel for tiny angles or a **halve‑and‑double** scheme; `Tan` is `Sin/Cos`. A small‑precision, hardware‑accelerated `SinAprox` is available. 
+
+**Constants subsystem.** Math functions call `Constants.GetConstant(Catalog.Pi, precision)` for π (and derivative values), with constants defined in the `Constants*.cs` set. 
+
+---
+
+## Constants system (overview)
+
+The constants module is organized via a catalog and builder/types to materialize values (π, e, √2, etc.) at requested precision. Access patterns:
+
+```csharp
+var pi = Constants.GetConstant(Catalog.Pi, wantedBits);
+```
+
+See `Constants.cs`, `ConstantInfo.cs`, `ConstantsCatalog.cs`, `ConstantBuilder.cs` for cataloging and assembly. 
+
+---
+
+## Edge cases & notes
+
+* **Overflow/underflow (casts).** IEEE‑754 casts to double/float synthesize exponent and mantissa fields directly; overflow yields ±∞; too small → signed zeros; NaN/∞ inputs to constructors are rejected. 
+* **Integer detection.** `IsInteger` now delegates to `Ceiling()==Floor()` for consistency with rounding paths. 
+* **Min/Max.** `Min`/`Max` prefer higher‑precision encodings on ties after canonical comparison. 
+* **Bitwise operators.** `~` complements bits within the stored precision window and shrinks size at least one bit; use with care. 
+
+---
+
+## Examples
+
+**Precision control & rounding**
+
+```csharp
+var x = new BigFloat(12345, binaryScaler: -10);   // 12.056…
+var y = BigFloat.SetPrecisionWithRound(x, 20);    // clamp to 20 bits
+var z = BigFloat.TruncateByAndRound(y, 3);        // remove 3 LSBs (rounded)
+```
+
+
+
+**ULP‑aware compare**
+
+```csharp
+bool equalWithin2Ulps = a.EqualsUlp(b, ulpTolerance: 2, ulpScopeIncludeGuardBits: false);
+```
+
+
+
+**Parse with precision separator and hex/binary**
+
+```csharp
+var d = BigFloat.Parse("1.2345|678");     // decimal; guard from '|'
+var h = BigFloat.Parse("0xAB.CD|EF");     // hex; guard nibbles from '|'
+var b = BigFloat.Parse("0b1.01|101");     // binary; guard bits from '|'
+```
+
+
+
+**Range‑safe cast**
+
+```csharp
+if (value.FitsInADouble) {
+    double v = (double)value;
+}
+```
+
+
+
+**Binary formatting with guard separator**
+
+```csharp
+string bits = value.ToBinaryString(numberOfGuardBitsToInclude: 32, showPrecisionSeparator: true);
+// e.g., "101.001|1100"
+```
+
+
+
+---
+
+## Versioning & provenance
+
+* Current NuGet metadata in repo indicates **v2.2.0** (August 5, 2025), with ongoing fixes (Sep–Nov). See `ChangeLog.md` for dated entries (constructor precision, remainder optimization, `IConvertible`, rounding suite, zero handling, formatting). 
+
+---
+
+## Appendix — Key properties & methods (index)
+
+* **Core:** `GuardBits`, `Scale`, `Size`, `SizeWithGuardBits`, `BinaryExponent`, `Precision`, `Accuracy`, `IsZero`, `IsStrictZero`, `Sign`.
+* **Arithmetic:** `+ - * / %`, `Mod`, `PowerOf2`, `Min/Max`, `SplitIntegerAndFractionalParts`. 
+* **Precision/Rounding:** `Round`, `Truncate`, `TruncateByAndRound`, `TruncateToIntegerKeepingAccuracy`, `SetPrecision`, `SetPrecisionWithRound`, `AdjustPrecision`, `ZeroWithAccuracy`, `OneWithAccuracy`.
+* **Comparisons:** `CompareTo`, `Equals`, `CompareUlp*`, `CompareTotalOrderBitwise`, `CompareTotalPreorder`, comparer classes. 
+* **Parsing/Formatting:** `Parse/TryParse` (decimal/hex/binary with `|` & `X`), `ToString` (`"G","R","X","B","E"`), `ToBinaryString`, `ToHexString`, span writers.
+* **Math:** `Inverse`, `Pow`, `Sqrt`, `NthRoot`, `CubeRoot`, `Sin`, `Cos`, `Tan`, `Log2`, `Log2Int`. 
+* **Conversions:** implicit/explicit casts, `IConvertible`, `FitsIn*` (range checks).
+
+---
+
+### Notes for maintainers
+
+* This spec intentionally mirrors the **code‑as‑written** (not future comments in stubs). E.g., division has adaptation hooks but defaults to the standard algorithm today. 
+* The August spec’s “`FitsInADouble(allowDenormalized: …)`” was corrected to the **property** pattern (`FitsInADouble`, `FitsInADoubleWithDenormalization`). 
+
+---
+
+*End of specification.*

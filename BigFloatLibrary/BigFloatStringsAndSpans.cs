@@ -1,8 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok was used in the development of this library.
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System;
 using System.Diagnostics;
@@ -43,18 +40,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <returns>The value as a string.</returns>
     public string ToString(string format)
     {
-        if (string.IsNullOrEmpty(format))
-        {
-            return ToString(); // default decimal conversion
-        }
-
-        // Use an invariant upper-case switch to select the conversion.
-        return format.ToUpperInvariant() switch
-        {
-            "X" => ToHexString(),
-            "B" => ToBinaryString(),
-            _ => throw new FormatException($"The {format} format string is not supported.")
-        };
+        return ToString(format, null);
     }
 
     /// <summary>
@@ -121,17 +107,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <param name="format">A format specifier (if empty, default decimal conversion is used).</param>
     /// <param name="provider">Format provider (ignored in this implementation).</param>
     /// <returns>True if the formatting fits in the destination span; otherwise, false.</returns>
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    public bool TryFormat(Span<char> destination, out int charsWritten,
+                          ReadOnlySpan<char> format, IFormatProvider? provider)
     {
         if (format.IsEmpty)
         {
-            // Default decimal formatting.
-            string s = ToString();
-            if (s.Length > destination.Length)
-            {
-                charsWritten = 0;
-                return false;
-            }
+            var s = ToString();
+            if (s.Length > destination.Length) { charsWritten = 0; return false; }
             s.AsSpan().CopyTo(destination);
             charsWritten = s.Length;
             return true;
@@ -141,32 +123,31 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         switch (fmt)
         {
             case 'X':
-                {
-                    string hex = ToHexString();
-                    if (hex.Length > destination.Length)
-                    {
-                        charsWritten = 0;
-                        return false;
-                    }
-                    hex.AsSpan().CopyTo(destination);
-                    charsWritten = hex.Length;
-                    return true;
-                }
+                var hex = ToHexString();
+                if (hex.Length > destination.Length) { charsWritten = 0; return false; }
+                hex.AsSpan().CopyTo(destination);
+                charsWritten = hex.Length;
+                return true;
+
             case 'B':
-                {
-                    int required = CalculateBinaryStringLength();
-                    if (required > destination.Length)
-                    {
-                        charsWritten = 0;
-                        return false;
-                    }
-                    WriteBinaryToSpan(destination, out charsWritten);
-                    return true;
-                }
+                int required = CalculateBinaryStringLength();
+                if (required > destination.Length) { charsWritten = 0; return false; }
+                WriteBinaryToSpan(destination, out charsWritten);
+                return true;
+
+            case 'E':
+            case 'G':
+            case 'R':
             default:
-                throw new FormatException($"The {format.ToString()} format string is not supported.");
+                // Fallback to IFormattable semantics
+                var s = ToString(format.ToString(), provider);
+                if (s.Length > destination.Length) { charsWritten = 0; return false; }
+                s.AsSpan().CopyTo(destination);
+                charsWritten = s.Length;
+                return true;
         }
     }
+
 
     public void WriteBinaryToSpan(Span<char> destination, out int charsWritten, int numberOfGuardBitsToInclude = 0, bool showGuardBitsSeparator = false)
     {
@@ -203,7 +184,13 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         if (isZero)
         {
             // Bit structure: whole '0' then (optional) fractional zeros
-            int zerosToWrite = numberOfGuardBitsToInclude - Scale; // if > 0 we show '.' and that many '0's
+            int zerosToWrite = Math.Max(0, numberOfGuardBitsToInclude - Scale); // if > 0 we show '.' and that many '0's
+
+            if (_mantissa.IsZero && _size == 0 && Scale == -GuardBits && zerosToWrite > numberOfGuardBitsToInclude)
+            {
+                zerosToWrite = numberOfGuardBitsToInclude;
+            }
+
             int baseBitChars = 1 + (zerosToWrite > 0 ? zerosToWrite : 0);
 
             // Separator index among bit chars (before any extra-leading zeros)
@@ -438,7 +425,17 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             // Writer prints: "0" and, if needed, ".000..." where
             // zerosToWrite = numberOfGuardBitsToOutput - Scale
             bitChars = 1;
-            int zerosToWrite = numberOfGuardBitsToOutput - Scale;
+            int zerosToWrite = Math.Max(0, numberOfGuardBitsToOutput - Scale);
+
+            // When a zero value is created from an integer constructor, the scale
+            // reflects the implicit guard bits (e.g. Scale == -GuardBits). In that
+            // scenario we only want to emit guard-bit zeros when explicitly
+            // requested via numberOfGuardBitsToOutput.
+            if (_mantissa.IsZero && _size == 0 && Scale == -GuardBits && zerosToWrite > numberOfGuardBitsToOutput)
+            {
+                zerosToWrite = numberOfGuardBitsToOutput;
+            }
+
             if (zerosToWrite > 0)
             {
                 dotChars = 1;
@@ -516,8 +513,6 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         return signChars + bitChars + dotChars + separatorChars;
     }
 
-
-
     /// <summary>
     /// Provides custom format-string support for BigFloat.
     /// This is the standard .NET entry point when users call
@@ -564,6 +559,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         BigInteger intVal = val._mantissa;
         int scale = val.Scale;
         int valSize = val._size;
+
+        //if (intVal.IsZero) return "0";
 
         if (includeGuardBits)
         {
@@ -658,14 +655,23 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+        BigInteger coarseMantissa = RoundingRightShift(intVal, GuardBits);
 
         // Applies the scale to the number and rounds from bottom bit
         BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
-        
+
+        // When rounding wipes out all significant digits (e.g. very small mantissa
+        // combined with a positive scale), preserve a single digit so the exponent
+        // still reflects the magnitude instead of returning "0e+N" for non-zero values.
+        if (resScaled.IsZero && !resUnScaled.IsZero && !coarseMantissa.IsZero)
+        {
+            resScaled = intVal.Sign >= 0 ? BigInteger.One : -BigInteger.One;
+        }
+
         // #########e+NN   ->  want  D.DDDDDDe+MMM
-        // maskSize is your "raw" decimal exponent,
+        // maskSize is the "raw" decimal exponent,
         // resScaled is the integer part you’ve currently computed.
 
         string number = resScaled.ToString();
@@ -747,14 +753,23 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
-        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable 
+        int maskSize = (int)((scale + 2.5) / LOG2_OF_10); // 2.5 is adjustable
         BigInteger resUnScaled = (intVal << (scale - maskSize)) / BigInteger.Pow(5, maskSize);
+        BigInteger coarseMantissa = RoundingRightShift(intVal, GuardBits);
 
         // Applies the scale to the number and rounds from bottom bit
         BigInteger resScaled = RoundingRightShift(resUnScaled, GuardBits);
 
+        // When rounding wipes out all significant digits (e.g. very small mantissa
+        // combined with a positive scale), preserve a single digit so the exponent
+        // still reflects the magnitude instead of returning "0e+N" for non-zero values.
+        if (resScaled.IsZero && !resUnScaled.IsZero && !coarseMantissa.IsZero)
+        {
+            resScaled = intVal.Sign >= 0 ? BigInteger.One : -BigInteger.One;
+        }
+
         // #########e+NN   ->  want  D.DDDDDDe+MMM
-        // maskSize is your "raw" decimal exponent,
+        // maskSize is the "raw" decimal exponent,
         // resScaled is the integer part you’ve currently computed.
 
         string number = resScaled.ToString();
@@ -790,16 +805,19 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         StringBuilder sb = new();
 
         BigInteger intVal = _mantissa;
+
         if (!showInTwosComplement && _mantissa.Sign < 0)
         {
             _ = sb.Append('-');
             intVal = -intVal;
         }
         _ = sb.Append($"{intVal >> GuardBits:X}");
+
         if (includeGuardBits)
         {
-            _ = sb.Append($":{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
+            _ = sb.Append($"|{(intVal & (uint.MaxValue)).ToString("X8")[^8..]}");
         }
+
         if (showSize)
         {
             _ = sb.Append($"[{Size}]");
@@ -848,10 +866,10 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         {
             string bottom8HexChars = (BigInteger.Abs(_mantissa) & ((BigInteger.One << GuardBits) - 1)).ToString("X8").PadLeft(8)[^8..];
             StringBuilder sb = new(32);
-            _ = sb.Append($"{ToString(true)}, "); //  integer part using ToString()
+            _ = sb.Append($"{ToString(true)},"); //  integer part using ToString()
             _ = sb.Append($"{(_mantissa.Sign >= 0 ? " " : "-")}0x{BigInteger.Abs(_mantissa) >> GuardBits:X}|{bottom8HexChars}"); // hex part
             //_ = sb.Append($"{ToBinaryString()}"); // hex part
-            if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits} GuardBits]"); }
+            if (_size > GuardBits)  { _ = sb.Append($"[{_size - GuardBits}+{GuardBits}]"); }
             if (_size == GuardBits) { _ = sb.Append($"[{GuardBits}]"); }
             if (_size < GuardBits)  { _ = sb.Append($"[{_size} - Out Of Precision!]"); }
 
@@ -867,26 +885,34 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
     /// <param name="varName">Prints an optional name of the variable.</param>
     public void DebugPrint(string? varName = null)
     {
+        Console.Write(ToDebugString(varName));
+    }
+
+    /// <summary>
+    /// Formats debug information for the BigFloat instead of writing to the console.
+    /// </summary>
+    /// <param name="varName">Optional name of the variable.</param>
+    public string ToDebugString(string? varName = null)
+    {
+        var sb = new StringBuilder(256);
+
         string shift = $"{((Scale >= 0) ? "<<" : ">>")} {Math.Abs(Scale)}";
         if (!string.IsNullOrEmpty(varName))
         {
-            Console.WriteLine($"{varName + ":"}");
+            sb.AppendLine($"{varName + ":"}");
         }
 
-        Console.WriteLine($"   Debug : {DebuggerDisplay}");
-        Console.WriteLine($"  String : {ToString()}");
-        //Console.WriteLine($"  Int|hex: {DataBits >> GuardBits:X}:{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard-bits round {(WouldRound() ? "up" : "down")})");
-        Console.WriteLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard-bits round {(WouldRoundUp() ? "up" : "down")})");
-        Console.WriteLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
-        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}{((double)(_mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
-        Console.WriteLine($"    |Dec : {_mantissa >> GuardBits}:{_mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
-        if (_mantissa < 0)
-        {
-            Console.WriteLine($"   or -{-_mantissa >> GuardBits:X4}:{(-_mantissa & (((ulong)1 << GuardBits) - 1)).ToString("X8")[^8..]}");
-        }
-
-        Console.WriteLine($"    |Bits: {_mantissa}");
-        Console.WriteLine($"   Scale : {Scale}");
-        Console.WriteLine();
+        sb.AppendLine($"   Debug : {DebuggerDisplay}");
+        sb.AppendLine($"  String : {ToString()}");
+        //sb.AppendLine($"  Int|hex: {DataBits >> GuardBits:X}|{(DataBits & (uint.MaxValue)).ToString("X")[^8..]}[{Size}] {shift} (Guard rounded: {(WouldRound() ? "up" : "down")})");
+        sb.AppendLine($" Int|Hex : {ToStringHexScientific(true, true, false)} (Guard rounded: {(WouldRoundUp() ? "up" : "down")})");
+        //sb.AppendLine($"    |Hex : {ToStringHexScientific(true, true, true)} (two's comp)");
+        sb.AppendLine($"    |Dec : {_mantissa >> GuardBits}{((double)(_mantissa & (((ulong)1 << GuardBits) - 1)) / ((ulong)1 << GuardBits)).ToString()[1..]} {shift}");
+        //sb.AppendLine($"    |Dec : {_mantissa >> GuardBits}, Guard: {_mantissa & (((ulong)1 << GuardBits) - 1)} {shift}");  // decimal part (e.g. .75)
+        sb.AppendLine($"    |Bits: {ToBinaryString(true, true)} ");
+        sb.AppendLine($"Mantissa : {_mantissa}");
+        //sb.AppendLine($"   Scale : {Scale}");
+        sb.AppendLine($"  BinExp : {BinaryExponent}");
+        return sb.ToString();
     }
 }

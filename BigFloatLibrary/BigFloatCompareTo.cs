@@ -1,10 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
-
-// Ignore Spelling: Ulp ulps Bitwise Preorder
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 /* ===================== BigFloat Equality and Comparison Guidance =====================
 Overview
@@ -119,8 +114,13 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         in (BigInteger Mant, int Scale, int Size) a,
         in (BigInteger Mant, int Scale, int Size) b)
     {
-        long e1 = (long)a.Scale + a.Size;
-        long e2 = (long)b.Scale + b.Size;
+        // Use effective exponent based on MAIN size (exclude GuardBits).
+        // a.Size/b.Size here include GuardBits unless zero; subtract them out.
+        int aMain = a.Size == 0 ? 0 : a.Size - BigFloat.GuardBits;
+        int bMain = b.Size == 0 ? 0 : b.Size - BigFloat.GuardBits;
+
+        long e1 = (long)a.Scale + aMain;
+        long e2 = (long)b.Scale + bMain;
         if (e1 != e2) return e1 < e2 ? -1 : 1;
 
         BigInteger am = BigInteger.Abs(a.Mant);
@@ -138,7 +138,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger aHi = am >> d;
             int cmp = aHi.CompareTo(bm);
             if (cmp != 0) return cmp;
-            bool sticky = (aHi << d) != am;           // magnitude-based
+            bool sticky = (aHi << d) != am;
             return sticky ? 1 : 0;
         }
         else
@@ -148,7 +148,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             BigInteger bHi = bm >> d;
             int cmp = am.CompareTo(bHi);
             if (cmp != 0) return cmp;
-            bool sticky = (bHi << d) != bm;           // magnitude-based
+            bool sticky = (bHi << d) != bm;
             return sticky ? -1 : 0;
         }
     }
@@ -157,20 +157,38 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     #region Primary Comparison Methods
     /// <summary>
     /// Standard numeric comparison (IComparable).
-    /// Compares values after canonicalization: guard bits are rounded away using the library’s rule,
-    /// then magnitudes are aligned by effective exponent. Ignores representation/precision differences
-    /// that do not change the rounded value.
-    /// Returns -1 if this < other, 0 if numerically equal, 1 if this > other.
+    /// Fast path: if the raw effective exponents differ by ≥ 2 (taking sign into account),
+    /// we can decide without paying the cost of canonicalization. Otherwise, we fall back
+    /// to the canonicalized alignment/compare path to preserve exact semantics.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly int CompareTo(BigFloat other)
     {
-        var a = GetCanonicalComponents();
+        // 0) Sign checks (no allocations; matches existing semantics).
+        int s1 = _mantissa.Sign;
+        int s2 = other._mantissa.Sign;
+        if (s1 != s2) return s1 < s2 ? -1 : 1;
+        if (s1 == 0) return 0; // both zero encodings compare equal
+
+        // 1) Raw effective exponent (no rounding): Scale + (main-size).
+        //    _size is the mantissa bit-length INCLUDING guard bits.
+        //    mainSize = max(0, _size - GuardBits); when _size==0 the value is zero (handled above).
+        int aMainRaw = (_size > 0) ? (_size - GuardBits) : 0;
+        int bMainRaw = (other._size > 0) ? (other._size - GuardBits) : 0;
+        long e1Raw = (long)Scale + aMainRaw;
+        long e2Raw = (long)other.Scale + bMainRaw;
+        long de = e1Raw - e2Raw;
+
+        // 2) Rounding guard bits can change the effective exponent by at most ±1.
+        //    If |de| >= 2, the ordering cannot flip under canonicalization.
+        if (de <= -2) return s1 > 0 ? -1 : 1;  // this is definitely smaller (or larger if negative)
+        if (de >= +2) return s1 > 0 ? 1 : -1; // this is definitely larger (or smaller if negative)
+
+        // 3) Close exponents (equal/adjacent): pay the canonicalization cost only now.
+        var a = GetCanonicalComponents();   // rounds away guard bits, handles carry and scale adjust
         var b = other.GetCanonicalComponents();
 
-        int s1 = a.Mant.Sign, s2 = b.Mant.Sign;
-        if (s1 != s2) return s1 < s2 ? -1 : 1;
-        if (s1 == 0) return 0;
-
+        // Signs can’t change under canonicalization; compare aligned canonicals.
         int core = CmpAligned(a, b);
         return s1 > 0 ? core : -core;
     }
@@ -613,7 +631,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (_mantissa.IsZero) return other == 0;
 
         // Align the ones place, then round away the guard field using the SAME rule
-        // your canonicalization uses (top-guard policy included).
+        // canonicalization uses (top-guard policy included).
         BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
         BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
 
@@ -631,7 +649,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (BinaryExponent < -1) { return other == 0; }
 
         // Align the ones place, then round away the guard field using the SAME rule
-        // your canonicalization uses (top-guard policy included).
+        // canonicalization uses (top-guard policy included).
         BigInteger aligned = (Scale >= 0) ? (_mantissa << Scale) : (_mantissa >> -Scale);
         BigInteger q = RoundingRightShift(aligned, GuardBits);   // signed integer units
 

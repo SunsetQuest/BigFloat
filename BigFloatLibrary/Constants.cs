@@ -1,10 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
-
-// Ignore Spelling: Mascheroni Ramanujan Soldner Meissel Mertens Apery Khintchine Glaisher Kinkelin Buffon Pisot Lemniscate Ln
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -758,7 +753,7 @@ public readonly partial struct BigFloat
             // Not in cache, lets fetch by ConstantInfo
             if (!Catalog.TryGetInfo(constantId, out ConstantInfo info))
             {
-                return Zero; // Constant not found
+                return default; // Constant not found
             }
 
             // Try to get the constant with the requested precision
@@ -777,7 +772,7 @@ public readonly partial struct BigFloat
                 return generatedPi;
             }
 
-            return Zero; // Couldn't get with requested precision
+            return default; // Couldn't get with requested precision
         }
 
         private static BigFloat TryGetFromCache(string constantId, int precisionInBits)
@@ -815,7 +810,7 @@ public readonly partial struct BigFloat
                     }
                 }
 
-                return Zero; // Not found in cache
+                return default; // Not found in cache
             }
             finally
             {

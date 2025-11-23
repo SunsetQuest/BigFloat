@@ -1,8 +1,5 @@
-﻿// Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System;
 using System.Numerics;
@@ -162,6 +159,9 @@ public readonly partial struct BigFloat
             + new BigFloat(BigInteger.One << GuardBits, 0, GuardBits + 1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Ceiling(BigFloat x) => x.Ceiling();
+
     /// <summary>
     /// Canonical Ceiling that preserves Scale/accuracy via identity.
     /// Ceiling toward +∞:
@@ -183,7 +183,6 @@ public readonly partial struct BigFloat
         BigFloat integerPart = TruncateToIntegerKeepingAccuracy(); // preserves precision/accuracy
         return IsNegative ? integerPart : integerPart + 1;
     }
-
 
     ///// <summary>
     ///// Canonical Ceiling that preserves Scale/accuracy via identity.
@@ -262,7 +261,8 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat Floor() => -(-this).Ceiling();
 
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Floor(BigFloat x) => -(-x).Ceiling();
 
     /// <summary>
     /// Returns the fractional part of the BigFloat.
@@ -272,7 +272,7 @@ public readonly partial struct BigFloat
     {
         int bitsToClear = GuardBits - Scale;
 
-        if (bitsToClear <= 0) return Zero;
+        if (bitsToClear <= 0) return ZeroWithAccuracy(-Scale);
         if (bitsToClear >= _size) return this;
 
         BigInteger mask = (BigInteger.One << (bitsToClear - 1)) - 1;
@@ -299,7 +299,7 @@ public readonly partial struct BigFloat
         int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
         // if the precision is shrunk to a size of zero it cannot contain any data bits
         return accuracyBits < -(GuardBits + intSize)
-            ? Zero
+            ? ZeroWithAccuracy(0)
             : new(intVal << (GuardBits + accuracyBits), -accuracyBits, GuardBits + intSize + accuracyBits);
         // alternative: throw new ArgumentException("The requested precision would not leave any bits.");
     }
@@ -312,7 +312,7 @@ public readonly partial struct BigFloat
     {
         int size = int.Log2(int.Abs(intVal)) + 1 + GuardBits;
         return accuracyBits < -size
-            ? Zero
+            ? ZeroWithAccuracy(0)
             : new(((BigInteger)intVal) << (GuardBits + accuracyBits), -accuracyBits, size + accuracyBits);
     }
 

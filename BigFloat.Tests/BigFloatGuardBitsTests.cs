@@ -1,4 +1,7 @@
-﻿using System.Numerics;
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
+
+using System.Numerics;
 
 namespace BigFloatLibrary.Tests;
 
@@ -163,7 +166,7 @@ public class BigFloatGuardBitsTests
     public void ToBinaryString_WithZeroValue_ShouldHandleGuardBitsCorrectly()
     {
         // Arrange
-        var bigFloat = BigFloat.Zero;
+        BigFloat bigFloat = BigFloat.ZeroWithAccuracy(0);
 
         // Act
         string resultWithGuardBits = bigFloat.ToBinaryString(includeGuardBits: true);
