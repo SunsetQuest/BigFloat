@@ -15,7 +15,7 @@
     <Optimize>True</Optimize>
   </PropertyGroup>
 
- <PropertyGroup>
+  <PropertyGroup>
     <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
@@ -28,7 +28,7 @@
   <ItemGroup>
     <Folder Include="images\" />
     <!-- This assumes GitHub source control but other repo options are available -->
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

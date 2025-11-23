@@ -1,8 +1,25 @@
 // Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
+//
+// Released under the MIT License. Permission is hereby granted, free of charge,
+// to any person obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish, distribute,
+// sub-license, and/or sell copies of the Software, and to permit persons to whom
+// the Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development
+// of this library.
 
 using System;
 using System.ComponentModel;
@@ -104,22 +121,25 @@ public readonly partial struct BigFloat
     public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
 
     /// <summary>
-    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
+    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise.
     /// </summary>
     public bool IsOutOfPrecision => _size < GuardBits;
 
     /// <summary>
-    /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is positive and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsPositive => _mantissa.Sign > 0 && !IsZero;
 
     /// <summary>
-    /// Rounds and returns true if this value is negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is negative and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsNegative => _mantissa.Sign < 0 && !IsZero;
 
     /// <summary>
-    /// Rounds with GuardBits and returns -1 if negative, 0 if zero, and +1 if positive.
+    /// Reports the sign of the mantissa while honoring the "near-zero" tolerance enforced by <see cref="IsZero"/>.
+    /// Returns -1 for negative, 0 for zero (or effectively zero), and +1 for positive.
     /// </summary>
     public int Sign => !IsZero ? _mantissa.Sign : 0;
 
@@ -138,9 +158,10 @@ public readonly partial struct BigFloat
     const double LOG2_OF_10 = 3.32192809488736235;
 
     /// <summary>
-    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context.
-    /// Value can range from -32(GuardBits) to Int.MaxValue.
-    /// Example: -4 would result in 0.0000(binary) + GuardBits appended as well.
+    /// Returns a zero BigFloat with a specific accuracy budget encoded into <see cref="Scale"/>.
+    /// The <paramref name="accuracy"/> argument may range from -GuardBits to <see cref="int.MaxValue"/> and represents
+    /// how many fractional binary digits of context to preserve below the radix point.
+    /// Example: -4 treats the value as zero but reserves four fractional places (plus GuardBits) of implied accuracy.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ZeroWithAccuracy(int accuracy)
@@ -335,9 +356,51 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    // future: maybe change addedBinaryPrecision to binaryPrecision. Set default to 45(53-8)
-    // Note: changed the default 32(GuardBits) to 24 since double is not exact. There is no great solution to this but moving 8 bits of the mantissa into the GuardBit area is a good compromise. In the past we had zero mantissa bits stored in the GuardBit area and this created some issues.  If we move all 32 bits into the GuardBit area then we would just be left with 53-32 GuardBits= 21 bits. A balance of 8 bits was selected but it is best if the user selects the value.
-    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)
+    // Design note on the default (binaryPrecision = 37) for double → BigFloat
+    // ---------------------------------------------------------------------
+    // A IEEE 754 double has a 53-bit significand (including the hidden bit).
+    // When converting to BigFloat we need to decide how many of those bits become
+    // in-precision bits (visible to Size/Precision) and how many are treated as
+    // guard bits (extra rounding headroom).
+    //
+    // In this constructor the default is:
+    //   • 37 bits loaded into the in-precision region, and
+    //   • 16 of the original double bits placed at the top of the GuardBits area,
+    //     with the remaining guard bits implicitly zero.
+    //
+    // Earlier versions kept all 53 bits in the in-precision area and *none* in the
+    // guard area, which tended to expose double’s edge-case rounding behaviour
+    // directly in BigFloat arithmetic. At the other extreme, pushing all 32 guard
+    // bits under the precision boundary would leave only 21 in-precision bits
+    // (53 − 32), which is often too coarse for a value that started as a double.
+    //
+    // The 37 / 16 split is therefore a compromise:
+    //   • enough in-precision bits (37) to represent typical double values cleanly,
+    //   • a non-trivial number of “real” double bits in the guard region (16) to
+    //     absorb rounding during subsequent operations, and
+    //   • the option for callers to override this balance via the binaryPrecision
+    //     parameter if a different trade-off is desired.
+
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from an IEEE 754
+    /// <see cref="double"/> value.
+    /// </summary>
+    /// <param name="value">
+    /// The double-precision floating-point value to convert.
+    /// </param>
+    /// <param name="binaryScaler">
+    /// Optional additional base-2 scaling applied after converting from
+    /// <paramref name="value"/>; this effectively adds to the resulting
+    /// binary exponent.
+    /// </param>
+    /// <param name="binaryPrecision">
+    /// The number of mantissa bits, out of the 53-bit double significand,
+    /// to place in the in-precision region. Any remaining bits are mapped
+    /// into the top of the guard-bit area to provide extra rounding headroom.
+    /// The default of 37 corresponds to 37 in-precision bits plus 16
+    /// double-derived guard bits.
+    /// </param>
+    public BigFloat(double value, int binaryScaler = 0, int binaryPrecision = 37)
     {
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
@@ -361,9 +424,9 @@ public readonly partial struct BigFloat
             {
                 mantissa = -mantissa;
             }
-            _mantissa = new BigInteger(mantissa) << addedBinaryPrecision;
-            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - addedBinaryPrecision;
-            _size = 53 + addedBinaryPrecision; //_size = BitOperations.Log2((ulong)Int);
+            _mantissa = new BigInteger(mantissa) << binaryPrecision;
+            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - binaryPrecision;
+            _size = 53 + binaryPrecision; //_size = BitOperations.Log2((ulong)Int);
         }
         else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
         {
@@ -371,7 +434,7 @@ public readonly partial struct BigFloat
             if (mantissa == 0)
             {
                 _mantissa = 0;
-                Scale = binaryScaler + GuardBits - addedBinaryPrecision;
+                Scale = binaryScaler + GuardBits - binaryPrecision;
                 _size = 0;
             }
             else
@@ -381,9 +444,9 @@ public readonly partial struct BigFloat
                 {
                     mantissa = -mantissa;
                 }
-                _mantissa = (new BigInteger(mantissa)) << addedBinaryPrecision;
-                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - addedBinaryPrecision;
-                _size = size + addedBinaryPrecision;
+                _mantissa = (new BigInteger(mantissa)) << binaryPrecision;
+                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - binaryPrecision;
+                _size = size + binaryPrecision;
 
                 // Ensure at least one in-precision bit exists outside of the guard area so that
                 // subnormal inputs (e.g., double.Epsilon) are not represented entirely within
@@ -403,7 +466,8 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    public BigFloat(float value, int binaryScaler = 0)
+    // default: 16 bits loaded in the in-precision area and 8 bits in the guard area.
+    public BigFloat(float value, int binaryScaler = 8)
     {
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007fffff;

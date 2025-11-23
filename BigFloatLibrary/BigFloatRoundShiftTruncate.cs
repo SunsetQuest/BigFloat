@@ -20,10 +20,7 @@ public readonly partial struct BigFloat
 
             if (_mantissa.Sign < 0)
             {
-                // For negative values, two's-complement the masked bits. If the
-                // magnitude extends beyond 64 bits, include the carry to keep the
-                // truncated representation consistent.
-                raw = ~raw + (ulong)(_size > 64 ? 1 : 0);
+                raw = ~raw + (_size > 64 ? 1UL : 0UL);
             }
             return raw;
         }
@@ -114,7 +111,7 @@ public readonly partial struct BigFloat
         if (k <= 0) return false;
 
         BigInteger mag = BigInteger.Abs(_mantissa);
-        BigInteger workingBelowPoint = mag >> (GuardBits - 1); // align guard boundary to bit 0
+        BigInteger workingBelowPoint = mag >> (GuardBits - 1);  // align guard boundary to bit 0
         BigInteger mask = (BigInteger.One << k) - 1;            // low k bits are the fractional field
         return (workingBelowPoint & mask) != 0;
     }

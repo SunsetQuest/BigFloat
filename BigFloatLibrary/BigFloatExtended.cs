@@ -108,7 +108,9 @@ public readonly partial struct BigFloat
             ThrowInvalidInitializationException($"binaryPrecision ({binaryPrecision}) cannot be negative.");
         }
 
-        if (value == short.MinValue && binaryPrecision == 15) binaryPrecision++; // Handle special case when value is MinValue
+        // Handle the asymmetric range where Abs(short.MinValue) overflows: add one more bit of precision to fit the magnitude
+        // without relying on undefined behavior from negating MinValue.
+        if (value == short.MinValue && binaryPrecision == 15) binaryPrecision++;
 
         uint magnitude = value > 0
             ? (uint)value
