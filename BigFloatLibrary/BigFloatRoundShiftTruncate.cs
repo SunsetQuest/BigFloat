@@ -57,12 +57,40 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns the 64 most significant data bits. If the number is negative the sign is ignored. If the size is smaller then 64 bits, then the LSBs are padded with zeros.
     /// </summary>
-    public ulong Highest64Bits => (ulong)((BigInteger.IsPositive(_mantissa) ? _mantissa : -_mantissa) >> (_size - 64));
+    public ulong Highest64Bits
+    {
+        get
+        {
+            BigInteger magnitude = BigInteger.Abs(_mantissa);
+
+            if (_size <= 64)
+            {
+                // Not enough bits to fill 64, so left-pad with zeros in the LSB positions.
+                return (ulong)(magnitude << (64 - _size));
+            }
+
+            return (ulong)(magnitude >> (_size - 64));
+        }
+    }
 
     /// <summary>
     /// Returns the 128 most significant data bits. If the number is negative the sign is ignored. If the size is smaller then 128 bits, then the LSBs are padded with zeros.
     /// </summary>
-    public UInt128 Highest128Bits => (UInt128)((BigInteger.IsPositive(_mantissa) ? _mantissa : -_mantissa) >> (_size - 128));
+    public UInt128 Highest128Bits
+    {
+        get
+        {
+            BigInteger magnitude = BigInteger.Abs(_mantissa);
+
+            if (_size <= 128)
+            {
+                // Not enough bits to fill 128, so left-pad with zeros in the LSB positions.
+                return (UInt128)(magnitude << (128 - _size));
+            }
+
+            return (UInt128)(magnitude >> (_size - 128));
+        }
+    }
 
     /// <summary>
     /// Returns true if any fractional bit exists in the working-precision window
