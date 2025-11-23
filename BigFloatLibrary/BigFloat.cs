@@ -124,7 +124,7 @@ public readonly partial struct BigFloat
     public int Sign => !IsZero ? _mantissa.Sign : 0;
 
     /// <summary>
-    /// Returns the default zero with with a zero size, precision, scale, and accuracy.
+    /// Returns the default zero with a zero size, precision, scale, and accuracy.
     /// </summary>
     [Obsolete("Use the integer value 0 instead or ZeroWithAccuracy.")]
     public static BigFloat Zero => new(BigInteger.Zero, 0, 0);
@@ -177,7 +177,7 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
-    /// Constructs a BigFloat using its elemental parts. A starting <paramref name="value"/> on how may binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
+    /// Constructs a BigFloat using its elemental parts. Starts with <paramref name="value"/> and specifies how many binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
     /// </summary>
     /// <param name="value">The integer part of the BigFloat that will have a <paramref name="binaryScaler"/> applied to it. </param>
     /// <param name="binaryScaler">How much should the <paramref name="value"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="value"/>.</param>
