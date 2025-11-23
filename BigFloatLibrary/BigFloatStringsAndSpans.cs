@@ -748,8 +748,22 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
             string numberText = power5Scaled.ToString();
 
-            
-            return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}e-{decimalDigits}";
+            int decimalOffset = numberText.Length - decimalDigits;
+
+            // Normalize into scientific notation: D.dddd × 10^exp
+            int numDigitsNeg = numberText.Length;
+            int adjustedExponentNeg = decimalOffset - 1;
+
+            string mantissaNeg = numberText[0]
+                                 + (numDigitsNeg > 1
+                                        ? string.Concat(".", numberText.AsSpan(1))
+                                        : "");
+
+            string exponentSign = adjustedExponentNeg >= 0 ? "+" : "-";
+
+            return (intVal.Sign < 0 ? "-" : "")
+                 + mantissaNeg
+                 + $"e{exponentSign}{Math.Abs(adjustedExponentNeg)}";
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
@@ -788,10 +802,11 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
                                 : "");
 
         // final string: [−]D.ddddDe+EEE
-        return (isNegative ? "-" : "+")
+        string exponentSign2 = adjustedExponent >= 0 ? "+" : "-";
+
+        return (isNegative ? "-" : "")
              + mantissa
-             + "e+"
-             + adjustedExponent;
+             + $"e{exponentSign2}{Math.Abs(adjustedExponent)}";
     }
 
     /// <summary>
