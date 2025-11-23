@@ -9,7 +9,7 @@ Updated: April 4th 2025
 ![](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/docs/Images/download32.png) 183 downloads
 
 **Quick Summary**: 
-BigFloat is both a C# struct data type along with a library of functions. It offers an innovative solution for handling large floating-point numbers, that extend beyond the precision limitations of standard the standard IEEE floating-point. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for high-precision applications. Available here on GitHub, BigFloat easily integrates into C# projects, providing a tool for developers needing advanced numerical computation capabilities.
+BigFloat is both a C# struct data type along with a library of functions. It offers an innovative solution for handling large floating-point numbers that extend beyond the precision limitations of the standard IEEE floating-point types. A flexible mantissa and a broad exponent range enable precise arithmetic operations and mathematical functions on large or small numbers. This library is ideal for high-precision applications. Available here on GitHub, BigFloat easily integrates into C# projects, providing a tool for developers needing advanced numerical computation capabilities.
 
 **Links to Code**:  [GitHub Repo](https://github.com/SunsetQuest/BigFloat), [Just Show Me the Code](https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs)
 
