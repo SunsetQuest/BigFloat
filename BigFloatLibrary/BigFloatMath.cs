@@ -197,7 +197,7 @@ public readonly partial struct BigFloat
             lastSize = t._size;
             t = xSquared * x - value;
         } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 2);
-        return SetPrecisionWithRound(x, outputSize-32); //return NextDown(x);
+        return SetPrecisionWithRound(x, outputSize - 32); //return NextDown(x);
     }
 
     /// <summary>
@@ -234,7 +234,7 @@ public readonly partial struct BigFloat
         }
 
         // Use double's hardware to get the top 53-bits
-        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) ^ (1L << 52);
+        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) | (1L << 52);
 
         // Build double from components and take root
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
@@ -248,7 +248,7 @@ public readonly partial struct BigFloat
         long mantissa2 = (bits & 0xfffffffffffffL) | 0x10000000000000L;
         int exp = (int)((bits >> 52) & 0x7ffL);
 
-        BigInteger mantissa3 = new BigInteger(mantissa2) << (GuardBits- shrinkBy); 
+        BigInteger mantissa3 = new BigInteger(mantissa2) << (GuardBits - shrinkBy);
         int scale = exp - 1023 - 52 + shrinkBy + leftShift;
         int size = 53 + GuardBits - shrinkBy;                                      
         return new(mantissa3, scale, size);
@@ -327,7 +327,7 @@ public readonly partial struct BigFloat
             t = Pow(x, root) - value;
         } while (t._size < lastSize); //Performance: while (t._size < lastSize | t._size < 5);
         //x = NextDown(x);
-        return SetPrecisionWithRound(x, outputSize-32);
+        return SetPrecisionWithRound(x, outputSize - 32);
     }
 
     /// <summary>
