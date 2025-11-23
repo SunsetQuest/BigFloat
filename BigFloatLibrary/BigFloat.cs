@@ -104,22 +104,25 @@ public readonly partial struct BigFloat
     public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
 
     /// <summary>
-    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
+    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise.
     /// </summary>
     public bool IsOutOfPrecision => _size < GuardBits;
 
     /// <summary>
-    /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is positive and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsPositive => _mantissa.Sign > 0 && !IsZero;
 
     /// <summary>
-    /// Rounds and returns true if this value is negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is negative and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsNegative => _mantissa.Sign < 0 && !IsZero;
 
     /// <summary>
-    /// Rounds with GuardBits and returns -1 if negative, 0 if zero, and +1 if positive.
+    /// Reports the sign of the mantissa while honoring the "near-zero" tolerance enforced by <see cref="IsZero"/>.
+    /// Returns -1 for negative, 0 for zero (or effectively zero), and +1 for positive.
     /// </summary>
     public int Sign => !IsZero ? _mantissa.Sign : 0;
 
@@ -138,9 +141,10 @@ public readonly partial struct BigFloat
     const double LOG2_OF_10 = 3.32192809488736235;
 
     /// <summary>
-    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context.
-    /// Value can range from -32(GuardBits) to Int.MaxValue.
-    /// Example: -4 would result in 0.0000(binary) + GuardBits appended as well.
+    /// Returns a zero BigFloat with a specific accuracy budget encoded into <see cref="Scale"/>.
+    /// The <paramref name="accuracy"/> argument may range from -GuardBits to <see cref="int.MaxValue"/> and represents
+    /// how many fractional binary digits of context to preserve below the radix point.
+    /// Example: -4 treats the value as zero but reserves four fractional places (plus GuardBits) of implied accuracy.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ZeroWithAccuracy(int accuracy)
