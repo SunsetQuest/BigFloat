@@ -406,8 +406,10 @@ public readonly partial struct BigFloat
         long mantissa = bits & 0xfffffffffffffL;
         int exp = (int)((bits >> 52) & 0x7ffL);
 
+        if (exp != 0)
+        {
         if (exp == 2047)  // 2047 represents inf or NAN
-        { //special values
+            {
             if (double.IsNaN(value))
             {
                 ThrowInvalidInitializationException("Value is NaN");
@@ -417,8 +419,7 @@ public readonly partial struct BigFloat
                 ThrowInvalidInitializationException("Value is infinity");
             }
         }
-        else if (exp != 0)
-        {
+            // Add leading 1 bit
             mantissa |= 0x10000000000000L;
             if (value < 0)
             {
