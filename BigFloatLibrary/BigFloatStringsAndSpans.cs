@@ -749,7 +749,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
             string numberText = power5Scaled.ToString();
 
             
-            return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}e-{decimalDigits}";
+            return $"{(intVal.Sign < 0 ? "-" : "")}{numberText}E-{decimalDigits}";
         }
 
         // 7XXXXX or 7e+10 - at this point we the number have a positive exponent. e.g no decimal point
@@ -790,7 +790,7 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         // final string: [−]D.ddddDe+EEE
         return (isNegative ? "-" : "")
              + mantissa
-             + "e+"
+             + "E+"
              + adjustedExponent;
     }
 
