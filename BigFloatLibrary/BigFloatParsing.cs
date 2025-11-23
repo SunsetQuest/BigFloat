@@ -43,7 +43,7 @@ public readonly partial struct BigFloat
 
         if (!success)
         {
-            throw new ArgumentException("Unable to convert string to BigFloat.");
+            throw new FormatException("Unable to convert string to BigFloat.");
         }
 
         biRes.AssertValid();

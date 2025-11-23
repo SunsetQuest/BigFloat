@@ -5690,8 +5690,8 @@ public class OriginalBigFloatTests
     [Fact]
     public void CompareToExact_GuardBitBehavior_ExplicitGuardBits()
     {
-        var a = new BigFloat(100000000.000000, addedBinaryPrecision: BigFloat.GuardBits);
-        var b = new BigFloat(100000000.000001, addedBinaryPrecision: BigFloat.GuardBits);
+        var a = new BigFloat(100000000.000000, binaryPrecision: BigFloat.GuardBits);
+        var b = new BigFloat(100000000.000001, binaryPrecision: BigFloat.GuardBits);
 
         Assert.Equal(-1, a.CompareTo(b));
         Assert.True(a.IsLessThanUlp(b, 1, true)); // Replaces StrictCompareTo

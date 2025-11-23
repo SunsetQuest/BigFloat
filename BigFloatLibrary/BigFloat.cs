@@ -335,9 +335,51 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    // future: maybe change addedBinaryPrecision to binaryPrecision. Set default to 45(53-8)
-    // Note: changed the default 32(GuardBits) to 24 since double is not exact. There is no great solution to this but moving 8 bits of the mantissa into the GuardBit area is a good compromise. In the past we had zero mantissa bits stored in the GuardBit area and this created some issues.  If we move all 32 bits into the GuardBit area then we would just be left with 53-32 GuardBits= 21 bits. A balance of 8 bits was selected but it is best if the user selects the value.
-    public BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)
+    // Design note on the default (binaryPrecision = 37) for double → BigFloat
+    // ---------------------------------------------------------------------
+    // A IEEE 754 double has a 53-bit significand (including the hidden bit).
+    // When converting to BigFloat we need to decide how many of those bits become
+    // in-precision bits (visible to Size/Precision) and how many are treated as
+    // guard bits (extra rounding headroom).
+    //
+    // In this constructor the default is:
+    //   • 37 bits loaded into the in-precision region, and
+    //   • 16 of the original double bits placed at the top of the GuardBits area,
+    //     with the remaining guard bits implicitly zero.
+    //
+    // Earlier versions kept all 53 bits in the in-precision area and *none* in the
+    // guard area, which tended to expose double’s edge-case rounding behaviour
+    // directly in BigFloat arithmetic. At the other extreme, pushing all 32 guard
+    // bits under the precision boundary would leave only 21 in-precision bits
+    // (53 − 32), which is often too coarse for a value that started as a double.
+    //
+    // The 37 / 16 split is therefore a compromise:
+    //   • enough in-precision bits (37) to represent typical double values cleanly,
+    //   • a non-trivial number of “real” double bits in the guard region (16) to
+    //     absorb rounding during subsequent operations, and
+    //   • the option for callers to override this balance via the binaryPrecision
+    //     parameter if a different trade-off is desired.
+
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from an IEEE 754
+    /// <see cref="double"/> value.
+    /// </summary>
+    /// <param name="value">
+    /// The double-precision floating-point value to convert.
+    /// </param>
+    /// <param name="binaryScaler">
+    /// Optional additional base-2 scaling applied after converting from
+    /// <paramref name="value"/>; this effectively adds to the resulting
+    /// binary exponent.
+    /// </param>
+    /// <param name="binaryPrecision">
+    /// The number of mantissa bits, out of the 53-bit double significand,
+    /// to place in the in-precision region. Any remaining bits are mapped
+    /// into the top of the guard-bit area to provide extra rounding headroom.
+    /// The default of 37 corresponds to 37 in-precision bits plus 16
+    /// double-derived guard bits.
+    /// </param>
+    public BigFloat(double value, int binaryScaler = 0, int binaryPrecision = 37)
     {
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
@@ -361,9 +403,9 @@ public readonly partial struct BigFloat
             {
                 mantissa = -mantissa;
             }
-            _mantissa = new BigInteger(mantissa) << addedBinaryPrecision;
-            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - addedBinaryPrecision;
-            _size = 53 + addedBinaryPrecision; //_size = BitOperations.Log2((ulong)Int);
+            _mantissa = new BigInteger(mantissa) << binaryPrecision;
+            Scale = exp - 1023 - 52 + binaryScaler + GuardBits - binaryPrecision;
+            _size = 53 + binaryPrecision; //_size = BitOperations.Log2((ulong)Int);
         }
         else // exp is 0 so this is a denormalized float (leading "1" is "0" instead)
         {
@@ -371,7 +413,7 @@ public readonly partial struct BigFloat
             if (mantissa == 0)
             {
                 _mantissa = 0;
-                Scale = binaryScaler + GuardBits - addedBinaryPrecision;
+                Scale = binaryScaler + GuardBits - binaryPrecision;
                 _size = 0;
             }
             else
@@ -381,9 +423,9 @@ public readonly partial struct BigFloat
                 {
                     mantissa = -mantissa;
                 }
-                _mantissa = (new BigInteger(mantissa)) << addedBinaryPrecision;
-                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - addedBinaryPrecision;
-                _size = size + addedBinaryPrecision;
+                _mantissa = (new BigInteger(mantissa)) << binaryPrecision;
+                Scale = -1023 - 52 + 1 + binaryScaler + GuardBits - binaryPrecision;
+                _size = size + binaryPrecision;
 
                 // Ensure at least one in-precision bit exists outside of the guard area so that
                 // subnormal inputs (e.g., double.Epsilon) are not represented entirely within
@@ -403,7 +445,8 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
-    public BigFloat(float value, int binaryScaler = 0)
+    // default: 16 bits loaded in the in-precision area and 8 bits in the guard area.
+    public BigFloat(float value, int binaryScaler = 8)
     {
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007fffff;
