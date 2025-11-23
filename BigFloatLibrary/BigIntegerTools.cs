@@ -73,7 +73,7 @@ public static class BigIntegerTools
             if (digitSpan < minWidth)
             {
                 int pad = minWidth - digitSpan;
-                // shift right and fill with the right glyph
+                // Shift the existing digits so we can prefix pad characters just after the sign (if present).
                 dest.Slice(signOfs, digitSpan).CopyTo(dest[(signOfs + pad)..]);
                 char padChar = shades ? '·' : ((twoC && value.Sign < 0) ? '1' : '0');
                 dest.Slice(signOfs, pad).Fill(padChar);
@@ -121,15 +121,15 @@ public static class BigIntegerTools
         byte[] bytes = new byte[(inputLen + 7) / 8];
         int outputBitPosition = 0;   // The current bit we are writing to.
 
-        // if it starts with a '-' then set negative rawValue to zero
+        // Track whether the final value should be negated after parsing the magnitude bits.
         bool isNeg = input[0] == '-'; // 0x2D;
 
-        // if starting with - or + then headPosition should be 1.
+        // Skip the leading sign character (if any) when scanning the magnitude.
         int headPosition = isNeg | input[0] == '+' ? 1 : 0;
 
         int periodLoc = input.LastIndexOf('.');
 
-        // We might have something like -.1 or .01. Return true only if any numbers found after the decimal.
+        // Handle inputs like "-.1" or ".01": in those cases we only succeed if a digit appears after the decimal point.
         if (headPosition == periodLoc)
         {
             result = new BigInteger(0);
