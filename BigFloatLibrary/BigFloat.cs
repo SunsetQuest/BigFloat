@@ -1,8 +1,25 @@
 // Copyright Ryan Scott White. 2020-2025
-// Released under the MIT License. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub-license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development of this library.
+//
+// Released under the MIT License. Permission is hereby granted, free of charge,
+// to any person obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish, distribute,
+// sub-license, and/or sell copies of the Software, and to permit persons to whom
+// the Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development
+// of this library.
 
 using System;
 using System.ComponentModel;
@@ -104,22 +121,25 @@ public readonly partial struct BigFloat
     public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
 
     /// <summary>
-    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise. 
+    /// Returns true if there is less than 1 bit of precision. However, a false value does not guarantee that the number is precise.
     /// </summary>
     public bool IsOutOfPrecision => _size < GuardBits;
 
     /// <summary>
-    /// Rounds and returns true if this value is positive. Zero is not considered positive or negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is positive and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsPositive => _mantissa.Sign > 0 && !IsZero;
 
     /// <summary>
-    /// Rounds and returns true if this value is negative. Only the top bit in GuardBits is counted.
+    /// Returns true if the stored mantissa is negative and the value is not treated as zero by <see cref="IsZero"/>.
+    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
     /// </summary>
     public bool IsNegative => _mantissa.Sign < 0 && !IsZero;
 
     /// <summary>
-    /// Rounds with GuardBits and returns -1 if negative, 0 if zero, and +1 if positive.
+    /// Reports the sign of the mantissa while honoring the "near-zero" tolerance enforced by <see cref="IsZero"/>.
+    /// Returns -1 for negative, 0 for zero (or effectively zero), and +1 for positive.
     /// </summary>
     public int Sign => !IsZero ? _mantissa.Sign : 0;
 
@@ -138,9 +158,10 @@ public readonly partial struct BigFloat
     const double LOG2_OF_10 = 3.32192809488736235;
 
     /// <summary>
-    /// Returns a zero BigFloat with specified least precision for maintaining accuracy context.
-    /// Value can range from -32(GuardBits) to Int.MaxValue.
-    /// Example: -4 would result in 0.0000(binary) + GuardBits appended as well.
+    /// Returns a zero BigFloat with a specific accuracy budget encoded into <see cref="Scale"/>.
+    /// The <paramref name="accuracy"/> argument may range from -GuardBits to <see cref="int.MaxValue"/> and represents
+    /// how many fractional binary digits of context to preserve below the radix point.
+    /// Example: -4 treats the value as zero but reserves four fractional places (plus GuardBits) of implied accuracy.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat ZeroWithAccuracy(int accuracy)
