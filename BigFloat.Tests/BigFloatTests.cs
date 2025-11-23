@@ -63,6 +63,19 @@ public class BigFloatTests
         Assert.Equal(value.ToString("E", CultureInfo.InvariantCulture), scientific);
     }
 
+    [Fact]
+    public void ToString_ExponentialFormat_UsesUppercaseSeparator()
+    {
+        var value = new BigFloat("123.456");
+
+        var exception = Record.Exception(() => value.ToString("E"));
+        Assert.Null(exception);
+
+        var result = value.ToString("E");
+        Assert.Contains('E', result);
+        Assert.DoesNotContain('e', result);
+    }
+
     [Theory]
     [InlineData("0.0001234", "E")]
     [InlineData("12345.6789", "G")]
