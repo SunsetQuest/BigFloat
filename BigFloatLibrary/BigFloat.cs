@@ -468,7 +468,7 @@ public readonly partial struct BigFloat
     }
 
     // default: 16 bits loaded in the in-precision area and 8 bits in the guard area.
-    public BigFloat(float value, int binaryScaler = 8)
+    public BigFloat(float value, int binaryPrecision = 16)
     {
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007fffff;
@@ -476,8 +476,8 @@ public readonly partial struct BigFloat
 
         if (exp != 0)
         {
-            if (exp == 255)
-            { //special values
+            if (exp == 255) // 255 represents inf or NAN
+            { 
                 if (float.IsNaN(value))
                 {
                     ThrowInvalidInitializationException("Value is NaN");
@@ -493,24 +493,41 @@ public readonly partial struct BigFloat
             {
                 mantissa = -mantissa;
             }
-            _mantissa = new BigInteger(mantissa) << GuardBits;
-            Scale = exp - 127 - 23 + binaryScaler;
-            _size = 24 + GuardBits;
+            _mantissa = new BigInteger(mantissa) << binaryPrecision;
+            Scale = exp - 127 - 23 + GuardBits - binaryPrecision;
+            _size = 24 + binaryPrecision;
         }
         else // exp is 0 so this is a denormalized(Subnormal) float (leading "1" is "0" instead)
         {
             if (mantissa == 0)
             {
                 _mantissa = 0;
-                Scale = binaryScaler;
+                Scale = GuardBits - binaryPrecision;
                 _size = 0;
             }
             else
             {
-                BigInteger mant = new(value >= 0 ? mantissa : -mantissa);
-                _mantissa = mant << GuardBits;
-                Scale = -126 - 23 + binaryScaler; //hack: 23 is a guess
-                _size = GuardBits - BitOperations.LeadingZeroCount((uint)mantissa) + GuardBits;
+                int size = GetBitLength((ulong)mantissa);
+                if (value < 0)
+                {
+                    mantissa = -mantissa;
+                }
+                _mantissa = (new BigInteger(mantissa)) << binaryPrecision;
+                Scale = -127 - 23 + 1 + GuardBits - binaryPrecision;
+                _size = size + binaryPrecision;
+
+                // Ensure at least one in-precision bit exists outside of the guard area so that
+                // subnormal inputs (e.g., float.Epsilon) are not represented entirely within
+                // the guard bits. When that happens, Size becomes zero and the value is reported
+                // as an integer. Shift the mantissa until we have one precision bit and adjust
+                // the scale so the numeric value remains unchanged.
+                int deficit = GuardBits + 1 - _size;
+                if (deficit > 0)
+                {
+                    _mantissa <<= deficit;
+                    _size += deficit;
+                    Scale -= deficit;
+                }
             }
         }
 
