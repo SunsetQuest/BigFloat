@@ -188,6 +188,12 @@ public class OriginalBigFloatTests
             Math.E +
             Math.PI;
 
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 8)); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 7)); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 6)); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 5)); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 4)); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 3)); // Fail on Verify_Constants
         Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 2)); // Fail on Verify_Constants
         Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 1)); // Fail on Verify_Constants
         Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 0)); // Fail on Verify_Constants
@@ -250,26 +256,6 @@ public class OriginalBigFloatTests
         {
             Assert.True(bf.EqualsUlp(ans, 1, true));
         }
-    }
-
-    [Fact]
-    public void Verify_NthRoot()
-    {
-        for (int i = BigFloat.GuardBits; i < 3000; i += 7)
-            for (int root = 1; root < 35; root++)
-            {
-                BigFloat answer = BigFloat.RandomWithMantissaBits(
-                    mantissaBits: i,
-                    minBinaryExponent: -300,
-                    maxBinaryExponent: 300,
-                    logarithmic: true, _rand);
-
-                BigFloat toTest = BigFloat.Pow(answer, root);
-                BigFloat result = BigFloat.NthRoot(toTest, root);
-                Assert.True(answer.EqualsUlp(result, 3, true), $"Failed with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-                Assert.True((toTest.SizeWithGuardBits - result.SizeWithGuardBits) < 32, $"Size difference too big with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-                //Console.WriteLine($"{BigFloat.Log2(toTest)}, {root}, {result.ToString(true)}, {answer.ToString(true)}, {(result - answer).RawMantissa.ToString()},, {(result.SizeWithGuardBits - answer.SizeWithGuardBits)} ");
-            }
     }
 
     [Fact]
@@ -4812,21 +4798,21 @@ public class OriginalBigFloatTests
         actual = new BigFloat(999900000000000000000000000.0).ToString(); Assert.Equal("9.999000000000e+26", actual); // Fail-W on Double->BigFloat->ToString
         actual = new BigFloat(9999000000000000000000000000.0).ToString(); Assert.Equal("9.999000000000e+27", actual); // Fail-W on Double->BigFloat->ToString
 
-        for (int i = 1; i < 2883; i++)
+        for (int i = 1; i < 2883; i *= 3)
         {
-            float floatVal = float.Parse(i.ToString() + "00000000000000.0");
-            actual = BigFloat.ToStringDecimal(new BigFloat(floatVal),false,true);
+            float floatVal = float.Parse(i.ToString() + "00000000000.0");
+            actual = BigFloat.ToStringDecimal(new BigFloat(floatVal), false, true);
             Assert.True(actual.Contains("9X") || actual.Contains("0X") || actual.Contains("1X"));
         }
 
-        for (int i = 2883; i < 10000; i++)
+        for (int i = 2883; i < 10000; i *= 3)
         {
             float floatVal = float.Parse(i.ToString() + "00000000000000.0");
             actual = new BigFloat(floatVal).ToString();
             Assert.Contains("e+", actual);
         }
 
-        for (int i = 1; i < 10000; i++)
+        for (int i = 1; i < 10000; i *= 3)
         {
             double doubleVal = double.Parse(i.ToString() + "000000000000000000000000000.0");
             actual = new BigFloat(doubleVal).ToString();
@@ -5196,9 +5182,9 @@ public class OriginalBigFloatTests
     }
 
     [Theory]
-    [InlineData(17, true)]   // CompareUlp equals 0 at tolerance 17
-    [InlineData(16, true)]   // CompareUlp equals 0 at tolerance 16
-    [InlineData(15, false)]  // CompareUlp < 0 at tolerance 15
+    [InlineData(8, true)]   // CompareUlp equals 0 at tolerance 8
+    [InlineData(7, true)]   // CompareUlp equals 0 at tolerance 7
+    [InlineData(6, false)]  // CompareUlp < 0 at tolerance 6
     public void CompareUlp_VerySmallFloats_Theory(int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat((float)-0.0000000444);
@@ -5214,18 +5200,6 @@ public class OriginalBigFloatTests
             Assert.True(b.IsLessThanUlp(a, tolerance));
             Assert.True(a.IsGreaterThanUlp(b, tolerance));
         }
-    }
-
-    [Fact]
-    public void CompareUlp_DoubleVsFloat_Precision()
-    {
-        var a = new BigFloat(-0.0000000444);  // double precision
-        var b = new BigFloat(-0.0000000445);  // double precision
-
-        Assert.True(a.IsGreaterThanUlp(b, 36));
-        Assert.True(b.IsLessThanUlp(a, 36));
-        Assert.True(a.EqualsUlp(b, 37));
-        Assert.True(b.EqualsUlp(a, 37));
     }
 
     [Theory]

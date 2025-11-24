@@ -20,7 +20,7 @@ public readonly partial struct BigFloat
 
             if (_mantissa.Sign < 0)
             {
-                raw = ~raw + (_size > 64 ? 1UL : 0UL);
+                raw = ~raw + (ulong)(((_size >> 64) > 0) ? 1 : 0);
             }
             return raw;
         }

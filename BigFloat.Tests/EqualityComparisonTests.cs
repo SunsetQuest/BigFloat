@@ -258,9 +258,11 @@ public class EqualityAndComparisonTests
     }
 
     [Theory]
-    [InlineData(17, true)]   // Equal at tolerance 17
-    [InlineData(16, true)]   // Equal at tolerance 16
-    [InlineData(15, false)]  // Different at tolerance 15
+
+    [InlineData(32, true)]
+    [InlineData(31, true)]
+    [InlineData(30, false)]
+    [InlineData(12, false)]
     public void CompareUlp_VerySmallFloats(int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat((float)-0.0000000444);
@@ -268,13 +270,17 @@ public class EqualityAndComparisonTests
 
         if (shouldBeEqual)
         {
-            Assert.True(a.EqualsUlp(b, tolerance));
-            Assert.True(b.EqualsUlp(a, tolerance));
+            Assert.True(a.EqualsUlp(b, tolerance, true));
+            Assert.True(b.EqualsUlp(a, tolerance, true));
+            Assert.False(b.IsLessThanUlp(a, tolerance, true));
+            Assert.False(a.IsGreaterThanUlp(b, tolerance, true));
         }
         else
         {
-            Assert.True(b.IsLessThanUlp(a, tolerance));
-            Assert.True(a.IsGreaterThanUlp(b, tolerance));
+            Assert.False(a.EqualsUlp(b, tolerance, true));
+            Assert.False(b.EqualsUlp(a, tolerance, true));
+            Assert.True(b.IsLessThanUlp(a, tolerance, true));
+            Assert.True(a.IsGreaterThanUlp(b, tolerance, true));
         }
     }
 
@@ -284,10 +290,10 @@ public class EqualityAndComparisonTests
         var a = new BigFloat(-0.0000000444);  // double precision
         var b = new BigFloat(-0.0000000445);  // double precision
 
-        Assert.True(a.IsGreaterThanUlp(b, 36));
-        Assert.True(b.IsLessThanUlp(a, 36));
-        Assert.True(a.EqualsUlp(b, 37));
-        Assert.True(b.EqualsUlp(a, 37));
+        Assert.True(a.IsGreaterThanUlp(b, 49));
+        Assert.True(b.IsLessThanUlp(a, 49));
+        Assert.True(a.EqualsUlp(b, 50));
+        Assert.True(b.EqualsUlp(a, 50));
     }
 
     [Theory]

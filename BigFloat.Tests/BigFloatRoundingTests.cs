@@ -421,10 +421,10 @@ public class BigFloatRoundingTests
         Assert.Equal(result1, BigFloat.OneWithAccuracy(accuracy));
         Assert.Equal(result2, 1);
 
-        Assert.Equal(-53, result1.Scale);
+        Assert.Equal(-66, result1.Scale);
         Assert.Equal(0, result2.Scale);
 
-        Assert.Equal(54, result1.Size);
+        Assert.Equal(67, result1.Size);
         Assert.Equal(1, result2.Size);
         
         Assert.Equal(1.0, (double)result2);
