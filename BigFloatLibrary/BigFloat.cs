@@ -408,17 +408,17 @@ public readonly partial struct BigFloat
 
         if (exp != 0)
         {
-        if (exp == 2047)  // 2047 represents inf or NAN
+            if (exp == 2047)  // 2047 represents inf or NAN
             {
-            if (double.IsNaN(value))
-            {
-                ThrowInvalidInitializationException("Value is NaN");
+                if (double.IsNaN(value))
+                {
+                    ThrowInvalidInitializationException("Value is NaN");
+                }
+                else if (double.IsInfinity(value))
+                {
+                    ThrowInvalidInitializationException("Value is infinity");
+                }
             }
-            else if (double.IsInfinity(value))
-            {
-                ThrowInvalidInitializationException("Value is infinity");
-            }
-        }
             // Add leading 1 bit
             mantissa |= 0x10000000000000L;
             if (value < 0)
