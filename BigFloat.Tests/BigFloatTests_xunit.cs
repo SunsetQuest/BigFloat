@@ -151,7 +151,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_Constants()
     {
-        BigFloat bigFloatTotal =
+        BigFloat bfFromBfConstants =
             BigFloat.Constants.NumberTheory.Prime +
             BigFloat.Constants.Derived.NaturalLogOfPhi +
             BigFloat.Constants.Analysis.Omega +
@@ -171,55 +171,50 @@ public class OriginalBigFloatTests
 
 
         double doubleTotal =
-            0.414682509851111660248 +
-            0.481211825059603447497 +
-            0.567143290409783872999 +
-            0.577215664901532860606 +
-            .6601618158468695739278 +
-            0.915965594177219015054 +
-            1.324717957244746025960 +
-            1.380277569097614115673 +
-            Math.Sqrt(2.0) +
-            1.460354508809586812889 +
-            1.618033988749894848204 +
-            1.732050807568877293527 +
-            Math.Sqrt(Math.PI) +
-            2.685452001065306445309 +
+            0.414682509851111660248109 +
+            0.481211825059603447497759 +
+            0.567143290409783872999968 +
+            0.577215664901532860606512 +
+            0.660161815846869573927812 +
+            0.915965594177219015054603 +
+            1.324717957244746025960908 +
+            1.380277569097614115673301 +
+            Math.Sqrt(2.0) + // 1.414213562373095048801688 +
+            1.460354508809586812889499 +
+            1.618033988749894848204586 +
+            1.732050807568877293527446 +
+            Math.Sqrt(Math.PI) + // 1.772453850905516027298167 +
+            2.685452001065306445309714 +
             Math.E +
             Math.PI;
 
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 8)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 7)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 6)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 5)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 4)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 3)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 2)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 1)); // Fail on Verify_Constants
-        Assert.Equal(0, BigFloat.CompareUlp(bigFloatTotal, (BigFloat)doubleTotal, 0)); // Fail on Verify_Constants
+        var bfFromDoubles = (BigFloat)doubleTotal;
+        Assert.Equal(0, BigFloat.CompareUlp(bfFromBfConstants, bfFromDoubles, 8));
+        Assert.Equal(0, BigFloat.CompareUlp(bfFromBfConstants, bfFromDoubles, 7));
+        Assert.Equal(0, BigFloat.CompareUlp(bfFromBfConstants, bfFromDoubles, 6));
+        Assert.Equal(0, BigFloat.CompareUlp(bfFromBfConstants, bfFromDoubles, 5));
 
         // double:            22.863809428109594
         // bigFloat(true ans):22.86380942810959552182300968517081605432710107187450407311958860532..
 
         // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
-        Assert.False(bigFloatTotal.EqualsUlp(((BigFloat)doubleTotal), 23, ulpScopeIncludeGuardBits:true)); // edge case
+        Assert.False(bfFromBfConstants.EqualsUlp(((BigFloat)doubleTotal), 23, ulpScopeIncludeGuardBits:true)); // edge case
 
         double BigFloatZero1 = (double)BigFloat.ZeroWithAccuracy(0);
         double BigFloatZero2 = (double)BigFloat.ZeroWithAccuracy(50);
         Assert.Equal(BigFloatZero2, BigFloatZero1); // Fail on ZeroWithNoPrecision == ZeroWithSpecifiedLeastPrecision(50)
 
-        // following does not pass because of limitations of double. A number that is out-of-precision and Zero cannot be differentiated. 
-        // double doubleDiff0 = (double)(bigFloatTotal - (BigFloat)doubleTotal);
-        // Assert.True(doubleDiff0 <= acceptableTolarance); // Fail on Verify_Constants
-
-        double doubleDiff1 = doubleTotal - (double)bigFloatTotal;
         double acceptableTolarance = (double.BitIncrement(Math.PI) - Math.PI) * 8;
+        double doubleDiff0 = (double)(bfFromBfConstants - (BigFloat)doubleTotal);
+
+        Assert.True(doubleDiff0 <= acceptableTolarance);
 
         // Since we are doing repetitive addition, it is expected that doubleTotal is off by a few bits.
-        Assert.True(doubleDiff1 <= acceptableTolarance); // Fail on Verify_Constants
+        double doubleDiff1 = doubleTotal - (double)bfFromBfConstants;
+        Assert.True(doubleDiff1 <= acceptableTolarance);
 
-        Assert.Equal(0, BigFloat.CompareUlp(BigFloat.Constants.NumberTheory.RamanujanSoldner, (BigFloat)262537412640768743.99999999999925, 50)); // Fail on Verify_Constants
-        Assert.Equal(262537412640768743.99999999999925, (double)BigFloat.Constants.NumberTheory.RamanujanSoldner); // Fail on Verify_Constants
+        Assert.Equal(0, BigFloat.CompareUlp(BigFloat.Constants.NumberTheory.RamanujanSoldner, (BigFloat)262537412640768743.99999999999925, 50));
+        Assert.Equal(262537412640768743.99999999999925, (double)BigFloat.Constants.NumberTheory.RamanujanSoldner);
 
         bool success = BigFloat.ConstantBuilder.Const_0_0307.TryGetAsBigFloat(out BigFloat bf, 100);
 
