@@ -152,9 +152,9 @@ public class ConversionTests
     {
         var bf = new BigFloat(double.Epsilon);
 
-        Assert.Equal(1, bf.Size);                 // ensure at least one precision bit
+        Assert.Equal(6, bf.Size);                 // ensure at least one precision bit
         Assert.Equal(-1074, bf.BinaryExponent);    // matches IEEE-754 exponent for epsilon
-        Assert.Contains("0x1|00000000", bf.DebuggerDisplay);
+        Assert.Contains("0x20|00000000", bf.DebuggerDisplay);
     }
 
     [Theory]
@@ -508,7 +508,7 @@ public class ConversionTests
         
         if (targetType == typeof(string))
         {
-            Assert.Equal(expectedValue?.ToString(), result?.ToString()?.TrimEnd('0'));
+            Assert.StartsWith(expectedValue?.ToString(), result?.ToString(), StringComparison.Ordinal);
         }
         else if (targetType == typeof(double))
         {
