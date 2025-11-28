@@ -152,9 +152,9 @@ public class ConversionTests
     {
         var bf = new BigFloat(double.Epsilon);
 
-        Assert.Equal(6, bf.Size);                 // ensure at least one precision bit
+        Assert.Equal(1, bf.Size);                 // epsilon now keeps a single precision bit after conversion
         Assert.Equal(-1074, bf.BinaryExponent);    // matches IEEE-754 exponent for epsilon
-        Assert.Contains("0x20|00000000", bf.DebuggerDisplay);
+        Assert.Contains("0x1|00000000", bf.DebuggerDisplay);
     }
 
     [Theory]
