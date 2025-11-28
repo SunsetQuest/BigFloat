@@ -402,6 +402,7 @@ public readonly partial struct BigFloat
     /// </param>
     public BigFloat(double value, int binaryScaler = 0, int binaryPrecision = 37)
     {
+        binaryPrecision = 53 - binaryPrecision;
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
         int exp = (int)((bits >> 52) & 0x7ffL);
