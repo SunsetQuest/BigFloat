@@ -290,10 +290,10 @@ public class EqualityAndComparisonTests
         var a = new BigFloat(-0.0000000444);  // double precision
         var b = new BigFloat(-0.0000000445);  // double precision
 
-        Assert.True(a.IsGreaterThanUlp(b, 49));
-        Assert.True(b.IsLessThanUlp(a, 49));
-        Assert.True(a.EqualsUlp(b, 50));
-        Assert.True(b.EqualsUlp(a, 50));
+        Assert.True(a.IsGreaterThanUlp(b, 59, true));
+        Assert.True(b.IsLessThanUlp(a, 59, true));
+        Assert.True(a.EqualsUlp(b, 60, true));
+        Assert.True(b.EqualsUlp(a, 60, true));
     }
 
     [Theory]

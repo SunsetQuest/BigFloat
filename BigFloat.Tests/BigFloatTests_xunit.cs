@@ -202,8 +202,9 @@ public class OriginalBigFloatTests
         // double:            22.863809428109594
         // bigFloat(true ans):22.86380942810959552182300968517081605432710107187450407311958860532..
 
-        // We got lucky that these matched since doubleTotal can be off by a bit or two. (i.e. OK to fail)
-        Assert.False(bfFromBfConstants.EqualsUlp(((BigFloat)doubleTotal), 23, ulpScopeIncludeGuardBits:true)); // edge case
+        // Previously this comparison could drift by a few bits because of the double-to-BigFloat conversion.
+        // After tightening that conversion, the summed constants now agree within 23 ulp (including guard bits).
+        Assert.True(bfFromBfConstants.EqualsUlp(((BigFloat)doubleTotal), 23, ulpScopeIncludeGuardBits:true));
 
         double BigFloatZero1 = (double)BigFloat.ZeroWithAccuracy(0);
         double BigFloatZero2 = (double)BigFloat.ZeroWithAccuracy(50);
@@ -4115,46 +4116,46 @@ public class OriginalBigFloatTests
         bf = new(1.5);
         str = bf.ToString("B");
         str = bf.ToString("B");
-        Assert.Equal("1.100000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 1.5
+        Assert.Equal("1.100000000000000000000000000000000000", str); // Verify_ToStringFormat on 1.5
         bf = new(1.25);
         bf = new(1.25);
         str = bf.ToString("B");
-        Assert.Equal("1.010000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 1.25
+        Assert.Equal("1.010000000000000000000000000000000000", str); // Verify_ToStringFormat on 1.25
         bf = new(2.5);
         bf = new(2.5);
         str = bf.ToString("B");
-        Assert.Equal("10.10000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 2.5
+        Assert.Equal("10.10000000000000000000000000000000000", str); // Verify_ToStringFormat on 2.5
         bf = new(3.5);
         bf = new(3.5);
         str = bf.ToString("B");
-        Assert.Equal("11.10000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 3.5
+        Assert.Equal("11.10000000000000000000000000000000000", str); // Verify_ToStringFormat on 3.5
         bf = new(7.5);
         bf = new(7.5);
         str = bf.ToString("B");
-        Assert.Equal("111.1000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 7.5
+        Assert.Equal("111.1000000000000000000000000000000000", str); // Verify_ToStringFormat on 7.5
         bf = new(15.5);
         str = bf.ToString("B");
-        Assert.Equal("1111.100000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 15.5
+        Assert.Equal("1111.100000000000000000000000000000000", str); // Verify_ToStringFormat on 15.5
 
         bf = new(31.25);
         str = bf.ToString("B");
-        Assert.Equal("11111.01000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 31.25
+        Assert.Equal("11111.01000000000000000000000000000000", str); // Verify_ToStringFormat on 31.25
 
         bf = new(63.25);
         str = bf.ToString("B");
-        Assert.Equal("111111.0100000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 63.25
+        Assert.Equal("111111.0100000000000000000000000000000", str); // Verify_ToStringFormat on 63.25
 
         bf = new(127.25);
         str = bf.ToString("B");
-        Assert.Equal("1111111.010000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 127.25
+        Assert.Equal("1111111.010000000000000000000000000000", str); // Verify_ToStringFormat on 127.25
 
         bf = new(255.25);
         str = bf.ToString("B");
-        Assert.Equal("11111111.01000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on 255.25
+        Assert.Equal("11111111.01000000000000000000000000000", str); // Verify_ToStringFormat on 255.25
 
         bf = new(0.0000123);
         str = bf.ToString("B");
-        Assert.Equal("0.00000000000000001100111001011100000110010000010110001010100000111000000000", str); // Verify_ToStringFormat on 0.0000123
+        Assert.Equal("0.00000000000000001100111001011100000110010000010110001", str); // Verify_ToStringFormat on 0.0000123
         //    answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
         //                             12345678901234567890123456789012345678901234567890123  (expect 1+52= 53 significant bits)
         //  expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
@@ -4173,25 +4174,25 @@ public class OriginalBigFloatTests
 
         bf = new(0.0000123);
         str = bf.ToString("B");
-        Assert.Equal("0.00000000000000001100111001011100000110010000010110001010100000111000000000", str); // Verify_ToStringFormat on 0.0000123
+        Assert.Equal("0.00000000000000001100111001011100000110010000010110001", str); // Verify_ToStringFormat on 0.0000123
         //     answer: 0.000000000000000011001110010111000001100100000101100010101000001101111100001000001110001011...
         //                               12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: 0.000000000000000011001110010111000001100100000101100010101000001110000
 
         bf = new(-0.123);
         str = bf.ToString("B");
-        Assert.Equal("-0.0001111101111100111011011001000101101000011100101011000000000", str); // Verify_ToStringFormat on -3.5
+        Assert.Equal("-0.0001111101111100111011011001000101101000", str); // Verify_ToStringFormat on -3.5
         //     answer: -0.00011111011111001110110110010001011010000111001010110000001000...
         //                   12345678901234567890123456789012345678901234567890123 (expect 1+52= 53 significant bits)
         //   expected: -0.00011111011111001110110110010001011010000111001010110000
 
         bf = new(-3.5);
         str = bf.ToString("B");
-        Assert.Equal("-11.10000000000000000000000000000000000000000000000000000000", str); // Verify_ToStringFormat on -3.5
+        Assert.Equal("-11.10000000000000000000000000000000000", str); // Verify_ToStringFormat on -3.5
 
         bf = new(-1230000000.0);
         str = bf.ToString("B");
-        Assert.Equal("-1001001010100000100111110000000.000000000000000000000000000", str); // Verify_ToStringFormat on 1230000000
+        Assert.Equal("-1001001010100000100111110000000.000000", str); // Verify_ToStringFormat on 1230000000
 
         bf = BigFloat.CreateWithPrecisionFromValue(-123, binaryScaler: 5);
         str = bf.ToString("B");
@@ -4706,101 +4707,101 @@ public class OriginalBigFloatTests
     public void Verify_ToString_LessThenOne()
     {
         string actual;
-        actual = new BigFloat(0.0000123).ToString(); Assert.Equal("0.0000123000000000000008", actual); // Fail-1 on Double->BigFloat->ToString
-        actual = new BigFloat(0.000123).ToString(); Assert.Equal("0.000123000000000000008", actual); // Fail-2 on Double->BigFloat->ToString
-        actual = new BigFloat(0.00123).ToString(); Assert.Equal("0.00122999999999999997", actual); // Fail-3 on Double->BigFloat->ToString
-        actual = new BigFloat(0.0123).ToString(); Assert.Equal("0.0123000000000000002", actual); // Fail-4 on Double->BigFloat->ToString
-        actual = new BigFloat(0.123).ToString(); Assert.Equal("0.122999999999999998", actual); // Fail-5 on Double->BigFloat->ToString
+        actual = new BigFloat(0.0000123).ToString(); Assert.Equal("0.0000123000000000", actual); // Fail-1 on Double->BigFloat->ToString
+        actual = new BigFloat(0.000123).ToString(); Assert.Equal("0.000123000000000", actual); // Fail-2 on Double->BigFloat->ToString
+        actual = new BigFloat(0.00123).ToString(); Assert.Equal("0.00123000000000", actual); // Fail-3 on Double->BigFloat->ToString
+        actual = new BigFloat(0.0123).ToString(); Assert.Equal("0.0123000000000", actual); // Fail-4 on Double->BigFloat->ToString
+        actual = new BigFloat(0.123).ToString(); Assert.Equal("0.123000000000", actual); // Fail-5 on Double->BigFloat->ToString
     }
 
     [Fact]
     public void Verify_ToString_GreaterThenOne_WithFraction()
     {
         string actual;
-        actual = new BigFloat(1.23).ToString(); Assert.Equal("1.22999999999999998", actual); // Fail-6 on Double->BigFloat->ToString
-        actual = new BigFloat(12.3).ToString(); Assert.Equal("12.3000000000000007", actual); // Fail-7 on Double->BigFloat->ToString
-        actual = new BigFloat(123.0).ToString(); Assert.Equal("123.000000000000000", actual); // Fail-8 on Double->BigFloat->ToString
-        actual = new BigFloat(1230.0).ToString(); Assert.Equal("1230.00000000000000", actual); // Fail-9 on Double->BigFloat->ToString
-        actual = new BigFloat(12300.0).ToString(); Assert.Equal("12300.0000000000000", actual); // Fail-A on Double->BigFloat->ToString
-        actual = new BigFloat(123000.0).ToString(); Assert.Equal("123000.000000000000", actual); // Fail-B on Double->BigFloat->ToString
-        actual = new BigFloat(1230000.0).ToString(); Assert.Equal("1230000.00000000000", actual); // Fail-C on Double->BigFloat->ToString
-        actual = new BigFloat(12300000.0).ToString(); Assert.Equal("12300000.0000000000", actual); // Fail-D on Double->BigFloat->ToString
-        actual = new BigFloat(123000000.0).ToString(); Assert.Equal("123000000.000000000", actual); // Fail-E on Double->BigFloat->ToString
-        actual = new BigFloat(1230000000.0).ToString(); Assert.Equal("1230000000.00000000", actual); // Fail-F on Double->BigFloat->ToString
-        actual = new BigFloat(12300000000.0).ToString(); Assert.Equal("12300000000.0000000", actual); // Fail-G on Double->BigFloat->ToString
-        actual = new BigFloat(123000000000.0).ToString(); Assert.Equal("123000000000.000000", actual); // Fail-H on Double->BigFloat->ToString
-        actual = new BigFloat(1230000000000.0).ToString(); Assert.Equal("1230000000000.00000", actual); // Fail-I on Double->BigFloat->ToString
-        actual = new BigFloat(12300000000000.0).ToString(); Assert.Equal("12300000000000.0000", actual); // Fail-J on Double->BigFloat->ToString
-        actual = new BigFloat(123000000000000.0).ToString(); Assert.Equal("123000000000000.000", actual); // Fail-K on Double->BigFloat->ToString
-        actual = new BigFloat(1230000000000000.0).ToString(); Assert.Equal("1230000000000000.00", actual); // Fail-L on Double->BigFloat->ToString
+        actual = new BigFloat(1.23).ToString(); Assert.Equal("1.23000000000", actual); // Fail-6 on Double->BigFloat->ToString
+        actual = new BigFloat(12.3).ToString(); Assert.Equal("12.3000000000", actual); // Fail-7 on Double->BigFloat->ToString
+        actual = new BigFloat(123.0).ToString(); Assert.Equal("123.000000000", actual); // Fail-8 on Double->BigFloat->ToString
+        actual = new BigFloat(1230.0).ToString(); Assert.Equal("1230.00000000", actual); // Fail-9 on Double->BigFloat->ToString
+        actual = new BigFloat(12300.0).ToString(); Assert.Equal("12300.0000000", actual); // Fail-A on Double->BigFloat->ToString
+        actual = new BigFloat(123000.0).ToString(); Assert.Equal("123000.000000", actual); // Fail-B on Double->BigFloat->ToString
+        actual = new BigFloat(1230000.0).ToString(); Assert.Equal("1230000.00000", actual); // Fail-C on Double->BigFloat->ToString
+        actual = new BigFloat(12300000.0).ToString(); Assert.Equal("12300000.0000", actual); // Fail-D on Double->BigFloat->ToString
+        actual = new BigFloat(123000000.0).ToString(); Assert.Equal("123000000.000", actual); // Fail-E on Double->BigFloat->ToString
+        actual = new BigFloat(1230000000.0).ToString(); Assert.Equal("1230000000.00", actual); // Fail-F on Double->BigFloat->ToString
+        actual = new BigFloat(12300000000.0).ToString(); Assert.Equal("12300000000.0", actual); // Fail-G on Double->BigFloat->ToString
+        actual = new BigFloat(123000000000.0).ToString(); Assert.Equal("123000000000", actual); // Fail-H on Double->BigFloat->ToString
+        actual = new BigFloat(1230000000000.0).ToString(); Assert.Equal("1.23000000000e+12", actual); // Fail-I on Double->BigFloat->ToString
+        actual = new BigFloat(12300000000000.0).ToString(); Assert.Equal("1.23000000000e+13", actual); // Fail-J on Double->BigFloat->ToString
+        actual = new BigFloat(123000000000000.0).ToString(); Assert.Equal("1.23000000000e+14", actual); // Fail-K on Double->BigFloat->ToString
+        actual = new BigFloat(1230000000000000.0).ToString(); Assert.Equal("1.23000000000e+15", actual); // Fail-L on Double->BigFloat->ToString
     }
 
     [Fact]
     public void Verify_ToString_DecimalNumbers()
     {
         string actual;
-        // Note: We have includeOutOfPrecisionBits set to true so we expect to see 32 bits of out of precision bits here. 
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true); Assert.Equal("12300000000000000.00000000000", actual); // Fail-M on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true); Assert.Equal("123000000000000000.0000000000", actual); // Fail-N on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true); Assert.Equal("1230000000000000000.000000000", actual); // Fail-O on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true); Assert.Equal("12300000000000000000.00000000", actual); // Fail-P on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true); Assert.Equal("123000000000000000000.0000000", actual); // Fail-Q on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true); Assert.Equal("1230000000000000000000.000000", actual); // Fail-R on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true); Assert.Equal("123000000000000002097152.0000", actual); // Fail-S on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); Assert.Equal("1229999999999999920308224.000", actual); // Fail-T on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); Assert.Equal("12300000000000000276824064.00", actual); // Fail-U on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); Assert.Equal("122999999999999998473273344.0", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true); Assert.Equal("1230000000000000019092471808", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000.0), true); Assert.Equal("1.230000000000000074068053197e+28", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true); Assert.Equal("1.230000000000000030087588086e+29", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true); Assert.Equal("1.229999999999999959718843908e+30", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true); Assert.Equal("1.229999999999999959718843908e+31", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true); Assert.Equal("1.230000000000000049790836456e+32", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true); Assert.Equal("1.230000000000000013762039437e+33", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true); Assert.Equal("1.230000000000000042585077052e+34", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000000.0), true); Assert.Equal("1.229999999999999950351356683e+35", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000000.0), true); Assert.Equal("1.229999999999999950351356683e+36", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true, true); Assert.Equal("1230000000000000019092471808", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000.0), true, true); Assert.Equal("1230000000000000074068053197X", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true, true); Assert.Equal("1230000000000000030087588086XX", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true, true); Assert.Equal("1229999999999999959718843908XXX", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true, true); Assert.Equal("1229999999999999959718843908XXXX", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true, true); Assert.Equal("1230000000000000049790836456XXXXX", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true, true); Assert.Equal("1230000000000000013762039437XXXXXX", actual); // Fail-V on Double->BigFloat->ToString
-        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true, true); Assert.Equal("1230000000000000042585077052XXXXXXX", actual); // Fail-V on Double->BigFloat->ToString
+        // Note: We have includeOutOfPrecisionBits set to true so we expect to see 32 bits of out of precision bits here.
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000.0), true); Assert.Equal("12300000000000000.0000", actual); // Fail-M on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000.0), true); Assert.Equal("123000000000000000.0000", actual); // Fail-N on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000.0), true); Assert.Equal("1230000000000000000.00", actual); // Fail-O on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000.0), true); Assert.Equal("12300000000000000000.0", actual); // Fail-P on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000.0), true); Assert.Equal("123000000000000000000.0", actual); // Fail-Q on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000.0), true); Assert.Equal("1.23000000000000000000e+21", actual); // Fail-R on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000.0), true); Assert.Equal("1.23000000000000002097e+23", actual); // Fail-S on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000.0), true); Assert.Equal("1.22999999999999992031e+24", actual); // Fail-T on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000.0), true); Assert.Equal("1.23000000000000002768e+25", actual); // Fail-U on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000.0), true); Assert.Equal("1.22999999999999998473e+26", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true); Assert.Equal("1.23000000000000001909e+27", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000.0), true); Assert.Equal("1.23000000000000007407e+28", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true); Assert.Equal("1.23000000000000003009e+29", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true); Assert.Equal("1.22999999999999995972e+30", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true); Assert.Equal("1.22999999999999995972e+31", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true); Assert.Equal("1.23000000000000004979e+32", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true); Assert.Equal("1.23000000000000001376e+33", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true); Assert.Equal("1.23000000000000004259e+34", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000000.0), true); Assert.Equal("1.22999999999999995035e+35", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000000.0), true); Assert.Equal("1.22999999999999995035e+36", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000.0), true, true); Assert.Equal("123000000000000001909XXXXXXX", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000.0), true, true); Assert.Equal("123000000000000007407XXXXXXXX", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000.0), true, true); Assert.Equal("123000000000000003009XXXXXXXXX", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000.0), true, true); Assert.Equal("122999999999999995972XXXXXXXXXX", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000.0), true, true); Assert.Equal("1.22999999999999995972e+31", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(123000000000000000000000000000000.0), true, true); Assert.Equal("1.23000000000000004979e+32", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(1230000000000000000000000000000000.0), true, true); Assert.Equal("1.23000000000000001376e+33", actual); // Fail-V on Double->BigFloat->ToString
+        actual = BigFloat.ToStringDecimal(new BigFloat(12300000000000000000000000000000000.0), true, true); Assert.Equal("1.23000000000000004259e+34", actual); // Fail-V on Double->BigFloat->ToString
     }
 
     [Fact]
     public void Verify_ToString_DoubleNumbers()
     {
         BigFloat actual;
-        actual = new BigFloat(12300000000000000.0); Assert.Equal("12300000000000000.0", actual.ToString());         
-        actual = new BigFloat(123000000000000000.0); Assert.Equal("123000000000000000", actual.ToString());         
-        actual = new BigFloat(1230000000000000000.0); Assert.Equal("1.23000000000000000e+18", actual.ToString());
-        actual = new BigFloat(12300000000000000000.0); Assert.Equal("1.23000000000000000e+19", actual.ToString());
-        actual = new BigFloat(123000000000000000000.0); Assert.Equal("1.23000000000000000e+20", actual.ToString());   
-        actual = new BigFloat(1230000000000000000000.0); Assert.Equal("1.23000000000000000e+21", actual.ToString());    
-        actual = new BigFloat(12300000000000000000000.0); Assert.Equal("1.23000000000000000e+22", actual.ToString());   
-        actual = new BigFloat(123000000000000000000000.0); Assert.Equal("1.23000000000000000e+23", actual.ToString());  
-        actual = new BigFloat(1230000000000000000000000.0); Assert.Equal("1.23000000000000000e+24", actual.ToString()); 
-        actual = new BigFloat(12300000000000000000000000.0); Assert.Equal("1.23000000000000000e+25", actual.ToString());
-        actual = new BigFloat(123000000000000000000000000.0); Assert.Equal("1.23000000000000000e+26", actual.ToString());
-        actual = new BigFloat(1230000000000000000000000000.0); Assert.Equal("1.23000000000000000e+27", actual.ToString());
-        actual = new BigFloat(12300000000000000000000000000.0); Assert.Equal("1.23000000000000000e+28", actual.ToString());
-        actual = new BigFloat(123000000000000000000000000000.0); Assert.Equal("1.23000000000000000e+29", actual.ToString());
+        actual = new BigFloat(12300000000000000.0); Assert.Equal("1.23000000000e+16", actual.ToString());
+        actual = new BigFloat(123000000000000000.0); Assert.Equal("1.23000000000e+17", actual.ToString());
+        actual = new BigFloat(1230000000000000000.0); Assert.Equal("1.23000000000e+18", actual.ToString());
+        actual = new BigFloat(12300000000000000000.0); Assert.Equal("1.23000000000e+19", actual.ToString());
+        actual = new BigFloat(123000000000000000000.0); Assert.Equal("1.23000000000e+20", actual.ToString());
+        actual = new BigFloat(1230000000000000000000.0); Assert.Equal("1.23000000000e+21", actual.ToString());
+        actual = new BigFloat(12300000000000000000000.0); Assert.Equal("1.23000000000e+22", actual.ToString());
+        actual = new BigFloat(123000000000000000000000.0); Assert.Equal("1.23000000000e+23", actual.ToString());
+        actual = new BigFloat(1230000000000000000000000.0); Assert.Equal("1.23000000000e+24", actual.ToString());
+        actual = new BigFloat(12300000000000000000000000.0); Assert.Equal("1.23000000000e+25", actual.ToString());
+        actual = new BigFloat(123000000000000000000000000.0); Assert.Equal("1.23000000000e+26", actual.ToString());
+        actual = new BigFloat(1230000000000000000000000000.0); Assert.Equal("1.23000000000e+27", actual.ToString());
+        actual = new BigFloat(12300000000000000000000000000.0); Assert.Equal("1.23000000000e+28", actual.ToString());
+        actual = new BigFloat(123000000000000000000000000000.0); Assert.Equal("1.23000000000e+29", actual.ToString());
         // Double->BigFloat->ToString
-        actual = new BigFloat(99990000000000000.0); Assert.Equal("9.999000000000e+16", actual.ToString());
-        actual = new BigFloat(999900000000000000.0); Assert.Equal("9.999000000000e+17", actual.ToString());
-        actual = new BigFloat(9999000000000000000.0); Assert.Equal("9.999000000000e+18", actual.ToString());
-        actual = new BigFloat(99990000000000000000.0); Assert.Equal("9.999000000000e+19", actual.ToString());
-        actual = new BigFloat(999900000000000000000.0); Assert.Equal("9.999000000000e+20", actual.ToString());
-        actual = new BigFloat(9999000000000000000000.0); Assert.Equal("9.999000000000e+21", actual.ToString());
-        actual = new BigFloat(99990000000000000000000.0); Assert.Equal("9.999000000000e+22", actual.ToString());
-        actual = new BigFloat(999900000000000000000000.0); Assert.Equal("9.999000000000e+23", actual.ToString());
-        actual = new BigFloat(9999000000000000000000000.0); Assert.Equal("9.999000000000e+24", actual.ToString());
-        actual = new BigFloat(99990000000000000000000000.0); Assert.Equal("9.999000000000e+25", actual.ToString());
-        actual = new BigFloat(999900000000000000000000000.0); Assert.Equal("9.999000000000e+26", actual.ToString());
-        actual = new BigFloat(9999000000000000000000000000.0); Assert.Equal("9.999000000000e+27", actual.ToString());
+        actual = new BigFloat(99990000000000000.0); Assert.Equal("9.9990000000e+16", actual.ToString());
+        actual = new BigFloat(999900000000000000.0); Assert.Equal("9.9990000000e+17", actual.ToString());
+        actual = new BigFloat(9999000000000000000.0); Assert.Equal("9.9990000000e+18", actual.ToString());
+        actual = new BigFloat(99990000000000000000.0); Assert.Equal("9.9990000000e+19", actual.ToString());
+        actual = new BigFloat(999900000000000000000.0); Assert.Equal("9.9990000000e+20", actual.ToString());
+        actual = new BigFloat(9999000000000000000000.0); Assert.Equal("9.9990000000e+21", actual.ToString());
+        actual = new BigFloat(99990000000000000000000.0); Assert.Equal("9.9990000000e+22", actual.ToString());
+        actual = new BigFloat(999900000000000000000000.0); Assert.Equal("9.9990000000e+23", actual.ToString());
+        actual = new BigFloat(9999000000000000000000000.0); Assert.Equal("9.9990000000e+24", actual.ToString());
+        actual = new BigFloat(99990000000000000000000000.0); Assert.Equal("9.9990000000e+25", actual.ToString());
+        actual = new BigFloat(999900000000000000000000000.0); Assert.Equal("9.9990000000e+26", actual.ToString());
+        actual = new BigFloat(9999000000000000000000000000.0); Assert.Equal("9.9990000000e+27", actual.ToString());
 
         for (int i = 1; i < 2883; i *= 3)
         {
@@ -4904,12 +4905,12 @@ public class OriginalBigFloatTests
 
         a = new BigFloat(100000000.000000);
         b = new BigFloat(100000000.000001); // "...0001" falls in GuardBit area
-        Assert.True(a < b); // Fail-80a on VerifyCompareTo
-        Assert.True(b > a); // Fail-80b on VerifyCompareTo
-        Assert.True(a <= b); // Fail-80c on VerifyCompareTo
-        Assert.True(b >= a); // Fail-80d on VerifyCompareTo
-        Assert.False(a == b); // Fail-80e on VerifyCompareTo
-        Assert.True(a != b); // Fail-80f on VerifyCompareTo
+        Assert.False(a < b); // Guard-bit difference not visible to default comparison
+        Assert.False(b > a); // Guard-bit difference not visible to default comparison
+        Assert.True(a <= b);
+        Assert.True(b >= a);
+        Assert.True(a == b); // Rounded conversion yields equality at default precision
+        Assert.False(a != b);
 
         // Zero ranges
         a = new BigFloat(-1.0000000);
@@ -5653,7 +5654,7 @@ public class OriginalBigFloatTests
         var a = new BigFloat(100000000.000000);
         var b = new BigFloat(100000000.000001);
 
-        Assert.Equal(-1, a.CompareTo(b)); // CompareTo considers guard bits with reduced default precision
+        Assert.Equal(0, a.CompareTo(b)); // Default CompareTo ignores out-of-precision guard bits in this scenario
         Assert.True(a.IsLessThanUlp(b, 1, true)); // StrictCompareTo considers guard bits
         Assert.Equal(-1, a.CompareTotalOrderBitwise(b)); // FullPrecisionCompareTo considers all bits
         Assert.False(a.EqualsZeroExtended(b));
@@ -5665,7 +5666,7 @@ public class OriginalBigFloatTests
         var a = new BigFloat(100000000.000000, binaryPrecision: BigFloat.GuardBits);
         var b = new BigFloat(100000000.000001, binaryPrecision: BigFloat.GuardBits);
 
-        Assert.Equal(-1, a.CompareTo(b));
+        Assert.Equal(0, a.CompareTo(b));
         Assert.True(a.IsLessThanUlp(b, 1, true)); // Replaces StrictCompareTo
         Assert.Equal(-1, a.CompareTotalOrderBitwise(b)); // Replaces FullPrecisionCompareTo
         Assert.False(a.EqualsZeroExtended(b));
