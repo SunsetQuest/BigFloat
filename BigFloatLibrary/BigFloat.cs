@@ -471,6 +471,7 @@ public readonly partial struct BigFloat
     // default: 16 bits loaded in the in-precision area and 8 bits in the guard area.
     public BigFloat(float value, int binaryPrecision = 16)
     {
+        binaryPrecision += 8;
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007fffff;
         int exp = (int)((bits >> 23) & 0xffL);
