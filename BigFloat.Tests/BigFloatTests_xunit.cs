@@ -5182,8 +5182,8 @@ public class OriginalBigFloatTests
 
     [Theory]
     [InlineData(8, true)]   // CompareUlp equals 0 at tolerance 8
-    [InlineData(7, true)]   // CompareUlp equals 0 at tolerance 7
-    [InlineData(6, true)]   // CompareUlp equals 0 at tolerance 6
+    [InlineData(7, false)]  // CompareUlp differs at tolerance 7 after float precision fix
+    [InlineData(6, false)]  // CompareUlp differs at tolerance 6 after float precision fix
     public void CompareUlp_VerySmallFloats_Theory(int tolerance, bool shouldBeEqual)
     {
         var a = new BigFloat((float)-0.0000000444);

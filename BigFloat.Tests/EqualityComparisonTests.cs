@@ -259,8 +259,8 @@ public class EqualityAndComparisonTests
 
     [Theory]
 
-    [InlineData(32, true)]
-    [InlineData(31, true)]
+    [InlineData(39, true)]
+    [InlineData(38, false)]
     [InlineData(30, false)]
     [InlineData(12, false)]
     public void CompareUlp_VerySmallFloats(int tolerance, bool shouldBeEqual)
