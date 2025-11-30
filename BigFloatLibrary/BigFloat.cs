@@ -402,7 +402,7 @@ public readonly partial struct BigFloat
     /// </param>
     public BigFloat(double value, int binaryScaler = 0, int binaryPrecision = 37)
     {
-        binaryPrecision = 53 - binaryPrecision;
+        binaryPrecision -= 21;
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0xfffffffffffffL;
         int exp = (int)((bits >> 52) & 0x7ffL);
@@ -467,7 +467,7 @@ public readonly partial struct BigFloat
 
         AssertValid();
     }
-
+    
     // default: 16 bits loaded in the in-precision area and 8 bits in the guard area.
     public BigFloat(float value, int binaryPrecision = 16)
     {
