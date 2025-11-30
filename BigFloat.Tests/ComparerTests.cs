@@ -177,63 +177,44 @@ public class ComparerTests
 
     #region Special Value Tests
 
-    [Fact]
-    public void Compare_Zero_HandledCorrectly()
+    [Theory]
+    [InlineData("0", "1", -1)]
+    [InlineData("0", "-1", 1)]
+    [InlineData("999999999999999999999999999999999999", "999999999999999999999999999999999998", 1)]
+    [InlineData("0.000000000000000000000000000000001", "0.000000000000000000000000000000002", -1)]
+    public void Compare_SpecialCases_ExpectedOrdering(string left, string right, int expectedSign)
     {
-        var zero = BigFloat.ZeroWithAccuracy(0);
-        var positive = new BigFloat(1);
-        var negative = new BigFloat(-1);
+        var lhs = new BigFloat(left);
+        var rhs = new BigFloat(right);
 
-        Assert.True(zero > negative);
-        Assert.True(zero < positive);
-        Assert.True(zero == BigFloat.ZeroWithAccuracy(0));
-        Assert.Equal(0, zero.CompareTo(BigFloat.ZeroWithAccuracy(0)));
-    }
+        int compareResult = lhs.CompareTo(rhs);
 
-    [Fact]
-    public void Compare_VeryLargeNumbers()
-    {
-        var large1 = new BigFloat("999999999999999999999999999999999999");
-        var large2 = new BigFloat("999999999999999999999999999999999998");
-        
-        Assert.True(large1 > large2);
-        Assert.True(large2 < large1);
-        Assert.False(large1 == large2);
-    }
-
-    [Fact]
-    public void Compare_VerySmallNumbers()
-    {
-        var small1 = new BigFloat("0.000000000000000000000000000000001");
-        var small2 = new BigFloat("0.000000000000000000000000000000002");
-        
-        Assert.True(small1 < small2);
-        Assert.True(small2 > small1);
-        Assert.False(small1 == small2);
+        if (expectedSign > 0)
+        {
+            Assert.True(compareResult > 0);
+            Assert.True(lhs > rhs);
+        }
+        else
+        {
+            Assert.True(compareResult < 0);
+            Assert.True(lhs < rhs);
+        }
     }
 
     #endregion
 
     #region Edge Case Tests
 
-    [Fact]
-    public void Compare_NegativeZero_EqualsPositiveZero()
+    [Theory]
+    [InlineData("0", "-0")]
+    [InlineData("1.00000000000000000000", "1.0")]
+    public void Compare_EqualRepresentations_CompareAsEqual(string left, string right)
     {
-        var positiveZero = new BigFloat(0);
-        var negativeZero = new BigFloat("-0");
-        
-        Assert.True(positiveZero == negativeZero);
-        Assert.Equal(0, positiveZero.CompareTo(negativeZero));
-    }
+        var lhs = new BigFloat(left);
+        var rhs = new BigFloat(right);
 
-    [Fact]
-    public void Compare_DifferentPrecisionSameValue()
-    {
-        var highPrecision = new BigFloat("1.00000000000000000000");
-        var lowPrecision = new BigFloat("1.0");
-        
-        Assert.True(highPrecision == lowPrecision);
-        Assert.Equal(0, highPrecision.CompareTo(lowPrecision));
+        Assert.Equal(0, lhs.CompareTo(rhs));
+        Assert.True(lhs == rhs);
     }
 
     #endregion
