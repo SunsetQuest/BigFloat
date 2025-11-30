@@ -56,9 +56,20 @@ public static class BigIntegerTools
         int tentativeChars = Math.Max(minWidth, 8 * byteCount) + (neg ? 1 : 0);
         const int STACK_THRESHOLD = 512;
 
-        Span<char> dest = tentativeChars <= STACK_THRESHOLD
-            ? stackalloc char[tentativeChars]
-            : ArrayPool<char>.Shared.Rent(tentativeChars);
+        char[] rented = Array.Empty<char>();
+        bool rentedFromPool = false;
+
+        Span<char> dest;
+        if (tentativeChars <= STACK_THRESHOLD)
+        {
+            dest = stackalloc char[tentativeChars];
+        }
+        else
+        {
+            rented = ArrayPool<char>.Shared.Rent(tentativeChars);
+            rentedFromPool = true;
+            dest = rented;
+        }
 
         try
         {
@@ -93,10 +104,8 @@ public static class BigIntegerTools
         }
         finally
         {
-            if (dest.Length > STACK_THRESHOLD)
-            {
-                ArrayPool<char>.Shared.Return(dest.ToArray());
-            }
+            if (rentedFromPool)
+                ArrayPool<char>.Shared.Return(rented);
         }
     }
 
