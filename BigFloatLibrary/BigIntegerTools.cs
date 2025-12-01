@@ -1190,85 +1190,92 @@ public static class BigIntegerTools
         bytes[^1] = (byte)((0x80 | bytes[^1]) >> (7 - ((bits - 1) % 8)));
         return new BigInteger(bytes, true);
     }
+
 #nullable disable
 
     /// <summary>
-    /// Generate a random BigInteger in the half-open interval
+    /// Generate a random <see cref="BigInteger"/> in the half-open interval
     /// [<paramref name="minInclusive"/>, <paramref name="maxExclusive"/>).
     /// </summary>
     /// <exception cref="ArgumentException">
-    /// Thrown when min ≥ max.
+    /// Thrown when <paramref name="minInclusive"/> ≥ <paramref name="maxExclusive"/>.
     /// </exception>
     public static BigInteger RandomBigInteger(
-    BigInteger minInclusive,
-    BigInteger maxExclusive,
-    RandomNumberGenerator rand)
+        BigInteger minInclusive,
+        BigInteger maxExclusive,
+        RandomNumberGenerator rand)
     {
-        return RandomBigIntegerCore(minInclusive, maxExclusive, buf => rand.GetBytes(buf));
+        ArgumentNullException.ThrowIfNull(rand);
+        return RandomBigIntegerCore(minInclusive, maxExclusive, span => rand.GetBytes(span));
     }
 
 #nullable enable
+
     /// <summary>
-    /// Generate a random BigInteger in the half-open interval
+    /// Generate a random <see cref="BigInteger"/> in the half-open interval
     /// [<paramref name="minInclusive"/>, <paramref name="maxExclusive"/>).
     /// </summary>
     /// <exception cref="ArgumentException">
-    /// Thrown when min ≥ max.
+    /// Thrown when <paramref name="minInclusive"/> ≥ <paramref name="maxExclusive"/>.
     /// </exception>
     public static BigInteger RandomBigInteger(
         BigInteger minInclusive,
         BigInteger maxExclusive,
         Random? rand = null)
     {
-        rand ??= new Random();
-        return RandomBigIntegerCore(minInclusive, maxExclusive, buf => rand.NextBytes(buf));
+        rand ??= Random.Shared;
+        return RandomBigIntegerCore(minInclusive, maxExclusive, span => rand.NextBytes(span));
     }
-#nullable disable
 
-    // source: Source: ChatGPT 3o on 5/21/2025
+    // Delegate type is non-generic to allow Span<byte> as a parameter.
+    private delegate void SpanFiller(Span<byte> buffer);
+
     private static BigInteger RandomBigIntegerCore(
         BigInteger minInclusive,
         BigInteger maxExclusive,
-        Action<Span<byte>> fillBuffer)
+        SpanFiller fillBuffer)
     {
         if (minInclusive >= maxExclusive)
-            throw new ArgumentException("minInclusive must be < maxExclusive");
+            throw new ArgumentException("minInclusive must be < maxExclusive", nameof(minInclusive));
 
-        // Width of the interval we need to sample.
         BigInteger range = maxExclusive - minInclusive;   // strictly positive
 
-        // --- 1.  Determine how many bits/bytes we must draw -----------------
-        int bitLen = (int)range.GetBitLength();               // .NET 8 API
+        int bitLen = (int)range.GetBitLength();           // > 0 for positive range
         int byteLen = (bitLen + 7) >> 3;                  // ceil(bits/8)
 
-        // Mask out the spare high bits in the top byte to cut rejection rate
-        byte msbMask = (byte)((1 << ((bitLen - 1) & 7) + 1) - 1); // 255 iff bitLen mod 8 == 0
+        // Bits actually used in the most-significant (top) byte of the big-endian encoding.
+        int usedBitsInMsb = ((bitLen - 1) & 7) + 1;
+        byte msbMask = (byte)((1 << usedBitsInMsb) - 1);  // 0xFF when bitLen % 8 == 0
 
-        // Use stackalloc up to 512 bytes, else rent.
+        byte[]? rented = null;
         Span<byte> buf = byteLen <= 512
             ? stackalloc byte[byteLen]
-            : ArrayPool<byte>.Shared.Rent(byteLen);
+            : (rented = ArrayPool<byte>.Shared.Rent(byteLen));
 
         try
         {
             BigInteger candidate;
             do
             {
-                fillBuffer(buf); // CS1503 error here
-                // Trim leading bits we don’t need.
+                fillBuffer(buf);
+
                 if (msbMask != 0xFF)
-                    buf[0] &= msbMask;
+                    buf[0] &= msbMask; // trim unused top bits (big-endian)
 
                 candidate = new BigInteger(buf, isUnsigned: true, isBigEndian: true);
             }
-            while (candidate >= range);   // rejection
+            while (candidate >= range);
 
             return candidate + minInclusive;
         }
         finally
         {
-            if (byteLen > 512)
-                ArrayPool<byte>.Shared.Return(buf.ToArray(), clearArray: true);
+            if (rented is not null)
+            {
+                ArrayPool<byte>.Shared.Return(rented, clearArray: true);
+            }
         }
     }
+#nullable disable
+
 }
