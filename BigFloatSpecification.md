@@ -1,6 +1,6 @@
 # BigFloat Library Specification
 
-*Updated: November 2025 — technical reference for developers and AI systems*
+*Updated: December 2025 — technical reference for developers and AI systems*
 
 > **Scope.** This document specifies the behavior, data model, key APIs, rounding/comparison semantics, parsing/formatting, math functions, precision control, and range/convertibility characteristics of **BigFloat** as implemented in the current sources. It supersedes the August 2025 draft. 
 
@@ -8,15 +8,16 @@
 
 ## What’s new since 2025‑08‑05 (high level)
 
-* **Constructor refactor & precision knobs.** All primitive‑type constructors now expose precision controls (`binaryPrecision`) and a `valueIncludesGuardBits` switch; zero‑inputs short‑circuit with correct metadata. Edge cases for `Int128.MinValue` were fixed.
-* **Rounding/Truncation suite.** Canonical `Round`, `TruncateByAndRound`, `TruncateToIntegerKeepingAccuracy`, and related helpers; `Ceiling/CeilingPreservingAccuracy` were rewritten to avoid lowering values when only guard bits are set.
-* **Comparison overhaul.** Clear split of value equality (`CompareTo/Equals`), ULP‑tolerant comparisons (`CompareUlp`/`EqualsUlp`), and deterministic total orders (bitwise vs. zero‑extension). New comparer types included. 
-* **Binary/hex/decimal formatting.** Binary writer gained optional guard‑bit separator (`|`) and exact buffer sizing; hex/scientific paths reworked for correctness and performance. 
-* **Parsing.** Decimal parsing now maps precision delimiter `|` to guard bits; supports `X` placeholders, exponential forms, brackets/quotes, and `0x…` / `0b…`. 
-* **Range helpers.** Introduced `FitsInADouble`, `FitsInADoubleWithDenormalization`, `FitsInAFloat`, `FitsInAFloatWithDenormalization`, and `FitsInADecimal`. *(Note: these are properties, not a method with parameters.)* 
+* **Constructor refactor & precision knobs.** All primitive‑type constructors expose precision controls (`binaryPrecision`) and a `valueIncludesGuardBits` switch; zero‑inputs short‑circuit with correct metadata. Fixed‑width overloads and `Int128.MinValue` handling were cleaned up, and the BigInteger‑to‑BigFloat zero path now offsets `binaryScaler` by the requested precision.
+* **Rounding/Truncation suite.** Canonical `Round`, `TruncateByAndRound`, `TruncateToIntegerKeepingAccuracy`, and related helpers; `Ceiling/CeilingPreservingAccuracy` were rewritten to avoid lowering values when only guard bits are set. `IsInteger` delegates to `Ceiling()==Floor()` for consistency with these paths.
+* **Comparison overhaul.** Clear split of value equality (`CompareTo/Equals`), ULP‑tolerant comparisons (`CompareUlp`/`EqualsUlp`), and deterministic total orders (bitwise vs. zero‑extension). New comparer types included.
+* **Binary/hex/decimal formatting.** Binary writer gained optional guard‑bit separator (`|`) and exact buffer sizing; hex/scientific paths reworked for correctness and performance. Formatting of zero binary strings without guard bits was fixed.
+* **Parsing.** Decimal parsing maps precision delimiter `|` to guard bits; supports `X` placeholders, exponential forms, brackets/quotes, and `0x…` / `0b…`.
+* **Range helpers.** Introduced `FitsInADouble`, `FitsInADoubleWithDenormalization`, `FitsInAFloat`, `FitsInAFloatWithDenormalization`, and `FitsInADecimal`. *(Note: these are properties, not a method with parameters.)*
 * **IConvertible.** `BigFloat` implements `IConvertible` with safe overflow checks and a `ToType` dispatcher.
-* **Arithmetic touch‑ups.** Safer/faster remainder path; multiply short‑circuits strict zero; divide keeps hooks for adaptive algorithms while using the standard path. 
-* **Packaging.** NuGet metadata bumped **v2.2.0** in Aug 2025; ongoing fixes through Oct–Nov per change log. 
+* **Arithmetic touch‑ups.** Safer/faster remainder path; multiply short‑circuits strict zero while preserving the tighter accuracy; divide keeps hooks for adaptive algorithms while using the standard path.
+* **Playground & benchmarks.** Playground sample, benchmark, and testing utilities are separated into dedicated files to keep demos organized and repeatable (library behavior unaffected).
+* **Packaging.** NuGet metadata bumped **v2.2.0** in Aug 2025; ongoing fixes through Oct–Dec per change log.
 
 ---
 
@@ -48,7 +49,7 @@ Each primitive overload supports optional precision configuration; zero inputs r
 * `BigFloat(Int128 value, …, int binaryPrecision = 127)`; `BigFloat(UInt128 value, …, int binaryPrecision = 128)`
 * `BigFloat(double value, int binaryScaler = 0, int addedBinaryPrecision = 24)` *(subnormals handled; NaN/∞ rejected)*
 * `BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)`
-  All constructors ensure `_size` matches the real bit length and call `AssertValid()` in DEBUG. 
+  Zero BigInteger inputs adjust `binaryScaler` downward by the requested precision before returning, keeping zeros canonical at the intended accuracy. All constructors ensure `_size` matches the real bit length and call `AssertValid()` in DEBUG.
 
 **Accuracy context helpers.**
 `ZeroWithAccuracy(int accuracy)` and `OneWithAccuracy(int accuracy)` produce canonical zeros/ones carrying an explicit accuracy (least‑precision) context. 
