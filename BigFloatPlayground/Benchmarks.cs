@@ -419,8 +419,8 @@ public static class Benchmarks
     {
         Stopwatch timer = new();
         int errorTotal = 0;
-        long miss = 0;
-        int exp;
+        BigInteger miss = 0;
+        int exp = 0;
         long correctBits = 0;
         long counter = 0;
         long oneTooHi = 0; // too high by 1
@@ -445,7 +445,7 @@ public static class Benchmarks
 
                 for (int y = 0; y < 10; y++)
                 {
-                    BigInteger diff = 0;
+                    BigInteger diff;
                     long errorCount2 = 0;
 
                     for (exp = 3; exp < 8; exp++)
@@ -459,25 +459,19 @@ public static class Benchmarks
 
                         (BigInteger res, int shiftedRes) = BigIntegerTools.PowMostSignificantBitsApprox(val, exp, valSize, wantedBits, false);
 
-                        BigInteger ans;
+                        BigInteger answer;
 
-                        int shifted;
                         int keep = Math.Min((int)GenerateRandomBigInteger(expSize), valSize) + 8;
-                        //keep = workSize2;
-                        //BigInteger ans = BigInteger.Pow(val, exp);
-                        //shifted = ans.GetBitLength() - keep;
-                        //ans >>= shifted;
-                        //ans = BigFloat.RightShiftWithRound(ans, shifted);
 
                         // Answer Setup version 2
-                        ans = BigInteger.Pow(val, exp);
-                        shifted = ans.GetBitLength() - keep;
-                        ans >>= shifted;
-                        //ans = BigFloat.RightShiftWithRound(ans, shifted);
+                        answer = BigInteger.Pow(val, exp);
+                        int shifted = (int) answer.GetBitLength() - keep;
+                        answer >>= shifted;
+                        //answer = BigFloat.RightShiftWithRound(answer, shifted);
 
                         // Remove the unneeded bits that have become 0
-                        int needToShiftAgain = (int)(ans.GetBitLength() - wantedBits);
-                        ans >>= needToShiftAgain;
+                        int needToShiftAgain = (int)(answer.GetBitLength() - wantedBits);
+                        answer >>= needToShiftAgain;
                         shifted += needToShiftAgain;
 
                         // Sometimes the lower level PowMostSignificantBits rounds up an extra bit, let compensate it here.
@@ -487,11 +481,11 @@ public static class Benchmarks
                         }
                         else if (shiftedRes == shifted + 1)
                         {
-                            ans >>= 1;
+                            answer >>= 1;
                         }
 
-                        diff = ans - res;
-                        correctBits2 = ans.GetBitLength() - diff.GetBitLength();
+                        diff = answer - res;
+                        correctBits2 = answer.GetBitLength() - diff.GetBitLength();
                         errorCount2++;
                     }
 
@@ -505,30 +499,19 @@ public static class Benchmarks
                 }
             }
 
-            long ans = 0;
-
-            long errorTotal2 = 0;
-
-            long correctBits3 = 0;
-
-            long counter2 = 0;
-
-            long oneTooHi2 = 0; // too high by 1
-            long oneTooLo2 = 0; // too low  by 1
-
             int wantedBits3 = 100;
             BigInteger val3 = (BigInteger)long.MaxValue;// (BigInteger)419;// BigInteger.Pow(2, i) - 1 + i;
             int valSize3 = (int)val3.GetBitLength();
 
             for (exp = 3; exp < 8; exp++)
             {
-                // Answer Setup version 1
+                // Answer answer version 1
                 //BigInteger ans = BigFloat.PowMostSignificantBits(val, valSize, exp, out int shifted, workSize, false);
 
                 // Answer Setup version 2
                 BigInteger p = BigInteger.Pow(val3, exp);
                 int shifted = Math.Max(0, (int)(p.GetBitLength() - Math.Min(wantedBits3, valSize3)));
-                (ans, bool overflowed) = BigIntegerTools.RoundingRightShiftWithCarry(p, shifted);
+                (BigInteger answer, bool overflowed) = BigIntegerTools.RoundingRightShiftWithCarry(p, shifted);
                 if (overflowed)
                 {
                     shifted++;
@@ -554,9 +537,9 @@ public static class Benchmarks
 
                 if (shifted - shiftedRes == 1)  // res did not round up
                 {
-                    ans <<= 1;
+                    answer <<= 1;
                 }
-                else if (shifted - shiftedRes == -1)  // ans did not round up
+                else if (shifted - shiftedRes == -1)  // answer did not round up
                 {
                     res <<= 1;
                 }
@@ -564,7 +547,7 @@ public static class Benchmarks
                 {
                     if (shiftedRes > shifted + 1)
                     {
-                        ans = BigIntegerTools.RoundingRightShift(ans, shiftedRes - shifted);
+                        answer = BigIntegerTools.RoundingRightShift(answer, shiftedRes - shifted);
                     }
                     else
                     {
@@ -572,25 +555,25 @@ public static class Benchmarks
                     }
                 }
 
-                miss = ans - res;
-                correctBits = ans.GetBitLength() - miss.GetBitLength();
-                //Console.Write($", {valSize}, {(val.IsEven?1:0)}, {exp}, {(exp % 2 == 0 ? 1 : 0)}, {expSize}, wantedBits:{wantedBits}, got:{correctBits} ({ans.GetBitLength()} - {diff.GetBitLength()})  miss:({wantedBits- correctBits})\r\n");
+                miss = answer - res;
+                correctBits = answer.GetBitLength() - miss.GetBitLength();
+                //Console.Write($", {valSize}, {(val.IsEven?1:0)}, {exp}, {(exp % 2 == 0 ? 1 : 0)}, {expSize}, wantedBits:{wantedBits}, got:{correctBits} ({answer.GetBitLength()} - {diff.GetBitLength()})  miss:({wantedBits- correctBits})\r\n");
 
                 _ = Interlocked.Increment(ref counter);
 
                 if (BigInteger.Abs(miss) > 1)
                 {
-                    Console.Write($"!!!!!!! diff:{miss,-2}[{miss.GetBitLength()}] valSize:{valSize3,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits3,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val3}\r\n");
+                    Console.Write($"!!!!!!! diff:{miss,-2}[{miss.GetBitLength()}] valSize:{valSize3,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits3,-4}got:{correctBits,-4}ansSz:{answer.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val3}\r\n");
                     _ = Interlocked.Increment(ref errorTotal);
                 }
                 else if (miss > 0)
                 {
-                    //Console.Write($"OK but ans 1 too Low, valSize:{valSize,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val}\r\n");
+                    //Console.Write($"OK but answer 1 too Low, valSize:{valSize,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits,-4}got:{correctBits,-4}ansSz:{answer.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val}\r\n");
                     _ = Interlocked.Increment(ref oneTooLo);
                 }
                 else if (miss < 0)
                 {
-                    Console.Write($"OK but ans 1 too High,  valSize:{valSize3,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits3,-4}got:{correctBits,-4}ansSz:{ans.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val3}\r\n");
+                    Console.Write($"OK but ans 1 too High,  valSize:{valSize3,-4}exp:{exp,-7}[{expSize,-2}] wantedBits:{wantedBits3,-4}got:{correctBits,-4}ansSz:{answer.GetBitLength(),-3} trails:{counter,-5}({(float)(errorTotal / (float)counter),-5}) val:{val3}\r\n");
                     _ = Interlocked.Increment(ref oneTooHi);
                 }
             }
