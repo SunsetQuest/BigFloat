@@ -70,7 +70,8 @@
                         <a href="#comparison" class="api-nav-item">Comparison Methods</a>
                         <a href="#conversion" class="api-nav-item">Conversion Methods</a>
                         <a href="#mathematical" class="api-nav-item">Mathematical Functions</a>
-                        <a href="#precision" class="api-nav-item">Precision Management</a>
+                        <a href="#precision" class="api-nav-item">Precision & Accuracy</a>
+                        <a href="#rounding" class="api-nav-item">Rounding Helpers</a>
                         <a href="#constants" class="api-nav-item">Constants</a>
                         <a href="#parsing" class="api-nav-item">Parsing & Formatting</a>
                     </div>
@@ -299,47 +300,95 @@ BigFloat ceil = x.CeilingPreservingAccuracy(); // 124</code></pre>
         <!-- Precision Management -->
         <section class="section section-alt" id="precision">
             <div class="container">
-                <h2>Precision Management</h2>
-                
+                <h2>Precision & Accuracy</h2>
+                <p class="api-note">Updated for the 2025-12 release. Prefer the new helpers instead of the legacy
+                    <code>ExtendPrecision</code>/<code>ReducePrecision</code> APIs (kept for compatibility).</p>
+
                 <div class="api-member">
                     <div class="api-signature">
-                        <code>public static BigFloat SetPrecisionWithRound(BigFloat value, int precisionInBits)</code>
+                        <code>public static BigFloat AdjustAccuracy(BigFloat value, int deltaBits)</code>
+                        <code>public static BigFloat SetAccuracy(BigFloat value, int accuracyBits)</code>
                     </div>
                     <div class="api-description">
-                        <p>Sets the precision of a BigFloat value with proper rounding.</p>
+                        <p>Grow or shrink the working accuracy while keeping the numeric value stable where possible.</p>
                         <h4>Parameters:</h4>
                         <ul class="param-list">
-                            <li><code>value</code> - The BigFloat value to adjust.</li>
-                            <li><code>precisionInBits</code> - The desired precision in bits.</li>
+                            <li><code>deltaBits</code> - Positive values append zero bits; negative values round then drop bits.</li>
+                            <li><code>accuracyBits</code> - Target total accuracy (precision + scale).</li>
                         </ul>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat x = new("123.456");
+BigFloat wider = BigFloat.AdjustAccuracy(x, 64);      // add headroom
+BigFloat trimmed = BigFloat.AdjustPrecision(x, -32);  // round then drop bits
+BigFloat target = BigFloat.SetAccuracy(x, 256);       // exact accuracy target</code></pre>
                     </div>
                 </div>
 
                 <div class="api-member">
                     <div class="api-signature">
-                        <code>public static BigFloat ExtendPrecision(BigFloat value, int bitsToAdd)</code>
+                        <code>public static BigFloat SetPrecision(BigFloat value, int newSize)</code>
+                        <code>public static BigFloat SetPrecisionWithRound(BigFloat value, int newSize)</code>
+                        <code>[Obsolete] public static BigFloat ExtendPrecision(BigFloat value, int bitsToAdd)</code>
+                        <code>[Obsolete] public static BigFloat ReducePrecision(BigFloat value, int bitsToRemove)</code>
                     </div>
                     <div class="api-description">
-                        <p>Extends the precision by adding zero bits (doesn't add information).</p>
+                        <p>Rebuild the mantissa to a target size. <code>SetPrecision</code> pads or trims without rounding;
+                            <code>SetPrecisionWithRound</code> rounds before dropping bits.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat value = new("0.1");
+BigFloat rounded = BigFloat.SetPrecisionWithRound(value, 96);
+BigFloat padded = BigFloat.SetPrecision(value, 256);</code></pre>
                     </div>
                 </div>
 
                 <div class="api-member">
                     <div class="api-signature">
                         <code>public bool FitsInADouble(bool allowDenormalized = false)</code>
+                        <code>public bool FitsInADecimal()</code>
                     </div>
                     <div class="api-description">
-                        <p>Determines if this BigFloat can be accurately represented as a double (new in 2025).</p>
-                        <h4>Parameters:</h4>
-                        <ul class="param-list">
-                            <li><code>allowDenormalized</code> - Whether to allow denormalized double values.</li>
-                        </ul>
+                        <p>Test whether the value can safely down-convert to built-in numeric types.</p>
                         <h4>Example:</h4>
                         <pre><code class="language-csharp">BigFloat big = new("1e+400");
 if (!big.FitsInADouble())
 {
     Console.WriteLine("Too large for double!");
 }</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rounding Helpers -->
+        <section class="section" id="rounding">
+            <div class="container">
+                <h2>Rounding Helpers (Guard-Bit Aware)</h2>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static int ToNearestInt(BigFloat value)</code>
+                        <code>public BigFloat TruncateToIntegerKeepingAccuracy()</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Round without consuming guard bits. <code>ToNearestInt</code> uses the first fractional bit; the
+                            truncation helper keeps accuracy metadata intact for subsequent operations.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat y = new("999.4999");
+int rounded = BigFloat.ToNearestInt(y);                     // 999 or 1000
+BigFloat integral = y.TruncateToIntegerKeepingAccuracy();   // retains guard bits
+Console.WriteLine(integral.Size); // includes guard bits</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Round(BigFloat value)</code>
+                        <code>public static BigFloat RoundToInteger(BigFloat value)</code>
+                        <code>public static BigFloat TruncateByAndRound(BigFloat value, int bitsToRemove)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Higher-level rounding helpers used internally by precision setters and scale adjustments. They are
+                            useful when you need predictable guard-bit handling before serialization or interop.</p>
                     </div>
                 </div>
             </div>
