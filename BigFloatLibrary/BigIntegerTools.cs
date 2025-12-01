@@ -43,70 +43,116 @@ public static class BigIntegerTools
         BinaryStringFormat format = BinaryStringFormat.Standard,
         int minWidth = 0)
     {
-        bool twoC = format.HasFlag(BinaryStringFormat.TwosComplement);
-        bool shades = format.HasFlag(BinaryStringFormat.Shades);
+        bool twoC = (format & BinaryStringFormat.TwosComplement) != 0;
+        bool shades = (format & BinaryStringFormat.Shades) != 0;
         bool neg = !twoC && value.Sign < 0;
 
-        if (neg) { value = BigInteger.Abs(value); }    // sign handled separately
+        BigInteger toEncode = neg ? BigInteger.Abs(value) : value;    // sign handled separately
+        var options = new BinaryFormatOptions(twoC, shades, neg, twoC && value.Sign < 0, minWidth);
 
-        // ==== 1.  Determine buffer sizes ====
-        int byteCount = value.GetByteCount(isUnsigned: !twoC);
-        if (byteCount == 0) { byteCount = 1; }         // BigInteger 0 → 0 bytes
-
-        int tentativeChars = Math.Max(minWidth, 8 * byteCount) + (neg ? 1 : 0);
+        int requiredChars = ComputeCharCount(value, toEncode, options);
         const int STACK_THRESHOLD = 512;
 
-        char[] rented = Array.Empty<char>();
-        bool rentedFromPool = false;
+        return requiredChars <= STACK_THRESHOLD
+            ? FormatStack(requiredChars)
+            : FormatPooled(requiredChars);
 
-        Span<char> dest;
-        if (tentativeChars <= STACK_THRESHOLD)
+        string FormatStack(int capacity)
         {
-            dest = stackalloc char[tentativeChars];
-        }
-        else
-        {
-            rented = ArrayPool<char>.Shared.Rent(tentativeChars);
-            rentedFromPool = true;
-            dest = rented;
-        }
-
-        try
-        {
-            // ==== 2.  Write the raw bit pattern ====
-            int written = twoC
-                ? WriteTwosComplement(value, dest)
-                : WriteStandard(value, dest, neg);
-
-            // ==== 3.  Enforce minWidth ====
-            int signOfs = neg ? 1 : 0;
-            int digitSpan = written - signOfs;
-            if (digitSpan < minWidth)
-            {
-                int pad = minWidth - digitSpan;
-                // Shift the existing digits so we can prefix pad characters just after the sign (if present).
-                dest.Slice(signOfs, digitSpan).CopyTo(dest[(signOfs + pad)..]);
-                char padChar = shades ? '·' : ((twoC && value.Sign < 0) ? '1' : '0');
-                dest.Slice(signOfs, pad).Fill(padChar);
-                written += pad;
-            }
-
-            // ==== 4.  Apply shades, if requested ====
-            if (shades)
-            {
-                for (int i = signOfs; i < written; ++i)
-                {
-                    dest[i] = dest[i] == '1' ? '█' : '·';
-                }
-            }
-
+            Span<char> dest = stackalloc char[capacity];
+            int written = FormatBinaryCore(toEncode, options, dest);
             return new string(dest[..written]);
         }
-        finally
+
+        string FormatPooled(int capacity)
         {
-            if (rentedFromPool)
+            char[] rented = ArrayPool<char>.Shared.Rent(capacity);
+            try
+            {
+                Span<char> dest = rented.AsSpan(0, capacity);
+                int written = FormatBinaryCore(toEncode, options, dest);
+                return new string(dest[..written]);
+            }
+            finally
+            {
                 ArrayPool<char>.Shared.Return(rented);
+            }
         }
+    }
+
+    /// <summary>
+    /// Formats <paramref name="value"/> into a caller-provided buffer using the same rules as <see cref="ToBinaryString"/>.
+    /// Returns <see langword="false"/> when the destination span is too small.
+    /// </summary>
+    public static bool TryFormatBinary(
+        this BigInteger value,
+        Span<char> destination,
+        out int charsWritten,
+        BinaryStringFormat format = BinaryStringFormat.Standard,
+        int minWidth = 0)
+    {
+        bool twoC = (format & BinaryStringFormat.TwosComplement) != 0;
+        bool shades = (format & BinaryStringFormat.Shades) != 0;
+        bool neg = !twoC && value.Sign < 0;
+
+        BigInteger toEncode = neg ? BigInteger.Abs(value) : value;
+        var options = new BinaryFormatOptions(twoC, shades, neg, twoC && value.Sign < 0, minWidth);
+
+        int required = ComputeCharCount(value, toEncode, options);
+        if (destination.Length < required)
+        {
+            charsWritten = 0;
+            return false;
+        }
+
+        charsWritten = FormatBinaryCore(toEncode, options, destination);
+        return true;
+    }
+
+    private readonly record struct BinaryFormatOptions(
+        bool TwoC, bool Shades, bool Neg, bool PadWithOnes, int MinWidth);
+
+    private static int ComputeCharCount(BigInteger original, BigInteger toEncode, BinaryFormatOptions options)
+    {
+        int byteCount = (options.TwoC ? original : toEncode).GetByteCount(isUnsigned: !options.TwoC);
+        if (byteCount == 0)
+        {
+            byteCount = 1; // BigInteger 0 → 0 bytes
+        }
+
+        return Math.Max(options.MinWidth, 8 * byteCount) + (options.Neg ? 1 : 0);
+    }
+
+    private static int FormatBinaryCore(BigInteger value, BinaryFormatOptions options, Span<char> dest)
+    {
+        // ==== 2.  Write the raw bit pattern ====
+        int written = options.TwoC
+            ? WriteTwosComplement(value, dest)
+            : WriteStandard(value, dest, options.Neg);
+
+        // ==== 3.  Enforce minWidth ====
+        int signOfs = options.Neg ? 1 : 0;
+        int digitSpan = written - signOfs;
+        if (digitSpan < options.MinWidth)
+        {
+            int pad = options.MinWidth - digitSpan;
+            // shift right and fill with the right glyph
+            dest.Slice(signOfs, digitSpan).CopyTo(dest[(signOfs + pad)..]);
+            char padChar = options.Shades ? '·' : (options.PadWithOnes ? '1' : '0');
+            dest.Slice(signOfs, pad).Fill(padChar);
+            written += pad;
+        }
+
+        // ==== 4.  Apply shades, if requested ====
+        if (options.Shades)
+        {
+            for (int i = signOfs; i < written; ++i)
+            {
+                dest[i] = dest[i] == '1' ? '█' : '·';
+            }
+        }
+
+        return written;
     }
 
     /// <summary>
