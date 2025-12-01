@@ -1,7 +1,7 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-// The below was created with ChatGPT o3. 
+// Random sampling helpers for BigFloat values.
 
 using System;
 using System.Numerics;
@@ -55,7 +55,10 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Random BigFloat with exactly <paramref name="mantissaBits"/> (incl. guard bits) and
-    /// an exponent in [minBinaryExponent,maxBinaryExponent].
+    /// an exponent in [minBinaryExponent,maxBinaryExponent]. When
+    /// <paramref name="logarithmic"/> is true, exponents are chosen uniformly across the
+    /// range; otherwise, exponents are weighted toward the lower end for a nearly linear
+    /// distribution.
     /// </summary>
     public static BigFloat RandomWithMantissaBits(
         int mantissaBits,
@@ -94,10 +97,23 @@ public readonly partial struct BigFloat
      *  helpers
      * ------------------------------------------------------------ */
 
-    /// <summary>Uniform fraction with <paramref name="precisionBits"/> bits of precision.</summary>
+    /// <summary>Uniform fraction in [0,1) with <paramref name="precisionBits"/> bits of precision.</summary>
     private static BigFloat UniformFraction(int precisionBits, Random rand)
     {
-        BigInteger r = NextPositiveBigInteger(rand, precisionBits);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(precisionBits);
+
+        int byteCount = (precisionBits + 7) / 8;
+        Span<byte> buf = stackalloc byte[byteCount];
+        rand.NextBytes(buf);
+
+        int extraBits = (byteCount * 8) - precisionBits;
+        if (extraBits > 0)
+        {
+            byte mask = (byte)((1 << (8 - extraBits)) - 1);
+            buf[^1] &= mask;
+        }
+
+        BigInteger r = new(buf, isUnsigned: true, isBigEndian: false);
         // Build mantissa so that value = r / 2^precisionBits
         BigFloat bf = BigFloat.CreateFromRawComponents(
             mantissa: r,

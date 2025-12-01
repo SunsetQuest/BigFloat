@@ -234,7 +234,7 @@ public readonly partial struct BigFloat
         }
 
         // Use double's hardware to get the top 53-bits
-        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) | (1L << 52);
+        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) ^ (1L << 52);
 
         // Build double from components and take root
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
