@@ -1,5 +1,12 @@
 # Change Log *(newest first)*
 
+### 2025-12-03
+
+* **Playground separation and cleanup**
+  Demo, benchmark, and testing utilities now live in their own files (`Showcase.cs`, `Benchmarks.cs`, `TestingArea.cs`), so sample code stays organized and reuse-ready without toggling unrelated regions.
+* **Benchmark correctness and clarity tweaks**
+  Benchmarks track miss distances with `BigInteger`, initialize exponents deterministically, and align variable naming (`answer`, `shifted`) with the surrounding calculations to avoid silent overflow and make pow approximation checks easier to audit.
+
 ### 2025-11-01
 
 * **BigInteger → BigFloat zero-constructor follow-up**
