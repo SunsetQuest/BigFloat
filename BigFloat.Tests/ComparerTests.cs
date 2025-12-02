@@ -219,27 +219,4 @@ public class ComparerTests
 
     #endregion
 
-    #region Performance Boundary Tests
-
-    [Fact(Skip = "Performance test - enable manually")]
-    public void Compare_Performance_MeetsTarget()
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var a = new BigFloat("123456789.987654321");
-        var b = new BigFloat("123456789.987654322");
-        
-        const int iterations = 100000;
-        for (int i = 0; i < iterations; i++)
-        {
-            _ = a.CompareTo(b);
-            _ = a < b;
-            _ = a == b;
-        }
-        
-        sw.Stop();
-        Assert.True(sw.ElapsedMilliseconds < TestTargetInMilliseconds * 10, 
-            $"Performance test took {sw.ElapsedMilliseconds}ms, target was {TestTargetInMilliseconds * 10}ms");
-    }
-
-    #endregion
 }
