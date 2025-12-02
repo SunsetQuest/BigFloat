@@ -112,7 +112,7 @@ public readonly partial struct BigFloat
     {
         // ---- 0. Quick exits ----------------------------------------------------
         if (x.Sign < 0)
-            throw new ArgumentException("Square‑root of a negative BigFloat is undefined.", nameof(x));
+            throw new ArithmeticException("Square‑root of a negative BigFloat is undefined.");
 
         if (x._mantissa.IsZero)
             return new BigFloat(BigInteger.Zero, 0, 0);
