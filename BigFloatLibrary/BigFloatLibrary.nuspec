@@ -1,27 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
-	<metadata>
-		<id>BigFloatLibrary</id>
-		<version>4.0.0</version>
-		<authors>Ryan Scott White</authors>
-		<owners>Ryan Scott White</owners>
-		<license type="expression">MIT</license>
-		<projectUrl>https://BigFloat.org</projectUrl>
-		<repository type="git" url="https://github.com/SunsetQuest/BigFloat.git" />
-		<icon>images/icon.png</icon>
-		<readme>README.md</readme>
-		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<description>BigFloat is a C# struct library for large Floating-Point numbers with arbitrary precision.</description>
-		<summary>A C# library for handling substantially large floating-point numbers with arbitrary precision and a flexible-sized mantissa.</summary>
-		<tags>bigfloat mathematics numeric arbitrary-precision floating-point</tags>
-		<dependencies>
-			<group targetFramework="net9.0" />
-		</dependencies>
-	</metadata>
-	<files>
-		<file src="bin\Release\net9.0\publish\BigFloatLibrary.dll" target="lib\net9.0" />
-		<file src="bin\Release\net9.0\publish\BigFloatLibrary.pdb" target="lib\net9.0" />
-		<file src="..\README.md" target="" />
-		<file src="images\icon.png" target="images\" />
-	</files>
+  <metadata>
+    <id>BigFloatLibrary</id>
+    <version>4.0.0</version>
+    <authors>Ryan Scott White</authors>
+    <owners>Ryan Scott White</owners>
+
+    <license type="expression">MIT</license>
+    <projectUrl>https://bigfloat.org</projectUrl>
+    <repository type="git"
+            url="https://github.com/SunsetQuest/BigFloat.git"
+            branch="master" />
+
+    <icon>images/icon.png</icon>
+    <readme>README.md</readme>
+
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+
+    <description>
+      BigFloat is a high-precision floating-point arithmetic library implemented in C#. 
+      It provides arbitrary-precision floating-point numbers with a dynamically sized 
+      mantissa, optimized algorithms, and no external dependencies. Suitable for scientific, 
+      engineering, and financial applications requiring precise numeric computation.
+    </description>
+
+    <summary>
+      High-performance arbitrary-precision floating-point arithmetic for .NET.
+    </summary>
+
+<releaseNotes>
+  See https://github.com/SunsetQuest/BigFloat/releases/tag/v4.0.0
+  for detailed release notes, breaking changes, and migration guidance.
+</releaseNotes>
+
+    <tags>bigfloat mathematics numeric arbitrary-precision floating-point</tags>
+
+    <dependencies />
+  </metadata>
+
+  <files>
+    <!-- net8.0 -->
+    <file src="bin\Release\net8.0\BigFloatLibrary.dll" target="lib\net8.0" />
+    <file src="bin\Release\net8.0\BigFloatLibrary.pdb" target="lib\net8.0" />
+
+    <!-- net9.0 -->
+    <file src="bin\Release\net9.0\BigFloatLibrary.dll" target="lib\net9.0" />
+    <file src="bin\Release\net9.0\BigFloatLibrary.pdb" target="lib\net9.0" />
+
+    <!-- net10.0 -->
+    <file src="bin\Release\net10.0\BigFloatLibrary.dll" target="lib\net10.0" />
+    <file src="bin\Release\net10.0\BigFloatLibrary.pdb" target="lib\net10.0" />
+
+    <!-- Docs -->
+    <file src="..\README.md" target="" />
+    <file src="images\icon.png" target="images\" />
+  </files>
 </package>
