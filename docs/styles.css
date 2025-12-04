@@ -290,6 +290,23 @@ pre code {
     justify-content: center;
 }
 
+.hero-highlights {
+    list-style: none;
+    display: grid;
+    gap: var(--space-sm);
+    margin-top: var(--space-xl);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+
+.hero-highlights li strong {
+    color: var(--text-primary);
+}
+
 /* Buttons */
 .btn {
     display: inline-flex;
@@ -469,6 +486,15 @@ pre code {
 .feature-icon {
     font-size: 2rem;
     margin-bottom: var(--space-md);
+}
+
+.changelog-link {
+    margin-top: var(--space-md);
+    color: var(--text-secondary);
+}
+
+.changelog-link a {
+    font-weight: 600;
 }
 
 /* Example Tabs */

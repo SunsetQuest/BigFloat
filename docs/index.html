@@ -66,6 +66,11 @@
                         <a href="getting-started.html" class="btn btn-primary">Get Started</a>
                         <a href="documentation.html" class="btn btn-secondary">View Documentation</a>
                     </div>
+                    <ul class="hero-highlights">
+                        <li><strong>Runs everywhere .NET 8/9 does:</strong> pure C# with no native dependencies.</li>
+                        <li><strong>Deterministic math:</strong> guard bits, explicit precision control, and spec-backed behaviors.</li>
+                        <li><strong>Production-friendly:</strong> MIT licensed, unit-tested, and aligned with the published BigFloat specification.</li>
+                    </ul>
                 </div>
             </div>
         </section>
@@ -97,11 +102,12 @@
                         <div class="step-number">3</div>
                         <h3>Start using BigFloat</h3>
                         <div class="code-snippet">
-                            <pre><code>var precise = BigFloat.SetPrecisionWithRound(new("0.1"), 128);
+                            <pre><code>BigFloat radius = new("1.5");
+var precise = BigFloat.SetPrecisionWithRound(new("0.1"), 128);
 BigFloat pi = Constants.Fundamental.Pi;
 BigFloat area = pi * radius * radius;
 int nearest = BigFloat.ToNearestInt(area);</code></pre>
-                            <button class="copy-btn" onclick="copyToClipboard('var precise = BigFloat.SetPrecisionWithRound(new(\"0.1\"), 128);\nBigFloat pi = Constants.Fundamental.Pi;\nBigFloat area = pi * radius * radius;\nint nearest = BigFloat.ToNearestInt(area);')">Copy</button>
+                            <button class="copy-btn" onclick="copyToClipboard('BigFloat radius = new(\"1.5\");\nvar precise = BigFloat.SetPrecisionWithRound(new(\"0.1\"), 128);\nBigFloat pi = Constants.Fundamental.Pi;\nBigFloat area = pi * radius * radius;\nint nearest = BigFloat.ToNearestInt(area);')">Copy</button>
                         </div>
                     </div>
                 </div>
@@ -115,7 +121,7 @@ int nearest = BigFloat.ToNearestInt(area);</code></pre>
                 <div class="content-grid">
                     <div class="content-text">
                         <p>
-                            BigFloat 2.2.0 (December 2025) ships with refreshed constructors, accuracy/precision helpers,
+                            BigFloat 4.0.0 (December 2025) ships with refreshed constructors, accuracy/precision helpers,
                             and playground cleanup. The docs and examples on this site now mirror the current APIs so you
                             can copy/paste without guessing which overloads exist.
                         </p>
@@ -125,6 +131,9 @@ int nearest = BigFloat.ToNearestInt(area);</code></pre>
                             <li>Constructors now expose guard-bit and precision tuning for integer inputs.</li>
                             <li>Benchmarks and playground snippets live in separate files to keep samples focused.</li>
                         </ul>
+                        <p class="changelog-link">
+                            Want more detail? Check the <a href="https://github.com/SunsetQuest/BigFloat/blob/master/ChangeLog.md" target="_blank">change log</a> for line-by-line improvements.
+                        </p>
                     </div>
                     <div class="content-code">
                         <div class="code-example">
@@ -219,6 +228,30 @@ Console.WriteLine(sum.ToString()); // 0.3 exactly</code></pre>
                         <div class="feature-icon">🔧</div>
                         <h3>Easy Integration</h3>
                         <p>Familiar operators and implicit conversions from standard types</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reliability Section -->
+        <section class="section section-alt">
+            <div class="container">
+                <h2 class="section-title">Why engineers ship with BigFloat</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🧭</div>
+                        <h3>Specification-backed</h3>
+                        <p>Behavior matches the published BigFloat Specification, so precision, rounding, and comparison rules are predictable.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔁</div>
+                        <h3>Reproducible results</h3>
+                        <p>Deterministic operators with guard bits make cross-platform runs consistent for benchmarks, simulations, and CI checks.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📦</div>
+                        <h3>No surprises in production</h3>
+                        <p>Pure C# with no native dependencies, MIT licensing, and NuGet delivery keeps deployments simple on Windows, Linux, or macOS.</p>
                     </div>
                 </div>
             </div>
@@ -334,8 +367,8 @@ BigFloat compound = BigFloat.Pow(e, rate * time);</code></pre>
                 <div class="fun-fact">
                     <h3>🤓 Fun Fact</h3>
                     <p>
-                        With BigFloat's 2 billion bit precision limit, you could calculate π to over 600 million decimal places! 
-                        That's enough digits to wrap around the Earth's equator if each digit was 1 millimeter wide.
+                        With BigFloat's 2 billion bit precision limit, you can calculate π to over 600 million decimal places.
+                        Printed with 1 mm digits, that string would stretch for more than 600 kilometers—enough to span multiple countries.
                     </p>
                 </div>
             </div>
