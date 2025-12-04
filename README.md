@@ -478,7 +478,7 @@ BigFloat is designed as an educational tool as much as a production-quality nume
 
 This project is distributed under the [MIT License](http://www.opensource.org/licenses/mit-license.php). See the `MIT License` file in this repository for details. ([GitHub][2])
 
-[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 2.2.0"
+[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 4.0.0"
 [2]: https://github.com/SunsetQuest/BigFloat "GitHub - SunsetQuest/BigFloat: A floating point library for large numbers."
 [3]: https://bigfloat.org/getting-started.html "Getting Started - BigFloat Library"
 [4]: https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs "raw.githubusercontent.com"
