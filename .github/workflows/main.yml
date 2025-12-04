@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag / version to release (e.g. v1.2.3). If empty, use the current tag on ref.'
+        description: 'Tag / version to release (e.g. v1.2.3 or 4.0.0). If empty, use the current tag on ref.'
         required: false
       prerelease:
         description: 'Mark release as pre-release?'
@@ -16,7 +16,12 @@ on:
   # Automatic trigger on version tags
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*'   # tags like v4.0.0
+      - '*.*.*'    # OPTIONAL: tags like 4.0.0 (add/remove based on your convention)
+
+# IMPORTANT: allow the workflow token to write releases
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
@@ -62,6 +67,7 @@ jobs:
           name: ${{ steps.vars.outputs.tag }}
           draft: false
           prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          generate_release_notes: true
           # files: |
           #   artifacts/*.nupkg
         env:
