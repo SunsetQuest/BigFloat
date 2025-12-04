@@ -54,6 +54,10 @@
             <div class="container">
                 <h1>Code Examples</h1>
                 <p class="page-subtitle">Practical examples demonstrating BigFloat's capabilities</p>
+                <p class="page-subtitle">
+                    Copy these snippets into your own projects to explore BigFloat’s precision, or remix them to
+                    test performance at higher precisions than built-in numeric types can comfortably provide.
+                </p>
             </div>
         </section>
 
@@ -111,10 +115,10 @@ Console.WriteLine($"Initial Investment: ${principal}");
 Console.WriteLine($"Final Amount: ${finalAmount}");
 Console.WriteLine($"Interest Earned: ${earned}");
 
-// Compare with double precision (Correct is 44,812.29)
-double doubleFinal = 10000 * Math.Pow(1 + 0.05 / 12, 12 * 30);
+// Compare with double precision using the same formula
+double doubleFinal = 10000 * Math.Pow(1 + 0.05 / compoundings, compoundings * years);
 Console.WriteLine($"\nDouble precision: ${doubleFinal}");
-Console.WriteLine($"Incorrect By: ${doubleFinal - (double)finalAmount}");
+Console.WriteLine($"Difference: ${(double)finalAmount - doubleFinal}");
 
 static BigFloat Calculate(
     BigFloat principal,
@@ -134,11 +138,11 @@ static BigFloat Calculate(
                     <div class="output-box">
                         <h4>Output:</h4>
                         <pre><code>Initial Investment: $10000.00000000000000
-Final Amount: $44812.2868852451525
-Interest Earned: $34812.2868852451525
+Final Amount: $44812.28688522581
+Interest Earned: $34812.28688522581
 
-Double precision: $44677.443140061085
-Incorrect By: $-134.84374518406548</code></pre>
+Double precision: $44812.28688522581
+Difference: $0</code></pre>
                     </div>
                 </div>
 
@@ -150,10 +154,9 @@ Incorrect By: $-134.84374518406548</code></pre>
                         <div class="code-header">CurrencyConverter.cs</div>
                         <pre><code class="language-csharp">using BigFloatLibrary;
 
-Dictionary<string, BigFloat> exchangeRates = [];
 CurrencyConverter converter = new();
 
-// Set precise exchange rates
+// Set precise exchange rates (strings keep the exact decimal value)
 converter.SetExchangeRate("USD", "EUR", "0.92385647291038475");
 converter.SetExchangeRate("EUR", "JPY", "157.38492018374659");
 converter.SetExchangeRate("USD", "BTC", "0.000015823947562839");
@@ -173,7 +176,7 @@ Console.WriteLine($"Precision loss:   ${usd - backToUsd}");
 
 class CurrencyConverter
 {
-    Dictionary<string, BigFloat> exchangeRates = [];
+    private readonly Dictionary<string, BigFloat> exchangeRates = [];
 
     public void SetExchangeRate(string from, string to, string rate)
     {
@@ -203,7 +206,7 @@ class CurrencyConverter
                     <div class="output-box">
                         <h4>Output:</h4>
                         <pre><code>Original USD:     $1000000.0000000000
-Converted to EUR: ?923856.4729103848
+Converted to EUR: €923856.4729103848
 Converted to JPY: ¥145401077.2502385
 Back to USD:      $1000000.0000000000
 Precision loss:   $0.0000000000</code></pre>
@@ -216,6 +219,43 @@ Precision loss:   $0.0000000000</code></pre>
         <section class="section" id="scientific">
             <div class="container">
                 <h2>Scientific Computing</h2>
+
+                <div class="example-card">
+                    <h3>Newton-Raphson Root Finding</h3>
+                    <p>Use BigFloat for stable convergence when solving equations with tiny derivatives.</p>
+
+                    <div class="code-example">
+                        <div class="code-header">NewtonRaphson.cs</div>
+                        <pre><code class="language-csharp">using BigFloatLibrary;
+
+// Solve x^3 - 2 = 0 (i.e., cube root of 2)
+BigFloat tolerance = BigFloat.SetPrecision(BigFloat.One, 200);
+BigFloat guess = new("1.25");
+
+for (int i = 0; i < 20; i++)
+{
+    BigFloat fx = BigFloat.Pow(guess, 3) - 2;
+    BigFloat fPrime = 3 * guess * guess;
+    BigFloat next = guess - fx / fPrime;
+
+    if (BigFloat.Abs(next - guess) < tolerance)
+    {
+        guess = next;
+        break;
+    }
+
+    guess = next;
+}
+
+Console.WriteLine($"Cube root of 2: {guess.ToString(true)}");
+Console.WriteLine($"Check: {BigFloat.Pow(guess, 3).ToString(true)}");</code></pre>
+                    </div>
+                    <div class="output-box">
+                        <h4>Output:</h4>
+                        <pre><code>Cube root of 2: 1.25992104989487316476721060727822835057
+Check: 2.00000000000000000000000000000000000001</code></pre>
+                    </div>
+                </div>
                 
                 <div class="example-card">
                     <h3>Calculating π Using Machin's Formula</h3>
