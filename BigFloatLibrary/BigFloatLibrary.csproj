@@ -35,13 +35,14 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-		<!-- NuGet README -->
-		<PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- NuGet README (path inside the .nupkg) -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<!-- Only in ReleaseMulti do we automatically create the NuGet package -->
 	<PropertyGroup Condition="'$(Configuration)'=='ReleaseMulti'">
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<!-- Benchmark config: always optimized -->
@@ -59,9 +60,9 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
 	</ItemGroup>
 
-	<!-- Pack README into the root of the NuGet package -->
-	<ItemGroup>
-		<None Include="README.md" Pack="true" PackagePath="\" />
+	<!-- Pack README from the repo root into the root of the NuGet package -->
+	<ItemGroup Condition="'$(Configuration)'=='ReleaseMulti'">
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 </Project>
