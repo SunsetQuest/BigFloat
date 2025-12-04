@@ -182,6 +182,16 @@ Console.WriteLine(b.IsInteger); // False</code></pre>
                         <p>Gets the precision of this BigFloat in bits (excluding guard bits).</p>
                     </div>
                 </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int BinaryExponent { get; }</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Returns the unbiased base-2 exponent for the normalized value (1.x)·2<sup>e</sup>.</p>
+                        <p class="api-note">Useful for inspecting magnitude without converting to <code>double</code> or <code>decimal</code>.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -223,6 +233,127 @@ BigFloat rem = a % b;  // 0.5</code></pre>
                     </div>
                     <div class="api-description">
                         <p>Comparison operators for BigFloat values.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arithmetic Methods -->
+        <section class="section" id="arithmetic">
+            <div class="container">
+                <h2>Arithmetic Helpers</h2>
+                <p class="api-note">These helpers adjust scaling and magnitude while preserving BigFloat precision metadata.</p>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat AdjustScale(BigFloat value, int changeScaleAmount)</code>
+                        <code>public BigFloat AdjustScale(int changeScaleAmount)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Moves the binary radix point left or right without changing the numeric value. Useful for aligning operands before custom algorithms.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat value = new("42.5");
+BigFloat shifted = value.AdjustScale(+4);   // multiply by 2^4 while keeping precision fields consistent
+BigFloat back = shifted.AdjustScale(-4);    // returns to the original magnitude</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static BigFloat Abs(BigFloat value)</code>
+                        <code>public BigFloat Abs()</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Returns the non-negative magnitude while preserving guard bits and current precision.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat negative = new("-0.125");
+BigFloat magnitude = BigFloat.Abs(negative); // 0.125 with original accuracy
+bool unchanged = magnitude.Sign &gt;= 0;       // true</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Methods -->
+        <section class="section section-alt" id="comparison">
+            <div class="container">
+                <h2>Comparison Methods</h2>
+                <p class="api-note">Choose the comparison that matches your intent: canonical ordering, tolerant ULP checks, or bitwise identity.</p>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int CompareTo(BigFloat other)</code>
+                        <code>public bool Equals(BigFloat other)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Canonical .NET ordering and equality. Guard bits are rounded away so values like <code>2.5</code> and <code>2.5000</code> compare equal.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">var values = new[] { new BigFloat("2.5"), new BigFloat("2.5000") };
+bool canonical = values[0].Equals(values[1]); // true
+values = values.OrderBy(v =&gt; v).ToArray();    // uses CompareTo for stable ordering</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int CompareUlp(BigFloat other, int ulpTolerance = 0, bool ulpScopeIncludeGuardBits = false)</code>
+                        <code>public bool EqualsUlp(BigFloat other, int ulpTolerance = 0, bool ulpScopeIncludeGuardBits = false)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Alignment-aware comparisons that allow a configurable ULP tolerance. Ideal for convergence tests or scenarios where “close enough” is acceptable.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat expected = new("0.1");
+BigFloat actual = BigFloat.SetPrecisionWithRound(expected, expected.Size - 4);
+bool closeEnough = actual.EqualsUlp(expected, ulpTolerance: 1); // tolerance counts the last main-bit</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public int CompareTotalOrder(BigFloat other)</code>
+                        <code>public bool IsBitwiseEqual(BigFloat other)</code>
+                    </div>
+                    <div class="api-description">
+                        <p><code>CompareTotalOrder</code> produces a deterministic ordering that includes guard bits (no canonicalization) and is useful for fast sorts. <code>IsBitwiseEqual</code> checks the exact mantissa, scale, and precision.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat a = new("2.5");
+BigFloat b = new("2.5000");
+bool identical = a.IsBitwiseEqual(b);        // false (different precision encodings)
+int ordering = a.CompareTotalOrder(b);       // distinguishes encodings while staying stable</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conversion Methods -->
+        <section class="section" id="conversion">
+            <div class="container">
+                <h2>Conversion &amp; Interop</h2>
+                <p class="api-note">Explicit conversions honor IEEE-754 rounding rules and throw on overflow when using <code>IConvertible</code>.</p>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static explicit operator double(BigFloat value)</code>
+                        <code>public static explicit operator float(BigFloat value)</code>
+                        <code>public static explicit operator decimal(BigFloat value)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Round-to-nearest-even casts to built-in floating-point types. Magnitudes outside the finite range produce <code>Infinity</code> when casting, or an <code>OverflowException</code> when using the corresponding <code>IConvertible</code> methods.</p>
+                        <h4>Example:</h4>
+                        <pre><code class="language-csharp">BigFloat high = new("1e+400");
+bool fits = high.FitsInADouble();
+double narrowed = fits ? (double)high : double.PositiveInfinity;</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-member">
+                    <div class="api-signature">
+                        <code>public static explicit operator BigFloat(double value)</code>
+                        <code>public static explicit operator BigFloat(BigInteger value)</code>
+                        <code>public decimal ToDecimal(IFormatProvider? provider)</code>
+                    </div>
+                    <div class="api-description">
+                        <p>Create BigFloat instances from standard numeric types while zeroing guard bits to maximize reproducibility. Use the <code>IConvertible</code> methods when you need overflow validation or culture-aware formatting.</p>
                     </div>
                 </div>
             </div>
@@ -307,10 +438,11 @@ BigFloat ceil = x.CeilingPreservingAccuracy(); // 124</code></pre>
                 <div class="api-member">
                     <div class="api-signature">
                         <code>public static BigFloat AdjustAccuracy(BigFloat value, int deltaBits)</code>
+                        <code>public static BigFloat AdjustPrecision(BigFloat value, int deltaBits)</code>
                         <code>public static BigFloat SetAccuracy(BigFloat value, int accuracyBits)</code>
                     </div>
                     <div class="api-description">
-                        <p>Grow or shrink the working accuracy while keeping the numeric value stable where possible.</p>
+                        <p>Grow or shrink the working accuracy while keeping the numeric value stable where possible. <code>AdjustPrecision</code> is the underlying implementation and remains available for direct control.</p>
                         <h4>Parameters:</h4>
                         <ul class="param-list">
                             <li><code>deltaBits</code> - Positive values append zero bits; negative values round then drop bits.</li>
