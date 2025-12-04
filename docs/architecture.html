@@ -65,8 +65,11 @@
                     <ul class="toc-list">
                         <li><a href="#structure">Core Structure</a></li>
                         <li><a href="#design-principles">Design Principles</a></li>
+                        <li><a href="#architecture-summary">Architecture Snapshot</a></li>
                         <li><a href="#guard-bits">Guard Bits Mechanism</a></li>
                         <li><a href="#scale-system">Scale vs. Exponent</a></li>
+                        <li><a href="#operational-flow">Operational Flow</a></li>
+                        <li><a href="#rounding">Rounding &amp; Canonicalization</a></li>
                         <li><a href="#file-organization">File Organization</a></li>
                         <li><a href="#optimizations">Performance Optimizations</a></li>
                         <li><a href="#memory">Memory Management</a></li>
@@ -114,7 +117,7 @@
 
                 <div class="structure-details">
                     <h3>Component Details</h3>
-                    
+
                     <div class="detail-grid">
                         <div class="detail-card">
                             <h4>📊 DataBits (Mantissa)</h4>
@@ -145,6 +148,39 @@
                                 <li>Updated only when DataBits changes</li>
                             </ul>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Snapshot -->
+        <section class="section" id="architecture-summary">
+            <div class="container">
+                <h2>Architecture Snapshot</h2>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h3>Data Layout</h3>
+                        <ul>
+                            <li><strong>Mantissa + 32 guard bits</strong> stored in <code>BigInteger</code>.</li>
+                            <li><strong>Scale</strong> offsets the radix point (base-2) without requiring normalization.</li>
+                            <li><strong>_size cache</strong> mirrors <code>BigInteger.GetBitLength()</code> for fast comparisons.</li>
+                        </ul>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Determinism</h3>
+                        <ul>
+                            <li>Immutable struct design keeps operations side-effect free and thread-safe.</li>
+                            <li>Canonicalization removes guard bits for value comparisons and hashing.</li>
+                            <li>Binary-first representation guarantees the same result across platforms.</li>
+                        </ul>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Precision Model</h3>
+                        <ul>
+                            <li>Guard bits absorb rounding error through long operation chains.</li>
+                            <li>Rounding uses <em>round to nearest with guard awareness</em> before truncation.</li>
+                            <li>Precision-aware parsing and formatting preserve guard bits via the <code>|</code> separator.</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -337,6 +373,62 @@ With guard bits:    1001.110 (more accurate rounding)</code></pre>
                             <code>Scale: -4</code>
                             <div class="result">Result: 0.1234</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Operational Flow -->
+        <section class="section section-alt" id="operational-flow">
+            <div class="container">
+                <h2>Operational Flow</h2>
+                <p>
+                    The library leans on a repeatable pipeline that keeps calculations deterministic and predictable.
+                    Most arithmetic paths (addition, subtraction, and comparison-heavy code) follow this playbook:
+                </p>
+                <ol class="flow-list">
+                    <li><strong>Normalize inputs:</strong> Scale alignment brings operands to a shared radix position without discarding guard bits.</li>
+                    <li><strong>Compute:</strong> Use <code>BigInteger</code> primitives to perform the core operation in binary (with guard bits intact).</li>
+                    <li><strong>Adjust precision:</strong> When shifting is needed, the helper used by <code>RoundingRightShift</code> retains guard bits until a canonical boundary is reached.</li>
+                    <li><strong>Cache sizing:</strong> The <code>_size</code> field is updated to mirror the mantissa’s bit length and feed size-aware optimizations.</li>
+                    <li><strong>Return immutable result:</strong> A new <code>BigFloat</code> instance is produced, leaving operands untouched.</li>
+                </ol>
+                <div class="flow-callout">
+                    <strong>Why it matters:</strong> This flow ensures the same inputs always produce the same outputs, simplifies reasoning about precision, and keeps thread safety trivial.
+                </div>
+            </div>
+        </section>
+
+        <!-- Rounding & Canonicalization -->
+        <section class="section" id="rounding">
+            <div class="container">
+                <h2>Rounding &amp; Canonicalization</h2>
+                <div class="rounding-grid">
+                    <div class="rounding-card">
+                        <h3>Round-to-Nearest</h3>
+                        <p>
+                            BigFloat rounds using the guard bits before truncation, typically producing a round-to-nearest result instead of a blind truncation. This avoids systematic bias when shrinking precision.
+                        </p>
+                        <ul>
+                            <li><strong>Guard-aware shifts:</strong> <em>RoundingRightShift</em> inspects dropped bits to decide whether to increment the retained mantissa.</li>
+                            <li><strong>Carry-safe:</strong> Rounding can ripple into higher bits while keeping the scale unchanged.</li>
+                        </ul>
+                    </div>
+                    <div class="rounding-card">
+                        <h3>Canonical Values</h3>
+                        <p>
+                            Comparisons, hashing, and many conversions use a canonicalized form that strips guard bits after rounding. It keeps logical equality aligned with numerical equality while still allowing higher-precision intermediates during computation.
+                        </p>
+                        <ul>
+                            <li><strong>Equality-friendly:</strong> Two numbers that differ only in guard bits compare as equal after canonicalization.</li>
+                            <li><strong>Predictable formatting:</strong> Formatting helpers render canonical values by default but expose options to include guard bits for diagnostics.</li>
+                        </ul>
+                    </div>
+                    <div class="rounding-card">
+                        <h3>Interop Guardrails</h3>
+                        <p>
+                            When casting to fixed-size types (integers, <code>double</code>, or <code>decimal</code>), guard bits are rounded away first to preserve expected magnitude. Overflow paths still respect the immutable, deterministic semantics.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -912,7 +1004,39 @@ BigFloat Sqrt(BigFloat value)
             color: var(--text-secondary);
             font-size: 0.95rem;
         }
-        
+
+        /* Snapshot cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+
+        .summary-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .summary-card h3 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            color: var(--brand-primary);
+        }
+
+        .summary-card ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+            color: var(--text-secondary);
+        }
+
+        .summary-card li {
+            margin-bottom: 0.35rem;
+        }
+
         /* Bit diagram */
         .bit-diagram {
             background: var(--bg-primary);
@@ -1147,6 +1271,26 @@ BigFloat Sqrt(BigFloat value)
             color: var(--brand-primary);
             font-weight: 600;
         }
+
+        /* Flow */
+        .flow-list {
+            margin: 1rem 0;
+            padding-left: 1.25rem;
+            color: var(--text-secondary);
+        }
+
+        .flow-list li {
+            padding: 0.35rem 0;
+        }
+
+        .flow-callout {
+            margin-top: 1rem;
+            padding: 1rem 1.25rem;
+            border-left: 3px solid var(--brand-primary);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+        }
         
         /* File grid */
         .file-grid {
@@ -1194,6 +1338,32 @@ BigFloat Sqrt(BigFloat value)
         
         .file-card li {
             padding: 0.25rem 0;
+        }
+
+        /* Rounding */
+        .rounding-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .rounding-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .rounding-card h3 {
+            margin-top: 0;
+            color: var(--brand-primary);
+        }
+
+        .rounding-card ul {
+            list-style: disc;
+            padding-left: 1.25rem;
+            color: var(--text-secondary);
         }
         
         /* Optimization grid */
