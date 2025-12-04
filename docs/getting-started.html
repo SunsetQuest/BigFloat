@@ -79,6 +79,9 @@
         <section class="section" id="requirements">
             <div class="container">
                 <h2>Requirements</h2>
+                <p class="section-intro">
+                    Run through this short checklist before installing so you do not chase environment issues later.
+                </p>
                 <div class="requirements-grid">
                     <div class="requirement-card">
                         <div class="requirement-icon">📦</div>
@@ -98,7 +101,7 @@
                     <div class="requirement-card">
                         <div class="requirement-icon">✅</div>
                         <h3>Check your toolchain</h3>
-                        <p>Run <code>dotnet --list-sdks</code> and confirm a 9.x entry is present before building.</p>
+                        <p>Run <code>dotnet --list-sdks</code> and confirm a 9.x entry is present before building. If you see only 8.x, install the .NET 9 SDK first.</p>
                     </div>
                 </div>
             </div>
@@ -131,8 +134,9 @@
                             <pre><code class="language-xml">&lt;PackageReference Include="BigFloatLibrary" Version="*" /&gt;</code></pre>
                             <button class="copy-btn">Copy</button>
                         </div>
+                        <p class="note">Use the wildcard when you want to pick up patch updates automatically; pin to <code>4.0.0</code> for reproducible builds.</p>
                     </div>
-                    
+
                     <div class="method-card">
                         <h3>Method 2: Source Code</h3>
                         <p>For maximum control or to contribute to development:</p>
@@ -149,6 +153,10 @@
                             <li>Add a project reference in your .csproj file</li>
                             <li>Optional: Include <code>Constants.cs</code> for mathematical constants</li>
                         </ol>
+                        <div class="info-box">
+                            <h4>🔍 Verify your clone</h4>
+                            <p>From the repo root, run <code>dotnet restore</code> followed by <code>dotnet build BigFloat.sln</code>. This ensures your environment can build the library and run the bundled tests.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,7 +167,16 @@
             <div class="container">
                 <h2>Your First BigFloat Program</h2>
                 <p>Let's create a simple program that demonstrates BigFloat's precision advantages and the updated rounding helpers:</p>
-                
+
+                <div class="code-example">
+                    <div class="code-header">Bootstrap a console app</div>
+                    <pre><code class="language-bash">dotnet new console -n BigFloatDemo
+cd BigFloatDemo
+dotnet add package BigFloatLibrary
+dotnet run</code></pre>
+                    <p class="note">The <code>dotnet new</code> template defaults to <code>net9.0</code> when the .NET 9 SDK is installed. If it falls back to <code>net8.0</code>, install the latest SDK and rerun the commands.</p>
+                </div>
+
                 <div class="code-example">
                     <div class="code-header">Program.cs</div>
                     <pre><code class="language-csharp">using System;
@@ -298,13 +315,14 @@ string str3 = bf.ToString("X");   // Hexadecimal</code></pre>
         <section class="section" id="precision">
             <div class="container">
                 <h2>Understanding Precision</h2>
-                
+
                 <div class="info-box">
                     <h3>🔍 Key Concept: Guard Bits</h3>
                     <p>
-                        BigFloat maintains 32 "guard bits" as hidden extra precision. These bits help maintain 
+                        BigFloat maintains 32 "guard bits" as hidden extra precision. These bits help maintain
                         accuracy through chains of operations, preventing cumulative rounding errors.
                     </p>
+                    <p class="note">You can see guard bits in action by formatting values that exceed the chosen precision—the trailing <code>X</code> characters indicate rounded-out digits.</p>
                 </div>
                 
                 <div class="precision-examples">
@@ -398,7 +416,7 @@ Console.WriteLine(parsed.Size);     // mantissa + guard bits</code></pre>
         <section class="section section-alt" id="next-steps">
             <div class="container">
                 <h2>Next Steps</h2>
-                
+
                 <div class="next-steps-grid">
                     <a href="documentation.html" class="next-step-card">
                         <div class="step-icon">📚</div>
