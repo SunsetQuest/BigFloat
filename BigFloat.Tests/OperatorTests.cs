@@ -242,7 +242,7 @@ public class OperatorTests
     public void Modulo_ByZero_ThrowsException()
     {
         var dividend = new BigFloat(7);
-        var zero = BigFloat.Zero;
+        var zero = BigFloat.ZeroWithAccuracy(10);
         Assert.Throws<DivideByZeroException>(() => dividend % zero);
     }
 #endif

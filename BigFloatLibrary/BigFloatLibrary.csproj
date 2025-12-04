@@ -1,34 +1,67 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <AnalysisLevel>preview</AnalysisLevel>
-    <Configurations>Debug;Release;Debug2;Benchmark</Configurations>
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
+	<!-- Common properties (apply to all configurations) -->
+	<PropertyGroup>
+		<!-- Always multi-target: restore/build is consistent -->
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Benchmark|AnyCPU'">
-    <Optimize>True</Optimize>
-  </PropertyGroup>
+		<!-- Build / analysis settings -->
+		<AnalysisLevel>preview</AnalysisLevel>
+		<Configurations>Debug;Release;Benchmark;ReleaseMulti</Configurations>
+		<Platforms>AnyCPU;x64</Platforms>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Benchmark|x64'">
-    <Optimize>True</Optimize>
-  </PropertyGroup>
+		<!-- NuGet package metadata -->
+		<PackageId>BigFloatLibrary</PackageId>
+		<!-- Update this for each release -->
+		<Version>4.0.0</Version>
 
-  <PropertyGroup>
-    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
+		<Authors>Ryan Scott White</Authors>
+		<Description>
+			Arbitrary-precision floating point library for C#, backed by System.Numerics.BigInteger,
+			with guard bits and precision-control APIs.
+		</Description>
 
-  <ItemGroup>
-    <Folder Include="images\" />
-    <!-- This assumes GitHub source control but other repo options are available -->
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-  </ItemGroup>
+		<PackageTags>bigfloat;arbitrary-precision;floating-point;numerics;math</PackageTags>
+
+		<!-- Project / repo / license -->
+		<PackageProjectUrl>https://bigfloat.org</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/SunsetQuest/BigFloat</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+		<!-- Symbols + SourceLink -->
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+		<!-- NuGet README -->
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<!-- Only in ReleaseMulti do we automatically create the NuGet package -->
+	<PropertyGroup Condition="'$(Configuration)'=='ReleaseMulti'">
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<!-- Benchmark config: always optimized -->
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Benchmark|AnyCPU'">
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Benchmark|x64'">
+		<Optimize>true</Optimize>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Folder Include="images\" />
+		<!-- GitHub SourceLink -->
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+	</ItemGroup>
+
+	<!-- Pack README into the root of the NuGet package -->
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
 
 </Project>
