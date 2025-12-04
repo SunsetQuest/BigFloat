@@ -13,13 +13,15 @@
 		<!-- NuGet package metadata -->
 		<PackageId>BigFloatLibrary</PackageId>
 		<!-- Update this for each release -->
-		<Version>4.0.0</Version>
+		<Version>4.0.1</Version>
 
 		<Authors>Ryan Scott White</Authors>
 		<Description>
-			Arbitrary-precision floating point library for C#, backed by System.Numerics.BigInteger,
-			with guard bits and precision-control APIs.
+			BigFloat is a high-precision floating-point arithmetic library implemented in C#.
+			It provides arbitrary-precision floating-point numbers with a dynamically sized
+			mantissa, optimized algorithms, and no external dependencies.
 		</Description>
+		<PackageIcon>icon.png</PackageIcon>
 
 		<PackageTags>bigfloat;arbitrary-precision;floating-point;numerics;math</PackageTags>
 
@@ -55,9 +57,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Folder Include="images\" />
 		<!-- GitHub SourceLink -->
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Path on disk, relative to the .csproj -->
+		<None Include="..\docs\Image\icon.png"
+			  Pack="true"
+			  PackagePath="\" />
 	</ItemGroup>
 
 	<!-- Pack README from the repo root into the root of the NuGet package -->
