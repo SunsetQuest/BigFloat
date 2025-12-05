@@ -13,7 +13,7 @@
 		<!-- NuGet package metadata -->
 		<PackageId>BigFloatLibrary</PackageId>
 		<!-- Update this for each release -->
-		<Version>4.0.1</Version>
+		<Version>4.0.2</Version>
 
 		<Authors>Ryan Scott White</Authors>
 		<Description>
@@ -63,7 +63,7 @@
 
 	<ItemGroup>
 		<!-- Path on disk, relative to the .csproj -->
-		<None Include="..\docs\Image\icon.png"
+		<None Include="..\docs\images\icon.png"
 			  Pack="true"
 			  PackagePath="\" />
 	</ItemGroup>
