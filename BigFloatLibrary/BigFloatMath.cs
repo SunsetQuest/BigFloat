@@ -71,7 +71,8 @@ public readonly partial struct BigFloat
                 // perform operation  
                 double res = double.Pow(valAsDouble, exponent);
                 BigFloat tmp = (BigFloat)res;
-                value = SetPrecision(tmp, expectedFinalPrecision - GuardBits);
+                int targetWorkingBits = expectedFinalPrecision - GuardBits;
+                value = AdjustPrecision(tmp, targetWorkingBits - tmp.Size);
 
                 // restore Scale
                 value = new BigFloat(value._mantissa, value.Scale + (removedExp * exponent), true);
@@ -177,7 +178,8 @@ public readonly partial struct BigFloat
         if (shift != 0)
             x <<= (shift / 3);
 
-        x = SetPrecision(x, outputSize + 100); //hack because precision runs out in while loop below because it loops too many times
+        int extendedPrecisionTarget = outputSize + GuardBits + 100;
+        x = AdjustPrecision(x, extendedPrecisionTarget - x._size); //hack because precision runs out in while loop below because it loops too many times
         // future: if value._size<53, we just use the 53 double value and return
 
         //Future: we could use Newton Plus's pre-right trick here size
@@ -308,7 +310,8 @@ public readonly partial struct BigFloat
         if (shift != 0)
             x <<= (shift / root); // set the scale
 
-        x = SetPrecision(x, outputSize + 100); //hack because precision runs out in while loop below because it loops too many times
+        int extendedPrecisionTarget = outputSize + GuardBits + 100;
+        x = AdjustPrecision(x, extendedPrecisionTarget - x._size); //hack because precision runs out in while loop below because it loops too many times
         // future: if value._size<53, we just use the 53 double value and return
 
         //Future: we could use Newton Plus's pre-right trick here size

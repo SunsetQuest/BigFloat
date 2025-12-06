@@ -146,14 +146,14 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Returns the default zero with a zero size, precision, scale, and accuracy.
     /// </summary>
-    [Obsolete("Use the integer value 0 instead or ZeroWithAccuracy.")]
-    public static BigFloat Zero => new(BigInteger.Zero, 0, 0);
+    [Obsolete("Use ZeroWithAccuracy(...) or the integer literal 0 instead. This member will be removed in a future major version.")]
+    public static BigFloat Zero => ZeroWithAccuracy(0);
 
     /// <summary>
     /// Returns a '1' with only 1 bit of precision. (1 << GuardBits)
     /// </summary>
-    [Obsolete("Use the integer value 1 instead or OneWithAccuracy.")]
-    public static BigFloat One => new(BigInteger.One << GuardBits, 0, GuardBits + 1);
+    [Obsolete("Use OneWithAccuracy(...) or the integer literal 1 instead. This member will be removed in a future major version.")]
+    public static BigFloat One => OneWithAccuracy(0);
 
     const double LOG2_OF_10 = 3.32192809488736235;
 
@@ -1356,17 +1356,27 @@ public readonly partial struct BigFloat
     public BigFloat SetAccuracy(int newAccuracyBits) => SetAccuracy(this, newAccuracyBits);
 
     /// <summary>
-    /// Sets the precision(and accuracy) of a number by appending 0 bits if too small or cropping bits if too large.
-    /// This can be useful for extending whole or rational numbers precision. 
-    /// No rounding is performed.
-    /// Example: SetPrecision(0b1101, 8) --> 0b11010000;  SetPrecision(0b1101, 3) --> 0b110
-    /// Also see: TruncateToAndRound, SetPrecisionWithRound
+    /// Sets the precision (and accuracy) of a number by appending 0 bits if too small or cropping bits if too large.
+    /// This legacy API does not round when reducing size; prefer <see cref="AdjustPrecision(BigFloat,int)"/> or
+    /// <see cref="SetPrecisionWithRound(BigFloat,int)"/> for modern behavior.
     /// </summary>
-    public static BigFloat SetPrecision(BigFloat x, int newSize) =>
-        new (x._mantissa << (newSize - x.Size), x.Scale + (x.Size - newSize), newSize + GuardBits);
+    [Obsolete("Use AdjustPrecision or SetPrecisionWithRound instead. This member will be removed in a future major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static BigFloat SetPrecision(BigFloat x, int newSize)
+    {
+        int delta = newSize - x.Size;
+        return AdjustPrecisionCore(x, delta, roundWhenShrinking: false);
+    }
 
+    /// <summary>
+    /// Sets the precision (and accuracy) of a number by appending 0 bits if too small or cropping bits if too large.
+    /// This legacy API does not round when reducing size; prefer <see cref="AdjustPrecision(int)"/> or
+    /// <see cref="SetPrecisionWithRound(int)"/> for modern behavior.
+    /// </summary>
+    [Obsolete("Use AdjustPrecision or SetPrecisionWithRound instead. This member will be removed in a future major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat SetPrecision(int newSize) => SetAccuracy(this, newSize);
+    public BigFloat SetPrecision(int newSize) => SetPrecision(this, newSize);
 
     /// <summary>
     /// Reduces the precision to the new specified size. To help maintain the most significant digits, the bits are not simply cut off. 
@@ -1375,12 +1385,12 @@ public readonly partial struct BigFloat
     /// Caution: Round-ups may percolate to the most significant bit, adding an extra bit to the size. 
     /// Also see: SetPrecision, TruncateToAndRound
     /// </summary>
-    public static BigFloat SetPrecisionWithRound(BigFloat x, int newSize) => 
+    public static BigFloat SetPrecisionWithRound(BigFloat x, int newSize) =>
         (x.Size - newSize) switch
         {
             0 => x,
             > 0 => TruncateByAndRound(x, x.Size - newSize),
-            < 0 => SetPrecision(x, newSize),
+            < 0 => AdjustPrecision(x, newSize - x.Size),
         };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1397,40 +1407,42 @@ public readonly partial struct BigFloat
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat AdjustPrecision(BigFloat x, int deltaBits)
+        => AdjustPrecisionCore(x, deltaBits, roundWhenShrinking: true);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public BigFloat AdjustPrecision(int deltaBits) => AdjustPrecision(this, deltaBits);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat AdjustPrecisionCore(BigFloat x, int deltaBits, bool roundWhenShrinking)
     {
         if (deltaBits == 0) return x;
 
         if (deltaBits > 0)
         {
-            // Extend precision: left shift mantissa; scale decreases; size increases
-            // validate: deltaBits <= MaxAllowedBits, size bounds, etc.
             return new BigFloat(
                 x._mantissa << deltaBits,
                 x.Scale - deltaBits,
                 checked(x._size + deltaBits)
             );
         }
-        else
+
+        int shrinkBy = -deltaBits;
+
+        if (shrinkBy >= x._size)
         {
-            int shrinkBy = -deltaBits;
-
-            // If k >= current size, result should be zero with well-defined size/scale.
-            // Decide policy: here we zero mantissa and clamp size to 0.
-            if (shrinkBy >= x._size)
-            {
-                return new BigFloat(BigInteger.Zero, x.Scale + shrinkBy, 0);
-            }
-
-            return new BigFloat(
-                RoundingRightShift(x._mantissa, shrinkBy),
-                x.Scale + shrinkBy,
-                checked(x._size - shrinkBy)
-            );
+            return new BigFloat(BigInteger.Zero, x.Scale + shrinkBy, 0);
         }
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigFloat AdjustPrecision(int deltaBits) => AdjustPrecision(this, deltaBits);
+        BigInteger resizedMantissa = roundWhenShrinking
+            ? RoundingRightShift(x._mantissa, shrinkBy)
+            : x._mantissa >> shrinkBy;
+
+        return new BigFloat(
+            resizedMantissa,
+            x.Scale + shrinkBy,
+            checked(x._size - shrinkBy)
+        );
+    }
 
     /// <summary>
     /// [Obsolete] Extends the precision and accuracy of a number by appending 0 bits (no rounding).

@@ -6743,8 +6743,9 @@ public class OriginalBigFloatTests
         Assert.Equal(expectedVal, result);
     }
 
+#pragma warning disable CS0618 // SetPrecision is obsolete; keep coverage as a compatibility check
     [Fact]
-    public void SetPrecision()
+    public void SetPrecision_LegacyCompatibility()
     {
         BigFloat inputVal, res;
         string output, expect;
@@ -6760,6 +6761,7 @@ public class OriginalBigFloatTests
             Assert.Equal(output, expect);
         }
     }
+#pragma warning restore CS0618
 
     [Fact]
     public void ExtendPrecision()
