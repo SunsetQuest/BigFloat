@@ -24,6 +24,7 @@ Current BigFloat version: **4.0.0**
 - [Core concepts: representation & guard bits](#core-concepts-representation--guard-bits)
 - [Precision, accuracy, and guard-bit notation](#precision-accuracy-and-guard-bit-notation)
 - [Accuracy & precision APIs (2025+)](#accuracy--precision-apis-2025)
+- [Legacy APIs & Migration Guide](#legacy-apis--migration-guide)
 - [Math functions & constants](#math-functions--constants)
 - [Working with very large / very small numbers](#working-with-very-large--very-small-numbers)
 - [Project layout](#project-layout)
@@ -294,7 +295,13 @@ BigFloat is explicit about this:
 
 ## Accuracy & precision APIs (2025+)
 
-The 2025 releases focus on making precision control explicit and less error-prone. New APIs are described in the docs site’s **Accuracy Controls** section. ([bigfloat.org][3])
+The 2025 releases focus on making precision control explicit and less error-prone. Preferred, accuracy-first APIs:
+
+- `AdjustAccuracy` / `SetAccuracy`
+- `AdjustPrecision` (delta-based) and `SetPrecisionWithRound` (target size with rounding)
+- `ZeroWithAccuracy` / `OneWithAccuracy` for context-aware identity values
+
+Older helpers remain for compatibility but are now marked as legacy (see [Legacy APIs & Migration Guide](#legacy-apis--migration-guide)). New APIs are described in the docs site’s **Accuracy Controls** section. ([bigfloat.org][3])
 
 ### Growing or shrinking accuracy
 
@@ -330,6 +337,21 @@ BigFloat compact = BigFloat.SetPrecisionWithRound(v, 80);
 ```
 
 The older `ExtendPrecision` / `ReducePrecision` helpers are still present for backward compatibility, but the newer APIs are preferred because they encode intent (accuracy vs. bare precision) more clearly. ([bigfloat.org][3])
+
+---
+
+## Legacy APIs & Migration Guide
+
+Legacy members remain available for callers that have not yet updated, but they are now marked `[Obsolete]` and forward to the newer helpers so behavior is centralized.
+
+| Legacy member | Recommended replacement | Notes |
+| --- | --- | --- |
+| `BigFloat.Zero`, `BigFloat.One` | `0` / `1` literals or `ZeroWithAccuracy(...)` / `OneWithAccuracy(...)` | Keeps explicit accuracy when needed; literals avoid obsolete warnings. |
+| `SetPrecision` (static or instance) | `AdjustPrecision(deltaBits)` for raw resizing; `SetPrecisionWithRound` when reducing with rounding | Legacy behavior truncates when shrinking; new helpers make rounding strategy explicit. |
+| `ExtendPrecision` | `AdjustPrecision(value, +bitsToAdd)` | Modern API uses the same delta-based helper. |
+| `ReducePrecision` | `AdjustPrecision(value, -bitsToRemove)` | Modern API keeps rounding/accuracy rules consistent. |
+
+Compatibility tests remain to ensure these members continue to behave, but new code should migrate to the accuracy-first surface area listed above.
 
 ---
 
