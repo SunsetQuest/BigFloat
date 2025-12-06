@@ -210,7 +210,7 @@ public readonly partial struct BigFloat
             return new BigFloat(BigInteger.Zero, binaryScaler - requestedPrecision, 0);
         }
 
-        int effectivePrecision = Math.Max(requestedPrecision, valueSize);
+        int effectivePrecision = Math.Max(requestedPrecision, valueSize - GuardBits);
         int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
         int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
 
