@@ -358,6 +358,17 @@ BigFloat extended = BigFloat.ExtendPrecision(original, 50);</code></pre>
                             <li><code>0.25</code> in decimal = <code>0.01</code> (exact) in binary</li>
                         </ul>
                     </div>
+
+                    <div class="info-box">
+                        <h3>📏 Constructor precision rule</h3>
+                        <p>All numeric constructors now follow the same split between in-precision bits and guard bits:</p>
+                        <ul>
+                            <li><strong>In-precision first:</strong> Take the requested <code>binaryPrecision</code> bits, clamped so no more than 32 source bits land in the guard region (for <code>double</code>, this enforces at least 21 in-precision bits).</li>
+                            <li><strong>Guard mapping:</strong> Any remaining source bits (up to 32) occupy the most significant guard bits; unused guard bits are zero.</li>
+                            <li><strong>Scaling and zeroes:</strong> <code>binaryScaler</code> simply shifts <code>Scale</code>/<code>BinaryExponent</code>. Zero inputs keep <code>_size</code> at 0 and encode the requested precision in <code>Scale</code>.</li>
+                        </ul>
+                        <p class="note">Defaults: <code>double</code> keeps 37 in-precision bits + 16 guard bits from the IEEE payload; <code>float</code> keeps 16 + 8; integer inputs keep their full width with 32 zero guard bits; <code>decimal</code> adds 96 extra in-precision bits atop its 96-bit mantissa.</p>
+                    </div>
                 </div>
             </div>
         </section>
