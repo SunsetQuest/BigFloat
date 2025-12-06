@@ -13,9 +13,14 @@ namespace BigFloatLibrary;
 public readonly partial struct BigFloat
 {
     /// <summary>
-    /// Parses an input string and returns a BigFloat. If it fails, an exception is thrown.
-    /// This function supports: 
-    ///  - Positive or negative leading signs or no sign. 
+    /// Parses an input string and returns a <see cref="BigFloat"/>. Parsed precision is split between the
+    /// in-precision bits and the guard region: digits to the right of the optional <c>|</c> delimiter are
+    /// mapped into guard bits (up to 32), while the leading digits populate the in-precision region. The
+    /// <paramref name="binaryScaler"/> offset is applied to <see cref="Scale"/> after parsing so callers can shift
+    /// the binary exponent without changing the mantissa. Zero inputs produce <c>_size</c> 0 while preserving the
+    /// parsed accuracy in <see cref="Scale"/>.
+    /// This function supports:
+    ///  - Positive or negative leading signs or no sign.
     ///  - Radix point (aka decimal point for base 10)
     ///  - Hex strings starting with a [-,+,_]0x (radix point and sign supported)
     ///  - Binary strings starting with a [-,+,_]0b (radix point and sign supported)
