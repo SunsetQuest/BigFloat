@@ -104,7 +104,7 @@
 
 // $10,000 at 5% annual rate, compounded daily for 30 years
 BigFloat principal = new("10000.00000000000000");
-BigFloat rate = new("0.05");
+BigFloat rate = new("0.050000000000000000000");
 int compoundings = 365;
 int years = 30;
 
@@ -118,7 +118,7 @@ Console.WriteLine($"Interest Earned: ${earned}");
 // Compare with double precision using the same formula
 double doubleFinal = 10000 * Math.Pow(1 + 0.05 / compoundings, compoundings * years);
 Console.WriteLine($"\nDouble precision: ${doubleFinal}");
-Console.WriteLine($"Difference: ${(double)finalAmount - doubleFinal}");
+Console.WriteLine($"Difference: ${((double)finalAmount - doubleFinal).ToString(\"F17\")}");
 
 static BigFloat Calculate(
     BigFloat principal,
@@ -138,11 +138,11 @@ static BigFloat Calculate(
                     <div class="output-box">
                         <h4>Output:</h4>
                         <pre><code>Initial Investment: $10000.00000000000000
-Final Amount: $44812.28688522581
-Interest Earned: $34812.28688522581
+Final Amount: $44812.2868852451525
+Interest Earned: $34812.2868852451525
 
 Double precision: $44812.28688522581
-Difference: $0</code></pre>
+Difference: $0.00000001933949534</code></pre>
                     </div>
                 </div>
 
