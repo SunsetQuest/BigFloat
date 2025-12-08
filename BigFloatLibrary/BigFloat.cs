@@ -328,12 +328,22 @@ public readonly partial struct BigFloat
     /// <param name="binaryPrecision">Requested in-precision bits (defaults to 63 for signed 64-bit inputs).</param>
     public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 63)
     {
+        const int DefaultBinaryPrecision = 63;
+
         ulong magnitude = value > 0
             ? (ulong)value
             : unchecked((ulong)(-value));
 
         int valueSize = magnitude == 0 ? 0 : (int)ulong.Log2(magnitude) + 1;
-        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision);
+
+        // Preserve all 64 bits only when the magnitude reaches 2^63 (long.MinValue); otherwise keep the
+        // default 63-bit precision. This reuses the computed value size instead of performing an explicit
+        // MinValue check or constructing twice.
+        int effectiveBinaryPrecision = binaryPrecision == DefaultBinaryPrecision && valueSize > DefaultBinaryPrecision
+            ? valueSize
+            : binaryPrecision;
+
+        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
     }
 
     /// <summary>
