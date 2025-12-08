@@ -190,19 +190,19 @@ public sealed class BigFloatContext : IDisposable
     /// <summary>
     /// A constants provider honoring the context configuration.
     /// </summary>
-    public Constants.WithPrecision Constants
+    public BigFloat.Constants.WithPrecision Constants
     {
         get
         {
             if (ConstantsPrecisionBits is null && ConstantsCutOnTrailingZero is null && ConstantsUseExternalFiles is null)
             {
-                return BigFloatLibrary.Constants.WithConfig();
+                return BigFloat.Constants.WithConfig();
             }
 
-            return BigFloatLibrary.Constants.WithConfig(
-                precisionInBits: ConstantsPrecisionBits ?? BigFloatLibrary.Constants.DefaultPrecisionInBits,
-                cutOnTrailingZero: ConstantsCutOnTrailingZero ?? BigFloatLibrary.Constants.DefaultCutOnTrailingZeroSetting,
-                useExternalFiles: ConstantsUseExternalFiles ?? BigFloatLibrary.Constants.DefaultUseExternalFiles);
+            return BigFloat.Constants.WithConfig(
+                precisionInBits: ConstantsPrecisionBits ?? BigFloat.Constants.DefaultPrecisionInBits,
+                cutOnTrailingZero: ConstantsCutOnTrailingZero ?? BigFloat.Constants.DefaultCutOnTrailingZeroSetting,
+                useExternalFiles: ConstantsUseExternalFiles ?? BigFloat.Constants.DefaultUseExternalFiles);
         }
     }
 
