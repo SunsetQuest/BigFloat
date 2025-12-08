@@ -12,18 +12,16 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
     /// <summary>
     /// Initializes a <see cref="BigFloat"/> from a <see cref="decimal"/> value. The 96-bit decimal mantissa is
-    /// converted to binary with <paramref name="addedBinaryPrecision"/> extra in-precision bits; the 32 guard bits
-    /// remain available for rounding headroom. <paramref name="binaryScaler"/> is applied to the resulting
-    /// <see cref="Scale"/> after the mantissa is normalized. When <paramref name="value"/> is zero, <c>_size</c> is 0
-    /// and <see cref="Scale"/> is set to <c>binaryScaler + GuardBits - addedBinaryPrecision</c> to encode only the
-    /// requested accuracy.
+    /// converted to binary with <paramref name="addedBinaryPrecision"/> extra in-precision bits; guard bits remain
+    /// zero-filled until populated by later operations. The in-precision portion is guaranteed to be
+    /// <c>96 + addedBinaryPrecision</c>, keeping all payload bits above the guard region. <paramref name="binaryScaler"/>
+    /// shifts the resulting <see cref="BinaryExponent"/> after the mantissa is normalized. When <paramref name="value"/> is
+    /// zero, <c>_size</c> is 0 and <see cref="Scale"/> is set to <c>binaryScaler + GuardBits - addedBinaryPrecision</c> to
+    /// encode only the requested accuracy.
     /// </summary>
     public BigFloat(decimal value, int binaryScaler = 0, int addedBinaryPrecision = 96)
     {
-        if (addedBinaryPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({addedBinaryPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(addedBinaryPrecision);
 
         if (value == 0m)
         {
