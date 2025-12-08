@@ -267,12 +267,22 @@ public readonly partial struct BigFloat
     /// <param name="binaryPrecision">Requested in-precision bits (minimum 0; default preserves 31 bits).</param>
     public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 31)
     {
+        const int DefaultBinaryPrecision = 31;
+
         uint magnitude = value > 0
             ? (uint)value
             : unchecked((uint)(-value));
 
         int valueSize = magnitude == 0 ? 0 : BitOperations.Log2(magnitude) + 1;
-        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision);
+
+        // Preserve all 32 bits only when the magnitude reaches 2^31 (int.MinValue); otherwise keep the
+        // default 31-bit precision. This reuses the computed value size instead of performing an explicit
+        // MinValue check or double-constructing the instance.
+        int effectiveBinaryPrecision = binaryPrecision == DefaultBinaryPrecision && valueSize > DefaultBinaryPrecision
+            ? valueSize
+            : binaryPrecision;
+
+        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
     }
 
     public static BigFloat CreateWithPrecisionFromValue(long value, bool valueIncludesGuardBits = false, int adjustBinaryPrecision = 0, int binaryScaler = 0)
@@ -318,12 +328,22 @@ public readonly partial struct BigFloat
     /// <param name="binaryPrecision">Requested in-precision bits (defaults to 63 for signed 64-bit inputs).</param>
     public BigFloat(long value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 63)
     {
+        const int DefaultBinaryPrecision = 63;
+
         ulong magnitude = value > 0
             ? (ulong)value
             : unchecked((ulong)(-value));
 
         int valueSize = magnitude == 0 ? 0 : (int)ulong.Log2(magnitude) + 1;
-        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision);
+
+        // Preserve all 64 bits only when the magnitude reaches 2^63 (long.MinValue); otherwise keep the
+        // default 63-bit precision. This reuses the computed value size instead of performing an explicit
+        // MinValue check or constructing twice.
+        int effectiveBinaryPrecision = binaryPrecision == DefaultBinaryPrecision && valueSize > DefaultBinaryPrecision
+            ? valueSize
+            : binaryPrecision;
+
+        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
     }
 
     /// <summary>
