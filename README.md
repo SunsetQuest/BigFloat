@@ -338,6 +338,75 @@ BigFloat compact = BigFloat.SetPrecisionWithRound(v, 80);
 
 The older `ExtendPrecision` / `ReducePrecision` helpers are still present for backward compatibility, but the newer APIs are preferred because they encode intent (accuracy vs. bare precision) more clearly. ([bigfloat.org][3])
 
+### Running calculations with `BigFloatContext` (opt-in ambient accuracy)
+
+`BigFloatContext` provides a convenience wrapper for grouping calculations under a shared accuracy budget, rounding hint, and constants configuration without changing the deterministic core APIs.
+
+```csharp
+using var ctx = BigFloatContext.WithAccuracy(256);
+
+// Compound interest without repeated AdjustAccuracy calls
+BigFloat principal = 10_000;
+BigFloat rate = BigFloat.Parse("0.0425");
+BigFloat future = ctx.Run(() =>
+{
+    BigFloat monthly = rate / 12;
+    BigFloat growth = BigFloat.Pow(BigFloat.One + monthly, 120);
+    return principal * growth;
+});
+```
+
+```csharp
+// Machin-like π with a simple arctan series
+using var ctx = BigFloatContext.WithAccuracy(512, constantsPrecisionBits: 512);
+
+BigFloat Arctan(BigFloat x, int terms)
+{
+    BigFloat sum = 0;
+    BigFloat power = x;
+    for (int n = 0; n < terms; n++)
+    {
+        int k = (2 * n) + 1;
+        BigFloat term = power / k;
+        sum = (n % 2 == 0) ? sum + term : sum - term;
+        power = BigFloatContext.ApplyCurrent(power * x * x);
+    }
+    return ctx.Apply(sum);
+}
+
+BigFloat pi = ctx.Run(() => 4 * (4 * Arctan(BigFloat.One / 5, 18) - Arctan(BigFloat.One / 239, 8)));
+```
+
+```csharp
+// Mandelbrot escape test that keeps every iteration on-budget
+using var ctx = BigFloatContext.WithAccuracy(192, roundingMode: BigFloatContextRounding.TowardZero);
+
+bool IsInsideMandelbrot(BigFloat cx, BigFloat cy, int iterations)
+{
+    return ctx.Run(() =>
+    {
+        BigFloat x = 0;
+        BigFloat y = 0;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            BigFloat x2 = BigFloatContext.ApplyCurrent(x * x);
+            BigFloat y2 = BigFloatContext.ApplyCurrent(y * y);
+            if (x2 + y2 > 4)
+            {
+                return false;
+            }
+
+            BigFloat xy = BigFloatContext.ApplyCurrent(x * y);
+            x = ctx.Apply(x2 - y2 + cx);
+            y = ctx.Apply(xy + xy + cy);
+        }
+
+        return true;
+    });
+}
+```
+
 ---
 
 ## Legacy APIs & Migration Guide
