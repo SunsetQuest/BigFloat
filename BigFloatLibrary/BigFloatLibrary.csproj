@@ -3,7 +3,7 @@
 	<!-- Common properties (apply to all configurations) -->
 	<PropertyGroup>
 		<!-- Always multi-target: restore/build is consistent -->
-		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;net9.0</TargetFrameworks>
 
 		<!-- Build / analysis settings -->
 		<AnalysisLevel>preview</AnalysisLevel>
