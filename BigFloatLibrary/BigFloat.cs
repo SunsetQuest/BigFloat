@@ -1332,6 +1332,10 @@ public readonly partial struct BigFloat
         => AdjustPrecision(x, deltaBits);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static BigFloat AdjustAccuracy(BigFloat x, int deltaBits, bool roundWhenShrinking)
+        => AdjustPrecisionCore(x, deltaBits, roundWhenShrinking);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public BigFloat AdjustAccuracy(int deltaBits) => AdjustAccuracy(this, deltaBits);
 
     /// <summary>

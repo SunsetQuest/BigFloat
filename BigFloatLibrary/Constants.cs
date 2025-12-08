@@ -22,6 +22,21 @@ public readonly partial struct BigFloat
         private const int DefaultPrecisionBits = 2000;
         private const bool DefaultCutOnTrailingZero = true;
 
+        /// <summary>
+        /// Exposes the default precision (in bits) used when retrieving constants.
+        /// </summary>
+        public static int DefaultPrecisionInBits => DefaultPrecisionBits;
+
+        /// <summary>
+        /// Exposes whether constants default to cutting precision at trailing zeros.
+        /// </summary>
+        public static bool DefaultCutOnTrailingZeroSetting => DefaultCutOnTrailingZero;
+
+        /// <summary>
+        /// Exposes whether constants default to pulling from external files when available.
+        /// </summary>
+        public static bool DefaultUseExternalFiles => true;
+
         #region Mathematical Categories
 
         /// <summary>
@@ -400,6 +415,16 @@ public readonly partial struct BigFloat
                 });
 
                 return new Dictionary<string, BigFloat>(result);
+            }
+
+            /// <summary>
+            /// Gets a single constant with the configured precision and rounding policy.
+            /// </summary>
+            /// <param name="constantId">The constant identifier from the Catalog.</param>
+            /// <returns>The constant with the configured precision.</returns>
+            public BigFloat Get(string constantId)
+            {
+                return GetConstant(constantId, _precisionInBits, _cutOnTrailingZero, _useExternalFiles);
             }
         }
 
