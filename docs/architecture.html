@@ -188,7 +188,7 @@
                             <li>Clamp <code>binaryPrecision</code> so no more than 32 source bits are mapped into guard bits (e.g., doubles keep at least 21 in-precision bits, yielding the 37/16 default split).</li>
                             <li>Remaining source bits fill the most significant guard bits; unused guard bits are zero so <code>_size</code> reflects the requested precision.</li>
                             <li><code>binaryScaler</code> offsets <code>Scale</code>/<code>BinaryExponent</code> without touching the mantissa, and zero inputs keep <code>_size</code> at 0 while encoding the precision budget in <code>Scale</code>.</li>
-                            <li>Defaults: doubles 37/16, floats 16/8, integers keep their full width plus 32 zero guard bits, decimals add 96 extra in-precision bits to the 96-bit payload.</li>
+                            <li>Defaults: doubles 37/16, floats 16/8, integers default to 31/63/64 in-precision bits and widen to the payload width when needed, decimals add 96 extra in-precision bits to the 96-bit payload.</li>
                         </ul>
                     </div>
                 </div>

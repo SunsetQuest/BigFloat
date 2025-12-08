@@ -200,10 +200,7 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigFloat CreateFromInteger(BigInteger value, int valueSize, int binaryScaler, bool valueIncludesGuardBits, int requestedPrecision)
     {
-        if (requestedPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({requestedPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(requestedPrecision);
 
         if (valueSize == 0)
         {
@@ -220,49 +217,73 @@ public readonly partial struct BigFloat
             guardBitsToAdd + effectivePrecision);
     }
 
-    /// <summary>
-    /// Constructs a BigFloat using its elemental parts. Starts with <paramref name="value"/> and specifies how many binary places the point should be shifted (base-2 exponent) using <paramref name="binaryScaler"/>.
-    /// </summary>
-    /// <param name="value">The integer part of the BigFloat that will have a <paramref name="binaryScaler"/> applied to it. </param>
-    /// <param name="binaryScaler">How much should the <paramref name="value"/> be shifted or scaled? This shift (base-2 exponent) will be applied to the <paramref name="value"/>.</param>
-    /// <param name="valueIncludesGuardBits">if true, then the guard bits should be included in the integer part.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int AdjustIntegerPrecisionForFullWidth(int valueSize, int binaryPrecision, int defaultBinaryPrecision)
+    {
+        EnsureNonNegativePrecision(binaryPrecision);
+
+        // When callers accept the default precision, automatically widen to include the
+        // full integer payload so the guard region remains purely additive.
+        if (binaryPrecision == defaultBinaryPrecision && valueSize > defaultBinaryPrecision)
+        {
+            return valueSize;
+        }
+
+        return binaryPrecision;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat CreateFromSignedInteger(long value, int valueSize, int binaryScaler, bool valueIncludesGuardBits, int binaryPrecision, int defaultBinaryPrecision)
+    {
+        int effectiveBinaryPrecision = AdjustIntegerPrecisionForFullWidth(valueSize, binaryPrecision, defaultBinaryPrecision);
+        return CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat CreateFromUnsignedInteger(ulong value, int valueSize, int binaryScaler, bool valueIncludesGuardBits, int binaryPrecision, int defaultBinaryPrecision)
+    {
+        int effectiveBinaryPrecision = AdjustIntegerPrecisionForFullWidth(valueSize, binaryPrecision, defaultBinaryPrecision);
+        return CreateFromInteger((BigInteger)value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
+    }
+
     /// <summary>
     /// Creates a <see cref="BigFloat"/> from a <see cref="BigInteger"/> while splitting bits between
     /// the in-precision region and the 32 guard bits. The <paramref name="addedBinaryPrecision"/>
-    /// parameter increases the in-precision region; any excess source bits (up to 32) overflow into
-    /// the guard area. The mantissa is left-shifted so that <see cref="Scale"/> reflects only the
-    /// requested <paramref name="binaryScaler"/> adjustment plus the precision split.
-    /// When <paramref name="value"/> is zero, <see cref="Scale"/> becomes
-    /// <c>binaryScaler - addedBinaryPrecision</c> and <c>_size</c> is zero, preserving only the desired
-    /// accuracy budget.
+    /// parameter grows the in-precision region; any excess source bits (up to 32) overflow into the
+    /// guard area while remaining guard bits are zero-filled. The in-precision portion is never smaller
+    /// than <c>valueBitLength - GuardBits</c>, ensuring at most 32 payload bits migrate into the guard
+    /// region. The mantissa is left-shifted so that <see cref="Scale"/> reflects the requested
+    /// <paramref name="binaryScaler"/> plus the precision split. When <paramref name="value"/> is zero,
+    /// <see cref="Scale"/> becomes <c>binaryScaler - addedBinaryPrecision</c> and <c>_size</c> is zero,
+    /// preserving only the desired accuracy budget.
     /// </summary>
     /// <param name="value">The integer payload for the mantissa. Negative values are preserved.</param>
-    /// <param name="binaryScaler">Additional base-2 scaling added to the resulting <see cref="Scale"/>.</param>
+    /// <param name="binaryScaler">Additional base-2 scaling added to the resulting <see cref="BinaryExponent"/>.</param>
     /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already contains the guard bits.</param>
     /// <param name="addedBinaryPrecision">Extra in-precision bits to add above the magnitude of <paramref name="value"/>.</param>
     public BigFloat(BigInteger value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
     {
+        EnsureNonNegativePrecision(addedBinaryPrecision);
+
         int valueSize = (int)BigInteger.Abs(value).GetBitLength();
         int requestedPrecision = checked(valueSize + addedBinaryPrecision);
 
-        if (requestedPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({requestedPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(requestedPrecision);
 
         this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, requestedPrecision);
     }
 
     /// <summary>
     /// Creates a <see cref="BigFloat"/> from a 32-bit signed integer. The <paramref name="binaryPrecision"/>
-    /// parameter represents the number of in-precision bits to keep from the integer. Any remaining integer
-    /// bits are mapped into the guard region (up to 32 bits); unused guard bits are zero-filled. The resulting
-    /// <see cref="Scale"/> equals <c>binaryScaler + valueBitLength - binaryPrecision</c> so the numeric value
-    /// is preserved while expressing the requested precision. Zero inputs set <c>_size</c> to 0 and
-    /// <see cref="Scale"/> to <c>binaryScaler - binaryPrecision</c>.
+    /// parameter sets how many in-precision bits are kept; any remaining payload bits (up to 32) move into the
+    /// most significant portion of the guard region and unused guard bits are zero. The in-precision portion is
+    /// clamped so that no more than <see cref="GuardBits"/> payload bits shift below the precision boundary.
+    /// <see cref="BinaryExponent"/> is offset by <paramref name="binaryScaler"/> while <see cref="Scale"/> is computed
+    /// as <c>binaryScaler + valueBitLength - inPrecision</c>. Zero inputs leave <c>_size</c> at 0 and set
+    /// <see cref="Scale"/> to <c>binaryScaler - binaryPrecision</c> so the requested accuracy is preserved.
     /// </summary>
     /// <param name="value">The integer to convert.</param>
-    /// <param name="binaryScaler">Additional base-2 scaling applied to <see cref="BinaryExponent"/>.</param>
+    /// <param name="binaryScaler">Additional base-2 scaling applied to the resulting exponent.</param>
     /// <param name="valueIncludesGuardBits">Set to true if <paramref name="value"/> already includes guard bits.</param>
     /// <param name="binaryPrecision">Requested in-precision bits (minimum 0; default preserves 31 bits).</param>
     public BigFloat(int value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 31)
@@ -275,14 +296,7 @@ public readonly partial struct BigFloat
 
         int valueSize = magnitude == 0 ? 0 : BitOperations.Log2(magnitude) + 1;
 
-        // Preserve all 32 bits only when the magnitude reaches 2^31 (int.MinValue); otherwise keep the
-        // default 31-bit precision. This reuses the computed value size instead of performing an explicit
-        // MinValue check or double-constructing the instance.
-        int effectiveBinaryPrecision = binaryPrecision == DefaultBinaryPrecision && valueSize > DefaultBinaryPrecision
-            ? valueSize
-            : binaryPrecision;
-
-        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
+        this = CreateFromSignedInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision, DefaultBinaryPrecision);
     }
 
     public static BigFloat CreateWithPrecisionFromValue(long value, bool valueIncludesGuardBits = false, int adjustBinaryPrecision = 0, int binaryScaler = 0)
@@ -294,10 +308,7 @@ public readonly partial struct BigFloat
         int valueSize = magnitude == 0 ? 0 : (int)ulong.Log2(magnitude) + 1;
         int requestedPrecision = checked(valueSize + adjustBinaryPrecision);
 
-        if (requestedPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({requestedPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(requestedPrecision);
 
         return CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, requestedPrecision);
     }
@@ -307,10 +318,7 @@ public readonly partial struct BigFloat
         int valueSize = value == 0 ? 0 : BitOperations.Log2(value) + 1;
         int requestedPrecision = checked(valueSize + adjustBinaryPrecision);
 
-        if (requestedPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({requestedPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(requestedPrecision);
 
         return CreateFromInteger((BigInteger)value, valueSize, binaryScaler, valueIncludesGuardBits, requestedPrecision);
     }
@@ -318,7 +326,8 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Creates a <see cref="BigFloat"/> from a 64-bit signed integer. <paramref name="binaryPrecision"/>
     /// keeps that many in-precision bits (minimum 0) while any remaining integer bits are shifted into
-    /// the guard region (up to 32 bits). <see cref="Scale"/> becomes <c>binaryScaler + valueBitLength - binaryPrecision</c>
+    /// the guard region (up to 32 bits). The precision is clamped so that at most <see cref="GuardBits"/>
+    /// payload bits fall into the guard area. <see cref="Scale"/> becomes <c>binaryScaler + valueBitLength - inPrecision</c>
     /// so the numeric value is unchanged and <see cref="BinaryExponent"/> is offset by <paramref name="binaryScaler"/>.
     /// Zero inputs set <c>_size</c> to 0 and <see cref="Scale"/> to <c>binaryScaler - binaryPrecision</c>.
     /// </summary>
@@ -336,20 +345,14 @@ public readonly partial struct BigFloat
 
         int valueSize = magnitude == 0 ? 0 : (int)ulong.Log2(magnitude) + 1;
 
-        // Preserve all 64 bits only when the magnitude reaches 2^63 (long.MinValue); otherwise keep the
-        // default 63-bit precision. This reuses the computed value size instead of performing an explicit
-        // MinValue check or constructing twice.
-        int effectiveBinaryPrecision = binaryPrecision == DefaultBinaryPrecision && valueSize > DefaultBinaryPrecision
-            ? valueSize
-            : binaryPrecision;
-
-        this = CreateFromInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, effectiveBinaryPrecision);
+        this = CreateFromSignedInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision, DefaultBinaryPrecision);
     }
 
     /// <summary>
     /// Creates a <see cref="BigFloat"/> from an unsigned 64-bit integer. <paramref name="binaryPrecision"/> keeps
     /// that many bits in precision (minimum 0) while any remaining source bits spill into the guard bits (up to 32).
-    /// The <see cref="Scale"/> is computed as <c>binaryScaler + valueBitLength - binaryPrecision</c> so that
+    /// The in-precision portion is clamped so at most <see cref="GuardBits"/> payload bits move into the guard region.
+    /// The <see cref="Scale"/> is computed as <c>binaryScaler + valueBitLength - inPrecision</c> so that
     /// <see cref="BinaryExponent"/> reflects the incoming value plus the provided scaler. Zero inputs set
     /// <c>_size</c> to 0 and <see cref="Scale"/> to <c>binaryScaler - binaryPrecision</c>.
     /// </summary>
@@ -359,8 +362,10 @@ public readonly partial struct BigFloat
     /// <param name="binaryPrecision">Requested in-precision bits (defaults to 64 for unsigned inputs).</param>
     public BigFloat(ulong value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 64)
     {
+        const int DefaultBinaryPrecision = 64;
+
         int valueSize = value == 0 ? 0 : BitOperations.Log2(value) + 1;
-        this = CreateFromInteger((BigInteger)value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision);
+        this = CreateFromUnsignedInteger(value, valueSize, binaryScaler, valueIncludesGuardBits, binaryPrecision, DefaultBinaryPrecision);
     }
 
     // Design note on the default (binaryPrecision = 37) for double → BigFloat
@@ -389,41 +394,21 @@ public readonly partial struct BigFloat
     //     parameter if a different trade-off is desired.
 
     /// <summary>
-    /// Initializes a new <see cref="BigFloat"/> from an IEEE 754
-    /// <see cref="double"/> value.
-    /// </summary>
-    /// <param name="value">
-    /// The double-precision floating-point value to convert.
-    /// </param>
-    /// <param name="binaryScaler">
-    /// Optional additional base-2 scaling applied after converting from
-    /// <paramref name="value"/>; this effectively adds to the resulting
-    /// binary exponent.
-    /// </param>
-    /// <param name="binaryPrecision">
-    /// The number of mantissa bits, out of the 53-bit double significand,
-    /// to place in the in-precision region. Any remaining bits are mapped
-    /// into the top of the guard-bit area to provide extra rounding headroom.
-    /// The default of 37 corresponds to 37 in-precision bits plus 16
-    /// double-derived guard bits.
-    /// </param>
-    /// <summary>
     /// Creates a <see cref="BigFloat"/> from a <see cref="double"/>. The <paramref name="binaryPrecision"/>
-    /// argument expresses how many of the 53 IEEE significand bits remain in the in-precision region; the rest
-    /// (up to 32 bits) are promoted into the guard region. The minimum in-precision count is 21 so that no more
-    /// than 32 double bits are mapped to guard bits by default, yielding the “37 precise + 16 guard” split.
-    /// <paramref name="binaryScaler"/> shifts the resulting <see cref="BinaryExponent"/> by the requested amount.
-    /// Zero inputs set <c>_size</c> to 0 and <see cref="Scale"/> to <c>binaryScaler + GuardBits - inPrecision</c>.
+    /// argument selects how many of the 53 IEEE significand bits remain in the in-precision region while the
+    /// rest (up to 32 bits) occupy the most significant guard bits; unused guard bits are zero-filled. The
+    /// minimum in-precision count is 21 so at most 32 double bits spill into guard bits, yielding the
+    /// “37 precise + 16 guard” default split. <paramref name="binaryScaler"/> shifts the resulting
+    /// <see cref="BinaryExponent"/> by the requested amount. Zero inputs set <c>_size</c> to 0 and
+    /// <see cref="Scale"/> to <c>binaryScaler + GuardBits - inPrecision</c> so the encoded accuracy matches the
+    /// requested precision.
     /// </summary>
     /// <param name="value">The <see cref="double"/> to convert.</param>
     /// <param name="binaryScaler">Additional base-2 scaling applied after conversion.</param>
     /// <param name="binaryPrecision">Number of in-precision bits (clamped between 21 and 53, default 37).</param>
     public BigFloat(double value, int binaryScaler = 0, int binaryPrecision = 37)
     {
-        if (binaryPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({binaryPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(binaryPrecision);
 
         long bits = BitConverter.DoubleToInt64Bits(value);
         long mantissa = bits & 0x000F_FFFF_FFFF_FFFFL;
@@ -477,18 +462,17 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Creates a <see cref="BigFloat"/> from a <see cref="float"/>. <paramref name="binaryPrecision"/> picks how
     /// many of the 24 IEEE significand bits remain in the in-precision region; the remainder (up to 24 bits,
-    /// bounded by the 32 guard bits) move into the guard region to provide rounding headroom. Zero inputs set
-    /// <c>_size</c> to 0 and <see cref="Scale"/> to <c>GuardBits - inPrecision</c> so the requested precision is
-    /// preserved even when the numeric value is zero.
+    /// bounded by the 32 guard bits) move into the guard region to provide rounding headroom. The in-precision
+    /// portion is clamped to keep at most <see cref="GuardBits"/> payload bits in guard territory while aligning
+    /// <see cref="BinaryExponent"/> with the source exponent. Zero inputs set <c>_size</c> to 0 and
+    /// <see cref="Scale"/> to <c>GuardBits - inPrecision</c> so the requested precision is preserved even when the
+    /// numeric value is zero.
     /// </summary>
     /// <param name="value">The <see cref="float"/> to convert.</param>
     /// <param name="binaryPrecision">In-precision bits to retain (clamped between 0 and 24, default 16).</param>
     public BigFloat(float value, int binaryPrecision = 16)
     {
-        if (binaryPrecision < 0)
-        {
-            ThrowInvalidInitializationException($"binaryPrecision ({binaryPrecision}) cannot be negative.");
-        }
+        EnsureNonNegativePrecision(binaryPrecision);
 
         int bits = BitConverter.SingleToInt32Bits(value);
         int mantissa = bits & 0x007F_FFFF;
@@ -565,6 +549,15 @@ public readonly partial struct BigFloat
     public static BigFloat CreateFromRawComponents(BigInteger mantissa, int binaryScaler, int mantissaSize)
     {
         return new(mantissa, binaryScaler, mantissaSize);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureNonNegativePrecision(int precision)
+    {
+        if (precision < 0)
+        {
+            ThrowInvalidInitializationException($"binaryPrecision ({precision}) cannot be negative.");
+        }
     }
 
     [DoesNotReturn]
