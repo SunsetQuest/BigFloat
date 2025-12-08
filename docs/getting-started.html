@@ -367,7 +367,7 @@ BigFloat extended = BigFloat.ExtendPrecision(original, 50);</code></pre>
                             <li><strong>Guard mapping:</strong> Any remaining source bits (up to 32) occupy the most significant guard bits; unused guard bits are zero.</li>
                             <li><strong>Scaling and zeroes:</strong> <code>binaryScaler</code> simply shifts <code>Scale</code>/<code>BinaryExponent</code>. Zero inputs keep <code>_size</code> at 0 and encode the requested precision in <code>Scale</code>.</li>
                         </ul>
-                        <p class="note">Defaults: <code>double</code> keeps 37 in-precision bits + 16 guard bits from the IEEE payload; <code>float</code> keeps 16 + 8; integer inputs keep their full width with 32 zero guard bits; <code>decimal</code> adds 96 extra in-precision bits atop its 96-bit mantissa.</p>
+                        <p class="note">Defaults: <code>double</code> keeps 37 in-precision bits + 16 guard bits from the IEEE payload; <code>float</code> keeps 16 + 8; integers default to 31/63/64 in-precision bits (auto-widening to cover the full payload when it exceeds the default) with remaining guard bits zeroed; <code>decimal</code> adds 96 extra in-precision bits atop its 96-bit mantissa.</p>
                     </div>
                 </div>
             </div>
