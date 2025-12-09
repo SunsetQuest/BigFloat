@@ -559,7 +559,7 @@ public class ConversionTests
         Assert.Equal(uint128, backToUInt128);
     }
 
-    //todo: add Half support to BigFloat and enable these tests
+    // Add Half support to BigFloat and enable these tests once implemented.
     //[Theory]
     //[InlineData(1.0f)]
     //[InlineData(0.5f)]

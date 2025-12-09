@@ -10,6 +10,11 @@ This file is guidance for AI coding agents (especially Codex) working on this re
 - Playground / samples: `BigFloatPlayground/`.
 - Target: modern .NET (.NET 8 with C# 12 and later).
 
+### Provenance
+
+- Portions of this codebase were generated or refined with assistance from ChatGPT, Claude, GitHub Copilot, and Grok. Inline AI
+  attributions should be avoided; use this section to capture provenance instead.
+
 ### Key invariants
 
 When modifying the core library:

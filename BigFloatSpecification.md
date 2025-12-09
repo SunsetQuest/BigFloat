@@ -208,6 +208,11 @@ string bits = value.ToBinaryString(numberOfGuardBitsToInclude: 32, showPrecision
 
 
 
+## Future ideas
+
+* **Repeating fractional metadata:** A former `_extraPrecOrRepeat` field explored marking repeating trailing bits or virtual zeros to preserve pattern intent without storing additional data. The concept remains unimplemented; any revival should document encoding and rounding rules before resurfacing in code.
+* **Exact small-integer division:** The `int / BigFloat` operator currently routes through `new BigFloat(a) / b`; a future enhancement could preserve the exact numerator bits to avoid redundant rounding paths for small integers.
+
 ---
 
 ## Versioning & provenance
