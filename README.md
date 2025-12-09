@@ -21,6 +21,7 @@ Current BigFloat version: **4.0.0**
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Generic math compatibility](#generic-math-compatibility)
 - [Core concepts: representation & guard bits](#core-concepts-representation--guard-bits)
 - [Precision, accuracy, and guard-bit notation](#precision-accuracy-and-guard-bit-notation)
 - [Accuracy & precision APIs (2025+)](#accuracy--precision-apis-2025)
@@ -204,6 +205,41 @@ class Program
 ```
 
 The examples in the documentation site’s **Getting Started** and **Examples** pages are kept in sync with the current APIs and are suitable for copy/paste into your projects. ([bigfloat.org][3])
+
+---
+
+## Generic math compatibility
+
+`BigFloat` participates in .NET’s generic math ecosystem via `System.Numerics.INumberBase<BigFloat>` and the operator interfaces it pulls in. The type intentionally **does not** claim IEEE-754-specific contracts such as `IFloatingPointIeee754<T>` because BigFloat has no `NaN`/`∞` payloads or subnormal ranges. At a glance:
+
+- Implements `INumberBase<BigFloat>`, providing `Zero`, `One`, parsing/formatting, conversions, and magnitude helpers.
+- Supports the standard arithmetic and comparison operator interfaces transitively (`IAdditionOperators`, `IMultiplicationOperators`, etc.).
+
+This enables reusable numeric code that works for both built-in floating types and BigFloat when the semantics align. Example (dot-product style accumulation):
+
+```csharp
+using System;
+using System.Numerics;
+using BigFloatLibrary;
+
+static T Dot<T>(ReadOnlySpan<T> values, ReadOnlySpan<T> weights) where T : INumberBase<T>
+{
+    if (values.Length != weights.Length)
+        throw new ArgumentException("Lengths must match", nameof(weights));
+
+    T acc = T.Zero;
+    for (int i = 0; i < values.Length; i++)
+    {
+        acc += values[i] * weights[i];
+    }
+    return acc;
+}
+
+var bf = Dot(new BigFloat[] { 1.5, 2, 3 }, new BigFloat[] { 2, 2, 2 });
+var dbl = Dot(new double[] { 1.5, 2, 3 }, new double[] { 2, 2, 2 });
+```
+
+`bf` and `dbl` will both accumulate using the same generic code path; the BigFloat variant keeps high precision and the built-in doubles keep IEEE-754 behavior.
 
 ---
 
