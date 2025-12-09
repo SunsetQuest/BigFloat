@@ -1,8 +1,6 @@
 // Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using Xunit;
-
 namespace BigFloatLibrary.Tests;
 
 /// <summary>

@@ -68,8 +68,6 @@ Notes
  * Be explicit with ULP scope: include guard bits only when that is intended.
 ===================================================================================== */
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;

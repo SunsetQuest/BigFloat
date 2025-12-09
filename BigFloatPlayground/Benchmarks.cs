@@ -2,11 +2,8 @@
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using BigFloatLibrary;
-using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Threading;
 using static BigFloatLibrary.BigFloat;
 
 namespace PlaygroundAndShowCase;

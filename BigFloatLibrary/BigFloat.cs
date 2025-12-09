@@ -21,7 +21,6 @@
 // Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development
 // of this library.
 
-using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
