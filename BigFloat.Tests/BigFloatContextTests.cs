@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace BigFloatLibrary.Tests;
 
 public class BigFloatContextTests

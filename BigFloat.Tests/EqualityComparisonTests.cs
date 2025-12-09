@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Numerics;
-using Xunit;
 
 namespace BigFloatLibrary.Tests;
 

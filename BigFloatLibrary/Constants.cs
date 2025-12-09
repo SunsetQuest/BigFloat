@@ -2,13 +2,8 @@
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 

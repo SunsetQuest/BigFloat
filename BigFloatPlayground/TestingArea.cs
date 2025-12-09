@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using BigFloatLibrary;
-using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
