@@ -612,6 +612,36 @@ public class OriginalBigFloatTests
     }
 
     [Fact]
+    public void SignProperties_ShouldRespectGuardBitZeroTolerance()
+    {
+        var cases = new (int BitLength, int ScaleOffset, bool Negative, bool ExpectZero, string Description)[]
+        {
+            (1, -1, false, true, "1-bit positive just under tolerance boundary"),
+            (1, 0, false, false, "1-bit positive just above tolerance boundary"),
+            (1, -1, true, true, "1-bit negative just under tolerance boundary"),
+            (1, 0, true, false, "1-bit negative just above tolerance boundary"),
+            (16, -1, false, true, "16-bit positive just under tolerance boundary"),
+            (16, 0, false, false, "16-bit positive just above tolerance boundary"),
+            (16, -1, true, true, "16-bit negative just under tolerance boundary"),
+            (16, 0, true, false, "16-bit negative just above tolerance boundary"),
+        };
+
+        foreach (var test in cases)
+        {
+            BigInteger magnitude = BigInteger.One << (test.BitLength - 1);
+            BigInteger mantissa = test.Negative ? BigInteger.Negate(magnitude) : magnitude;
+            int scale = BigFloat.GuardBits + test.ScaleOffset - test.BitLength;
+
+            BigFloat value = new(mantissa, scale, valueIncludesGuardBits: true);
+
+            Assert.Equal(test.ExpectZero, value.IsZero);
+            Assert.Equal(test.ExpectZero ? 0 : (test.Negative ? -1 : 1), value.Sign);
+            Assert.Equal(!test.ExpectZero && !test.Negative, value.IsPositive);
+            Assert.Equal(!test.ExpectZero && test.Negative, value.IsNegative);
+        }
+    }
+
+    [Fact]
     public void IsStrictZero_WhenResultFromFloatingPointArithmetic_ShouldHandleRoundingErrors()
     {
         // Arrange & Act

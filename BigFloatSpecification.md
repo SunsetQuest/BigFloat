@@ -33,7 +33,7 @@ GuardBits = 32
 * **Scale / Accuracy.** `Scale` is the base‑2 exponent applied to `_mantissa`; **Accuracy** is defined as `-Scale` (fractional‑bit budget).
 * **Size & precision.** `Size` = `max(0, _size − GuardBits)`; `SizeWithGuardBits` = `_size`; **Precision** = `_size − GuardBits`.
 * **Binary exponent.** `BinaryExponent = Scale + _size − GuardBits − 1`. 
-* **Zero semantics.** `IsZero` uses `_size` and `Scale` so denormalized “near‑zero” encodings normalize to zero; `IsStrictZero` checks `_mantissa.IsZero`. `Sign` collapses to 0 for zeros.
+* **Zero semantics.** Guard-bit-aware zero detection treats values with `_size == 0` or with `_size < GuardBits` **and** `_size + Scale < GuardBits` as zero, ensuring denormalized “near-zero” encodings collapse to zero. `IsStrictZero` checks `_mantissa.IsZero` only, while `Sign`, `IsPositive`, and `IsNegative` all reuse the same near-zero rule to collapse sign when the tolerance is met.
 * **Canonicalization hook.** Rounding that removes guard bits is done via `BigIntegerTools.RoundingRightShift(…, GuardBits)` and is the basis for comparisons and many conversions. (See Formatting and Comparison sections.)
 
 ---

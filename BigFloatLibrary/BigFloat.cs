@@ -116,7 +116,10 @@ public readonly partial struct BigFloat
 
     //see BigFloatZeroNotes.txt for notes
     /// <summary>
-    /// Returns true if the value is essentially zero.
+    /// Returns true when the value is considered zero after applying guard-bit tolerance.
+    /// A value is treated as zero if <c>_size == 0</c> or if <c>_size &lt; GuardBits</c>
+    /// <em>and</em> <c>_size + Scale &lt; GuardBits</c>, meaning every significant bit sits below the
+    /// guard-bit boundary. This same near-zero rule governs sign-related properties.
     /// </summary>
     public bool IsZero => _size < 32 && ((_size == 0) || (_size + Scale < 32));
 
@@ -127,18 +130,18 @@ public readonly partial struct BigFloat
 
     /// <summary>
     /// Returns true if the stored mantissa is positive and the value is not treated as zero by <see cref="IsZero"/>.
-    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
+    /// GuardBits are respected through the zero-tolerance rule only; no additional rounding is performed here.
     /// </summary>
     public bool IsPositive => _mantissa.Sign > 0 && !IsZero;
 
     /// <summary>
     /// Returns true if the stored mantissa is negative and the value is not treated as zero by <see cref="IsZero"/>.
-    /// GuardBits are respected only through the zero-tolerance check; no extra rounding is performed here.
+    /// GuardBits are respected through the zero-tolerance rule only; no additional rounding is performed here.
     /// </summary>
     public bool IsNegative => _mantissa.Sign < 0 && !IsZero;
 
     /// <summary>
-    /// Reports the sign of the mantissa while honoring the "near-zero" tolerance enforced by <see cref="IsZero"/>.
+    /// Reports the sign of the mantissa while honoring the guard-bit-aware "near-zero" tolerance enforced by <see cref="IsZero"/>.
     /// Returns -1 for negative, 0 for zero (or effectively zero), and +1 for positive.
     /// </summary>
     public int Sign => !IsZero ? _mantissa.Sign : 0;
