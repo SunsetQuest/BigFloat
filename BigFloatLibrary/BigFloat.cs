@@ -17,10 +17,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-//
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development
-// of this library.
-
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -78,17 +74,6 @@ public readonly partial struct BigFloat
     /// _size is 0 only when 'DataBits==0'. When BigFloat is Zero, the size is zero.
     /// </summary>
     internal readonly int _size;
-
-    //future: Possible future feature for repeating decimals
-    ///// <summary>
-    ///// When positive, it's the number of least significant digits in DataBits that repeat.
-    /////    Example: DataBits:11.001(with _extraPrecOrRepeat = 3) would be 11.001001001001...
-    ///// When negative, it is the number of extra virtual zeros tacked on the end of the internal DataBits for better precision and accuracy.
-    ///// Example: 11.001(with _extraPrecOrRepeat = -3) would be the same as 11.001000
-    /////   For the above example "000" would not take up any space and is also guaranteed to be all 0 bits.
-    ///// When zero, this feature does not get used. (Default)
-    ///// </summary>
-    // private readonly int _extraPrecOrRepeat;
 
     /// <summary>
     /// The binary Scale (or -Accuracy) is the amount to left shift (<<) the DataBits (i.e. right shift the radix point) to get to the desired value.
@@ -1607,7 +1592,7 @@ public readonly partial struct BigFloat
         return new BigFloat(prod, resScalePart, sizePart);
     }
 
-    public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
+    public static BigFloat operator *(BigFloat a, int b)
     {
         // 1) extract unsigned magnitude and sign
         int sign = (b < 0) ? -1 : 1;
@@ -1744,7 +1729,6 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator /(int a, BigFloat b)
     {
-        // Future: a should be exact
         return new BigFloat(a) / b;
     }
 
@@ -1998,10 +1982,9 @@ public readonly partial struct BigFloat
         return BitConverter.Int32BitsToSingle(sub);
     }
 
-    // todo: test
     /// <summary>
     /// Round-to-Nearest at '.' using only the first fractional bit (ignores guard bits), then truncate.
-    /// No round-to-even (ties go away-from-zero implicitly by using the top fractional bit only). (source ChatGPT 5T)
+    /// No round-to-even (ties go away-from-zero implicitly by using the top fractional bit only).
     /// </summary>
     public static int ToNearestInt(BigFloat x)
     {

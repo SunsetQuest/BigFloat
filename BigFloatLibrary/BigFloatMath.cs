@@ -372,7 +372,6 @@ public readonly partial struct BigFloat
 
 
     //////////////////////////////// Trig FUNCTIONS ////////////////////////////////////////////
-    // source: Claude 3.7, ChatGPT o3, and Ryan
 
     /// <summary>Switch point: if log2(|x|) ≤ –4 (~ 0.0625 rad) a direct Taylor series is fastest.</summary>
     private const int _taylorExpSwitch = -4;    // 1/16 rad ~ 3.6 deg
