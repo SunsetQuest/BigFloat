@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -309,12 +310,12 @@ public readonly partial struct BigFloat
         if (_mantissa.Sign >= 0)
         {
             BigInteger frac = _mantissa & mask;
-            return new BigFloat(frac, Scale, (int)frac.GetBitLength());
+            return new BigFloat(frac, Scale, MantissaSize(frac));
         }
         else
         {
             BigInteger frac = -(-_mantissa & mask);
-            return new BigFloat(frac, Scale, (int)(-frac).GetBitLength());
+            return new BigFloat(frac, Scale, MantissaSize(-frac));
         }
     }
 
@@ -324,7 +325,7 @@ public readonly partial struct BigFloat
     /// <param name="accuracyBits">The accuracy range can be from -GuardBits to Int.MaxValue.</param>
     public static BigFloat IntWithAccuracy(BigInteger intVal, int accuracyBits)
     {
-        int intSize = (int)BigInteger.Abs(intVal).GetBitLength();
+        int intSize = MantissaSize(intVal);
         // if the precision is shrunk to a size of zero it cannot contain any data bits
         return accuracyBits < -(GuardBits + intSize)
             ? ZeroWithAccuracy(0)

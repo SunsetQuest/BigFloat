@@ -5,6 +5,7 @@ using System;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -386,7 +387,7 @@ public readonly partial struct BigFloat
         else if (radixDepth >= 0) //111.111 OR 0.000111
         {
             BigInteger a = BigInteger.Pow(5, radixDepth);
-            int multBitLength = (int)a.GetBitLength();
+            int multBitLength = MantissaSize(a);
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + GuardBits - 1 + ROUND - guardBits;  // added  "-1" because it was adding one to many digits 
                                                                                // make asInt larger by the size of "a" before we dividing by "a"
@@ -396,7 +397,7 @@ public readonly partial struct BigFloat
         else // 100010XX
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
-            int multBitLength = (int)a.GetBitLength();
+            int multBitLength = MantissaSize(a);
             int shiftAmt = multBitLength - GuardBits - ROUND + guardBits;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;

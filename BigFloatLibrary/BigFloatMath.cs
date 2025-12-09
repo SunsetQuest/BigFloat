@@ -4,6 +4,7 @@
 using System;
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -137,7 +138,7 @@ public readonly partial struct BigFloat
 
         // ---- 3. Undo the scaling we did in step 1 and pack into BigFloat --------
         int retShift = ((totalLen + 1) >> 1) - wantedPrecision; // == ⌈totalLen/2⌉ – prec
-        return new BigFloat(root, retShift, (int)root.GetBitLength());
+        return new BigFloat(root, retShift, MantissaSize(root));
     }
 
     public static BigFloat CubeRoot(BigFloat value)

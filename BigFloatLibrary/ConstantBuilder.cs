@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -37,7 +38,7 @@ public readonly partial struct BigFloat
             {
                 foreach (BigInteger c in includedWholeNumbers) // ??= new int[])
                 {
-                    int adjBitLen = minimumAccuracy - (int)c.GetBitLength();
+                    int adjBitLen = minimumAccuracy - MantissaSize(c);
                     bfList.Add(new(c << adjBitLen, -adjBitLen));
                 }
             }

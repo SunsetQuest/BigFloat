@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Numerics;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -116,7 +117,7 @@ public readonly partial struct BigFloat
 
                 // Extract dataBits from remaining bytes
                 BigInteger dataBits = new(bytes, isUnsigned: true, isBigEndian: true);
-                int dataBitsLen = (int)dataBits.GetBitLength();
+                int dataBitsLen = MantissaSize(dataBits);
 
                 // Create BigFloat with valueIncludesGuardBits set to true
                 int scale = RadixShiftFromLeadingBit - dataBitsLen + GuardBits;
