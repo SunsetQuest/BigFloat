@@ -492,7 +492,7 @@ public readonly partial struct BigFloat
             // Ensure last bits are correct
             sum >>= 8;
 
-            return new BigFloat(sum, 2 - MantissaSize(sum) + GuardBits, true);
+            return new BigFloat(sum, 2 - BigFloatNumerics.MantissaSize(sum) + GuardBits, true);
         }
 
         /// <summary>
