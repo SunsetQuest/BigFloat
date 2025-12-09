@@ -8,6 +8,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -496,7 +497,7 @@ public readonly partial struct BigFloat
             // Ensure last bits are correct
             sum >>= 8;
 
-            return new BigFloat(sum, 2 - (int)sum.GetBitLength() + GuardBits, true);
+            return new BigFloat(sum, 2 - MantissaSize(sum) + GuardBits, true);
         }
 
         /// <summary>

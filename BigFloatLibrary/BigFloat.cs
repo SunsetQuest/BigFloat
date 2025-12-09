@@ -28,6 +28,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
+using static BigFloatLibrary.BigFloatNumerics;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -57,12 +58,6 @@ public readonly partial struct BigFloat
     /// These bits help guard against some nuisances such as "7" * "9" being "60". 
     /// </summary>
     public const int GuardBits = 32;  // 0-62, must be even (for sqrt)
-
-    /// <summary>
-    /// Performance tuning constants for optimized operations
-    /// </summary>
-    private const int KARATSUBA_THRESHOLD = 256;  // Threshold for switching to Karatsuba multiplication
-    private const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;  // Threshold for advanced division algorithms
 
     /// <summary>
     /// Gets the full integer's data bits, including guard bits.
@@ -268,7 +263,7 @@ public readonly partial struct BigFloat
     {
         EnsureNonNegativePrecision(addedBinaryPrecision);
 
-        int valueSize = (int)BigInteger.Abs(value).GetBitLength();
+        int valueSize = MantissaSize(value);
         int requestedPrecision = checked(valueSize + addedBinaryPrecision);
 
         EnsureNonNegativePrecision(requestedPrecision);
@@ -778,7 +773,7 @@ public readonly partial struct BigFloat
         }
 
         // Use advanced division algorithms for large numbers
-        if (numerator._size > BURNIKEL_ZIEGLER_THRESHOLD || denominator._size > BURNIKEL_ZIEGLER_THRESHOLD)
+        if (ShouldUseBurnikelZiegler(numerator._size, denominator._size))
         {
             return DivideLargeNumbers(numerator, denominator);
         }
@@ -831,7 +826,7 @@ public readonly partial struct BigFloat
         BigInteger resIntPart = leftShiftedT / dividend._mantissa;
 
         int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
-        int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
+        int sizePart = MantissaSize(resIntPart);
 
         return new BigFloat(resIntPart, resScalePart, sizePart);
     }
@@ -934,7 +929,7 @@ public readonly partial struct BigFloat
 
         return (
             new BigFloat(intPart, Scale, _size),
-            fracPart.IsZero ? ZeroWithAccuracy(0) : new BigFloat(fracPart, Scale, (int)fracPart.GetBitLength())
+            fracPart.IsZero ? ZeroWithAccuracy(0) : new BigFloat(fracPart, Scale, MantissaSize(fracPart))
         );
     }
 
@@ -1003,7 +998,7 @@ public readonly partial struct BigFloat
         }
 
         BigInteger intVal = r._mantissa + (BigInteger.One << onesPlace);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         // int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: for performance, faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
         return new BigFloat(intVal, r.Scale, sizeVal);
@@ -1028,7 +1023,7 @@ public readonly partial struct BigFloat
         }
 
         BigInteger intVal = r._mantissa - (BigInteger.One << onesPlace);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         //int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
 
@@ -1084,12 +1079,12 @@ public readonly partial struct BigFloat
         if (r1.Scale < r2.Scale)
         {
             BigInteger intVal0 = RoundingRightShift(r1._mantissa, -scaleDiff) + r2._mantissa;
-            int resSize0 = (int)BigInteger.Abs(intVal0).GetBitLength();
+            int resSize0 = MantissaSize(intVal0);
             return new BigFloat(intVal0, r2.Scale, resSize0);
         }
 
         BigInteger intVal = r1._mantissa + RoundingRightShift(r2._mantissa, scaleDiff);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         return new BigFloat(intVal, r1.Scale, sizeVal);
     }
 
@@ -1102,7 +1097,7 @@ public readonly partial struct BigFloat
         BigInteger addVal = (BigInteger)r2 << (GuardBits - r1.Scale);
         addVal += r1._mantissa;
 
-        return new BigFloat(addVal, r1.Scale, (int)BigInteger.Abs(addVal).GetBitLength());
+        return new BigFloat(addVal, r1.Scale, MantissaSize(addVal));
     }
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
@@ -1481,7 +1476,7 @@ public readonly partial struct BigFloat
             diff--;
         }
 
-        int size = Math.Max(0, (int)BigInteger.Abs(diff).GetBitLength());
+        int size = Math.Max(0, MantissaSize(diff));
 
         return new BigFloat(diff, r1.Scale < r2.Scale ? r2.Scale : r1.Scale, size);
     }
@@ -1493,7 +1488,7 @@ public readonly partial struct BigFloat
     public static BigFloat PowerOf2(BigFloat val)
     {
         BigInteger prod = val._mantissa * val._mantissa;
-        int resSize = (int)prod.GetBitLength();
+        int resSize = MantissaSize(prod);
         int shrinkBy = resSize - val._size;
         prod = RoundingRightShift(prod, shrinkBy, ref resSize);
         int resScalePart = (2 * val.Scale) + shrinkBy - GuardBits;
@@ -1536,7 +1531,7 @@ public readonly partial struct BigFloat
         BigInteger valWithLessPrec = val._mantissa >> inputShink;
         BigInteger prod = valWithLessPrec * valWithLessPrec;
 
-        int resBitLen = (int)prod.GetBitLength();
+        int resBitLen = MantissaSize(prod);
         int shrinkBy = resBitLen - val._size - (2 * GuardBits);
         int sizePart = resBitLen - shrinkBy;
         prod = RoundingRightShift(prod, shrinkBy);
@@ -1597,7 +1592,7 @@ public readonly partial struct BigFloat
             shouldBe = a._size;
         }
 
-        int sizePart = (int)BigInteger.Abs(prod).GetBitLength();
+        int sizePart = MantissaSize(prod);
         int shrinkBy = sizePart - shouldBe;
 
         prod = RoundingRightShift(prod, shrinkBy, ref sizePart);
@@ -1645,7 +1640,7 @@ public readonly partial struct BigFloat
 
         // General multiplication with size management
         BigInteger mant = a._mantissa * new BigInteger(ub);
-        int sizePart = (int)BigInteger.Abs(mant).GetBitLength();
+        int sizePart = MantissaSize(mant);
         int origSize = a._size;
         int shrinkBy = sizePart - origSize;
 
@@ -1711,7 +1706,7 @@ public readonly partial struct BigFloat
         }
 
         int newScale = divisor.Scale - extraShift;
-        int resultSize = (int)result.GetBitLength();
+        int resultSize = MantissaSize(result);
 
         // Precision adjustment
         if (resultSize < targetSize)
@@ -1730,7 +1725,7 @@ public readonly partial struct BigFloat
             newScale += adjustShift;
 
             // Check if rounding caused a carry that increased the bit length
-            if (result.GetBitLength() > targetSize)
+            if (MantissaSize(result) > targetSize)
             {
                 result >>= 1;
                 newScale += 1;
@@ -2048,7 +2043,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool Validate()
     {
-        int realSize = (int)BigInteger.Abs(_mantissa).GetBitLength();
+        int realSize = MantissaSize(_mantissa);
         bool valid = _size == realSize;
 
         Debug.Assert(valid,
