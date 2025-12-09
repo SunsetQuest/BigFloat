@@ -72,6 +72,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using static BigFloatLibrary.BigIntegerTools;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -88,7 +89,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // Detect carry that adds a new top bit after rounding (e.g., 0111.. -> 1000..).
         int oldMainSize = Math.Max(0, _size - GuardBits);
-        int newMainSize = (int)BigInteger.Abs(roundedMain).GetBitLength();
+        int newMainSize = MantissaSize(roundedMain);
 
         int scale = Scale;
         if (newMainSize > oldMainSize && oldMainSize != 0)
@@ -507,7 +508,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (thisSign == 0) { return 0; }
 
         // A fast general size check.
-        int bigIntegerSizeLessOne = (int)BigInteger.Abs(bigInteger).GetBitLength() - 1;
+        int bigIntegerSizeLessOne = MantissaSize(bigInteger) - 1;
 
         if (BinaryExponent != bigIntegerSizeLessOne)
         {

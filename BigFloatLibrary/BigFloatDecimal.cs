@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -84,7 +85,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
 
         // Set fields
         _mantissa = !isNegative ? mantissa : -mantissa;
-        _size = (int)mantissa.GetBitLength();
+        _size = MantissaSize(mantissa);
         Scale = binaryExponent + binaryScaler + GuardBits;
 
         AssertValid();
@@ -191,7 +192,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
                     decScale += extraDec;
                     m *= TenPow[extraDec];
 
-                    bitLen = (int)m.GetBitLength();
+                    bitLen = MantissaSize(m);
                     excessBits = Math.Max(0, bitLen - PrecBits);
                 }
 
@@ -200,7 +201,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             }
 
             // did the rounding spill into a new MSB?
-            if (m.GetBitLength() > PrecBits)
+            if (MantissaSize(m) > PrecBits)
             {
                 m /= 10;
                 decScale--;

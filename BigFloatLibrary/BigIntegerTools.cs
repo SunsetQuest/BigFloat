@@ -772,8 +772,8 @@ public static class BigIntegerTools
     /// <summary>
     /// This number will take a BigInteger and return the bits to the right side of the decimal point. 
     /// Example: Inverse of 0b11011(i.e. 18) would be 0.037037 and returned as 0b00010010(i.e. 18).
-    /// Note: Initial version of this was started with ChatGPT. SunsetQuest's Newton Plus algorithm was then added. 
-    /// (see inverseNotes.txt)
+    /// Note: Initial version of this was combined with SunsetQuest's Newton Plus algorithm.
+    /// (see inverseNotes.txt for historical tuning notes)
     /// </summary>
     /// <param name="x">The value you want to find the inverse (1/x) of x. Negative values are allowed.</param>
     /// <param name="requestedPrecision">The number of bits in the output precision. If 0, then the output will match the input's length.</param>

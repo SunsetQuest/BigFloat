@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -136,7 +137,7 @@ public readonly partial struct BigFloat
 
         // ---- 3. Undo the scaling we did in step 1 and pack into BigFloat --------
         int retShift = ((totalLen + 1) >> 1) - wantedPrecision; // == ⌈totalLen/2⌉ – prec
-        return new BigFloat(root, retShift, (int)root.GetBitLength());
+        return new BigFloat(root, retShift, MantissaSize(root));
     }
 
     public static BigFloat CubeRoot(BigFloat value)
@@ -371,7 +372,6 @@ public readonly partial struct BigFloat
 
 
     //////////////////////////////// Trig FUNCTIONS ////////////////////////////////////////////
-    // source: Claude 3.7, ChatGPT o3, and Ryan
 
     /// <summary>Switch point: if log2(|x|) ≤ –4 (~ 0.0625 rad) a direct Taylor series is fastest.</summary>
     private const int _taylorExpSwitch = -4;    // 1/16 rad ~ 3.6 deg

@@ -1,25 +1,6 @@
-// Copyright Ryan Scott White. 2020-2025
-//
-// Released under the MIT License. Permission is hereby granted, free of charge,
-// to any person obtaining a copy of this software and associated documentation
-// files (the "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish, distribute,
-// sub-license, and/or sell copies of the Software, and to permit persons to whom
-// the Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-//
-// Starting 2/25, ChatGPT/Claude/GitHub Copilot/Grok were used in the development
-// of this library.
+// Copyright(c) 2020 - 2025 Ryan Scott White
+// Licensed under the MIT License. See LICENSE.txt in the project root for details.
+// Starting 2/25, ChatGPT/Claude/Copilot/Grok were used in the development of this library.
 
 using System.ComponentModel;
 using System.Diagnostics;
@@ -27,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
+using static BigFloatLibrary.BigFloatNumerics;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -58,12 +40,6 @@ public readonly partial struct BigFloat
     public const int GuardBits = 32;  // 0-62, must be even (for sqrt)
 
     /// <summary>
-    /// Performance tuning constants for optimized operations
-    /// </summary>
-    private const int KARATSUBA_THRESHOLD = 256;  // Threshold for switching to Karatsuba multiplication
-    private const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;  // Threshold for advanced division algorithms
-
-    /// <summary>
     /// Gets the full integer's data bits, including guard bits.
     /// </summary>
     private readonly BigInteger _mantissa;
@@ -77,17 +53,6 @@ public readonly partial struct BigFloat
     /// _size is 0 only when 'DataBits==0'. When BigFloat is Zero, the size is zero.
     /// </summary>
     internal readonly int _size;
-
-    //future: Possible future feature for repeating decimals
-    ///// <summary>
-    ///// When positive, it's the number of least significant digits in DataBits that repeat.
-    /////    Example: DataBits:11.001(with _extraPrecOrRepeat = 3) would be 11.001001001001...
-    ///// When negative, it is the number of extra virtual zeros tacked on the end of the internal DataBits for better precision and accuracy.
-    ///// Example: 11.001(with _extraPrecOrRepeat = -3) would be the same as 11.001000
-    /////   For the above example "000" would not take up any space and is also guaranteed to be all 0 bits.
-    ///// When zero, this feature does not get used. (Default)
-    ///// </summary>
-    // private readonly int _extraPrecOrRepeat;
 
     /// <summary>
     /// The binary Scale (or -Accuracy) is the amount to left shift (<<) the DataBits (i.e. right shift the radix point) to get to the desired value.
@@ -267,7 +232,7 @@ public readonly partial struct BigFloat
     {
         EnsureNonNegativePrecision(addedBinaryPrecision);
 
-        int valueSize = (int)BigInteger.Abs(value).GetBitLength();
+        int valueSize = MantissaSize(value);
         int requestedPrecision = checked(valueSize + addedBinaryPrecision);
 
         EnsureNonNegativePrecision(requestedPrecision);
@@ -777,7 +742,7 @@ public readonly partial struct BigFloat
         }
 
         // Use advanced division algorithms for large numbers
-        if (numerator._size > BURNIKEL_ZIEGLER_THRESHOLD || denominator._size > BURNIKEL_ZIEGLER_THRESHOLD)
+        if (ShouldUseBurnikelZiegler(numerator._size, denominator._size))
         {
             return DivideLargeNumbers(numerator, denominator);
         }
@@ -830,7 +795,7 @@ public readonly partial struct BigFloat
         BigInteger resIntPart = leftShiftedT / dividend._mantissa;
 
         int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
-        int sizePart = (int)BigInteger.Abs(resIntPart).GetBitLength();
+        int sizePart = MantissaSize(resIntPart);
 
         return new BigFloat(resIntPart, resScalePart, sizePart);
     }
@@ -933,7 +898,7 @@ public readonly partial struct BigFloat
 
         return (
             new BigFloat(intPart, Scale, _size),
-            fracPart.IsZero ? ZeroWithAccuracy(0) : new BigFloat(fracPart, Scale, (int)fracPart.GetBitLength())
+            fracPart.IsZero ? ZeroWithAccuracy(0) : new BigFloat(fracPart, Scale, MantissaSize(fracPart))
         );
     }
 
@@ -1002,7 +967,7 @@ public readonly partial struct BigFloat
         }
 
         BigInteger intVal = r._mantissa + (BigInteger.One << onesPlace);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         // int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: for performance, faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
         return new BigFloat(intVal, r.Scale, sizeVal);
@@ -1027,7 +992,7 @@ public readonly partial struct BigFloat
         }
 
         BigInteger intVal = r._mantissa - (BigInteger.One << onesPlace);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         //int sizeVal = (onesPlace > r._size) ? onesPlace +1 :  //future: faster just to calc?
         //    r._size + ((BigInteger.TrailingZeroCount(intVal) == r._size) ? 1 : 0);
 
@@ -1083,12 +1048,12 @@ public readonly partial struct BigFloat
         if (r1.Scale < r2.Scale)
         {
             BigInteger intVal0 = RoundingRightShift(r1._mantissa, -scaleDiff) + r2._mantissa;
-            int resSize0 = (int)BigInteger.Abs(intVal0).GetBitLength();
+            int resSize0 = MantissaSize(intVal0);
             return new BigFloat(intVal0, r2.Scale, resSize0);
         }
 
         BigInteger intVal = r1._mantissa + RoundingRightShift(r2._mantissa, scaleDiff);
-        int sizeVal = (int)BigInteger.Abs(intVal).GetBitLength();
+        int sizeVal = MantissaSize(intVal);
         return new BigFloat(intVal, r1.Scale, sizeVal);
     }
 
@@ -1101,7 +1066,7 @@ public readonly partial struct BigFloat
         BigInteger addVal = (BigInteger)r2 << (GuardBits - r1.Scale);
         addVal += r1._mantissa;
 
-        return new BigFloat(addVal, r1.Scale, (int)BigInteger.Abs(addVal).GetBitLength());
+        return new BigFloat(addVal, r1.Scale, MantissaSize(addVal));
     }
 
     ///////////////////////// Rounding, Shifting, Truncate /////////////////////////
@@ -1480,7 +1445,7 @@ public readonly partial struct BigFloat
             diff--;
         }
 
-        int size = Math.Max(0, (int)BigInteger.Abs(diff).GetBitLength());
+        int size = Math.Max(0, MantissaSize(diff));
 
         return new BigFloat(diff, r1.Scale < r2.Scale ? r2.Scale : r1.Scale, size);
     }
@@ -1492,7 +1457,7 @@ public readonly partial struct BigFloat
     public static BigFloat PowerOf2(BigFloat val)
     {
         BigInteger prod = val._mantissa * val._mantissa;
-        int resSize = (int)prod.GetBitLength();
+        int resSize = MantissaSize(prod);
         int shrinkBy = resSize - val._size;
         prod = RoundingRightShift(prod, shrinkBy, ref resSize);
         int resScalePart = (2 * val.Scale) + shrinkBy - GuardBits;
@@ -1535,7 +1500,7 @@ public readonly partial struct BigFloat
         BigInteger valWithLessPrec = val._mantissa >> inputShink;
         BigInteger prod = valWithLessPrec * valWithLessPrec;
 
-        int resBitLen = (int)prod.GetBitLength();
+        int resBitLen = MantissaSize(prod);
         int shrinkBy = resBitLen - val._size - (2 * GuardBits);
         int sizePart = resBitLen - shrinkBy;
         prod = RoundingRightShift(prod, shrinkBy);
@@ -1596,7 +1561,7 @@ public readonly partial struct BigFloat
             shouldBe = a._size;
         }
 
-        int sizePart = (int)BigInteger.Abs(prod).GetBitLength();
+        int sizePart = MantissaSize(prod);
         int shrinkBy = sizePart - shouldBe;
 
         prod = RoundingRightShift(prod, shrinkBy, ref sizePart);
@@ -1606,7 +1571,7 @@ public readonly partial struct BigFloat
         return new BigFloat(prod, resScalePart, sizePart);
     }
 
-    public static BigFloat operator *(BigFloat a, int b) //ChatGPT o4-mini-high
+    public static BigFloat operator *(BigFloat a, int b)
     {
         // 1) extract unsigned magnitude and sign
         int sign = (b < 0) ? -1 : 1;
@@ -1644,7 +1609,7 @@ public readonly partial struct BigFloat
 
         // General multiplication with size management
         BigInteger mant = a._mantissa * new BigInteger(ub);
-        int sizePart = (int)BigInteger.Abs(mant).GetBitLength();
+        int sizePart = MantissaSize(mant);
         int origSize = a._size;
         int shrinkBy = sizePart - origSize;
 
@@ -1710,7 +1675,7 @@ public readonly partial struct BigFloat
         }
 
         int newScale = divisor.Scale - extraShift;
-        int resultSize = (int)result.GetBitLength();
+        int resultSize = MantissaSize(result);
 
         // Precision adjustment
         if (resultSize < targetSize)
@@ -1729,7 +1694,7 @@ public readonly partial struct BigFloat
             newScale += adjustShift;
 
             // Check if rounding caused a carry that increased the bit length
-            if (result.GetBitLength() > targetSize)
+            if (MantissaSize(result) > targetSize)
             {
                 result >>= 1;
                 newScale += 1;
@@ -1743,7 +1708,6 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat operator /(int a, BigFloat b)
     {
-        // Future: a should be exact
         return new BigFloat(a) / b;
     }
 
@@ -1997,10 +1961,9 @@ public readonly partial struct BigFloat
         return BitConverter.Int32BitsToSingle(sub);
     }
 
-    // todo: test
     /// <summary>
     /// Round-to-Nearest at '.' using only the first fractional bit (ignores guard bits), then truncate.
-    /// No round-to-even (ties go away-from-zero implicitly by using the top fractional bit only). (source ChatGPT 5T)
+    /// No round-to-even (ties go away-from-zero implicitly by using the top fractional bit only).
     /// </summary>
     public static int ToNearestInt(BigFloat x)
     {
@@ -2047,7 +2010,7 @@ public readonly partial struct BigFloat
     /// </summary>
     public bool Validate()
     {
-        int realSize = (int)BigInteger.Abs(_mantissa).GetBitLength();
+        int realSize = MantissaSize(_mantissa);
         bool valid = _size == realSize;
 
         Debug.Assert(valid,

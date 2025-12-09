@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -52,7 +53,7 @@ public readonly partial struct BigFloat
             return;
         }
 
-        int valueSize = (int)BigInteger.Abs((BigInteger)value).GetBitLength();
+        int valueSize = MantissaSize((BigInteger)value);
         int effectivePrecision = Math.Max(binaryPrecision, valueSize);
         int guardBitsToAdd = valueIncludesGuardBits ? 0 : GuardBits;
         int applyGuardBits = guardBitsToAdd + (effectivePrecision - valueSize);
@@ -313,7 +314,7 @@ public readonly partial struct BigFloat
         else
         {
             // fallback to GetBitLength (rarely hit)
-            size = (int)absNew.GetBitLength();
+            size = MantissaSize(absNew);
         }
 
         return new BigFloat(newVal, x.Scale, size);

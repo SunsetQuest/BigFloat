@@ -4,6 +4,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -385,7 +386,7 @@ public readonly partial struct BigFloat
         else if (radixDepth >= 0) //111.111 OR 0.000111
         {
             BigInteger a = BigInteger.Pow(5, radixDepth);
-            int multBitLength = (int)a.GetBitLength();
+            int multBitLength = MantissaSize(a);
             multBitLength += (int)(a >> (multBitLength - 2)) & 0x1;      // Round up if closer to larger size 
             int shiftAmt = multBitLength + GuardBits - 1 + ROUND - guardBits;  // added  "-1" because it was adding one to many digits 
                                                                                // make asInt larger by the size of "a" before we dividing by "a"
@@ -395,7 +396,7 @@ public readonly partial struct BigFloat
         else // 100010XX
         {
             BigInteger a = BigInteger.Pow(5, -radixDepth);
-            int multBitLength = (int)a.GetBitLength();
+            int multBitLength = MantissaSize(a);
             int shiftAmt = multBitLength - GuardBits - ROUND + guardBits;
             // Since we are making asInt larger by multiplying it by "a", we now need to shrink it by size "a".
             intPart = (((val * a) >> shiftAmt) + ROUND) >> ROUND;
@@ -667,8 +668,6 @@ public readonly partial struct BigFloat
             result = default;
             return false;
         }
-
-        //guardBitsIncluded += 2; // todo: I think we should do a "+=1" or "+=2" because if the user request ParseHex("1") then, without this, they would get 1.00|0000.. however if they specify "1" then they probably intended 2-4 bits of precision.  We could only do this if accuracyDelimiterPosition is not specified(-1) AND guardBitsIncluded is not specified(0) however then it is not possible to do a guardBitsIncluded with 0 because it would always increment it. I think the solution is to just increment everything. (e.g C=C.00|000... AB0=AB0.00|000... ). Another reason to add the additional precision is if we didn't add it and did a "1 * F" we would get 0b1|111.000... and the user would get an answer of 2e1. While this would be correct in regards to precision, it would be confusing to users.
 
         asInt <<= GuardBits - guardBitsIncluded;
 
