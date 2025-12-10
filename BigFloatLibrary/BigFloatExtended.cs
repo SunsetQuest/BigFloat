@@ -7,6 +7,9 @@ using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
+/// <summary>
+/// Provides additional constructors and helper methods for the <see cref="BigFloat"/> struct.
+/// </summary>
 public readonly partial struct BigFloat
 {
     /// <summary>
@@ -33,10 +36,20 @@ public readonly partial struct BigFloat
     /// </summary>
     public int Accuracy => -Scale;
 
+    /// <summary>
+    /// Gets a cached representation of negative one with the default guard-bit layout.
+    /// </summary>
     public static BigFloat NegativeOne => new(BigInteger.MinusOne << GuardBits, 0, GuardBits + 1);
 
     /////////////////////////    CONVERSION FUNCTIONS     /////////////////////////
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from an <see cref="sbyte"/> value.
+    /// </summary>
+    /// <param name="value">The signed 8-bit integer to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> is already shifted to include guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(sbyte value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 7)
     {
         if (binaryPrecision < 0)
@@ -65,6 +78,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from an unsigned 8-bit integer.
+    /// </summary>
+    /// <param name="value">The byte to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(byte value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 8)
     {
         if (binaryPrecision < 0)
@@ -93,6 +113,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from a 16-bit signed integer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(short value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 15)
     {
         if (value == 0)
@@ -127,6 +154,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from a 16-bit unsigned integer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="addedBinaryPrecision">Additional precision bits to preserve from the source value.</param>
     public BigFloat(ushort value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int addedBinaryPrecision = 16)
     {
         int applyGuardBits = (valueIncludesGuardBits ? 0 : GuardBits) + addedBinaryPrecision;
@@ -136,6 +170,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from a 32-bit unsigned integer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(uint value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 32)
     {
         if (binaryPrecision < 0)
@@ -164,6 +205,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from a 128-bit signed integer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(Int128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 127)
     {
         if (binaryPrecision < 0)
@@ -193,6 +241,13 @@ public readonly partial struct BigFloat
         AssertValid();
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="BigFloat"/> from a 128-bit unsigned integer.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="binaryScaler">Binary exponent shift to apply to the input value.</param>
+    /// <param name="valueIncludesGuardBits">True if <paramref name="value"/> already accounts for guard bits.</param>
+    /// <param name="binaryPrecision">Requested binary precision, not including guard bits.</param>
     public BigFloat(UInt128 value, int binaryScaler = 0, bool valueIncludesGuardBits = false, int binaryPrecision = 128)
     {
         if (binaryPrecision < 0)
@@ -259,21 +314,33 @@ public readonly partial struct BigFloat
     public static BigFloat NextDownHalfInPrecisionBit(in BigFloat x) => BitAdjust(x, -1L << (GuardBits - 1));
 
     // === Compatibility shims (deprecated) ===
+    /// <summary>
+    /// Deprecated alias for <see cref="NextUp(in BigFloat)"/>; increments by one final-precision ULP.
+    /// </summary>
     [System.Obsolete("Renamed: use NextUp(x) for final-precision ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat BitIncrement(in BigFloat x) => NextUp(x);
 
+    /// <summary>
+    /// Deprecated alias for <see cref="NextDown(in BigFloat)"/>; decrements by one final-precision ULP.
+    /// </summary>
     [System.Obsolete("Renamed: use NextDown(x) for final-precision ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat BitDecrement(in BigFloat x) => NextDown(x);
 
+    /// <summary>
+    /// Deprecated alias for <see cref="NextUpInPrecisionBit(in BigFloat)"/>; increments a guard-bit scale unit.
+    /// </summary>
     [System.Obsolete("Renamed: use NextUpExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat GuardBitIncrement(in BigFloat x) => NextUpInPrecisionBit(x);
 
+    /// <summary>
+    /// Deprecated alias for <see cref="NextDownInPrecisionBit(in BigFloat)"/>; decrements a guard-bit scale unit.
+    /// </summary>
     [System.Obsolete("Renamed: use NextDownExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
