@@ -152,22 +152,22 @@ public class OriginalBigFloatTests
     public void Verify_Constants()
     {
         BigFloat bfFromBfConstants =
-            BigFloat.Constants.NumberTheory.Prime +
-            BigFloat.Constants.Derived.NaturalLogOfPhi +
-            BigFloat.Constants.Analysis.Omega +
-            BigFloat.Constants.Fundamental.EulerMascheroni +
-            BigFloat.Constants.NumberTheory.TwinPrime +
-            BigFloat.Constants.Analysis.Catalan +
-            BigFloat.Constants.Misc.Plastic +
-            BigFloat.Constants.Misc.Pisot +
-            BigFloat.Constants.Fundamental.Sqrt2 +
-            BigFloat.Constants.Physics.FineStructure +
-            BigFloat.Constants.Fundamental.GoldenRatio +
-            BigFloat.Constants.Fundamental.Sqrt3 +
-            BigFloat.Constants.Fundamental.SqrtPi +
-            BigFloat.Constants.Analysis.Khintchine +
-            BigFloat.Constants.Fundamental.E +
-            BigFloat.Constants.Fundamental.Pi;
+            BigFloat.Constants.Prime +
+            BigFloat.Constants.NaturalLogOfPhi +
+            BigFloat.Constants.Omega +
+            BigFloat.Constants.EulerMascheroni +
+            BigFloat.Constants.TwinPrime +
+            BigFloat.Constants.Catalan +
+            BigFloat.Constants.Plastic +
+            BigFloat.Constants.Pisot +
+            BigFloat.Constants.Sqrt2 +
+            BigFloat.Constants.FineStructure +
+            BigFloat.Constants.GoldenRatio +
+            BigFloat.Constants.Sqrt3 +
+            BigFloat.Constants.SqrtPi +
+            BigFloat.Constants.Khintchine +
+            BigFloat.Constants.E +
+            BigFloat.Constants.Pi;
 
 
         double doubleTotal =
@@ -219,8 +219,8 @@ public class OriginalBigFloatTests
         double doubleDiff1 = doubleTotal - (double)bfFromBfConstants;
         Assert.True(doubleDiff1 <= acceptableTolarance);
 
-        Assert.Equal(0, BigFloat.CompareUlp(BigFloat.Constants.NumberTheory.RamanujanSoldner, (BigFloat)262537412640768743.99999999999925, 50));
-        Assert.Equal(262537412640768743.99999999999925, (double)BigFloat.Constants.NumberTheory.RamanujanSoldner);
+        Assert.Equal(0, BigFloat.CompareUlp(BigFloat.Constants.RamanujanSoldner, (BigFloat)262537412640768743.99999999999925, 50));
+        Assert.Equal(262537412640768743.99999999999925, (double)BigFloat.Constants.RamanujanSoldner);
 
         bool success = BigFloat.ConstantBuilder.Const_0_0307.TryGetAsBigFloat(out BigFloat bf, 100);
 

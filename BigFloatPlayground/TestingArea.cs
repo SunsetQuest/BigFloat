@@ -17,7 +17,7 @@ public static class TestingArea
         Console.WriteLine($"Pi(generated): {PiFromGenerated}");
 
         // Default constants with standard precision
-        BigFloat PiFromDefault = BigFloat.Constants.Fundamental.Pi;
+        BigFloat PiFromDefault = BigFloat.Constants.Pi;
         Console.WriteLine($"Pi(default): {PiFromDefault}");
 
         // Get all constants at once with configured precision
