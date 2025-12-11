@@ -33,282 +33,240 @@ public readonly partial struct BigFloat
         /// </summary>
         public static bool DefaultUseExternalFiles => true;
 
-        #region Mathematical Categories
+        #region Mathematical Constants
 
         /// <summary>
-        /// Fundamental mathematical constants such as pi and e.
+        /// pi: The ratio of a circle's circumference to its diameter.
+        /// Approximately 3.14159265358979323846...
         /// </summary>
-        public static class Fundamental
-        {
-            /// <summary>
-            /// pi: The ratio of a circle's circumference to its diameter.
-            /// Approximately 3.14159265358979323846...
-            /// </summary>
-            public static BigFloat Pi => GetConstant(Catalog.Pi);
-
-            /// <summary>
-            /// Euler's number (e): The base of the natural logarithm.
-            /// Approximately 2.71828182845904523536...
-            /// </summary>
-            public static BigFloat E => GetConstant(Catalog.E);
-
-            /// <summary>
-            /// Square root of 2: Approximately 1.41421356237309504880...
-            /// </summary>
-            public static BigFloat Sqrt2 => GetConstant(Catalog.Sqrt2);
-
-            /// <summary>
-            /// Square root of 3: Approximately 1.73205080756887729352...
-            /// Also known as Theodorus' constant.
-            /// </summary>
-            public static BigFloat Sqrt3 => GetConstant(Catalog.TheodorusConstant_Sqrt3);
-
-            /// <summary>
-            /// Square root of Pi: Approximately 1.77245385090551602729...
-            /// </summary>
-            public static BigFloat SqrtPi => GetConstant(Catalog.Sqrt_Pi);
-
-            /// <summary>
-            /// Golden Ratio (φ): Approximately 1.61803398874989484820...
-            /// The limit of the ratio of consecutive Fibonacci numbers.
-            /// </summary>
-            public static BigFloat GoldenRatio => GetConstant(Catalog.GoldenRatio);
-
-            /// <summary>
-            /// Euler-Mascheroni constant (γ): Approximately 0.57721566490153286061...
-            /// The limit of the difference between the harmonic series and natural logarithm.
-            /// </summary>
-            public static BigFloat EulerMascheroni => GetConstant(Catalog.EulerMascheroniConstant);
-        }
+        public static BigFloat Pi => GetConstant(Catalog.Pi);
 
         /// <summary>
-        /// Number-theoretic constants related to prime numbers and number theory.
+        /// Euler's number (e): The base of the natural logarithm.
+        /// Approximately 2.71828182845904523536...
         /// </summary>
-        public static class NumberTheory
-        {
-            /// <summary>
-            /// Twin Prime constant: Approximately 0.66016181584686957392...
-            /// Product over primes p of (1 - 1/(p-1)^2).
-            /// </summary>
-            public static BigFloat TwinPrime => GetConstant(Catalog.TwinPrimeConstant);
-
-            /// <summary>
-            /// Prime constant: Approximately 0.41468250985111166...
-            /// A binary constant where 1 bits correspond to prime indices.
-            /// </summary>
-            public static BigFloat Prime => GetConstant(Catalog.PrimeConstant);
-
-            /// <summary>
-            /// Ramanujan-Soldner constant: Approximately 1.45136923488338105...
-            /// The unique positive zero of the logarithmic integral function.
-            /// </summary>
-            public static BigFloat RamanujanSoldner => GetConstant(Catalog.RamanujanSoldnerConstant);
-
-            /// <summary>
-            /// Meissel–Mertens constant: Approximately 0.26149721284764278...
-            /// Related to the distribution of prime numbers.
-            /// </summary>
-            public static BigFloat MeisselMertens => GetConstant(Catalog.Const_0_2614);
-
-            /// <summary>
-            /// Conway's constant: Approximately 1.30357726903429639...
-            /// The growth rate of the Look-and-say sequence.
-            /// </summary>
-            public static BigFloat Conway => GetConstant(Catalog.ConwayConstant);
-
-            /// <summary>
-            /// Apéry's constant: Approximately 1.20205690315959428...
-            /// Equal to ζ(3), the sum of the reciprocals of cubes of positive integers.
-            /// </summary>
-            public static BigFloat Apery => GetConstant(Catalog.AperyConstant);
-        }
+        public static BigFloat E => GetConstant(Catalog.E);
 
         /// <summary>
-        /// Constants related to special functions and advanced mathematics.
+        /// Square root of 2: Approximately 1.41421356237309504880...
         /// </summary>
-        public static class Analysis
-        {
-            /// <summary>
-            /// Catalan's constant: Approximately 0.91596559417721901...
-            /// Sum of the alternating series 1-1/9+1/25-1/49...
-            /// </summary>
-            public static BigFloat Catalan => GetConstant(Catalog.CatalanConstant);
-
-            /// <summary>
-            /// Khintchine's constant: Approximately 2.68545200106530...
-            /// The geometric mean of continued fraction terms.
-            /// </summary>
-            public static BigFloat Khintchine => GetConstant(Catalog.KhintchinesConstant);
-
-            /// <summary>
-            /// Omega constant: Approximately 0.56714329040978...
-            /// The value of W(1) where W is the Lambert W function.
-            /// </summary>
-            public static BigFloat Omega => GetConstant(Catalog.OmegaConstant);
-
-            /// <summary>
-            /// Negative logarithm of gamma (Euler's constant): Approximately 0.54953931298164...
-            /// </summary>
-            public static BigFloat NegLogGamma => GetConstant(Catalog.Const_0_5495);
-
-            /// <summary>
-            /// Glaisher–Kinkelin constant: Approximately 1.28242712910062...
-            /// Related to the Barnes G-function and the K-function.
-            /// </summary>
-            public static BigFloat GlaisherKinkelin => GetConstant(Catalog.GlaisherKinkelinConstant);
-
-            /// <summary>
-            /// Exponential of Euler-Mascheroni constant: Approximately 1.78107241799019...
-            /// exp(γ)
-            /// </summary>
-            public static BigFloat ExpEulerMascheroni => GetConstant(Catalog.ExpEulerMascheroniConstant);
-        }
+        public static BigFloat Sqrt2 => GetConstant(Catalog.Sqrt2);
 
         /// <summary>
-        /// Constants related to physics and the natural sciences.
+        /// Square root of 3: Approximately 1.73205080756887729352...
+        /// Also known as Theodorus' constant.
         /// </summary>
-        public static class Physics
-        {
-            /// <summary>
-            /// Fine Structure constant: Approximately 1.46035450880959...
-            /// A fundamental physical constant characterizing the strength of the electromagnetic interaction.
-            /// </summary>
-            public static BigFloat FineStructure => GetConstant(Catalog.FineStructureConstant);
-        }
+        public static BigFloat Sqrt3 => GetConstant(Catalog.TheodorusConstant_Sqrt3);
 
         /// <summary>
-        /// Constants derived from fundamental constants like Pi and e.
+        /// Square root of Pi: Approximately 1.77245385090551602729...
         /// </summary>
-        public static class Derived
-        {
-            /// <summary>
-            /// Natural log of Phi: Approximately 0.48121182505960344...
-            /// </summary>
-            public static BigFloat NaturalLogOfPhi => GetConstant(Catalog.NaturalLogOfPhi);
-
-            /// <summary>
-            /// pi squared (pi^2): Approximately 9.86960440108935...
-            /// </summary>
-            public static BigFloat PiSquared => GetConstant(Catalog.PiSquared);
-
-            /// <summary>
-            /// e squared (e^2): Approximately 7.38905609893065...
-            /// </summary>
-            public static BigFloat ESquared => GetConstant(Catalog.ESquared);
-
-            /// <summary>
-            /// pi times e (pie): Approximately 8.53973422267356...
-            /// </summary>
-            public static BigFloat PiTimesE => GetConstant(Catalog.PiTimesE);
-
-            /// <summary>
-            /// e to the power of pi (e^pi): Approximately 23.14069263277926...
-            /// </summary>
-            public static BigFloat EPowerPi => GetConstant(Catalog.EPowerPi);
-
-            /// <summary>
-            /// pi to the power of e (pi^e): Approximately 22.45915771836104...
-            /// </summary>
-            public static BigFloat PiPowerE => GetConstant(Catalog.PiPowerE);
-
-            /// <summary>
-            /// pi to the power of Pi (pi^pi): Approximately 36.46215960720791...
-            /// </summary>
-            public static BigFloat PiPowerPi => GetConstant(Catalog.PiPowerPi);
-
-            /// <summary>
-            /// e to the power of e (e^e): Approximately 15.15426224147926...
-            /// </summary>
-            public static BigFloat EPowerE => GetConstant(Catalog.EPowerE);
-
-            /// <summary>
-            /// Ratio of pi to e (pi/e): Approximately 1.15572734979092...
-            /// </summary>
-            public static BigFloat PiDividedByE => GetConstant(Catalog.PiDividedByE);
-
-            /// <summary>
-            /// Ratio of e to pi (e/pi): Approximately 0.86525597943226...
-            /// </summary>
-            public static BigFloat EDividedByPi => GetConstant(Catalog.EDividedByPi);
-
-            /// <summary>
-            /// Logarithm of pi (ln(pi)): Approximately 1.14472988584940...
-            /// </summary>
-            public static BigFloat LogPi => GetConstant(Catalog.LogPi);
-        }
+        public static BigFloat SqrtPi => GetConstant(Catalog.Sqrt_Pi);
 
         /// <summary>
-        /// Constants related to trigonometric functions.
+        /// Golden Ratio (φ): Approximately 1.61803398874989484820...
+        /// The limit of the ratio of consecutive Fibonacci numbers.
         /// </summary>
-        public static class Trigonometric
-        {
-            /// <summary>
-            /// Sine of 2pi/5: Approximately 0.95105651629515...
-            /// Related to the regular pentagon.
-            /// </summary>
-            public static BigFloat Sin2PiDiv5 => GetConstant(Catalog.Sin2PiDiv5);
-
-            /// <summary>
-            /// Cosine of pi/8: Approximately 0.92387953251128...
-            /// </summary>
-            public static BigFloat CosPiDiv8 => GetConstant(Catalog.CosPiDiv8);
-
-            /// <summary>
-            /// Cosine of pi/16: Approximately 0.98078528040323...
-            /// </summary>
-            public static BigFloat CosPiDiv16 => GetConstant(Catalog.CosPiDiv16);
-
-            /// <summary>
-            /// Cosine of pi/20: Approximately 0.98768834059513...
-            /// </summary>
-            public static BigFloat CosPiDiv20 => GetConstant(Catalog.CosPiDiv20);
-
-            /// <summary>
-            /// Buffon's constant (2/pi): Approximately 0.63661977236758...
-            /// Related to the famous Buffon's needle problem.
-            /// </summary>
-            public static BigFloat Buffon => GetConstant(Catalog.BuffonConstant);
-
-            /// <summary>
-            /// Sine of pi/3 (√3/2): Approximately 0.86602540378443...
-            /// </summary>
-            public static BigFloat SinPiDiv3 => GetConstant(Catalog.SinPiDiv3);
-        }
+        public static BigFloat GoldenRatio => GetConstant(Catalog.GoldenRatio);
 
         /// <summary>
-        /// Additional mathematical constants that don't fit into other categories.
+        /// Euler-Mascheroni constant (γ): Approximately 0.57721566490153286061...
+        /// The limit of the difference between the harmonic series and natural logarithm.
         /// </summary>
-        public static class Misc
-        {
-            /// <summary>
-            /// Plastic number: Approximately 1.32471795724474...
-            /// The unique real root of x^3 - x - 1 = 0.
-            /// </summary>
-            public static BigFloat Plastic => GetConstant(Catalog.PlasticNumber);
+        public static BigFloat EulerMascheroni => GetConstant(Catalog.EulerMascheroniConstant);
 
-            /// <summary>
-            /// Pisot's constant: Approximately 1.38027756910156...
-            /// A Pisot-Vijayaraghavan number, the positive root of x^4 - x^3 - 1 = 0.
-            /// </summary>
-            public static BigFloat Pisot => GetConstant(Catalog.PisotsConstant);
+        /// <summary>
+        /// Twin Prime constant: Approximately 0.66016181584686957392...
+        /// Product over primes p of (1 - 1/(p-1)^2).
+        /// </summary>
+        public static BigFloat TwinPrime => GetConstant(Catalog.TwinPrimeConstant);
 
-            /// <summary>
-            /// Lemniscate constant: Approximately 0.59907011736779...
-            /// Related to the perimeter of the lemniscate curve.
-            /// </summary>
-            public static BigFloat Lemniscate => GetConstant(Catalog.LemniscateConstant);
+        /// <summary>
+        /// Prime constant: Approximately 0.41468250985111166...
+        /// A binary constant where 1 bits correspond to prime indices.
+        /// </summary>
+        public static BigFloat Prime => GetConstant(Catalog.PrimeConstant);
 
-            /// <summary>
-            /// The imaginary unit raised to the imaginary power (i^i): Approximately 0.20787957635076...
-            /// Equal to exp(-pi/2).
-            /// </summary>
-            public static BigFloat IPowerI => GetConstant(Catalog.IPowerI);
+        /// <summary>
+        /// Ramanujan-Soldner constant: Approximately 1.45136923488338105...
+        /// The unique positive zero of the logarithmic integral function.
+        /// </summary>
+        public static BigFloat RamanujanSoldner => GetConstant(Catalog.RamanujanSoldnerConstant);
 
-            /// <summary>
-            /// The arithmetic-geometric mean of Pi and e: Approximately 0.92610855157230...
-            /// </summary>
-            public static BigFloat AGMMeanPiE => GetConstant(Catalog.AGMMeanPiE);
-        }
+        /// <summary>
+        /// Meissel–Mertens constant: Approximately 0.26149721284764278...
+        /// Related to the distribution of prime numbers.
+        /// </summary>
+        public static BigFloat MeisselMertens => GetConstant(Catalog.Const_0_2614);
+
+        /// <summary>
+        /// Conway's constant: Approximately 1.30357726903429639...
+        /// The growth rate of the Look-and-say sequence.
+        /// </summary>
+        public static BigFloat Conway => GetConstant(Catalog.ConwayConstant);
+
+        /// <summary>
+        /// Apéry's constant: Approximately 1.20205690315959428...
+        /// Equal to ζ(3), the sum of the reciprocals of cubes of positive integers.
+        /// </summary>
+        public static BigFloat Apery => GetConstant(Catalog.AperyConstant);
+
+        /// <summary>
+        /// Catalan's constant: Approximately 0.91596559417721901...
+        /// Sum of the alternating series 1-1/9+1/25-1/49...
+        /// </summary>
+        public static BigFloat Catalan => GetConstant(Catalog.CatalanConstant);
+
+        /// <summary>
+        /// Khintchine's constant: Approximately 2.68545200106530...
+        /// The geometric mean of continued fraction terms.
+        /// </summary>
+        public static BigFloat Khintchine => GetConstant(Catalog.KhintchinesConstant);
+
+        /// <summary>
+        /// Omega constant: Approximately 0.56714329040978...
+        /// The value of W(1) where W is the Lambert W function.
+        /// </summary>
+        public static BigFloat Omega => GetConstant(Catalog.OmegaConstant);
+
+        /// <summary>
+        /// Negative logarithm of gamma (Euler's constant): Approximately 0.54953931298164...
+        /// </summary>
+        public static BigFloat NegLogGamma => GetConstant(Catalog.Const_0_5495);
+
+        /// <summary>
+        /// Glaisher–Kinkelin constant: Approximately 1.28242712910062...
+        /// Related to the Barnes G-function and the K-function.
+        /// </summary>
+        public static BigFloat GlaisherKinkelin => GetConstant(Catalog.GlaisherKinkelinConstant);
+
+        /// <summary>
+        /// Exponential of Euler-Mascheroni constant: Approximately 1.78107241799019...
+        /// exp(γ)
+        /// </summary>
+        public static BigFloat ExpEulerMascheroni => GetConstant(Catalog.ExpEulerMascheroniConstant);
+
+        /// <summary>
+        /// Fine Structure constant: Approximately 1.46035450880959...
+        /// A fundamental physical constant characterizing the strength of the electromagnetic interaction.
+        /// </summary>
+        public static BigFloat FineStructure => GetConstant(Catalog.FineStructureConstant);
+
+        /// <summary>
+        /// Natural log of Phi: Approximately 0.48121182505960344...
+        /// </summary>
+        public static BigFloat NaturalLogOfPhi => GetConstant(Catalog.NaturalLogOfPhi);
+
+        /// <summary>
+        /// pi squared (pi^2): Approximately 9.86960440108935...
+        /// </summary>
+        public static BigFloat PiSquared => GetConstant(Catalog.PiSquared);
+
+        /// <summary>
+        /// e squared (e^2): Approximately 7.38905609893065...
+        /// </summary>
+        public static BigFloat ESquared => GetConstant(Catalog.ESquared);
+
+        /// <summary>
+        /// pi times e (pie): Approximately 8.53973422267356...
+        /// </summary>
+        public static BigFloat PiTimesE => GetConstant(Catalog.PiTimesE);
+
+        /// <summary>
+        /// e to the power of pi (e^pi): Approximately 23.14069263277926...
+        /// </summary>
+        public static BigFloat EPowerPi => GetConstant(Catalog.EPowerPi);
+
+        /// <summary>
+        /// pi to the power of e (pi^e): Approximately 22.45915771836104...
+        /// </summary>
+        public static BigFloat PiPowerE => GetConstant(Catalog.PiPowerE);
+
+        /// <summary>
+        /// pi to the power of Pi (pi^pi): Approximately 36.46215960720791...
+        /// </summary>
+        public static BigFloat PiPowerPi => GetConstant(Catalog.PiPowerPi);
+
+        /// <summary>
+        /// e to the power of e (e^e): Approximately 15.15426224147926...
+        /// </summary>
+        public static BigFloat EPowerE => GetConstant(Catalog.EPowerE);
+
+        /// <summary>
+        /// Ratio of pi to e (pi/e): Approximately 1.15572734979092...
+        /// </summary>
+        public static BigFloat PiDividedByE => GetConstant(Catalog.PiDividedByE);
+
+        /// <summary>
+        /// Ratio of e to pi (e/pi): Approximately 0.86525597943226...
+        /// </summary>
+        public static BigFloat EDividedByPi => GetConstant(Catalog.EDividedByPi);
+
+        /// <summary>
+        /// Logarithm of pi (ln(pi)): Approximately 1.14472988584940...
+        /// </summary>
+        public static BigFloat LogPi => GetConstant(Catalog.LogPi);
+
+        /// <summary>
+        /// Sine of 2pi/5: Approximately 0.95105651629515...
+        /// Related to the regular pentagon.
+        /// </summary>
+        public static BigFloat Sin2PiDiv5 => GetConstant(Catalog.Sin2PiDiv5);
+
+        /// <summary>
+        /// Cosine of pi/8: Approximately 0.92387953251128...
+        /// </summary>
+        public static BigFloat CosPiDiv8 => GetConstant(Catalog.CosPiDiv8);
+
+        /// <summary>
+        /// Cosine of pi/16: Approximately 0.98078528040323...
+        /// </summary>
+        public static BigFloat CosPiDiv16 => GetConstant(Catalog.CosPiDiv16);
+
+        /// <summary>
+        /// Cosine of pi/20: Approximately 0.98768834059513...
+        /// </summary>
+        public static BigFloat CosPiDiv20 => GetConstant(Catalog.CosPiDiv20);
+
+        /// <summary>
+        /// Buffon's constant (2/pi): Approximately 0.63661977236758...
+        /// Related to the famous Buffon's needle problem.
+        /// </summary>
+        public static BigFloat Buffon => GetConstant(Catalog.BuffonConstant);
+
+        /// <summary>
+        /// Sine of pi/3 (√3/2): Approximately 0.86602540378443...
+        /// </summary>
+        public static BigFloat SinPiDiv3 => GetConstant(Catalog.SinPiDiv3);
+
+        /// <summary>
+        /// Plastic number: Approximately 1.32471795724474...
+        /// The unique real root of x^3 - x - 1 = 0.
+        /// </summary>
+        public static BigFloat Plastic => GetConstant(Catalog.PlasticNumber);
+
+        /// <summary>
+        /// Pisot's constant: Approximately 1.38027756910156...
+        /// A Pisot-Vijayaraghavan number, the positive root of x^4 - x^3 - 1 = 0.
+        /// </summary>
+        public static BigFloat Pisot => GetConstant(Catalog.PisotsConstant);
+
+        /// <summary>
+        /// Lemniscate constant: Approximately 0.59907011736779...
+        /// Related to the perimeter of the lemniscate curve.
+        /// </summary>
+        public static BigFloat Lemniscate => GetConstant(Catalog.LemniscateConstant);
+
+        /// <summary>
+        /// The imaginary unit raised to the imaginary power (i^i): Approximately 0.20787957635076...
+        /// Equal to exp(-pi/2).
+        /// </summary>
+        public static BigFloat IPowerI => GetConstant(Catalog.IPowerI);
+
+        /// <summary>
+        /// The arithmetic-geometric mean of Pi and e: Approximately 0.92610855157230...
+        /// </summary>
+        public static BigFloat AGMMeanPiE => GetConstant(Catalog.AGMMeanPiE);
 
         #endregion
 
