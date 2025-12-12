@@ -1,6 +1,7 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Buffers;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -29,7 +30,7 @@ public readonly partial struct BigFloat
     /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     public BigFloat(string numericString, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
     {
-        this = Parse(numericString, binaryScaler, guardBitsIncluded);
+        this = Parse(numericString.AsSpan(), binaryScaler, guardBitsIncluded);
     }
 
     /// <summary>
@@ -44,7 +45,12 @@ public readonly partial struct BigFloat
     /// <param name="binaryScaler">Optional positive or negative base-2 scaling (default is zero).</param>
     public static BigFloat Parse(string numericString, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
     {
-        bool success = TryParse(numericString, out BigFloat biRes, binaryScaler, guardBitsIncluded);
+        return Parse(numericString.AsSpan(), binaryScaler, guardBitsIncluded);
+    }
+
+    public static BigFloat Parse(ReadOnlySpan<char> numericSpan, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
+    {
+        bool success = TryParse(numericSpan, out BigFloat biRes, binaryScaler, guardBitsIncluded);
 
         if (!success)
         {
@@ -74,38 +80,42 @@ public readonly partial struct BigFloat
     /// <returns>Returns true if successful.</returns>
     public static bool TryParse(string numericString, out BigFloat result, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
     {
-        //string orgValue = numericString;
-        if (string.IsNullOrEmpty(numericString))
+        return TryParse(numericString.AsSpan(), out result, binaryScaler, guardBitsIncluded);
+    }
+
+    public static bool TryParse(ReadOnlySpan<char> numericSpan, out BigFloat result, int binaryScaler = 0, int guardBitsIncluded = int.MinValue)
+    {
+        if (numericSpan.IsEmpty)
         {
             result = default;
             return false;
         }
 
         // Let us check for invalid short strings, 0x___ , or 0b___
-        int locAfterSign = (numericString[0] is '-' or '+') ? 1 : 0;
-        if (numericString.Length == locAfterSign)    //[-,+][END] - fail  
+        int locAfterSign = (numericSpan[0] is '-' or '+') ? 1 : 0;
+        if (numericSpan.Length == locAfterSign)    //[-,+][END] - fail
         {
             result = default;
             return false;
         }
-        else if (numericString[locAfterSign] == '0')  //[-,+]0___
+        else if (numericSpan[locAfterSign] == '0')  //[-,+]0___
         {
-            bool isNegHexOrBin = numericString[0] == '-';
-            if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'b' or 'B')  //[-,+]0b___
+            bool isNegHexOrBin = numericSpan[0] == '-';
+            if (numericSpan.Length > 2 && numericSpan[locAfterSign + 1] is 'b' or 'B')  //[-,+]0b___
             {
                 // remove leading "0x" or "-0x"
                 //guardBitsIncluded = (guardBitsIncluded == int.MinValue) ? 0 : guardBitsIncluded;
-                return TryParseBinary(numericString.AsSpan(isNegHexOrBin ? 3 : 2), out result, binaryScaler, isNegHexOrBin ? -1 : 0, guardBitsIncluded);
+                return TryParseBinary(numericSpan[(isNegHexOrBin ? 3 : 2)..], out result, binaryScaler, isNegHexOrBin ? -1 : 0, guardBitsIncluded);
             }
-            else if (numericString.Length > 2 && numericString[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
+            else if (numericSpan.Length > 2 && numericSpan[locAfterSign + 1] is 'x' or 'X')  //[-,+]0x___
             {
                 guardBitsIncluded = (guardBitsIncluded == int.MinValue) ? 0 : guardBitsIncluded;
 
-                return TryParseHex(numericString, out result, binaryScaler, guardBitsIncluded);
+                return TryParseHex(numericSpan, out result, binaryScaler, guardBitsIncluded);
             }
             //else { } // [-,+]0[END] OR [-,+]0___  - continue(exceptions handled by BigInteger.Parse)
         }
-        return TryParseDecimal(numericString, out result, binaryScaler, guardBitsIncluded);
+        return TryParseDecimal(numericSpan, out result, binaryScaler, guardBitsIncluded);
     }
 
     /// <summary>
@@ -147,13 +157,18 @@ public readonly partial struct BigFloat
         int xCount = 0;
 
         int bufferLength = numericSpan.Length;
-        Span<char> cleaned = stackalloc char[bufferLength];
+        char[]? rentedBuffer = null;
+        Span<char> cleaned = bufferLength <= 256
+            ? stackalloc char[bufferLength]
+            : rentedBuffer = ArrayPool<char>.Shared.Rent(bufferLength);
 
-        // travel backward on bufferLength and skip trailing spaces by reducing bufferLength
-        while (bufferLength > 0 && (numericSpan[bufferLength - 1] == ' ' || numericSpan[bufferLength - 1] == '_' || numericSpan[bufferLength - 1] == ','))
+        try
         {
-            bufferLength--;
-        }
+            // travel backward on bufferLength and skip trailing spaces by reducing bufferLength
+            while (bufferLength > 0 && (numericSpan[bufferLength - 1] == ' ' || numericSpan[bufferLength - 1] == '_' || numericSpan[bufferLength - 1] == ','))
+            {
+                bufferLength--;
+            }
         // travel forward on bufferLength and skip trailing spaces by increasing inputCurser
         int inputCurser = 0;
         while (inputCurser < bufferLength && (numericSpan[inputCurser] == ' ' || numericSpan[inputCurser] == '_' || numericSpan[inputCurser] == ','))
@@ -404,10 +419,18 @@ public readonly partial struct BigFloat
         }
 
 
-        result = new BigFloat(intPart, binaryScaler, true);
+            result = new BigFloat(intPart, binaryScaler, true);
 
-        result.AssertValid();
-        return true;
+            result.AssertValid();
+            return true;
+        }
+        finally
+        {
+            if (rentedBuffer is not null)
+            {
+                ArrayPool<char>.Shared.Return(rentedBuffer);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static bool Helper_OnlyWhitespaceRemaining(ReadOnlySpan<char> s, ref int i)
@@ -415,7 +438,7 @@ public readonly partial struct BigFloat
             int len = s.Length;
             int k = i + 1;
             while (k < len && char.IsWhiteSpace(s[k])) k++;
-            i = k - 1;                 
+            i = k - 1;
             return k >= len;           // true if only whitespace remained
         }
     }
@@ -514,11 +537,17 @@ public readonly partial struct BigFloat
             noLeadingZerosFound = false;
         }
 
-        Span<char> cleaned = stackalloc char[hexInput.Length - inputCurser + 1];
+        char[]? rented = null;
+        int cleanedLength = hexInput.Length - inputCurser + 1;
+        Span<char> cleaned = cleanedLength <= 256
+            ? stackalloc char[cleanedLength]
+            : rented = ArrayPool<char>.Shared.Rent(cleanedLength);
 
-        cleaned[0] = '0'; // Ensure we have a positive number
+        try
+        {
+            cleaned[0] = '0'; // Ensure we have a positive number
 
-        for (; inputCurser < hexInput.Length; inputCurser++)
+            for (; inputCurser < hexInput.Length; inputCurser++)
         {
             char c = hexInput[inputCurser];
             switch (c)
@@ -675,8 +704,16 @@ public readonly partial struct BigFloat
         {
             asInt = BigInteger.Negate(asInt);
         }
-        result = new BigFloat(asInt, newScale + guardBitsIncluded, true);
-        return true;
+            result = new BigFloat(asInt, newScale + guardBitsIncluded, true);
+            return true;
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                ArrayPool<char>.Shared.Return(rented);
+            }
+        }
     }
 
     /// <summary>

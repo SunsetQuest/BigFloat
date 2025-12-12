@@ -1,6 +1,7 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
 using System.Text;
@@ -395,9 +396,25 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
         if (numberOfGuardBitsToInclude <= 0) showPrecisionSeparator = false;
         numberOfGuardBitsToInclude = Math.Clamp(numberOfGuardBitsToInclude, 0, 32);
         int bufferSize = CalculateBinaryStringLength(numberOfGuardBitsToInclude, showPrecisionSeparator);
-        Span<char> buffer = stackalloc char[bufferSize];
-        WriteBinaryToSpan(buffer, out int charsWritten, numberOfGuardBitsToInclude, showPrecisionSeparator);
-        return new string(buffer[..charsWritten]);
+        const int StackLimit = 256;
+
+        if (bufferSize <= StackLimit)
+        {
+            Span<char> buffer = stackalloc char[bufferSize];
+            WriteBinaryToSpan(buffer, out int charsWritten, numberOfGuardBitsToInclude, showPrecisionSeparator);
+            return new string(buffer[..charsWritten]);
+        }
+
+        char[] rented = ArrayPool<char>.Shared.Rent(bufferSize);
+        try
+        {
+            WriteBinaryToSpan(rented, out int charsWritten, numberOfGuardBitsToInclude, showPrecisionSeparator);
+            return new string(rented, 0, charsWritten);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(rented);
+        }
     }
 
     /// <summary>
@@ -611,7 +628,8 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
 
             // The length should have room for: [-][digits][.][digits]
             int length = (intVal < 0 ? 3 : 2) + numberText.Length - (exponent <= 0 ? decimalOffset : 1);
-            char[] chars = new char[length];
+            char[] rented = ArrayPool<char>.Shared.Rent(length);
+            Span<char> chars = rented.AsSpan(0, length);
             int position = 0;
 
             if (intVal < 0)
@@ -631,20 +649,26 @@ public readonly partial struct BigFloat : IFormattable, ISpanFormattable
                     chars[position++] = '0';
                 }
 
-                numberText.CopyTo(0, chars, position, numberText.Length);
+                numberText.AsSpan().CopyTo(chars[position..]);
 
-                return new string(chars);
+                int used = position + numberText.Length;
+                string result = new string(rented, 0, used);
+                ArrayPool<char>.Shared.Return(rented);
+                return result;
             }
 
             // ####.##### - at this point it must be this format
-            numberText.CopyTo(0, chars, position, decimalOffset);
+            numberText.AsSpan(0, decimalOffset).CopyTo(chars[position..]);
             position += decimalOffset;
 
             chars[position++] = '.';
 
-            numberText.CopyTo(decimalOffset, chars, position, decimalDigits);
+            numberText.AsSpan(decimalOffset, decimalDigits).CopyTo(chars[position..]);
+            position += decimalDigits;
 
-            return new string(chars);
+            string decimalString = new string(rented, 0, position);
+            ArrayPool<char>.Shared.Return(rented);
+            return decimalString;
         }
 
         // #########.  - check to see if we have an integer, if so, no Pow(5) scaling required
