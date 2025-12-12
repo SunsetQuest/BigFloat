@@ -23,8 +23,6 @@ namespace BigFloatLibrary;
 //   BigFloatRandom.cs: functions for generating random BigFloats
 //   BigFloatRoundShiftTruncate.cs: extra rounding, shifting, truncating, or splitting functions.
 //   BigFloatStringsAndSpans.cs: extra functions related to converting BigFloat to strings/spans
-//   Constants.cs,ConstantInfo.cs,ConstantsCatalog.cs,ConstantBuilder.cs: extra features for returning common constants. 
-
 /// <summary>
 /// BigFloat stores a BigInteger with a floating radix point.
 /// </summary>

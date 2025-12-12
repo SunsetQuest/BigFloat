@@ -1,18 +1,14 @@
-using System.IO;
-using BenchmarkDotNet.Columns;
+﻿using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Exporters;
-using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using BigFloatLibrary;
 
 namespace BigFloat.Benchmarks;
 
-public static class Program
+internal static class Program
 {
     public static void Main(string[] args)
     {
@@ -32,35 +28,35 @@ public static class Program
     }
 
 
-[MemoryDiagnoser]
-public class FormattingBenchmarks
-{
-    private readonly BigFloat _largeValue = BigFloat.Parse("-12345678901234567890.12345678901234567890", guardBitsIncluded: 16);
-    private readonly char[] _buffer = new char[512];
-
-    [Benchmark]
-    public string FormatWithToString() => _largeValue.ToString();
-
-    [Benchmark]
-    public bool FormatWithTryFormat()
+    [MemoryDiagnoser]
+    public class FormattingBenchmarks
     {
-        return _largeValue.TryFormat(_buffer, out _, ReadOnlySpan<char>.Empty, provider: null);
+        private readonly BigFloatLibrary.BigFloat _largeValue = BigFloatLibrary.BigFloat.Parse("-12345678901234567890.12345678901234567890", guardBitsIncluded: 16);
+        private readonly char[] _buffer = new char[512];
+
+        [Benchmark]
+        public string FormatWithToString() => _largeValue.ToString();
+
+        [Benchmark]
+        public bool FormatWithTryFormat()
+        {
+            return _largeValue.TryFormat(_buffer, out _, ReadOnlySpan<char>.Empty, provider: null);
+        }
     }
-}
 
-[MemoryDiagnoser]
-public class ParsingBenchmarks
-{
-    private readonly string _input = "-12345678901234567890.12345678901234567890";
-
-    [Benchmark]
-    public BigFloat ParseWithString() => BigFloat.Parse(_input);
-
-    [Benchmark]
-    public BigFloat ParseWithSpan()
+    [MemoryDiagnoser]
+    public class ParsingBenchmarks
     {
-        BigFloat.TryParse(_input.AsSpan(), out var value);
-        return value;
+        private readonly string _input = "-12345678901234567890.12345678901234567890";
+
+        [Benchmark]
+        public BigFloatLibrary.BigFloat ParseWithString() => BigFloatLibrary.BigFloat.Parse(_input);
+
+        [Benchmark]
+        public BigFloatLibrary.BigFloat ParseWithSpan()
+        {
+            BigFloatLibrary.BigFloat.TryParse(_input.AsSpan(), out var value);
+            return value;
+        }
     }
-}
 }

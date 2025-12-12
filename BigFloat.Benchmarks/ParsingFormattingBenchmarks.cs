@@ -1,4 +1,4 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BigFloatLibrary;
 
 namespace BigFloat.Benchmarks;
@@ -10,7 +10,7 @@ public class ParsingFormattingBenchmarks
     [Params(64, 256, 1024)]
     public int OperandBits { get; set; }
 
-    private BigFloatNumber _value;
+    private BigFloatLibrary.BigFloat _value;
     private string _decimalString = string.Empty;
     private string _hexString = string.Empty;
     private string _binaryString = string.Empty;
@@ -19,10 +19,10 @@ public class ParsingFormattingBenchmarks
     public void Setup()
     {
         var rand = new Random(OperandBits * 1867);
-        int mantissaBits = OperandBits + BigFloatNumber.GuardBits;
+        int mantissaBits = OperandBits + BigFloatLibrary.BigFloat.GuardBits;
         int exponent = Math.Max(OperandBits / 2, 6);
 
-        _value = BigFloatNumber.RandomWithMantissaBits(mantissaBits, -exponent, exponent, logarithmic: true, rand: rand);
+        _value = BigFloatLibrary.BigFloat.RandomWithMantissaBits(mantissaBits, -exponent, exponent, logarithmic: true, rand: rand);
 
         _decimalString = _value.ToString();
         _hexString = _value.ToString("X");
@@ -31,13 +31,13 @@ public class ParsingFormattingBenchmarks
 
     [Benchmark]
     [BenchmarkCategory("CI")]
-    public BigFloatNumber ParseDecimal() => BigFloatNumber.Parse(_decimalString);
+    public BigFloatLibrary.BigFloat ParseDecimal() => BigFloatLibrary.BigFloat.Parse(_decimalString);
 
     [Benchmark]
-    public BigFloatNumber ParseHex() => BigFloatNumber.Parse(_hexString);
+    public BigFloatLibrary.BigFloat ParseHex() => BigFloatLibrary.BigFloat.Parse(_hexString);
 
     [Benchmark]
-    public BigFloatNumber ParseBinary() => BigFloatNumber.Parse(_binaryString);
+    public BigFloatLibrary.BigFloat ParseBinary() => BigFloatLibrary.BigFloat.Parse(_binaryString);
 
     [Benchmark]
     public string FormatDecimal() => _value.ToString();
