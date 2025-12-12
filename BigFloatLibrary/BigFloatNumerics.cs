@@ -18,16 +18,20 @@ internal static class BigFloatNumerics
     /// multiplication outpaces schoolbook O(n^2) multiplication. The threshold is
     /// based on the smaller operand because Karatsuba's benefit appears once both
     /// halves of the split are large enough to amortize the extra additions.
+    /// Tuned against the threshold sweep in docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v80.md
+    /// and docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v90.md, which show the
+    /// crossover near 320 bits on typical developer hardware running .NET 8/9.
     /// </summary>
-    public const int KARATSUBA_THRESHOLD = 256;
+    public const int KARATSUBA_THRESHOLD = 320;
 
     /// <summary>
     /// Burnikel–Ziegler division becomes more efficient than basic long division
     /// once either operand grows past this bit-length. The algorithm works in
-    /// word-sized blocks, so we switch when at least one input is ~1 KiB in size
-    /// (1024 bits) to avoid the quadratic cost of the standard approach.
+    /// word-sized blocks; sweeps on .NET 8/9 (see docs/benchmarks/threshold-sweeps-*.md)
+    /// show the quadratic shift/subtract curve starting to climb by ~512 bits, so
+    /// we switch above that point to keep large divisions sub-quadratic for real-world inputs.
     /// </summary>
-    public const int BURNIKEL_ZIEGLER_THRESHOLD = 1024;
+    public const int BURNIKEL_ZIEGLER_THRESHOLD = 512;
 
     /// <summary>
     /// Returns the bit-length of a mantissa using absolute value to keep
