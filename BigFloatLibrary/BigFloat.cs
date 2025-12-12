@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 // Starting 2/25, ChatGPT/Claude/Copilot/Grok were used in the development of this library.
 
@@ -868,7 +868,7 @@ public readonly partial struct BigFloat
     {
         // Remainder is scale-aware and avoids huge shifts; it throws on divide-by-zero. 
         // (See implementation in this file.) 
-        var rem = Remainder(dividend, divisor);  
+        BigFloat rem = Remainder(dividend, divisor);  
 
         // Exact multiple ⇒ keep exact zero (and its accuracy context).
         if (rem._mantissa.IsZero) return rem;

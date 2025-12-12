@@ -1,4 +1,4 @@
-namespace BigFloatLibrary;
+﻿namespace BigFloatLibrary;
 
 /// <summary>
 /// Ambient, opt-in convenience layer for running a block of BigFloat operations
@@ -125,7 +125,7 @@ public sealed class BigFloatContext : IDisposable
     {
         ArgumentNullException.ThrowIfNull(work);
 
-        using var scope = EnsureActive();
+        using ReentryScope? scope = EnsureActive();
         BigFloat result = work();
         return Apply(result);
     }
@@ -137,7 +137,7 @@ public sealed class BigFloatContext : IDisposable
     {
         ArgumentNullException.ThrowIfNull(work);
 
-        using var scope = EnsureActive();
+        using ReentryScope? scope = EnsureActive();
         work();
     }
 
@@ -149,7 +149,7 @@ public sealed class BigFloatContext : IDisposable
     {
         ArgumentNullException.ThrowIfNull(work);
 
-        using var scope = EnsureActive();
+        using ReentryScope? scope = EnsureActive();
         T result = work();
         return result switch
         {
