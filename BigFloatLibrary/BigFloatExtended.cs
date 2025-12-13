@@ -437,8 +437,29 @@ public readonly partial struct BigFloat
     {
         return new BigFloat(value);
     }
+
+    /// <summary>
+    /// Converts an <see cref="sbyte"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The signed 8-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromSByte(sbyte value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of an 8-bit unsigned integer to a BigFloat.</summary>
     public static implicit operator BigFloat(byte value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts an <see cref="byte"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The 8-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromByte(byte value)
     {
         return new BigFloat(value);
     }
@@ -450,14 +471,44 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts an <see cref="ushort"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned short to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromUShort(ushort value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a signed 16-bit integer to a BigFloat.</summary>
     public static implicit operator BigFloat(short value)
     {
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts an <see cref="short"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned short to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromShort(short value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a 32-bit unsigned integer to a BigFloat.</summary>
     public static implicit operator BigFloat(uint value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="uint"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned 32-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromUInt32(uint value)
     {
         return new BigFloat(value);
     }

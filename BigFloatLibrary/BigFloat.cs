@@ -1804,6 +1804,14 @@ public readonly partial struct BigFloat
     }
 
     /// <summary>
+    /// Converts this <see cref="BigFloat"/> to a <see cref="BigInteger"/> by discarding the fractional part (including guard bits).
+    /// </summary>
+    public BigInteger ToBigInteger()
+    {
+        return GetIntegralValue(this);
+    }
+
+    /// <summary>
     /// Casts a BigInteger to a BigFloat. The GuardBits are set to zero. 
     /// Example: a BigInteger of 1 would translate to "1+GuardBits" bits of precision.
     /// </summary>
