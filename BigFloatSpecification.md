@@ -58,7 +58,13 @@ Each primitive overload supports optional precision configuration; zero inputs r
 
 * **Implicit from** `sbyte`,`byte`,`short`,`ushort`,`int`,`uint`,`long`,`ulong`,`Int128`,`UInt128`,`decimal`. 
 * **Explicit to** integral types and `BigInteger`; casts remove guard bits with rounding at the guard boundary and truncate working fraction as required. The explicit `int` path documents that rounding at the guard boundary precedes truncation; a convenience `ToNearestInt` is provided. 
-* **Explicit to double/float** implement full IEEE‑754 bit synthesis: normal, subnormal, overflow → ±∞, tiny → ±0. 
+* **Explicit to double/float** synthesize IEEE‑754 bits directly. Normal values round the mantissa to 53/24 bits using
+  `ShiftRightRoundEven` (round‑to‑nearest, ties‑to‑even) and re‑bias the exponent; carry may promote the significand by one bit
+  to handle 1.111… → 10.000… transitions. Subnormals compute <code>n = round(|x| · 2<sup>1074</sup>)</code> (or 2<sup>149</sup> for
+  <code>float</code>) with the same tie‑to‑even helper; <code>n = 0</code> returns ±0 with the original sign, <code>n ≥ 2<sup>52</sup></code>
+  (<code>2<sup>23</sup></code> for <code>float</code>) rounds to the smallest normal, otherwise <code>n</code> is emitted as a subnormal significand. Overflow
+  returns ±∞. Values representable in the target type round‑trip through <code>double → BigFloat → double</code> (or <code>float</code>) without
+  changing the bit pattern.
 * **`IConvertible`**:
 
   * `ToDouble/ToSingle` check exponent ranges (`biasedExp`), throwing `OverflowException` on overflow; subnormals/underflow reach ±0. `ToDecimal` delegates the decimal cast; unsupported casts (Boolean/Char/DateTime) throw. `ToType` handles known primitives and otherwise delegates through `Convert.ChangeType((double)this, …)`.
