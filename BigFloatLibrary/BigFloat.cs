@@ -936,6 +936,40 @@ public readonly partial struct BigFloat
         return new(value._mantissa, value.Scale - shift, value._size);
     }
 
+    #region Named operator alternatives (CA2225)
+
+    /// <summary>Named alternative for operator / (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Divide(BigFloat numerator, BigFloat denominator) => numerator / denominator;
+
+    /// <summary>Named alternative for operator / (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Divide(BigFloat value, int divisor) => value / divisor;
+
+    /// <summary>Named alternative for operator / (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Divide(int value, BigFloat divisor) => value / divisor;
+
+    /// <summary>Named alternative for operator ~ (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat OnesComplement(BigFloat value) => ~value;
+
+    /// <summary>Named alternative for operator &lt;&lt; (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat LeftShift(BigFloat value, int shift) => value << shift;
+
+    /// <summary>Named alternative for operator &gt;&gt; (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat RightShift(BigFloat value, int shift) => value >> shift;
+
+    #endregion
+
     /// <summary>
     /// Increments the integer part of a BigFloat by one.
     /// </summary>
