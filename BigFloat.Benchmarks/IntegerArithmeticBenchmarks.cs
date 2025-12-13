@@ -1,7 +1,7 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BigFloatLibrary;
 
-namespace BigFloat.Benchmarks;
+namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Core")]
@@ -12,8 +12,8 @@ public class IntegerArithmeticBenchmarks
 
     [Params(32, 256, 1024)]
     public int OperandBits { get; set; }
-
-    private BigFloat _value = null!;
+    
+    private BigFloat _value;
 
     [GlobalSetup]
     public void Setup()

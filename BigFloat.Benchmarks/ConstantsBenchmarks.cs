@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BigFloatLibrary;
 
-namespace BigFloat.Benchmarks;
+namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Constants")]
