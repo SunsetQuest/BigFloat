@@ -317,7 +317,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Deprecated alias for <see cref="NextUp(in BigFloat)"/>; increments by one final-precision ULP.
     /// </summary>
-    [System.Obsolete("Renamed: use NextUp(x) for final-precision ULP.", error: false)]
+    [Obsolete("Renamed: use NextUp(x) for final-precision ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat BitIncrement(in BigFloat x) => NextUp(x);
@@ -325,7 +325,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Deprecated alias for <see cref="NextDown(in BigFloat)"/>; decrements by one final-precision ULP.
     /// </summary>
-    [System.Obsolete("Renamed: use NextDown(x) for final-precision ULP.", error: false)]
+    [Obsolete("Renamed: use NextDown(x) for final-precision ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat BitDecrement(in BigFloat x) => NextDown(x);
@@ -333,7 +333,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Deprecated alias for <see cref="NextUpInPrecisionBit(in BigFloat)"/>; increments a guard-bit scale unit.
     /// </summary>
-    [System.Obsolete("Renamed: use NextUpExtended(x) for guard-bit ULP.", error: false)]
+    [Obsolete("Renamed: use NextUpExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat GuardBitIncrement(in BigFloat x) => NextUpInPrecisionBit(x);
@@ -341,7 +341,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Deprecated alias for <see cref="NextDownInPrecisionBit(in BigFloat)"/>; decrements a guard-bit scale unit.
     /// </summary>
-    [System.Obsolete("Renamed: use NextDownExtended(x) for guard-bit ULP.", error: false)]
+    [Obsolete("Renamed: use NextDownExtended(x) for guard-bit ULP.", error: false)]
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat GuardBitDecrement(in BigFloat x) => NextDownInPrecisionBit(x);

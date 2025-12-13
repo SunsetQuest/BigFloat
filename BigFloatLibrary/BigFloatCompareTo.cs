@@ -115,8 +115,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         // Use effective exponent based on MAIN size (exclude GuardBits).
         // a.Size/b.Size here include GuardBits unless zero; subtract them out.
-        int aMain = a.Size == 0 ? 0 : a.Size - BigFloat.GuardBits;
-        int bMain = b.Size == 0 ? 0 : b.Size - BigFloat.GuardBits;
+        int aMain = a.Size == 0 ? 0 : a.Size - GuardBits;
+        int bMain = b.Size == 0 ? 0 : b.Size - GuardBits;
 
         long e1 = (long)a.Scale + aMain;
         long e2 = (long)b.Scale + bMain;
@@ -184,8 +184,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         if (de >= +2) return s1 > 0 ? 1 : -1; // this is definitely larger (or smaller if negative)
 
         // 3) Close exponents (equal/adjacent): pay the canonicalization cost only now.
-        var a = GetCanonicalComponents();   // rounds away guard bits, handles carry and scale adjust
-        var b = other.GetCanonicalComponents();
+        (BigInteger Mant, int Scale, int Size) a = GetCanonicalComponents();   // rounds away guard bits, handles carry and scale adjust
+        (BigInteger Mant, int Scale, int Size) b = other.GetCanonicalComponents();
 
         // Signs can’t change under canonicalization; compare aligned canonicals.
         int core = CmpAligned(a, b);
@@ -199,9 +199,9 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary>
     public readonly BigInteger UlpDistance(BigFloat other)
     {
-        BigInteger a = this._mantissa;
+        BigInteger a = _mantissa;
         BigInteger b = other._mantissa;
-        int scaleDiff = other.Scale - this.Scale;
+        int scaleDiff = other.Scale - Scale;
         if (scaleDiff > 0)
         {
             a = RoundingRightShift(a, scaleDiff);
@@ -235,10 +235,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Add guard bits internally - user specifies in terms of value precision
         // but can use negative values to be more strict
         int effectiveBitsToIgnore = ulpTolerance + (ulpScopeIncludeGuardBits ? 0 : GuardBits-1);
-        BigInteger a = this._mantissa;
+        BigInteger a = _mantissa;
         BigInteger b = other._mantissa;
 
-        int scaleDiff = other.Scale - this.Scale;
+        int scaleDiff = other.Scale - Scale;
         if (scaleDiff > 0)
         {
             a = RoundingRightShift(a,scaleDiff);
@@ -270,10 +270,10 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         // Add guard bits internally - user specifies in terms of value precision
         // but can use negative values to be more strict
         int effectiveBitsToIgnore = ulpTolerance + (ulpScopeIncludeGuardBits ? 0 : GuardBits - 1);
-        BigInteger a = this._mantissa;
+        BigInteger a = _mantissa;
         BigInteger b = other._mantissa;
 
-        int scaleDiff = other.Scale - this.Scale;
+        int scaleDiff = other.Scale - Scale;
         int shiftA = effectiveBitsToIgnore - 4, shiftB = effectiveBitsToIgnore - 4;
 
         if (scaleDiff > 0)
@@ -556,7 +556,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         public static readonly TotalOrderComparer Instance = new();
         private TotalOrderComparer() { }
-        public int Compare(BigFloat x, BigFloat y) => BigFloat.CompareTotalOrderBitwise(in x, in y);
+        public int Compare(BigFloat x, BigFloat y) => CompareTotalOrderBitwise(in x, in y);
     }
 
     /// <summary>
@@ -611,8 +611,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// </summary> 
     public bool Equals(BigFloat other)// IEquatable<BigFloat>
     {
-        var a = GetCanonicalComponents();
-        var b = other.GetCanonicalComponents();
+        (BigInteger Mant, int Scale, int Size) a = GetCanonicalComponents();
+        (BigInteger Mant, int Scale, int Size) b = other.GetCanonicalComponents();
 
         if (a.Mant.Sign != b.Mant.Sign) return false;
         if (a.Mant.Sign == 0) return true;
@@ -844,7 +844,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// <summary>Returns a 32-bit signed integer hash code for the current BigFloat object.</summary>
     public override int GetHashCode()
     {
-        var c = GetCanonicalComponents();     // same path as Equals()
+        (BigInteger Mant, int Scale, int Size) c = GetCanonicalComponents();
         if (c.Mant.IsZero) return 0;
 
         // Hash canonical pair (rounded mantissa, scale).
