@@ -1577,58 +1577,61 @@ public readonly partial struct BigFloat
 
     public static BigFloat operator *(BigFloat a, int b)
     {
-        // 1) extract unsigned magnitude and sign
-        int sign = (b < 0) ? -1 : 1;
-        uint ub = (uint)Math.Abs(b);
+        // zero and sign-only special cases
+        if (b == 0) { return ZeroWithAccuracy(a.Accuracy); }
+        if (b == 1) { return a; }
+        if (b == -1) { return -a; }
 
-        // 2) zero and trivial cases
+        uint ub = b == int.MinValue ? 0x80000000u : (uint)Math.Abs(b);
+        int sign = b < 0 ? -1 : 1;
+
+        // small constant fast paths (remaining values: 2, 3, 4)
         if (ub <= 4)
         {
-            return b switch
+            if ((ub & (ub - 1)) == 0)
             {
-                0 => ZeroWithAccuracy(a.Accuracy),         // exactly 0  
-                1 => a,            // unchanged  
-                -1 => -a,          // flip sign  
-                2 => a << 1,
-                -2 => -a << 1,
-                3 => (a << 1) + a,
-                -3 => (-a << 1) - a,
-                4 => a << 2,
-                -4 => -a << 2,
-                _ => throw new NotImplementedException(),
-            };
+                // 2 or 4 : adjust exponent only
+                int k = BitOperations.TrailingZeroCount(ub);
+                BigInteger pow2Mantissa = sign < 0 ? BigInteger.Negate(a._mantissa) : a._mantissa;
+                return new BigFloat(pow2Mantissa, a.Scale + k, a._size);
+            }
+
+            // 3 : shift-and-add to avoid a full BigInteger multiply
+            BigInteger tripleMantissa = (a._mantissa << 1) + a._mantissa;
+            if (sign < 0)
+            {
+                tripleMantissa = BigInteger.Negate(tripleMantissa);
+            }
+
+            int localSizePart = MantissaSize(tripleMantissa);
+            int localShrinkBy = localSizePart - a._size;
+            if (localShrinkBy > 0)
+            {
+                tripleMantissa = RoundingRightShift(tripleMantissa, localShrinkBy, ref localSizePart);
+            }
+
+            return new BigFloat(tripleMantissa, a.Scale + localShrinkBy, localSizePart);
         }
 
-        // if b == 2^k, just adjust exponent
-        //   
+        // Power-of-two multipliers: adjust exponent only
         if ((ub & (ub - 1)) == 0)
         {
             int k = BitOperations.TrailingZeroCount(ub);
-            return new BigFloat(
-                a._mantissa * sign,
-                a.Scale + k,
-                a._size      // mantissa bit-length unchanged
-            );
+            BigInteger powerMantissa = sign < 0 ? BigInteger.Negate(a._mantissa) : a._mantissa;
+            return new BigFloat(powerMantissa, a.Scale + k, a._size);
         }
 
         // General multiplication with size management
-        BigInteger mant = a._mantissa * new BigInteger(ub);
+        BigInteger mant = BigInteger.Multiply(a._mantissa, b);
         int sizePart = MantissaSize(mant);
-        int origSize = a._size;
-        int shrinkBy = sizePart - origSize;
+        int shrinkBy = sizePart - a._size;
 
         if (shrinkBy > 0)
         {
             mant = RoundingRightShift(mant, shrinkBy, ref sizePart);
         }
 
-        int resScale = a.Scale + shrinkBy;
-
-        return new BigFloat(
-            mant * sign,
-            resScale,
-            sizePart
-        );
+        return new BigFloat(mant, a.Scale + shrinkBy, sizePart);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1645,14 +1648,16 @@ public readonly partial struct BigFloat
         if (dividend == 0) { throw new DivideByZeroException(); }
         if (divisor.IsZero) { return ZeroWithAccuracy(-divisor.Size); }
 
-        // Extract the sign once and apply at the end
+        if (dividend == 1) { return divisor; }
+        if (dividend == -1) { return -divisor; }
+
+        uint absDividend = dividend == int.MinValue ? 0x80000000u : (uint)Math.Abs(dividend);
         int sign = Math.Sign(dividend) * divisor._mantissa.Sign;
-        int absDividend = Math.Abs(dividend);
 
         // Optimize for powers of 2
         if ((absDividend & (absDividend - 1)) == 0)
         {
-            int k = BitOperations.TrailingZeroCount((uint)absDividend);
+            int k = BitOperations.TrailingZeroCount(absDividend);
             return new BigFloat(
                 BigInteger.Abs(divisor._mantissa) * sign,
                 divisor.Scale - k,
@@ -1660,53 +1665,13 @@ public readonly partial struct BigFloat
             );
         }
 
-        // Case 2: General division
-        // First, determine target precision based on divisor's size
-        int targetSize = divisor._size;
-
-        // Shift the divisor's mantissa to ensure we maintain precision
-        // We add GuardBits for rounding plus a small buffer for division
-        int extraShift = GuardBits + 2; // 2 extra bits as buffer
-        BigInteger shifted = BigInteger.Abs(divisor._mantissa) << extraShift;
-
-        BigInteger result = shifted / absDividend;
-
-        // Apply rounding (round to nearest)
-        BigInteger remainder = shifted % absDividend;
-        if (remainder * 2 >= absDividend)
+        // Small divisor fast path (remaining values: 3)
+        if (absDividend <= 4)
         {
-            result += 1;
+            return divisor / new BigFloat(new BigInteger(dividend));
         }
 
-        int newScale = divisor.Scale - extraShift;
-        int resultSize = MantissaSize(result);
-
-        // Precision adjustment
-        if (resultSize < targetSize)
-        {
-            // Shift left to match the target size
-            int adjustShift = targetSize - resultSize;
-            result <<= adjustShift;
-            newScale -= adjustShift;
-        }
-        else if (resultSize > targetSize)
-        {
-            // Shift right with rounding to match the target size
-            int adjustShift = resultSize - targetSize;
-            BigInteger roundingBit = BigInteger.One << (adjustShift - 1);
-            result = (result + roundingBit) >> adjustShift;
-            newScale += adjustShift;
-
-            // Check if rounding caused a carry that increased the bit length
-            if (MantissaSize(result) > targetSize)
-            {
-                result >>= 1;
-                newScale += 1;
-            }
-        }
-
-        result *= sign;
-        return new BigFloat(result, newScale, targetSize);
+        return divisor / new BigFloat(new BigInteger(dividend));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
