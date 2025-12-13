@@ -438,6 +438,9 @@ With guard bits:    1001.110 (more accurate rounding)</code></pre>
                         <p>
                             When casting to fixed-size types (integers, <code>double</code>, or <code>decimal</code>), guard bits are rounded away first to preserve expected magnitude. Overflow paths still respect the immutable, deterministic semantics.
                         </p>
+                        <p>
+                            Floating-point casts synthesize IEEE-754 bit patterns explicitly: normalized values round to 53/24 significant bits with a round-to-nearest-even helper (<code>ShiftRightRoundEven</code>) and rebias the exponent, while subnormals compute <code>n = round(|x| · 2<sup>1074</sup>)</code> (or 2<sup>149</sup> for <code>float</code>) before emitting the subnormal payload. Round-to-even handles ties both in the normalized path and at the subnormal/normal boundary; underflow returns ±0 with sign preserved and overflow returns ±∞.
+                        </p>
                     </div>
                 </div>
             </div>
