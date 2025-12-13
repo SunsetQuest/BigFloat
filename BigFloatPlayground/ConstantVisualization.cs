@@ -79,10 +79,12 @@ public static class ConstantVisualization
     /// <returns>A formatted string containing the comparison table.</returns>
     public static string CreateComparisonTable(Dictionary<string, BigFloat> constants, int decimalDigits = 20)
     {
+        ArgumentNullException.ThrowIfNull(constants);
+
         StringBuilder table = new();
 
         // Calculate appropriate column width
-        int nameWidth = Math.Max(15, constants.Keys.Max(k => k.Length) + 2);
+        int nameWidth = Math.Max(15, constants.Keys.Max(static k => k.Length) + 2);
         int valueWidth = decimalDigits + 5; // Add space for decimal point, integer part, etc.
 
         // Build header

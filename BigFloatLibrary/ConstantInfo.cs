@@ -238,7 +238,7 @@ public readonly partial struct BigFloat
                     string fileContent = File.ReadAllText(fileToTryAndLoad);
                     ReadOnlySpan<char> span = fileContent;
 
-                    var prefix = "Number:".AsSpan();
+                    ReadOnlySpan<char> prefix = "Number:".AsSpan();
                     int start = span.IndexOf(prefix);
                     if (start >= 0)
                     {
@@ -254,7 +254,7 @@ public readonly partial struct BigFloat
                         if (end < 0) end = span.Length - start;  // last line, no newline
 
                         // Extract the number substring
-                        var numSpan = span.Slice(start, end).Trim();
+                        ReadOnlySpan<char> numSpan = span.Slice(start, end).Trim();
                         string numberStr = numSpan.ToString();
 
                         // Calculate how many decimal digits we need for the requested bits
@@ -269,7 +269,7 @@ public readonly partial struct BigFloat
                             int digitsToKeep = Math.Min(numberStr.Length, decimalPoint + 1 + requiredDecimalDigits + 20);
                             string truncatedNumber = numberStr[..digitsToKeep];
 
-                            value = BigFloat.Parse(truncatedNumber);
+                            value = Parse(truncatedNumber);
 
                             // Apply the trailing zero cut if needed
                             if (cutOnTrailingZero)

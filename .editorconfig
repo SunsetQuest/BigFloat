@@ -114,6 +114,7 @@ dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1823.severity = none
 dotnet_diagnostic.IDE0004.severity = none
+dotnet_diagnostic.IDE0007.severity = none # prefer 'var'
 dotnet_diagnostic.IDE0051.severity = none
 dotnet_diagnostic.CA1307.severity = none
 dotnet_diagnostic.CA1309.severity = none
