@@ -1123,8 +1123,14 @@ public readonly partial struct BigFloat
         return RoundingRightShift(x, GuardBits);
     }
 
+    /// <summary>
+    /// Gets the mantissa rounded with GuardBits removed.
+    /// Prefer <see cref="RoundedMantissa"/>.
+    /// </summary>
+    [Obsolete("Use RoundedMantissa instead. This method will be removed in a future major version.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BigInteger GetRoundedMantissa() => GetRoundedMantissa(_mantissa);
+    public BigInteger GetRoundedMantissa() => RoundedMantissa;
 
     /// <summary>
     /// Computes the rounded mantissa without guard bits, also updating the size (e.g., bit length or exponent)
