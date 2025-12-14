@@ -473,14 +473,29 @@ public readonly partial struct BigFloat
     {
         BigFloat sum = term;
         BigFloat x2 = x * x;
+        long kLong = k;
         while(true)
         {
             // sin when k=2: term *= −x^2 / ((2k‑1)(2k))
             // cos when k=1: term *= −x^2 / ((2k)(2k+1))
-            term = -term * x2 / (k * (k + 1));
+            long denomLong = kLong * (kLong + 1);
+            if (denomLong == 0)
+            {
+                // Avoid division by zero if the multiplier overflows back to zero.
+                break;
+            }
+
+            if (denomLong >= int.MinValue && denomLong <= int.MaxValue)
+            {
+                term = -term * x2 / (int)denomLong;
+            }
+            else
+            {
+                term = -term * x2 / new BigFloat(denomLong);
+            }
             sum += term;
-            if (term.BinaryExponent <= stopExp) { break; }
-            k += 2;
+            if (term.IsZero || term.BinaryExponent <= stopExp) { break; }
+            kLong += 2;
         }
         return sum;
     }
