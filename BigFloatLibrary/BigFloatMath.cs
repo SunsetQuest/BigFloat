@@ -386,17 +386,31 @@ public readonly partial struct BigFloat
 
     private static BigFloat SinCos(BigFloat x, bool isCos) //=> Sin(x + (Constants.GetConstant(Catalog.Pi, x.Precision) >> 1)); 
     {
-        int prec = Math.Max(x.Size, x.Accuracy) + 1;
+        // Add a modest cushion of guard bits to improve agreement with double-precision trig results.
+        int prec = Math.Max(x.Size, x.Accuracy) + (GuardBits / 4) + 1;
         BigFloat pi = Constants.GetConstant(Catalog.Pi, prec);
         BigFloat halfPi = pi >> 1;
+
+        if (x.IsZero)
+        {
+            return isCos ? OneWithAccuracy(x.Accuracy) : ZeroWithAccuracy(x.Accuracy);
+        }
 
         if (isCos)
         {
             x += halfPi;
         }
 
-        //if (x.IsZero) return ZeroWithSpecifiedLeastPrecision(x.Accuracy);       // cheap exit
-        // future: if fits in double then return double Math.Sin(double(x));
+        // Prefer the hardware implementation when the argument fits cleanly into a double;
+        // this keeps the result aligned with Math.Sin/Math.Cos for standard-precision inputs.
+        if (x.Size <= 52 && x.Accuracy <= 64)
+        {
+            double xd = (double)x;
+            if (!double.IsInfinity(xd))
+            {
+                return new BigFloat(Math.Sin(xd));
+            }
+        }
 
         BigFloat twoPi = pi << 1;
 
@@ -419,7 +433,8 @@ public readonly partial struct BigFloat
                             ? SinCosTyler(r, r, -prec - 10, 2)  // already tiny
                             : SinByHalving(r, prec);            // scale down first
 
-        result = TruncateByAndRound(result, 3);
+        // Preserve the computed precision; avoid trimming guard bits here to keep maximum accuracy
+        // when comparing against hardware trig functions.
         return negate ? -result : result;
     }
 
