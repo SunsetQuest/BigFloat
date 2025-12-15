@@ -1,8 +1,6 @@
 // Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using System.Diagnostics;
-
 namespace BigFloatLibrary.Tests;
 
 /// <summary>
@@ -235,7 +233,7 @@ public class OperatorTests
     }
 
 #if !DEBUG
-    [DebuggerHidden]
+    [System.Diagnostics.DebuggerHidden]
     [Fact]
     public void Modulo_ByZero_ThrowsException()
     {

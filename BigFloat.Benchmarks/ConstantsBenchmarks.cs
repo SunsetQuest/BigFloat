@@ -1,6 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BigFloatLibrary;
-
 namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
@@ -11,21 +9,21 @@ public class ConstantsBenchmarks
     public int PrecisionBits { get; set; }
 
     [IterationSetup(Target = nameof(Pi))]
-    public void WarmPi() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.Pi, PrecisionBits, useExternalFiles: false);
+    public void WarmPi() => BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, PrecisionBits, useExternalFiles: false);
 
     [Benchmark]
     [BenchmarkCategory("CI")]
-    public BigFloatLibrary.BigFloat Pi() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.Pi, PrecisionBits, useExternalFiles: false);
+    public BigFloat Pi() => BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, PrecisionBits, useExternalFiles: false);
 
     [IterationSetup(Target = nameof(E))]
-    public void WarmE() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.E, PrecisionBits, useExternalFiles: false);
+    public void WarmE() => BigFloat.Constants.GetConstant(BigFloat.Catalog.E, PrecisionBits, useExternalFiles: false);
 
     [Benchmark]
-    public BigFloatLibrary.BigFloat E() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.E, PrecisionBits, useExternalFiles: false);
+    public BigFloat E() => BigFloat.Constants.GetConstant(BigFloat.Catalog.E, PrecisionBits, useExternalFiles: false);
 
     [IterationSetup(Target = nameof(Gamma))]
-    public void WarmGamma() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.EulerMascheroniConstant, PrecisionBits, useExternalFiles: false);
+    public void WarmGamma() => BigFloat.Constants.GetConstant(BigFloat.Catalog.EulerMascheroniConstant, PrecisionBits, useExternalFiles: false);
 
     [Benchmark]
-    public BigFloatLibrary.BigFloat Gamma() => BigFloatLibrary.BigFloat.Constants.GetConstant(BigFloatLibrary.BigFloat.Catalog.EulerMascheroniConstant, PrecisionBits, useExternalFiles: false);
+    public BigFloat Gamma() => BigFloat.Constants.GetConstant(BigFloat.Catalog.EulerMascheroniConstant, PrecisionBits, useExternalFiles: false);
 }
