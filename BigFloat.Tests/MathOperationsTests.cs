@@ -86,37 +86,6 @@ public class MathOperationsTests
 
 
     [Fact]
-    public void NthRoot_RandomValues_AccurateResults2()
-    {
-        for (int i = BigFloat.GuardBits; i < 3000; i++) //i = (int)(i * 1.111111) + 1)
-        {
-            for (int root = 1; root < 35; root = (int)(root * 1.111111) + 1)
-            {
-                BigFloat answer = BigFloat.RandomWithMantissaBits(
-                    mantissaBits: i,
-                    minBinaryExponent: -300,
-                    maxBinaryExponent: 300,
-                    logarithmic: true,
-                    _rand);
-
-                BigFloat toTest = BigFloat.Pow(answer, root);
-                BigFloat result = BigFloat.NthRoot(toTest, root);
-
-                if (!answer.EqualsUlp(result, 3, true))
-                {
-                    result = BigFloat.NthRoot(toTest, root);
-                }
-
-                Assert.True(answer.EqualsUlp(result, 3, true),
-                    $"Failed with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-
-                Assert.True((toTest.SizeWithGuardBits - result.SizeWithGuardBits) < 32,
-                    $"Size difference too big with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-            }
-        }
-    }
-
-    [Fact]
     public void NthRoot_RandomValues_AccurateResults()
     {
         RunBudgeted(TestTargetInMilliseconds, RAND_SEED, (rand, iter) =>
