@@ -180,7 +180,7 @@ public readonly partial struct BigFloat
 
         int extendedPrecisionTarget = outputSize + GuardBits + 100;
         x = AdjustPrecision(x, extendedPrecisionTarget - x._size); //hack because precision runs out in while loop below because it loops too many times
-        // future: if value._size<53, we just use the 53 double value and return
+        // Values carrying ≤52 bits of precision are already handled by the hardware-derived approximation above.
 
         //Future: we could use Newton Plus's pre-right trick here size
 
@@ -236,7 +236,7 @@ public readonly partial struct BigFloat
         }
 
         // Use double's hardware to get the top 53-bits
-        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) ^ (1L << 52);
+        mantissa = (long)(BigInteger.Abs(value._mantissa) >> (value._size - 53)) | (1L << 52);
 
         // Build double from components and take root
         double doubleValue = BitConverter.Int64BitsToDouble(mantissa | ((long)adjustedExp << 52));
@@ -279,11 +279,6 @@ public readonly partial struct BigFloat
             if (value._mantissa.Sign == 0) { return new(BigInteger.Zero, value.Size, 0); } 
         }
 
-        if (value._size < 53)
-        {
-            return NthRootAprox(value, root);
-        }
-
         int outputSize = value.SizeWithGuardBits;
         value = AdjustPrecision(value, value.SizeWithGuardBits / 8); // "8" is adjustable - impacts precision and speed
 
@@ -309,6 +304,27 @@ public readonly partial struct BigFloat
         BigFloat x = ((BigFloat)tempRoot);
         if (shift != 0)
             x <<= (shift / root); // set the scale
+
+        if (value._size <= 52)
+        {
+            int smallExtendedPrecisionTarget = outputSize + GuardBits + 32;
+            x = AdjustPrecision(x, smallExtendedPrecisionTarget - x._size);
+
+            BigFloat smallRt = new((BigInteger)root << value.Size, -value.Size);
+            BigFloat smallT = Pow(x, root) - value;
+            BigFloat smallB = smallRt * Pow(x, root - 1);
+            int smallLastSize;
+            do
+            {
+                BigFloat correction = smallT / smallB;
+                x -= correction;
+                smallB = smallRt * Pow(x, root - 1);
+                smallLastSize = smallT._size;
+                smallT = Pow(x, root) - value;
+            } while (smallT._size < smallLastSize);
+
+            return SetPrecisionWithRound(x, outputSize - 32);
+        }
 
         int extendedPrecisionTarget = outputSize + GuardBits + 100;
         x = AdjustPrecision(x, extendedPrecisionTarget - x._size); //hack because precision runs out in while loop below because it loops too many times

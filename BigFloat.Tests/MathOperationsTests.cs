@@ -216,8 +216,24 @@ public class MathOperationsTests
         var difference = BigFloat.Abs(result - expected);
         var relativeDifference = difference / expected;
         
-        Assert.True(relativeDifference < new BigFloat("0.0000001"), 
+        Assert.True(relativeDifference < new BigFloat("0.0000001"),
             $"NthRoot({valueStr}, {root}) = {result}, expected {expectedStr}");
+    }
+
+    [Fact]
+    public void NthRoot_Approximation_Path_Preserves_Pow_Roundtrip()
+    {
+        // Ensure we exercise the approximation branch where the operand carries fewer than 53 bits of precision.
+        BigFloat answer = new BigFloat(0x5CCAE7313AF24, 246, true);
+
+        for (int root = 4; root <= 10; root++)
+        {
+            BigFloat powered = BigFloat.Pow(answer, root);
+            BigFloat result = BigFloat.NthRoot(powered, root);
+
+            Assert.True(answer.EqualsUlp(result, 2, true),
+                $"Root {root} failed: Pow(answer, root) round-tripped to {result} instead of {answer}");
+        }
     }
 
     [Theory]
