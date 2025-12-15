@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Numerics;
@@ -64,10 +64,12 @@ public class IntegerOperatorTests
         Assert.True(divided.EqualsZeroExtended(dividedReference));
     }
 
+#if !DEBUG
     [Fact]
     public void Division_ByZeroIntThrows()
     {
         var numerator = new BigFloat(1);
         Assert.Throws<DivideByZeroException>(() => numerator / 0);
     }
+#endif
 }

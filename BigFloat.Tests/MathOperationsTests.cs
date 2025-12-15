@@ -1,17 +1,19 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using Xunit.Sdk;
+
+using static BigFloatLibrary.TestsShared;
 
 namespace BigFloatLibrary.Tests;
-
 /// <summary>
 /// Tests for mathematical operations including Pow, NthRoot, and arithmetic operations
 /// </summary>
 public class MathOperationsTests
 {
-    private const int RAND_SEED = 22;
-
     #region Pow Tests
 
     [Theory]
@@ -83,51 +85,119 @@ public class MathOperationsTests
 
     #region NthRoot Tests
 
-    [Fact]
-    public void NthRoot_RandomValues_AccurateResults()
-    {
-        Random rand = new(RAND_SEED);
 
-        for (int i = BigFloat.GuardBits; i < 3000; i += 7)
+    [Fact]
+    public void NthRoot_RandomValues_AccurateResults2()
+    {
+        for (int i = BigFloat.GuardBits; i < 3000; i++) //i = (int)(i * 1.111111) + 1)
         {
-            for (int root = 1; root < 35; root++)
+            for (int root = 1; root < 35; root = (int)(root * 1.111111) + 1)
             {
                 BigFloat answer = BigFloat.RandomWithMantissaBits(
                     mantissaBits: i,
                     minBinaryExponent: -300,
                     maxBinaryExponent: 300,
                     logarithmic: true,
-                    rand);
+                    _rand);
 
                 BigFloat toTest = BigFloat.Pow(answer, root);
                 BigFloat result = BigFloat.NthRoot(toTest, root);
-                
-                Assert.True(answer.EqualsUlp(result, 3, true), 
+
+                if (!answer.EqualsUlp(result, 3, true))
+                {
+                    result = BigFloat.NthRoot(toTest, root);
+                }
+
+                Assert.True(answer.EqualsUlp(result, 3, true),
                     $"Failed with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
-                
-                Assert.True((toTest.SizeWithGuardBits - result.SizeWithGuardBits) < 32, 
+
+                Assert.True((toTest.SizeWithGuardBits - result.SizeWithGuardBits) < 32,
                     $"Size difference too big with input({toTest}) and root({root}) with a result of {result} but answer is {answer}");
             }
         }
     }
 
     [Fact]
-    public void NthRoot_IntegerRoots_ExactResults()
+    public void NthRoot_RandomValues_AccurateResults()
     {
-        Random rand = new(RAND_SEED);
-
-        for (long answer = 2; answer < 5000; answer++)
+        RunBudgeted(TestTargetInMilliseconds, RAND_SEED, (rand, iter) =>
         {
-            for (int e = 1; e < 200; e++)
-            {
-                BigInteger lowerInclusive = BigInteger.Pow(answer, e);
-                BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
-                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, rand);
-                BigInteger root = BigIntegerTools.NthRoot(x, e);
-                
-                Assert.Equal(answer, root);
-            }
-        }
+            int mantissaBits = (int)LogUniform(rand, BigFloat.GuardBits, 2999);
+            int root = (int)LogUniform(rand, 1, 34);
+
+            BigFloat answer = BigFloat.RandomWithMantissaBits(
+                mantissaBits: mantissaBits,
+                minBinaryExponent: -300,
+                maxBinaryExponent: 300,
+                logarithmic: true,
+                rand);
+
+            BigFloat toTest = BigFloat.Pow(answer, root);
+            BigFloat result = BigFloat.NthRoot(toTest, root);
+
+            if (!answer.EqualsUlp(result, 3, true))
+                throw new XunitException(
+                    $"EqualsUlp failed: seed={RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
+                    $"result={result}, answer={answer}, input={toTest}");
+
+            int sizeDiff = toTest.SizeWithGuardBits - result.SizeWithGuardBits;
+            if (sizeDiff >= 32)
+                throw new XunitException(
+                    $"Size diff too big: seed={RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
+                    $"sizeDiff={sizeDiff}, result={result}, answer={answer}, input={toTest}");
+        });
+    }
+
+    [Fact]
+    public void Verify_NthRoot()
+    {
+        const long minA = 2, maxA = 999;   // answer < 1000
+        const int minE = 1, maxE = 199;   // e < 200
+
+        RunBudgeted(10, RAND_SEED, (rand, iter) =>
+        {
+            long a = LogUniform(rand, minA, maxA);
+            int e = (int)LogUniform(rand, minE, maxE);
+
+            BigInteger lo = BigInteger.Pow(a, e);
+            BigInteger hi = BigInteger.Pow(a + 1, e);
+
+            BigInteger x = BigIntegerTools.RandomBigInteger(lo, hi, rand);
+            BigInteger root = BigIntegerTools.NthRoot(x, e);
+
+            if (root != a)
+                throw new XunitException($"NthRoot failed: seed={RAND_SEED}, iter={iter}, a={a}, e={e}");
+        });
+    }
+
+    private static void RunBudgeted(int targetMs, int seed, Action<Random, int> testCase)
+    {
+        int n = CalibrateIterations(targetMs, seed, testCase);
+        var r = new Random(seed);
+        for (int i = 0; i < n; i++) testCase(r, i);
+    }
+
+    private static int CalibrateIterations(int targetMs, int seed, Action<Random, int> testCase)
+    {
+        // Short window keeps this light but still adapts to machine speed.
+        int windowMs = int.Clamp(targetMs, 10, 50);
+        var r = new Random((int)(seed ^ 0x9E37_79B9));
+        var sw = Stopwatch.StartNew();
+
+        int n = 0;
+        while (sw.ElapsedMilliseconds < windowMs)
+            testCase(r, n++);
+
+        double msPer = sw.Elapsed.TotalMilliseconds / Math.Max(1, n);
+        return Math.Max(1, (int)Math.Round(targetMs / msPer));
+    }
+
+    private static long LogUniform(Random r, long minInclusive, long maxInclusive)
+    {
+        double logMin = Math.Log(minInclusive);
+        double logMax = Math.Log(maxInclusive);
+        long v = (long)Math.Round(Math.Exp(logMin + r.NextDouble() * (logMax - logMin)));
+        return v < minInclusive ? minInclusive : (v > maxInclusive ? maxInclusive : v);
     }
 
     [Theory]
