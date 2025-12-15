@@ -11,7 +11,6 @@ namespace BigFloatLibrary.Tests;
 public class MathOperationsTests
 {
     private const int RAND_SEED = 22;
-    private static readonly Random _rand = new(RAND_SEED);
 
     #region Pow Tests
 
@@ -87,6 +86,8 @@ public class MathOperationsTests
     [Fact]
     public void NthRoot_RandomValues_AccurateResults()
     {
+        Random rand = new(RAND_SEED);
+
         for (int i = BigFloat.GuardBits; i < 3000; i += 7)
         {
             for (int root = 1; root < 35; root++)
@@ -95,8 +96,8 @@ public class MathOperationsTests
                     mantissaBits: i,
                     minBinaryExponent: -300,
                     maxBinaryExponent: 300,
-                    logarithmic: true, 
-                    _rand);
+                    logarithmic: true,
+                    rand);
 
                 BigFloat toTest = BigFloat.Pow(answer, root);
                 BigFloat result = BigFloat.NthRoot(toTest, root);
@@ -113,13 +114,15 @@ public class MathOperationsTests
     [Fact]
     public void NthRoot_IntegerRoots_ExactResults()
     {
+        Random rand = new(RAND_SEED);
+
         for (long answer = 2; answer < 5000; answer++)
         {
             for (int e = 1; e < 200; e++)
             {
                 BigInteger lowerInclusive = BigInteger.Pow(answer, e);
                 BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
-                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, _rand);
+                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, rand);
                 BigInteger root = BigIntegerTools.NthRoot(x, e);
                 
                 Assert.Equal(answer, root);
@@ -143,8 +146,24 @@ public class MathOperationsTests
         var difference = BigFloat.Abs(result - expected);
         var relativeDifference = difference / expected;
         
-        Assert.True(relativeDifference < new BigFloat("0.0000001"), 
+        Assert.True(relativeDifference < new BigFloat("0.0000001"),
             $"NthRoot({valueStr}, {root}) = {result}, expected {expectedStr}");
+    }
+
+    [Fact]
+    public void NthRoot_Approximation_Path_Preserves_Pow_Roundtrip()
+    {
+        // Ensure we exercise the approximation branch where the operand carries fewer than 53 bits of precision.
+        BigFloat answer = new BigFloat(0x5CCAE7313AF24, 246, true);
+
+        for (int root = 4; root <= 10; root++)
+        {
+            BigFloat powered = BigFloat.Pow(answer, root);
+            BigFloat result = BigFloat.NthRoot(powered, root);
+
+            Assert.True(answer.EqualsUlp(result, 2, true),
+                $"Root {root} failed: Pow(answer, root) round-tripped to {result} instead of {answer}");
+        }
     }
 
     [Theory]
