@@ -8,7 +8,7 @@ using BenchmarkDotNet.Attributes;
 
 namespace BigFloatLibrary.Benchmarks;
 
-internal static class Program
+public static class Program
 {
     public static void Main(string[] args)
     {
@@ -17,7 +17,6 @@ internal static class Program
         IConfig config = ManualConfig.Create(DefaultConfig.Instance)
             .AddLogger(ConsoleLogger.Default)
             .AddColumn(StatisticColumn.P0, StatisticColumn.P50, StatisticColumn.P90)
-            .AddExporter(MarkdownExporter.GitHub)
             .WithArtifactsPath(artifactsPath)
             .WithOrderer(new DefaultOrderer(SummaryOrderPolicy.FastestToSlowest));
 
