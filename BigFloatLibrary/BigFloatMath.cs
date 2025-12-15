@@ -148,12 +148,33 @@ public readonly partial struct BigFloat
             return -NthRoot(-value, 3);
         }
 
+        int outputSize = value.SizeWithGuardBits;
+
         if (value._size < 53)
         {
-            return NthRootAprox(value, 3);
+            BigFloat smallX = NthRootAprox(value, 3);
+
+            int smallExtendedPrecisionTarget = outputSize + GuardBits + 32;
+            smallX = AdjustPrecision(smallX, smallExtendedPrecisionTarget - smallX._size);
+
+            BigFloat smallRt = new((BigInteger)3 << value.Size, -value.Size);
+            BigFloat smallXSquared = Pow(smallX, 2);
+            BigFloat smallB = smallRt * smallXSquared;
+            BigFloat smallT = smallXSquared * smallX - value;
+            int smallLastSize;
+            do
+            {
+                BigFloat correction = smallT / smallB;
+                smallX -= correction;
+                smallXSquared = Pow(smallX, 2);
+                smallB = smallRt * smallXSquared;
+                smallLastSize = smallT._size;
+                smallT = smallXSquared * smallX - value;
+            } while (smallT._size < smallLastSize);
+
+            return SetPrecisionWithRound(smallX, outputSize - 32);
         }
 
-        int outputSize = value.SizeWithGuardBits;
         value = AdjustPrecision(value, value.SizeWithGuardBits / 4); // "8" is adjustable - impacts precision and speed
 
         // Use double's hardware to get the first 53-bits
