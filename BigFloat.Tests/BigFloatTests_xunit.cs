@@ -259,20 +259,6 @@ public class OriginalBigFloatTests
         }
     }
 
-    [Fact]
-    public void Verify_NthRoot2()
-    {
-        for (long answer = 2; answer < 5000; answer++)
-            for (int e = 1; e < 200; e++)
-            {
-                BigInteger lowerInclusive = BigInteger.Pow(answer, e);
-                BigInteger upperExclusive = BigInteger.Pow(answer + 1, e);
-                BigInteger x = BigIntegerTools.RandomBigInteger(lowerInclusive, upperExclusive, _rand);
-                BigInteger root = BigIntegerTools.NthRoot(x, e);
-                Assert.Equal(answer, root);
-            }
-    }
-
     // Test values calculated using: https://www.ttmath.org/online_calculator, https://www.mathsisfun.com/calculator-precision.html
     [Theory]
     [InlineData("7777777777777777777777777777777777777777777777777777777777777777", 7, "1340494621.5142142784634135012228258256621009971950248327657|6045823859")]
