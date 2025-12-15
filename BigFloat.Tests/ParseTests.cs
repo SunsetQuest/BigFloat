@@ -437,10 +437,14 @@ public class ParseTests
     [InlineData("-11", -17)]
     [InlineData("-FF", -255)]
     [InlineData("0.0", 0)]
-    public void TryParseHex_ValidInput_ParsesCorrectly(string input, int expected)
+    [InlineData("-0.", 0)]
+    [InlineData("-.0", 0)]
+    [InlineData("F.F", 15.9375)]
+    [InlineData("0.F", 0.9375)]
+    public void TryParseHex_ValidInput_ParsesCorrectly(string input, double expected)
     {
         Assert.True(BigFloat.TryParseHex(input, out BigFloat output));
-        Assert.Equal(expected, output);
+        Assert.Equal(new BigFloat(expected), output);
     }
 
     #endregion

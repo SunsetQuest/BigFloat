@@ -240,8 +240,23 @@ public class MathOperationsTests
         var expected = new BigFloat(cleanExpected,0, 32);
         
         // Use ULP comparison for these calculated values
-        Assert.True(result.EqualsUlp(expected, 2), 
+        Assert.True(result.EqualsUlp(expected, 2),
             $"NthRoot({value}, {root}) = {result}, expected approximately {cleanExpected}");
+    }
+
+    [Theory]
+    [InlineData(10UL, 5, "1.584893192|4")] // Insufficient precision for ULP tolerance(-29)
+    [InlineData(10UL, 6, "1.467799|268")] // Insufficient precision for ULP tolerance(-29)
+    [InlineData(12345UL, 17, "1.7405076|911")] // Insufficient precision for ULP tolerance(-29)
+    public void NthRoot_Should_Not_Match_Insufficient_Precision_Values(ulong input, int root, string insufficientPrecisionStr)
+    {
+        var inputBigFloat = (BigFloat)input;
+        var insufficientPrecisionResult = BigFloat.Parse(insufficientPrecisionStr);
+
+        var result = BigFloat.NthRoot(inputBigFloat, root);
+
+        Assert.False(insufficientPrecisionResult.EqualsUlp(result, -27),
+            $"NthRoot({input}, {root}) incorrectly matched insufficient precision value {insufficientPrecisionStr}");
     }
 
     #endregion
