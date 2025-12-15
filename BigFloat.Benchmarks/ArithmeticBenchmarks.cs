@@ -1,6 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BigFloatLibrary;
-
 namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
@@ -10,8 +8,8 @@ public class ArithmeticBenchmarks
     [Params(32, 256, 1024, 4096)]
     public int OperandBits { get; set; }
 
-    private BigFloatLibrary.BigFloat _a;
-    private BigFloatLibrary.BigFloat _b;
+    private BigFloat _a;
+    private BigFloat _b;
 
     [GlobalSetup]
     public void Setup()
@@ -22,29 +20,29 @@ public class ArithmeticBenchmarks
 
         if (_b.IsZero)
         {
-            _b = new BigFloatLibrary.BigFloat(1, binaryScaler: 0);
+            _b = new BigFloat(1, binaryScaler: 0);
         }
     }
 
     [Benchmark]
     [BenchmarkCategory("CI")]
-    public BigFloatLibrary.BigFloat Addition() => _a + _b;
+    public BigFloat Addition() => _a + _b;
 
     [Benchmark]
     [BenchmarkCategory("CI")]
-    public BigFloatLibrary.BigFloat Subtraction() => _a - _b;
+    public BigFloat Subtraction() => _a - _b;
 
     [Benchmark]
-    public BigFloatLibrary.BigFloat Multiplication() => _a * _b;
+    public BigFloat Multiplication() => _a * _b;
 
     [Benchmark]
-    public BigFloatLibrary.BigFloat Division() => _a / _b;
+    public BigFloat Division() => _a / _b;
 
-    private BigFloatLibrary.BigFloat CreateRandomValue(Random rand)
+    private BigFloat CreateRandomValue(Random rand)
     {
-        int mantissaBits = OperandBits + BigFloatLibrary.BigFloat.GuardBits;
+        int mantissaBits = OperandBits + BigFloat.GuardBits;
         int exponent = Math.Max(OperandBits / 2, 8);
-        return BigFloatLibrary.BigFloat.RandomWithMantissaBits(
+        return BigFloat.RandomWithMantissaBits(
             mantissaBits,
             -exponent,
             exponent,

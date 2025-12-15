@@ -1,6 +1,4 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BigFloatLibrary;
-
 namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]

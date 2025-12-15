@@ -2,7 +2,6 @@
 //
 // Centralized helpers for core numeric decisions shared across BigFloat partials.
 
-using System;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 

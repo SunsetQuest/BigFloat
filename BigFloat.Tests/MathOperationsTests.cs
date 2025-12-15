@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using Xunit.Sdk;
 
 using static BigFloatLibrary.TestsShared;
