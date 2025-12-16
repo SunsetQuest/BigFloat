@@ -205,6 +205,9 @@ public class BigFloatRoundingTests
         Assert.Equal(new BigInteger(0b11), result.RawMantissa);
         Assert.Equal(BigFloat.GuardBits + 2, result.Scale);
         Assert.Equal(2, result.RawMantissa.GetBitLength());
+    }
+
+    [Fact]
     public void TruncateToIntegerKeepingAccuracy_PreservesAccuracyForFractionalValues()
     {
         var value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
