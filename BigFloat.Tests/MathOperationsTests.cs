@@ -182,7 +182,7 @@ public class MathOperationsTests
         
         // Using a relaxed comparison since these are complex calculations
         var difference = BigFloat.Abs(result - expected);
-        var relativeDifference = difference / expected;
+        BigFloat relativeDifference = difference / expected;
         
         Assert.True(relativeDifference < new BigFloat("0.0000001"),
             $"NthRoot({valueStr}, {root}) = {result}, expected {expectedStr}");

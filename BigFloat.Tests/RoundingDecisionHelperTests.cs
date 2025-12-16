@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
 
 namespace BigFloatLibrary.Tests;
@@ -53,7 +53,7 @@ public class RoundingDecisionHelperTests
         Assert.Equal(expected, InvokePrivateRoundedMantissa(mantissa));
 
         var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
-        Assert.Equal(expected, value.GetRoundedMantissa());
+        Assert.Equal(expected, value.RoundedMantissa);
     }
 
     [Fact]
@@ -78,11 +78,11 @@ public class RoundingDecisionHelperTests
             "GetRoundedMantissa",
             BindingFlags.NonPublic | BindingFlags.Static,
             binder: null,
-            types: new[] { typeof(BigInteger) },
+            types: [typeof(BigInteger)],
             modifiers: null);
 
         Assert.NotNull(method);
-        return (BigInteger)method!.Invoke(null, new object[] { mantissa })!;
+        return (BigInteger)method!.Invoke(null, [mantissa])!;
     }
 
     private static (BigInteger rounded, int updatedSize) InvokePrivateRoundedMantissaWithSize(BigInteger mantissa, int size)
@@ -91,7 +91,7 @@ public class RoundingDecisionHelperTests
             "GetRoundedMantissa",
             BindingFlags.NonPublic | BindingFlags.Static,
             binder: null,
-            types: new[] { typeof(BigInteger), typeof(int).MakeByRefType() },
+            types: [typeof(BigInteger), typeof(int).MakeByRefType()],
             modifiers: null);
 
         Assert.NotNull(method);

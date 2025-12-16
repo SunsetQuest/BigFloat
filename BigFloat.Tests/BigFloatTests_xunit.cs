@@ -45,7 +45,7 @@ public class OriginalBigFloatTests
         {
             value = new(1, i, valueIncludesGuardBits: true, binaryPrecision: 31);
             string strValue = value.ToString();
-            Assert.False(strValue == "0" || strValue == "0.0" || strValue == "0.00"); // 0.000...1->BigFloat->ToString should never be zero.
+            Assert.False(strValue is "0" or "0.0" or "0.00"); // 0.000...1->BigFloat->ToString should never be zero.
         }
 
         Assert.Equal(new BigFloat(1, -8) % 1, (BigFloat)0.00390625); // 0.00390625 % 01 // 5-5-2025 update: "0.00390625" is a better answer than 0
@@ -347,18 +347,18 @@ public class OriginalBigFloatTests
             (16, 0, true, false, "16-bit negative just above tolerance boundary"),
         };
 
-        foreach (var test in cases)
+        foreach ((int BitLength, int ScaleOffset, bool Negative, bool ExpectZero, string Description) in cases)
         {
-            BigInteger magnitude = BigInteger.One << (test.BitLength - 1);
-            BigInteger mantissa = test.Negative ? BigInteger.Negate(magnitude) : magnitude;
-            int scale = BigFloat.GuardBits + test.ScaleOffset - test.BitLength;
+            BigInteger magnitude = BigInteger.One << (BitLength - 1);
+            BigInteger mantissa = Negative ? BigInteger.Negate(magnitude) : magnitude;
+            int scale = BigFloat.GuardBits + ScaleOffset - BitLength;
 
             BigFloat value = new(mantissa, scale, valueIncludesGuardBits: true);
 
-            Assert.Equal(test.ExpectZero, value.IsZero);
-            Assert.Equal(test.ExpectZero ? 0 : (test.Negative ? -1 : 1), value.Sign);
-            Assert.Equal(!test.ExpectZero && !test.Negative, value.IsPositive);
-            Assert.Equal(!test.ExpectZero && test.Negative, value.IsNegative);
+            Assert.Equal(ExpectZero, value.IsZero);
+            Assert.Equal(ExpectZero ? 0 : (Negative ? -1 : 1), value.Sign);
+            Assert.Equal(!ExpectZero && !Negative, value.IsPositive);
+            Assert.Equal(!ExpectZero && Negative, value.IsNegative);
         }
     }
 
@@ -480,16 +480,16 @@ public class OriginalBigFloatTests
             (BigFloat.ParseBinary("-.01", 0, 0, BigFloat.GuardBits), false, true, "Very small negative"),
         };
 
-        foreach (var testCase in testCases)
+        foreach ((BigFloat Value, bool? ExpectedStrictZero, bool ExpectedZero, string Description) in testCases)
         {
-            if (testCase.ExpectedStrictZero.HasValue)
+            if (ExpectedStrictZero.HasValue)
             {
-                Assert.True(testCase.ExpectedStrictZero.Value == testCase.Value.IsStrictZero,
-                    $"IsStrictZero failed for: {testCase.Description}");
+                Assert.True(ExpectedStrictZero.Value == Value.IsStrictZero,
+                    $"IsStrictZero failed for: {Description}");
             }
 
-            Assert.True(testCase.ExpectedZero == testCase.Value.IsZero,
-                $"IsZero failed for: {testCase.Description}");
+            Assert.True(ExpectedZero == Value.IsZero,
+                $"IsZero failed for: {Description}");
         }
     }
 
@@ -838,7 +838,7 @@ public class OriginalBigFloatTests
             input = input.Replace(".", "");
             input = input[Math.Max(input.Length - 64, 0)..];
             input = input.TrimStart('0', '-');
-            if (input == "")
+            if (string.IsNullOrEmpty(input))
             {
                 input = "0";
             }
@@ -2288,8 +2288,8 @@ public class OriginalBigFloatTests
     [Fact]
     public void Floor_Ceiling_PositiveFractionalValues_ShouldDifferByOne()
     {
-        var testCases = new[]
-        {
+        (double value, int floor, int ceiling)[] testCases =
+        [
             (value: 0.123, floor: 0, ceiling: 1),
             (value: 0.5, floor: 0, ceiling: 1),
             (value: 0.75, floor: 0, ceiling: 1),
@@ -2297,9 +2297,9 @@ public class OriginalBigFloatTests
             (value: 1.1, floor: 1, ceiling: 2),
             (value: 1.99, floor: 1, ceiling: 2),
             (value: 2.1, floor: 2, ceiling: 3)
-        };
+        ];
 
-        foreach (var (value, floor, ceiling) in testCases)
+        foreach ((double value, int floor, int ceiling) in testCases)
         {
             AssertFloorCeilingBehavior(value, expectedFloor: floor, expectedCeiling: ceiling, shouldBeInteger: false);
         }
@@ -2308,8 +2308,8 @@ public class OriginalBigFloatTests
     [Fact]
     public void Floor_Ceiling_NegativeFractionalValues_ShouldDifferByOne()
     {
-        var testCases = new[]
-        {
+        (double value, int floor, int ceiling)[] testCases =
+        [
             (value: -0.123, floor: -1, ceiling: 0),
             (value: -0.5, floor: -1, ceiling: 0),
             (value: -0.7, floor: -1, ceiling: 0),
@@ -2317,9 +2317,9 @@ public class OriginalBigFloatTests
             (value: -1.1, floor: -2, ceiling: -1),
             (value: -1.99, floor: -2, ceiling: -1),
             (value: -2.1, floor: -3, ceiling: -2)
-        };
+        ];
 
-        foreach (var (value, floor, ceiling) in testCases)
+        foreach ((double value, int floor, int ceiling) in testCases)
         {
             AssertFloorCeilingBehavior(value, expectedFloor: floor, expectedCeiling: ceiling, shouldBeInteger: false);
         }
@@ -2327,9 +2327,9 @@ public class OriginalBigFloatTests
 
     private static void AssertFloorCeilingBehavior(double value, int expectedFloor, int expectedCeiling, bool shouldBeInteger = true)
     {
-        var bigFloat = new BigFloat(value);
-        var floor = bigFloat.FloorPreservingAccuracy();
-        var ceiling = bigFloat.CeilingPreservingAccuracy();
+        BigFloat bigFloat = new BigFloat(value);
+        BigFloat floor = bigFloat.FloorPreservingAccuracy();
+        BigFloat ceiling = bigFloat.CeilingPreservingAccuracy();
 
         Assert.Equal(expectedFloor, (int)floor);
         Assert.Equal(expectedCeiling, (int)ceiling);
@@ -2340,9 +2340,9 @@ public class OriginalBigFloatTests
     public void Floor_Ceiling_ExtremeValues_ShouldHandleCorrectly()
     {
         // Min/Max values should have floor == ceiling (they're effectively integers at that scale)
-        var bigFloat = new BigFloat(double.MinValue);
-        var floor = bigFloat.FloorPreservingAccuracy();
-        var ceiling = bigFloat.CeilingPreservingAccuracy();
+        BigFloat bigFloat = new BigFloat(double.MinValue);
+        BigFloat floor = bigFloat.FloorPreservingAccuracy();
+        BigFloat ceiling = bigFloat.CeilingPreservingAccuracy();
 
         Assert.Equal(floor, ceiling); // MinValue floor should equal ceiling
 
@@ -2360,9 +2360,9 @@ public class OriginalBigFloatTests
 
         foreach (var value in testValues)
         {
-            var bigFloat = new BigFloat(value);
-            var bigFloatFloor = bigFloat.FloorPreservingAccuracy();
-            var bigFloatCeiling = bigFloat.CeilingPreservingAccuracy();
+            BigFloat bigFloat = new BigFloat(value);
+            BigFloat bigFloatFloor = bigFloat.FloorPreservingAccuracy();
+            BigFloat bigFloatCeiling = bigFloat.CeilingPreservingAccuracy();
 
             var doubleFloor = double.Floor(value);
             var doubleCeiling = double.Ceiling(value);
@@ -2466,9 +2466,9 @@ public class OriginalBigFloatTests
     // Helper methods for cleaner assertions
     private static void AssertIntegerBehavior(double value, int expectedValue, bool isInteger = true)
     {
-        var bigFloat = new BigFloat(value);
-        var floor = bigFloat.FloorPreservingAccuracy();
-        var ceiling = bigFloat.CeilingPreservingAccuracy();
+        BigFloat bigFloat = new BigFloat(value);
+        BigFloat floor = bigFloat.FloorPreservingAccuracy();
+        BigFloat ceiling = bigFloat.CeilingPreservingAccuracy();
 
         Assert.Equal(expectedValue, (int)floor); // Floor of {value} should be {expectedValue}
         Assert.Equal(expectedValue, (int)ceiling); // Ceiling of {value} should be {expectedValue}
@@ -2482,8 +2482,8 @@ public class OriginalBigFloatTests
         // Validate test data consistency
         Assert.True(expectedCeiling >= expectedFloor, "Test Error: expectedFloor should be less than or equal to expectedCeiling");
 
-        var floorOutput = value.FloorPreservingAccuracy();
-        var ceilingOutput = value.CeilingPreservingAccuracy();
+        BigFloat floorOutput = value.FloorPreservingAccuracy();
+        BigFloat ceilingOutput = value.CeilingPreservingAccuracy();
 
         Assert.True(expectedFloor.EqualsZeroExtended(floorOutput), $"Floor of {value} should be {expectedFloor}, but was {floorOutput}.");
         Assert.True(expectedCeiling.EqualsZeroExtended(ceilingOutput), $"Ceiling of {value} should be {expectedCeiling}, but was {ceilingOutput}.");
@@ -2511,10 +2511,10 @@ public class OriginalBigFloatTests
     public void BigFloatToHexStringTests(string binaryInput, string[] validResults)
     {
         // Arrange
-        var bigFloat = new BigFloat(binaryInput);
+        BigFloat bigFloat = new BigFloat(binaryInput);
 
         // Act
-        var result = bigFloat.ToHexString();
+        string result = bigFloat.ToHexString();
 
         // Assert
         Assert.Contains(result, validResults);
@@ -2664,7 +2664,7 @@ public class OriginalBigFloatTests
     [InlineData("111", 7)]
     public void TryParseBinary_BasicIntegers_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal(expected, output);
     }
 
@@ -2684,7 +2684,7 @@ public class OriginalBigFloatTests
     [InlineData(".111", 0.875)]
     public void TryParseBinary_BasicFractionals_Theory(string input, double expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2703,7 +2703,7 @@ public class OriginalBigFloatTests
     [InlineData("1.11", 1.75)]
     public void TryParseBinary_IntegerDotFractional_Theory(string input, double expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2722,7 +2722,7 @@ public class OriginalBigFloatTests
     [InlineData("+11.", 3)]
     public void TryParseBinary_PositiveSigned_Theory(string input, double expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2757,7 +2757,7 @@ public class OriginalBigFloatTests
     [InlineData("-1.11", -1.75)]
     public void TryParseBinary_NegativeSigned_Theory(string input, double expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2768,7 +2768,7 @@ public class OriginalBigFloatTests
     [InlineData("11.", 3)]
     public void TryParseBinary_TrailingDot_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal(expected, output);
     }
 
@@ -2783,7 +2783,7 @@ public class OriginalBigFloatTests
     [InlineData("1111111111", 1023)]
     public void TryParseBinary_ByteBoundaries_Positive_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2798,7 +2798,7 @@ public class OriginalBigFloatTests
     [InlineData("+1111111111", 1023)]
     public void TryParseBinary_ByteBoundaries_PositiveSigned_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2814,7 +2814,7 @@ public class OriginalBigFloatTests
     [InlineData("-11111111111", -2047)]
     public void TryParseBinary_ByteBoundaries_Negative_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2829,7 +2829,7 @@ public class OriginalBigFloatTests
     [InlineData("11111111111111111", 131071)]
     public void TryParseBinary_TwoByteBoundaries_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2846,7 +2846,7 @@ public class OriginalBigFloatTests
     [InlineData("11111111111111111.000000000000", 131071)]
     public void TryParseBinary_TwoByteBoundaries_VariousFormats_Theory(string input, int expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2859,7 +2859,7 @@ public class OriginalBigFloatTests
     [InlineData("+101010101010101010101010101010101010101010101010101010101010101.", 6148914691236517205L)]
     public void TryParseBinary_LargeNumbers_Theory(string input, long expected)
     {
-        Assert.True(BigFloat.TryParseBinary(input, out var output));
+        Assert.True(BigFloat.TryParseBinary(input, out BigFloat output));
         Assert.Equal((BigFloat)expected, output);
     }
 
@@ -2874,7 +2874,7 @@ public class OriginalBigFloatTests
 
             // checks several numbers between 0 and long.MaxValue
             string strVal = binaryBits;
-            Assert.True(BigFloat.TryParseBinary(strVal, out var output));
+            Assert.True(BigFloat.TryParseBinary(strVal, out BigFloat output));
             Assert.Equal(val, output);
 
             // checks several negative numbers between 0 and long.MaxValue
@@ -2907,56 +2907,56 @@ public class OriginalBigFloatTests
     [Fact]
     public void TryParseBinary_GuardBitSeparator_TrailingPipe()
     {
-        Assert.True(BigFloat.TryParseBinary("1000000000000000.|", out var output));
+        Assert.True(BigFloat.TryParseBinary("1000000000000000.|", out BigFloat output));
         Assert.Equal(new BigFloat((ulong)32768 << BigFloat.GuardBits, 0, true, binaryPrecision: 48), output);
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeBeforeDot()
     {
-        Assert.True(BigFloat.TryParseBinary("1000000000000000|.", out var output));
+        Assert.True(BigFloat.TryParseBinary("1000000000000000|.", out BigFloat output));
         Assert.Equal(new BigFloat((ulong)32768 << BigFloat.GuardBits, 0, true, binaryPrecision: 48), output);
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeInMiddle()
     {
-        Assert.True(BigFloat.TryParseBinary("100000000000000|0.", out var output));
+        Assert.True(BigFloat.TryParseBinary("100000000000000|0.", out BigFloat output));
         Assert.True(output.EqualsZeroExtended(new BigFloat((BigInteger)32768 << (BigFloat.GuardBits), 0, valueIncludesGuardBits: true)));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeWithFractional()
     {
-        Assert.True(BigFloat.TryParseBinary("100000000000000|0.0", out var output));
+        Assert.True(BigFloat.TryParseBinary("100000000000000|0.0", out BigFloat output));
         Assert.True(output.EqualsZeroExtended(new BigFloat((BigInteger)32768 << (BigFloat.GuardBits - 1), 1, valueIncludesGuardBits: true)));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_FractionalWithGuardBits()
     {
-        Assert.True(BigFloat.TryParseBinary("10000000000.0000|00", out var output));
+        Assert.True(BigFloat.TryParseBinary("10000000000.0000|00", out BigFloat output));
         Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)32768 << (BigFloat.GuardBits - 1), -4, true, binaryPrecision: 47)));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterFirstBit()
     {
-        Assert.True(BigFloat.TryParseBinary("1|000000000000000.", out var output));
+        Assert.True(BigFloat.TryParseBinary("1|000000000000000.", out BigFloat output));
         Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 15, true, binaryPrecision: BigFloat.GuardBits + 1)));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterDot()
     {
-        Assert.True(BigFloat.TryParseBinary("1.|000000000000000", out var output));
+        Assert.True(BigFloat.TryParseBinary("1.|000000000000000", out BigFloat output));
         Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 0, true, binaryPrecision: BigFloat.GuardBits + 1)));
     }
 
     [Fact]
     public void TryParseBinary_GuardBitSeparator_PipeAfterDotWithFractional()
     {
-        Assert.True(BigFloat.TryParseBinary("1|.000000000000000", out var output));
+        Assert.True(BigFloat.TryParseBinary("1|.000000000000000", out BigFloat output));
         Assert.Equal(0, output.CompareTotalOrderBitwise(new BigFloat((ulong)1 << BigFloat.GuardBits, 0, true, binaryPrecision: BigFloat.GuardBits + 1)));
     }
 
@@ -4276,8 +4276,8 @@ public class OriginalBigFloatTests
     [InlineData("10.0001", "10.01", 0, false)] // Different at tolerance 0
     public void CompareUlp_BinaryParsing_Theory(string aStr, string bStr, int tolerance, bool shouldBeEqual)
     {
-        Assert.True(BigFloat.TryParseBinary(aStr, out var a));
-        Assert.True(BigFloat.TryParseBinary(bStr, out var b));
+        Assert.True(BigFloat.TryParseBinary(aStr, out BigFloat a));
+        Assert.True(BigFloat.TryParseBinary(bStr, out BigFloat b));
 
         if (shouldBeEqual)
         {
@@ -4816,9 +4816,9 @@ public class OriginalBigFloatTests
     public void HalfwayRoundsToEven_MinNormalBitPattern()
     {
         // Half-way below the smallest normal; ties-to-even → min normal
-        var eps = new BigFloat(1, binaryScaler: -1075);
-        var near = new BigFloat(1, binaryScaler: -1022) - eps;
-        var d = (double)near;
+        BigFloat eps = new BigFloat(1, binaryScaler: -1075);
+        BigFloat near = new BigFloat(1, binaryScaler: -1022) - eps;
+        double d = (double)near;
 
         Assert.Equal(0x0010_0000_0000_0000L, BitConverter.DoubleToInt64Bits(d));
     }
@@ -5791,25 +5791,25 @@ public class OriginalBigFloatTests
         [Fact]
         public void Sin_Should_ReturnOne_When_InputIsHalfPi()
         {
-            var input = HalfPi;
-            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-            var result = BigFloat.Sin(input);
+            BigFloat input = HalfPi;
+            BigFloat expected = BigFloat.OneWithAccuracy(StandardPrecision);
+            BigFloat result = BigFloat.Sin(input);
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Cos_Should_ReturnMinusOne_When_InputIsPi()
         {
-            var input = Pi;
-            var expected = -BigFloat.OneWithAccuracy(StandardPrecision);
-            var result = BigFloat.Cos(input);
+            BigFloat input = Pi;
+            BigFloat expected = -BigFloat.OneWithAccuracy(StandardPrecision);
+            BigFloat result = BigFloat.Cos(input);
             Assert.Equal(expected, result);
         }
 
         [Fact]
         public void Sin_Should_ReturnZero_When_InputIsPi()
         {
-            var input = Pi;
+            BigFloat input = Pi;
             var expected = BigFloat.ZeroWithAccuracy(HighPrecision);
             var result = BigFloat.Sin(input);
             Assert.True(result.EqualsUlp(expected));
@@ -5827,7 +5827,7 @@ public class OriginalBigFloatTests
         [Fact]
         public void Tan_Should_ReturnOne_When_InputIsQuarterPi()
         {
-            var input = QuarterPi;
+            BigFloat input = QuarterPi;
             var expected = BigFloat.OneWithAccuracy(StandardPrecision);
             var result = BigFloat.Tan(input);
             Assert.True(expected.EqualsUlp(result, 1, true));
@@ -5998,7 +5998,7 @@ public class OriginalBigFloatTests
         public void ToBinaryString_Should_HandleZero_When_InputIsZero()
         {
             // Arrange
-            var input = BigInteger.Zero;
+            BigInteger input = BigInteger.Zero;
 
             // Act & Assert
             Assert.Equal("0", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard));

@@ -1,13 +1,13 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using System;
 using System.Numerics;
 
 namespace BigFloatLibrary.Tests;
 
 public class ArithmeticBranchCoverageTests
 {
+#if !DEBUG
     [Fact]
     public void Division_ByZero_Throws()
     {
@@ -16,6 +16,7 @@ public class ArithmeticBranchCoverageTests
 
         Assert.Throws<DivideByZeroException>(() => numerator / zero);
     }
+#endif
 
     [Fact]
     public void Division_WithLargeOperands_KeepsExpectedQuotient()
@@ -24,7 +25,7 @@ public class ArithmeticBranchCoverageTests
         var denominator = new BigFloat(BigInteger.One << 260);
         var expected = new BigFloat(BigInteger.One << 260);
 
-        var result = numerator / denominator;
+        BigFloat result = numerator / denominator;
 
         Assert.True(result.EqualsZeroExtended(expected));
     }
@@ -57,7 +58,7 @@ public class ArithmeticBranchCoverageTests
     {
         var wide = new BigFloat(new BigInteger(1), binaryScaler: 80);
 
-        var result = wide + 1;
+        BigFloat result = wide + 1;
 
         Assert.Equal(wide, result);
     }
@@ -67,7 +68,7 @@ public class ArithmeticBranchCoverageTests
     {
         var value = new BigFloat(new BigInteger(10));
 
-        var result = value + 5;
+        BigFloat result = value + 5;
 
         Assert.Equal(new BigFloat(15), result);
     }
@@ -77,7 +78,7 @@ public class ArithmeticBranchCoverageTests
     {
         var value = new BigFloat(new BigInteger(3), binaryScaler: 80);
 
-        var incremented = ++value;
+        BigFloat incremented = ++value;
 
         Assert.Equal(value, incremented);
     }
@@ -87,7 +88,7 @@ public class ArithmeticBranchCoverageTests
     {
         var value = new BigFloat(new BigInteger(3), binaryScaler: 80);
 
-        var decremented = --value;
+        BigFloat decremented = --value;
 
         Assert.Equal(value, decremented);
     }
@@ -108,7 +109,7 @@ public class ArithmeticBranchCoverageTests
         var value = new BigFloat("3.75");
         int newSize = value.Size + 5;
 
-        var result = BigFloat.SetPrecisionWithRound(value, newSize);
+        BigFloat result = BigFloat.SetPrecisionWithRound(value, newSize);
 
         Assert.Equal(newSize, result.Size);
         Assert.True(result.EqualsZeroExtended(value));
@@ -120,8 +121,8 @@ public class ArithmeticBranchCoverageTests
         var value = new BigFloat("1.5");
         int reducedSize = Math.Max(1, value.Size - 2);
 
-        var result = BigFloat.SetPrecisionWithRound(value, reducedSize);
-        var expected = value.AdjustPrecision(reducedSize - value.Size);
+        BigFloat result = BigFloat.SetPrecisionWithRound(value, reducedSize);
+        BigFloat expected = value.AdjustPrecision(reducedSize - value.Size);
 
         Assert.Equal(reducedSize, result.Size);
         Assert.True(result.EqualsZeroExtended(expected));
