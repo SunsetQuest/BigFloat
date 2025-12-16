@@ -540,6 +540,19 @@ public class OriginalBigFloatTests
         Assert.True(x == y, $"Value changed: {x} vs {y}");
     }
 
+    [Fact]
+    public void AdjustAccuracy_Increase_UpdatesAccuracyAndScale()
+    {
+        var original = BigFloat.ParseBinary("101.01");
+        int delta = 5;
+
+        var widened = BigFloat.AdjustAccuracy(original, delta);
+
+        Assert.Equal(original.Accuracy + delta, widened.Accuracy);
+        Assert.Equal(original.Scale - delta, widened.Scale);
+        Assert.True(original == widened);
+    }
+
     [Theory]
     [InlineData(1.2345, -5)]
     [InlineData(-1.2345, -20)]
@@ -551,6 +564,17 @@ public class OriginalBigFloatTests
         var a = BigFloat.AdjustAccuracy(x, delta);
         var p = BigFloat.AdjustPrecision(x, delta);
         Assert.True(a.Equals(p), $"Mismatch: {a} vs {p}");
+    }
+
+    [Fact]
+    public void AdjustAccuracy_Decrease_RoundsAndReducesAccuracy()
+    {
+        var x = BigFloat.ParseBinary("1.1011");
+
+        var reduced = BigFloat.AdjustAccuracy(x, -2);
+
+        Assert.Equal(x.Accuracy - 2, reduced.Accuracy);
+        Assert.Equal(BigFloat.ParseBinary("1.11"), reduced);
     }
 
     [Fact]
