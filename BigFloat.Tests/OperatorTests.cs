@@ -636,9 +636,75 @@ public class OperatorTests
     {
         var bf = new BigFloat(value);
         var inverse = 1 / bf;
-        
+
         var product = bf * inverse;
         Assert.True(product.EqualsUlp(1, 2));
+    }
+
+    #endregion
+
+    #region Named Operator Alternative Tests
+
+    [Fact]
+    public void Divide_NamedOverloadMatchesOperator_ForBigFloatOperands()
+    {
+        var numerator = new BigFloat("7.5");
+        var denominator = new BigFloat("2.5");
+
+        var methodResult = BigFloat.Divide(numerator, denominator);
+        var operatorResult = numerator / denominator;
+
+        Assert.True(methodResult.EqualsZeroExtended(operatorResult));
+    }
+
+    [Fact]
+    public void Divide_NamedOverloadMatchesOperator_ForBigFloatAndInt()
+    {
+        var value = new BigFloat("9");
+        const int divisor = 4;
+
+        var methodResult = BigFloat.Divide(value, divisor);
+        var operatorResult = value / divisor;
+
+        Assert.True(methodResult.EqualsUlp(operatorResult, 1, true));
+    }
+
+    [Fact]
+    public void Divide_NamedOverloadMatchesOperator_ForIntAndBigFloat()
+    {
+        const int value = 7;
+        var divisor = new BigFloat("2");
+
+        var methodResult = BigFloat.Divide(value, divisor);
+        var operatorResult = value / divisor;
+
+        Assert.True(methodResult.EqualsUlp(operatorResult, 1, true));
+    }
+
+    [Fact]
+    public void Shift_NamedOverloadsMatchOperators()
+    {
+        var value = new BigFloat("3.5");
+        const int shift = 3;
+
+        var leftMethod = BigFloat.LeftShift(value, shift);
+        var leftOperator = value << shift;
+        Assert.True(leftMethod.EqualsZeroExtended(leftOperator));
+
+        var rightMethod = BigFloat.RightShift(value, shift);
+        var rightOperator = value >> shift;
+        Assert.True(rightMethod.EqualsZeroExtended(rightOperator));
+    }
+
+    [Fact]
+    public void OnesComplement_NamedAlternativeMatchesOperator()
+    {
+        var value = new BigFloat("5.125");
+
+        var methodResult = BigFloat.OnesComplement(value);
+        var operatorResult = ~value;
+
+        Assert.True(methodResult.EqualsZeroExtended(operatorResult));
     }
 
     #endregion
