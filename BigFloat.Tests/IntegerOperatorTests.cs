@@ -49,6 +49,25 @@ public class IntegerOperatorTests
     }
 
     [Theory]
+    [InlineData("5", 3, "2")]
+    [InlineData("3", 5, "-2")]
+    [InlineData("-1.5", -1, "-0.5")]
+    [InlineData("-1.5", 2, "-3.5")]
+    [InlineData("1", 1, "0")]
+    [InlineData("0", -4, "4")]
+    [InlineData("0.25", -1, "1.25")]
+    public void Subtract_IntProducesExpectedValueAndSign(string value, int subtrahend, string expected)
+    {
+        var original = new BigFloat(value);
+
+        var result = original - subtrahend;
+        var expectedValue = new BigFloat(expected);
+
+        Assert.True(result.EqualsUlp(expectedValue, 4, true));
+        Assert.Equal(expectedValue.Sign, result.Sign);
+    }
+
+    [Theory]
     [InlineData("1e-2000", int.MaxValue)]
     [InlineData("-1e-2000", int.MinValue)]
     public void DivisionAndMultiplication_HandleExtremeScales(string value, int factor)
