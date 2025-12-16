@@ -183,6 +183,30 @@ public class BigFloatRoundingTests
 
     #region Round Tests (Half Away From Zero)
 
+
+    [Fact]
+    public void RoundToInteger_PositiveAndNegativeWholeNumbers_ReturnUnchanged()
+    {
+        var positive = new BigFloat(7.0);
+        var negative = new BigFloat(-7.0);
+
+        Assert.Equal(positive, BigFloat.RoundToInteger(positive));
+        Assert.Equal(negative, BigFloat.RoundToInteger(negative));
+    }
+
+    [Fact]
+    public void RoundToInteger_FractionalValues_RoundHalfAwayFromZero()
+    {
+        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.6)));
+        Assert.Equal(2.0, (double)BigFloat.RoundToInteger(new BigFloat(2.4)));
+
+        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.6)));
+        Assert.Equal(-2.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.4)));
+
+        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.5)));
+        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.5)));
+    }
+
     [Fact]
     public void Round_ExactlyHalf()
     {
