@@ -72,6 +72,43 @@ public class RoundingDecisionHelperTests
         Assert.True(updatedSize > originalSize - BigFloat.GuardBits, "Carry should increase size when rounding overflows retained bits.");
     }
 
+    [Fact]
+    public void GetRoundedMantissa_PublicMethodRoundsDownWhenBelowMidpoint()
+    {
+        const int magnitude = 42;
+        BigInteger mantissa = ((BigInteger)magnitude << BigFloat.GuardBits)
+            | (BigInteger.One << (BigFloat.GuardBits - 2));
+
+        var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
+
+        Assert.Equal(magnitude, value.GetRoundedMantissa());
+    }
+
+    [Fact]
+    public void GetRoundedMantissa_PublicMethodRoundsUpAtHalfway()
+    {
+        const int magnitude = 42;
+        BigInteger mantissa = ((BigInteger)magnitude << BigFloat.GuardBits)
+            | (BigInteger.One << (BigFloat.GuardBits - 1));
+
+        var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
+
+        Assert.Equal(magnitude + 1, value.GetRoundedMantissa());
+    }
+
+    [Fact]
+    public void GetRoundedMantissa_PublicMethodRoundsUpWhenAboveMidpoint()
+    {
+        const int magnitude = 42;
+        BigInteger mantissa = ((BigInteger)magnitude << BigFloat.GuardBits)
+            | (BigInteger.One << (BigFloat.GuardBits - 1))
+            | BigInteger.One;
+
+        var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
+
+        Assert.Equal(magnitude + 1, value.GetRoundedMantissa());
+    }
+
     private static BigInteger InvokePrivateRoundedMantissa(BigInteger mantissa)
     {
         MethodInfo? method = typeof(BigFloat).GetMethod(
