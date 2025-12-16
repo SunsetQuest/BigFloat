@@ -649,7 +649,17 @@ public readonly partial struct BigFloat
 
         if (cmp == 0)
         {
-            return TieBreakEqual(in x, in y);
+            if (x._size != y._size)
+            {
+                return x._size >= y._size ? x : y;
+            }
+
+            if (x.Scale != y.Scale)
+            {
+                return x.Scale <= y.Scale ? x : y;
+            }
+
+            return x;
         }
 
         if (pickMin)
@@ -658,22 +668,6 @@ public readonly partial struct BigFloat
         }
 
         return cmp > 0 ? x : y;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static BigFloat TieBreakEqual(in BigFloat x, in BigFloat y)
-    {
-        if (x._size != y._size)
-        {
-            return x._size >= y._size ? x : y;
-        }
-
-        if (x.Scale != y.Scale)
-        {
-            return x.Scale <= y.Scale ? x : y;
-        }
-
-        return x;
     }
 
     ///////////////////////// Operator Overloads: BigFloat <--> BigFloat /////////////////////////
