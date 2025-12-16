@@ -180,6 +180,31 @@ public class BigFloatRoundingTests
     }
 
     [Fact]
+    public void TruncateByAndRound_RoundsUpWhenDiscardedBitSet()
+    {
+        var value = new BigFloat(new BigInteger(0b1111), BigFloat.GuardBits, valueIncludesGuardBits: true);
+
+        var result = BigFloat.TruncateByAndRound(value, 2);
+
+        Assert.Equal(15.0, (double)value);
+        Assert.Equal(16.0, (double)result);
+        Assert.Equal(new BigInteger(0b100), result.RawMantissa);
+        Assert.Equal(BigFloat.GuardBits + 2, result.Scale);
+        Assert.Equal(3, result.RawMantissa.GetBitLength());
+    }
+
+    [Fact]
+    public void TruncateByAndRound_DoesNotRoundWhenDiscardedBitsAreZero()
+    {
+        var value = new BigFloat(new BigInteger(0b1100), BigFloat.GuardBits, valueIncludesGuardBits: true);
+
+        var result = BigFloat.TruncateByAndRound(value, 2);
+
+        Assert.Equal(12.0, (double)value);
+        Assert.Equal(12.0, (double)result);
+        Assert.Equal(new BigInteger(0b11), result.RawMantissa);
+        Assert.Equal(BigFloat.GuardBits + 2, result.Scale);
+        Assert.Equal(2, result.RawMantissa.GetBitLength());
     public void TruncateToIntegerKeepingAccuracy_PreservesAccuracyForFractionalValues()
     {
         var value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
