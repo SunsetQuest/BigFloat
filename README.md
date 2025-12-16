@@ -4,7 +4,7 @@ BigFloat is a C# struct/class library for arbitrary-precision floating-point num
 
 Ryan Scott White / [MIT License](http://www.opensource.org/licenses/mit-license.php "The MIT License")  
 Updated: December 1st, 2025  
-Current BigFloat version: **4.0.0**  
+Current BigFloat version: **4.1.0**
 
 - GitHub repo: https://github.com/SunsetQuest/BigFloat
 - Documentation site: https://bigfloat.org
@@ -148,7 +148,7 @@ or via `PackageReference`:
 </ItemGroup>
 ```
 
-Refer to NuGet for the current package version (the README describes the 4.0.0 library APIs; NuGet version numbers may differ). ([NuGet][1])
+Refer to NuGet for the current package version (the README describes the 4.1.0 library APIs; NuGet version numbers may differ). ([NuGet][1])
 
 ### Option 2 – From source
 
@@ -580,7 +580,7 @@ The repository is organized roughly as follows: ([GitHub][2])
 
 * **`ChangeLog.md`**
 
-  * High-level history of releases and notable changes (consult this file for detailed version history, including 4.0.0 notes).
+  * High-level history of releases and notable changes (consult this file for detailed version history, including 4.1.0 notes).
 
 * **`BigFloatSpecification.md`**
 
@@ -605,7 +605,7 @@ BigFloat is designed as an educational tool as much as a production-quality nume
 
 This project is distributed under the [MIT License](http://www.opensource.org/licenses/mit-license.php). See the `MIT License` file in this repository for details. ([GitHub][2])
 
-[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 4.0.0"
+[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 4.1.0"
 [2]: https://github.com/SunsetQuest/BigFloat "GitHub - SunsetQuest/BigFloat: A floating point library for large numbers."
 [3]: https://bigfloat.org/getting-started.html "Getting Started - BigFloat Library"
 [4]: https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs "raw.githubusercontent.com"

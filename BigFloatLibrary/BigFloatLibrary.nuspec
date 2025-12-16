@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>BigFloatLibrary</id>
-    <version>4.0.0</version>
+    <version>4.1.0</version>
     <authors>Ryan Scott White</authors>
     <owners>Ryan Scott White</owners>
 
@@ -29,7 +29,7 @@
     </summary>
 
 <releaseNotes>
-  See https://github.com/SunsetQuest/BigFloat/releases/tag/v4.0.0
+  See https://github.com/SunsetQuest/BigFloat/releases/tag/v4.1.0
   for detailed release notes, breaking changes, and migration guidance.
 </releaseNotes>
 
