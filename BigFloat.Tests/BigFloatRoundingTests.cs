@@ -179,6 +179,30 @@ public class BigFloatRoundingTests
         Assert.Equal(0.0, (double)result);
     }
 
+    [Fact]
+    public void TruncateToIntegerKeepingAccuracy_PreservesAccuracyForFractionalValues()
+    {
+        var value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
+        int originalAccuracy = value.Accuracy;
+
+        var truncated = value.TruncateToIntegerKeepingAccuracy();
+
+        Assert.Equal(originalAccuracy, truncated.Accuracy);
+        Assert.True(truncated.IsInteger);
+    }
+
+    [Fact]
+    public void TruncateToIntegerKeepingAccuracy_ToZeroRetainsAccuracyBudget()
+    {
+        var tiny = new BigFloat(1, binaryScaler: -200, valueIncludesGuardBits: false, binaryPrecision: 1);
+        int originalAccuracy = tiny.Accuracy;
+
+        var truncated = BigFloat.TruncateToIntegerKeepingAccuracy(tiny);
+
+        Assert.True(truncated.IsStrictZero);
+        Assert.Equal(originalAccuracy, truncated.Accuracy);
+    }
+
     #endregion
 
     #region Round Tests (Half Away From Zero)
