@@ -1,8 +1,5 @@
-using System;
-using Xunit;
-
-namespace BigFloatLibrary.Tests;
-
+﻿namespace BigFloatLibrary.Tests;
+#if !DEBUG
 public class EnsureNonNegativePrecisionTests
 {
     [Theory]
@@ -32,3 +29,4 @@ public class EnsureNonNegativePrecisionTests
         Assert.Throws<OverflowException>(() => new BigFloat(1.0m, addedBinaryPrecision: addedBinaryPrecision));
     }
 }
+#endif

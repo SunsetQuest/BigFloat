@@ -81,7 +81,7 @@ public class RoundingDecisionHelperTests
 
         var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
 
-        Assert.Equal(magnitude, value.GetRoundedMantissa());
+        Assert.Equal(magnitude, value.RoundedMantissa);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class RoundingDecisionHelperTests
 
         var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
 
-        Assert.Equal(magnitude + 1, value.GetRoundedMantissa());
+        Assert.Equal(magnitude + 1, value.RoundedMantissa);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class RoundingDecisionHelperTests
 
         var value = new BigFloat(mantissa, binaryScaler: 0, valueIncludesGuardBits: true);
 
-        Assert.Equal(magnitude + 1, value.GetRoundedMantissa());
+        Assert.Equal(magnitude + 1, value.RoundedMantissa);
     }
 
     private static BigInteger InvokePrivateRoundedMantissa(BigInteger mantissa)
@@ -133,7 +133,7 @@ public class RoundingDecisionHelperTests
 
         Assert.NotNull(method);
 
-        object[] args = { mantissa, size };
+        object[] args = [mantissa, size];
         BigInteger rounded = (BigInteger)method!.Invoke(null, args)!;
         return (rounded, (int)args[1]!);
     }

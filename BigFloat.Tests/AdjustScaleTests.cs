@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Numerics;
@@ -22,15 +22,15 @@ public class AdjustScaleTests
     [Fact]
     public void AdjustScale_Instance_ShiftsScaleUpwards()
     {
-        var original = new BigFloat(7, binaryScaler: -4);
+        BigFloat original = new BigFloat(7, binaryScaler: -4);
 
-        var adjusted = original.AdjustScale(5);
+        BigFloat adjusted = original.AdjustScale(5);
 
         Assert.Equal(original.Size, adjusted.Size);
         Assert.Equal(original.Scale + 5, adjusted.Scale);
         Assert.True(adjusted.EqualsUlp(new BigFloat(7, binaryScaler: 1), 0, true));
     }
-
+#if !DEBUG
     [Fact]
     public void AdjustScale_Static_Overflow_Throws()
     {
@@ -46,4 +46,5 @@ public class AdjustScaleTests
 
         Assert.Throws<OverflowException>(() => smallScale.AdjustScale(-1));
     }
+#endif
 }

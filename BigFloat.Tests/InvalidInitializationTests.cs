@@ -1,13 +1,11 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using System;
-using Xunit;
-
 namespace BigFloatLibrary.Tests;
-
+#if !DEBUG
 public class InvalidInitializationTests
 {
+
     [Theory]
     [InlineData(double.NaN, "Value is NaN")]
     [InlineData(double.PositiveInfinity, "Value is infinity")]
@@ -35,3 +33,4 @@ public class InvalidInitializationTests
         Assert.Equal("Invalid BigFloat initialization: binaryPrecision (-1) cannot be negative.", ex.Message);
     }
 }
+#endif
