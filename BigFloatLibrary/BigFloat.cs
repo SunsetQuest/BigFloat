@@ -1312,7 +1312,7 @@ public readonly partial struct BigFloat
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat AdjustScale(BigFloat x, int changeScaleAmount)
-        => new(x._mantissa, x.Scale + changeScaleAmount, x._size);
+        => new(x._mantissa, checked(x.Scale + changeScaleAmount), x._size);
 
     /// <summary>
     /// Adjust the scale of a value
