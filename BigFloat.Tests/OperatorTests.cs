@@ -1,6 +1,8 @@
 // Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Numerics;
+
 namespace BigFloatLibrary.Tests;
 
 /// <summary>
@@ -287,6 +289,50 @@ public class OperatorTests
     #endregion
 
     #region Increment and Decrement Tests
+
+    [Fact]
+    public void PreIncrement_NoOpWhenIntegerBitNotRepresentable()
+    {
+        var bf = new BigFloat(BigInteger.One << (BigFloat.GuardBits + 1), BigFloat.GuardBits + 2, true);
+        Assert.True(BigFloat.GuardBits - bf.Scale < 1);
+
+        var original = bf;
+        var result = ++bf;
+
+        Assert.Equal(original, result);
+        Assert.Equal(original, bf);
+    }
+
+    [Fact]
+    public void PreIncrement_CarriesAcrossMantissaBoundary()
+    {
+        int scale = BigFloat.GuardBits - 5;
+        var bf = new BigFloat((BigInteger.One << 5) - 1, scale, true);
+        int onesPlace = BigFloat.GuardBits - bf.Scale;
+        var expected = new BigFloat(bf.RawMantissa + (BigInteger.One << onesPlace), bf.Scale, true);
+        int originalSize = bf.SizeWithGuardBits;
+
+        var result = ++bf;
+
+        Assert.Equal(expected, result);
+        Assert.Equal(expected, bf);
+        Assert.Equal(originalSize + 1, result.SizeWithGuardBits);
+    }
+
+    [Fact]
+    public void PreDecrement_CrossesZeroWhenStepExceedsMantissa()
+    {
+        int scale = BigFloat.GuardBits - 5;
+        var bf = new BigFloat(BigInteger.One, scale, true);
+        int onesPlace = BigFloat.GuardBits - bf.Scale;
+        var expected = new BigFloat(bf.RawMantissa - (BigInteger.One << onesPlace), bf.Scale, true);
+
+        var result = --bf;
+
+        Assert.Equal(expected, result);
+        Assert.Equal(expected, bf);
+        Assert.True(result.RawMantissa.Sign < 0);
+    }
 
     [Theory]
     [InlineData("0", "1")]
