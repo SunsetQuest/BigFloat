@@ -416,6 +416,38 @@ public class BigFloatTests
         Assert.Equal(new BigFloat(expectedMax), max);
     }
 
+    [Fact]
+    public void MinMax_PrefersHigherPrecisionWhenValuesAreEqual()
+    {
+        var original = new BigFloat(3);
+        var widened = original.AdjustPrecision(8);
+
+        Assert.Equal(0, BigFloat.Compare(in original, in widened));
+
+        var min = BigFloat.Min(original, widened);
+        var max = BigFloat.Max(original, widened);
+
+        Assert.Equal(widened, min);
+        Assert.Equal(widened, max);
+        Assert.Equal(widened.SizeWithGuardBits, min.SizeWithGuardBits);
+        Assert.Equal(widened.SizeWithGuardBits, max.SizeWithGuardBits);
+    }
+
+    [Fact]
+    public void MinMax_PrefersHigherAccuracyForEqualZeros()
+    {
+        var defaultZero = BigFloat.ZeroWithAccuracy(0);
+        var accurateZero = BigFloat.ZeroWithAccuracy(8);
+
+        Assert.Equal(0, BigFloat.Compare(in defaultZero, in accurateZero));
+
+        var min = BigFloat.Min(defaultZero, accurateZero);
+        var max = BigFloat.Max(defaultZero, accurateZero);
+
+        Assert.Equal(accurateZero.Accuracy, min.Accuracy);
+        Assert.Equal(accurateZero.Accuracy, max.Accuracy);
+    }
+
     #endregion
 
     #region Abs Tests
