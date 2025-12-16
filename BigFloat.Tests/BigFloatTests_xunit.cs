@@ -540,6 +540,19 @@ public class OriginalBigFloatTests
         Assert.True(x == y, $"Value changed: {x} vs {y}");
     }
 
+    [Fact]
+    public void AdjustAccuracy_Increase_UpdatesAccuracyAndScale()
+    {
+        var original = BigFloat.ParseBinary("101.01");
+        int delta = 5;
+
+        var widened = BigFloat.AdjustAccuracy(original, delta);
+
+        Assert.Equal(original.Accuracy + delta, widened.Accuracy);
+        Assert.Equal(original.Scale - delta, widened.Scale);
+        Assert.True(original == widened);
+    }
+
     [Theory]
     [InlineData(1.2345, -5)]
     [InlineData(-1.2345, -20)]
@@ -551,6 +564,17 @@ public class OriginalBigFloatTests
         var a = BigFloat.AdjustAccuracy(x, delta);
         var p = BigFloat.AdjustPrecision(x, delta);
         Assert.True(a.Equals(p), $"Mismatch: {a} vs {p}");
+    }
+
+    [Fact]
+    public void AdjustAccuracy_Decrease_RoundsAndReducesAccuracy()
+    {
+        var x = BigFloat.ParseBinary("1.1011");
+
+        var reduced = BigFloat.AdjustAccuracy(x, -2);
+
+        Assert.Equal(x.Accuracy - 2, reduced.Accuracy);
+        Assert.Equal(BigFloat.ParseBinary("1.11"), reduced);
     }
 
     [Fact]
@@ -569,6 +593,51 @@ public class OriginalBigFloatTests
         var z2 = BigFloat.SetAccuracy(z, 10);
         Assert.True(z2.IsZero);
         Assert.Equal(10, z2.Accuracy);
+    }
+
+    [Fact]
+    public void SetAccuracy_StaticAndInstance_MatchAdjustPrecision()
+    {
+        var value = BigFloat.IntWithAccuracy(3, 40);
+        int[] targetAccuracies =
+        [
+            value.Accuracy,            // no-op
+            value.Accuracy + 20,       // widen fractional budget
+            5,                         // shrink but keep positive accuracy
+            -5,                        // cross into negative accuracy
+        ];
+
+        foreach (int target in targetAccuracies)
+        {
+            int delta = target - value.Accuracy;
+            var expected = BigFloat.AdjustPrecision(value, delta);
+
+            var viaStatic = BigFloat.SetAccuracy(value, target);
+            var viaInstance = value.SetAccuracy(target);
+
+            Assert.Equal(target, viaStatic.Accuracy);
+            Assert.Equal(expected, viaStatic);
+            Assert.Equal(expected, viaInstance);
+        }
+    }
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(-12)]
+    [InlineData(0)]
+    public void SetAccuracy_TracksTargetAcrossRanges(int delta)
+    {
+        var source = BigFloat.ParseBinary("101.101");
+        int targetAccuracy = source.Accuracy + delta;
+
+        var expected = BigFloat.AdjustPrecision(source, delta);
+
+        var aligned = BigFloat.SetAccuracy(source, targetAccuracy);
+        var alignedInstance = source.SetAccuracy(targetAccuracy);
+
+        Assert.Equal(targetAccuracy, aligned.Accuracy);
+        Assert.Equal(expected, aligned);
+        Assert.Equal(expected, alignedInstance);
     }
 
     [Fact]

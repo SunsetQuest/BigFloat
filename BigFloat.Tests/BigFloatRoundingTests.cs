@@ -205,11 +205,56 @@ public class BigFloatRoundingTests
         Assert.Equal(new BigInteger(0b11), result.RawMantissa);
         Assert.Equal(BigFloat.GuardBits + 2, result.Scale);
         Assert.Equal(2, result.RawMantissa.GetBitLength());
+    public void TruncateToIntegerKeepingAccuracy_PreservesAccuracyForFractionalValues()
+    {
+        var value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
+        int originalAccuracy = value.Accuracy;
+
+        var truncated = value.TruncateToIntegerKeepingAccuracy();
+
+        Assert.Equal(originalAccuracy, truncated.Accuracy);
+        Assert.True(truncated.IsInteger);
+    }
+
+    [Fact]
+    public void TruncateToIntegerKeepingAccuracy_ToZeroRetainsAccuracyBudget()
+    {
+        var tiny = new BigFloat(1, binaryScaler: -200, valueIncludesGuardBits: false, binaryPrecision: 1);
+        int originalAccuracy = tiny.Accuracy;
+
+        var truncated = BigFloat.TruncateToIntegerKeepingAccuracy(tiny);
+
+        Assert.True(truncated.IsStrictZero);
+        Assert.Equal(originalAccuracy, truncated.Accuracy);
     }
 
     #endregion
 
     #region Round Tests (Half Away From Zero)
+
+
+    [Fact]
+    public void RoundToInteger_PositiveAndNegativeWholeNumbers_ReturnUnchanged()
+    {
+        var positive = new BigFloat(7.0);
+        var negative = new BigFloat(-7.0);
+
+        Assert.Equal(positive, BigFloat.RoundToInteger(positive));
+        Assert.Equal(negative, BigFloat.RoundToInteger(negative));
+    }
+
+    [Fact]
+    public void RoundToInteger_FractionalValues_RoundHalfAwayFromZero()
+    {
+        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.6)));
+        Assert.Equal(2.0, (double)BigFloat.RoundToInteger(new BigFloat(2.4)));
+
+        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.6)));
+        Assert.Equal(-2.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.4)));
+
+        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.5)));
+        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.5)));
+    }
 
     [Fact]
     public void Round_ExactlyHalf()
