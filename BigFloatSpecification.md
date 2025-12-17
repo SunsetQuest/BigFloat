@@ -17,7 +17,7 @@
 * **IConvertible.** `BigFloat` implements `IConvertible` with safe overflow checks and a `ToType` dispatcher.
 * **Arithmetic touch‑ups.** Safer/faster remainder path; multiply short‑circuits strict zero while preserving the tighter accuracy; divide keeps hooks for adaptive algorithms while using the standard path.
 * **Playground & benchmarks.** Playground sample, benchmark, and testing utilities are separated into dedicated files to keep demos organized and repeatable (library behavior unaffected).
-* **Packaging.** NuGet metadata bumped **v4.0.0** in Dec 2025; ongoing fixes through Oct–Dec per change log.
+* **Packaging.** NuGet metadata bumped **v4.1.0** in Dec 2025; ongoing fixes through Oct–Dec per change log.
 
 ---
 
@@ -223,7 +223,7 @@ string bits = value.ToBinaryString(numberOfGuardBitsToInclude: 32, showPrecision
 
 ## Versioning & provenance
 
-* Current NuGet metadata in repo indicates **v4.0.0** (December 2025), with ongoing fixes (Sep–Nov). See `ChangeLog.md` for dated entries (constructor precision, remainder optimization, `IConvertible`, rounding suite, zero handling, formatting).
+* Current NuGet metadata in repo indicates **v4.1.0** (December 2025), with ongoing fixes (Sep–Nov). See `ChangeLog.md` for dated entries (constructor precision, remainder optimization, `IConvertible`, rounding suite, zero handling, formatting).
 
 ---
 
