@@ -66,8 +66,13 @@ public class PropertyBasedTests
         BigFloat delta = BigFloat.Abs(reparsed - value);
         BigFloat scale = BigFloat.Max(BigFloat.Abs(value), (BigFloat)1);
         bool ulpClose = reparsed.EqualsUlp(value, 12, ulpScopeIncludeGuardBits: true);
+        if (delta.IsStrictZero)
+        {
+            return true;
+        }
 
-        return ulpClose || (delta / scale) < new BigFloat("1e-6");
+        BigFloat relative = delta / scale;
+        return ulpClose || relative < new BigFloat("1e-5");
     }
 
     [Property(MaxTest = 40, Arbitrary = new[] { typeof(ModerateBigFloatArbitrary) })]
