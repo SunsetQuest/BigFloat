@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 #nullable enable
 
 namespace BigFloatLibrary;
@@ -65,14 +66,19 @@ public readonly partial struct BigFloat : INumberBase<BigFloat>
     static bool INumberBase<BigFloat>.IsZero(BigFloat value) => value.IsZero;
 
     static BigFloat INumberBase<BigFloat>.MaxMagnitude(BigFloat x, BigFloat y)
-    {
-        BigFloat ax = Abs(x);
-        BigFloat ay = Abs(y);
-        int cmp = ax.CompareTo(ay);
-        return cmp > 0 ? x : cmp < 0 ? y : BigFloat.Max(x, y);
-    }
+        => MaxMagnitudeCore(x, y);
 
     static BigFloat INumberBase<BigFloat>.MaxMagnitudeNumber(BigFloat x, BigFloat y)
+        => MaxMagnitudeCore(x, y);
+
+    static BigFloat INumberBase<BigFloat>.MinMagnitude(BigFloat x, BigFloat y)
+        => MinMagnitudeCore(x, y);
+
+    static BigFloat INumberBase<BigFloat>.MinMagnitudeNumber(BigFloat x, BigFloat y)
+        => MinMagnitudeCore(x, y);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat MaxMagnitudeCore(BigFloat x, BigFloat y)
     {
         BigFloat ax = Abs(x);
         BigFloat ay = Abs(y);
@@ -80,15 +86,8 @@ public readonly partial struct BigFloat : INumberBase<BigFloat>
         return cmp > 0 ? x : cmp < 0 ? y : BigFloat.Max(x, y);
     }
 
-    static BigFloat INumberBase<BigFloat>.MinMagnitude(BigFloat x, BigFloat y)
-    {
-        BigFloat ax = Abs(x);
-        BigFloat ay = Abs(y);
-        int cmp = ax.CompareTo(ay);
-        return cmp < 0 ? x : cmp > 0 ? y : BigFloat.Min(x, y);
-    }
-
-    static BigFloat INumberBase<BigFloat>.MinMagnitudeNumber(BigFloat x, BigFloat y)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static BigFloat MinMagnitudeCore(BigFloat x, BigFloat y)
     {
         BigFloat ax = Abs(x);
         BigFloat ay = Abs(y);
