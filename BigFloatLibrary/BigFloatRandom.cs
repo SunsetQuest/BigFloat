@@ -24,7 +24,7 @@ public readonly partial struct BigFloat
         bool logarithmic = false,
         Random? rand = null)
     {
-        rand ??= Random.Shared;
+        rand ??= TestsShared._rand;
         if (min > max) (min, max) = (max, min);
         if (min == max) return min;
 
@@ -70,7 +70,7 @@ public readonly partial struct BigFloat
         if (minBinaryExponent > maxBinaryExponent)
             (minBinaryExponent, maxBinaryExponent) = (maxBinaryExponent, minBinaryExponent);
 
-        rand ??= Random.Shared;
+        rand ??= TestsShared._rand;
 
         /* ---- choose exponent ---- */
         int chosenExp = logarithmic
@@ -87,9 +87,9 @@ public readonly partial struct BigFloat
          * _size == mantissaBits
          * ⇒ Scale = chosenExp - mantissaBits + GuardBits + 1
          */
-        int scale = chosenExp - mantissaBits + BigFloat.GuardBits + 1;
+        int scale = chosenExp - mantissaBits + GuardBits + 1;
 
-        return BigFloat.CreateFromRawComponents(mant, scale, mantissaBits);
+        return CreateFromRawComponents(mant, scale, mantissaBits);
     }
 
     /* ------------------------------------------------------------ *
@@ -114,7 +114,7 @@ public readonly partial struct BigFloat
 
         BigInteger r = new(buf, isUnsigned: true, isBigEndian: false);
         // Build mantissa so that value = r / 2^precisionBits
-        BigFloat bf = BigFloat.CreateFromRawComponents(
+        BigFloat bf = CreateFromRawComponents(
             mantissa: r,
             binaryScaler: -(precisionBits),     // i.e. *2^(‑precisionBits)
             mantissaSize: precisionBits);

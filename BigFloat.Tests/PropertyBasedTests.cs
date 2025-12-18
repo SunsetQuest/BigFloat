@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System;
@@ -27,7 +27,7 @@ public static class BigFloatGenerators
                           exponent - 1,
                           exponent + 1,
                           logarithmic: true,
-                          rand: Random.Shared) * (negative ? -1 : 1);
+                          TestsShared._rand) * (negative ? -1 : 1);
     }
 
     public static Gen<BigFloat> ModerateMagnitudeGen() =>

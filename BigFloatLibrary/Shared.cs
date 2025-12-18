@@ -23,7 +23,7 @@ public static class TestsShared
     {
         // Short window keeps this light but still adapts to machine speed.
         int windowMs = int.Clamp(targetMs, 10, 50);
-        var r = new Random((int)(seed ^ 0x9E37_79B9));
+        var r = new Random((int)(seed ^ 0x30)); //0x9E37_79B9
         var sw = Stopwatch.StartNew();
 
         int n = 0;
