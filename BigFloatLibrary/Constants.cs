@@ -276,7 +276,7 @@ public readonly partial struct BigFloat
         /// <summary>
         /// Provides access to mathematical constants with customizable precision.
         /// </summary>
-        public readonly struct WithPrecision
+        public readonly struct WithPrecision : IEquatable<WithPrecision>
         {
             private readonly int _precisionInBits;
             private readonly bool _cutOnTrailingZero;
@@ -287,6 +287,33 @@ public readonly partial struct BigFloat
                 _precisionInBits = precisionInBits;
                 _cutOnTrailingZero = cutOnTrailingZero;
                 _useExternalFiles = useExternalFiles;
+            }
+
+            public bool Equals(WithPrecision other)
+            {
+                return _precisionInBits == other._precisionInBits
+                    && _cutOnTrailingZero == other._cutOnTrailingZero
+                    && _useExternalFiles == other._useExternalFiles;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is WithPrecision other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(_precisionInBits, _cutOnTrailingZero, _useExternalFiles);
+            }
+
+            public static bool operator ==(WithPrecision left, WithPrecision right)
+            {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(WithPrecision left, WithPrecision right)
+            {
+                return !left.Equals(right);
             }
 
             // Existing code...
