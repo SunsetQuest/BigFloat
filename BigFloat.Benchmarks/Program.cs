@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Running;
@@ -8,7 +7,7 @@ using BenchmarkDotNet.Attributes;
 
 namespace BigFloatLibrary.Benchmarks;
 
-public static class Program
+internal static class Program
 {
     public static void Main(string[] args)
     {
@@ -28,9 +27,9 @@ public static class Program
 
 
     [MemoryDiagnoser]
-    public class FormattingBenchmarks
+    internal class FormattingBenchmarks
     {
-        private readonly BigFloatLibrary.BigFloat _largeValue = BigFloatLibrary.BigFloat.Parse("-12345678901234567890.12345678901234567890", guardBitsIncluded: 16);
+        private readonly BigFloat _largeValue = BigFloat.Parse("-12345678901234567890.12345678901234567890", guardBitsIncluded: 16);
         private readonly char[] _buffer = new char[512];
 
         [Benchmark]
@@ -39,22 +38,22 @@ public static class Program
         [Benchmark]
         public bool FormatWithTryFormat()
         {
-            return _largeValue.TryFormat(_buffer, out _, ReadOnlySpan<char>.Empty, provider: null);
+            return _largeValue.TryFormat(_buffer, out _, [], provider: null);
         }
     }
 
     [MemoryDiagnoser]
-    public class ParsingBenchmarks
+    internal class ParsingBenchmarks
     {
         private readonly string _input = "-12345678901234567890.12345678901234567890";
 
         [Benchmark]
-        public BigFloatLibrary.BigFloat ParseWithString() => BigFloatLibrary.BigFloat.Parse(_input);
+        public BigFloat ParseWithString() => BigFloat.Parse(_input);
 
         [Benchmark]
-        public BigFloatLibrary.BigFloat ParseWithSpan()
+        public BigFloat ParseWithSpan()
         {
-            BigFloatLibrary.BigFloat.TryParse(_input.AsSpan(), out var value);
+            BigFloat.TryParse(_input.AsSpan(), out BigFloat value);
             return value;
         }
     }

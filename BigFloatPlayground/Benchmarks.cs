@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using BigFloatLibrary;
@@ -8,7 +8,7 @@ using static BigFloatLibrary.BigFloat;
 
 namespace PlaygroundAndShowCase;
 
-public static class Benchmarks
+internal static class Benchmarks
 {
     public static void Inverse_Benchmark()
     {
@@ -171,20 +171,14 @@ public static class Benchmarks
             //special conditions
             if (value < 2)
             {
-                if (value < 0)
-                {
-                    throw new Exception("value must be a positive integer");
-                }
+                ArgumentOutOfRangeException.ThrowIfNegative(value);
 
                 remainder = 0;
                 return value;
             }
             if (root < 2)
             {
-                if (root < 1)
-                {
-                    throw new Exception("root must be greater than or equal to 1");
-                }
+                ArgumentOutOfRangeException.ThrowIfLessThan(root, 1);
 
                 remainder = 0;
                 return value;

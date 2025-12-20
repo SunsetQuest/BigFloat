@@ -3,7 +3,7 @@ namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Core")]
-public class IntegerArithmeticBenchmarks
+internal class IntegerArithmeticBenchmarks
 {
     [Params(-4, -3, -2, -1, 1, 2, 3, 4, 7, 16, 123456789)]
     public int Factor { get; set; }

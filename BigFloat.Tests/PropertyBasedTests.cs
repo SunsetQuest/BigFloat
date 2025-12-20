@@ -35,13 +35,13 @@ internal static class BigFloatGenerators
         CreateBigFloatGenerator(allowNegative: false, minBinaryExponent: -8, maxBinaryExponent: 32);
 }
 
-public static class ModerateBigFloatArbitrary
+internal static class ModerateBigFloatArbitrary
 {
     public static Arbitrary<BigFloat> ModerateBigFloat() =>
         Arb.From(BigFloatGenerators.ModerateMagnitudeGen());
 }
 
-public static class PositiveSmallBigFloatArbitrary
+internal static class PositiveSmallBigFloatArbitrary
 {
     public static Arbitrary<BigFloat> PositiveSmallBigFloat() =>
         Arb.From(BigFloatGenerators.PositiveSmallMagnitudeGen());

@@ -14,16 +14,16 @@ public class BigFloatRoundingTests
     [Fact]
     public void Ceiling_PositiveWholeNumber_ReturnsUnchanged()
     {
-        var bf = new BigFloat(5.0);
-        var result = bf.Ceiling();
+        BigFloat bf = new BigFloat(5.0);
+        BigFloat result = bf.Ceiling();
         Assert.Equal(5.0, (double)result);
     }
 
     [Fact]
     public void Ceiling_PositiveFraction_RoundsUp()
     {
-        var bf = new BigFloat(3.1);
-        var result = bf.Ceiling();
+        BigFloat bf = new BigFloat(3.1);
+        BigFloat result = bf.Ceiling();
         Assert.Equal(4.0, (double)result);
 
         bf = new BigFloat(3.9);
@@ -34,8 +34,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Ceiling_NegativeFraction_RoundsTowardZero()
     {
-        var bf = new BigFloat(-3.1);
-        var result = bf.Ceiling();
+        BigFloat bf = new BigFloat(-3.1);
+        BigFloat result = bf.Ceiling();
         Assert.Equal(-3.0, (double)result);
 
         bf = new BigFloat(-3.9);
@@ -46,16 +46,16 @@ public class BigFloatRoundingTests
     [Fact]
     public void Ceiling_Zero_ReturnsZero()
     {
-        var bf = BigFloat.ZeroWithAccuracy(0);
-        var result = bf.Ceiling();
+        BigFloat bf = BigFloat.ZeroWithAccuracy(0);
+        BigFloat result = bf.Ceiling();
         Assert.True(result.IsZero);
     }
 
     [Fact]
     public void Ceiling_SmallPositiveFraction_ReturnsOne()
     {
-        var bf = new BigFloat(0.001);
-        var result = bf.Ceiling();
+        BigFloat bf = new BigFloat(0.001);
+        BigFloat result = bf.Ceiling();
         Assert.Equal(1.0, (double)result);
     }
 
@@ -63,13 +63,13 @@ public class BigFloatRoundingTests
     public void Ceiling_PowerOfTwoEdgeCase_HandlesOverflow()
     {
         // Test case where rounding up causes bit overflow (e.g., 15.9 -> 16)
-        var bf = BigFloat.Parse("15.9");
-        var result = bf.Ceiling();
+        BigFloat bf = BigFloat.Parse("15.9");
+        BigFloat result = bf.Ceiling();
         Assert.Equal(16.0, (double)result);
 
         // Test with binary: 111.111 -> 1000
-        var bf2 = BigFloat.Parse("7.875"); // 111.111 in binary
-        var result2 = bf2.Ceiling();
+        BigFloat bf2 = BigFloat.Parse("7.875"); // 111.111 in binary
+        BigFloat result2 = bf2.Ceiling();
         Assert.Equal(8.0, (double)result2);
     }
 
@@ -77,12 +77,12 @@ public class BigFloatRoundingTests
     public void Ceiling_LargeScaleValues()
     {
         // Test with large positive scale (very small numbers)
-        var small = new BigFloat(1, -100); // 2^-100
-        var result = small.Ceiling();
+        BigFloat small = new BigFloat(1, -100); // 2^-100
+        BigFloat result = small.Ceiling();
         Assert.Equal(1.0, (double)result);
 
         // Test with large negative scale (very large numbers)
-        var large = new BigFloat(BigInteger.Parse("123456789"), 20);
+        BigFloat large = new BigFloat(BigInteger.Parse("123456789"), 20);
         result = large.Ceiling();
         Assert.Equal(0, result.CompareTo(large)); // Should be unchanged as it's already integer
     }
@@ -94,8 +94,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Floor_PositiveFraction_RoundsDown()
     {
-        var bf = new BigFloat(3.1);
-        var result = bf.Floor();
+        BigFloat bf = new BigFloat(3.1);
+        BigFloat result = bf.Floor();
         Assert.Equal(3.0, (double)result);
 
         bf = new BigFloat(3.9);
@@ -106,8 +106,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Floor_NegativeFraction_RoundsAwayFromZero()
     {
-        var bf = new BigFloat(-3.1);
-        var result = bf.Floor();
+        BigFloat bf = new BigFloat(-3.1);
+        BigFloat result = bf.Floor();
         Assert.Equal(-4.0, (double)result);
 
         bf = new BigFloat(-3.9);
@@ -118,8 +118,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Floor_WholeNumber_ReturnsUnchanged()
     {
-        var bf = new BigFloat(5.0);
-        var result = bf.Floor();
+        BigFloat bf = new BigFloat(5.0);
+        BigFloat result = bf.Floor();
         Assert.Equal(5.0, (double)result);
 
         bf = new BigFloat(-5.0);
@@ -130,8 +130,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Floor_Zero_ReturnsZero()
     {
-        var bf = BigFloat.ZeroWithAccuracy(0);
-        var result = bf.Floor();
+        BigFloat bf = BigFloat.ZeroWithAccuracy(0);
+        BigFloat result = bf.Floor();
         Assert.True(result.IsZero);
     }
 
@@ -142,24 +142,24 @@ public class BigFloatRoundingTests
     [Fact]
     public void Truncate_PositiveFraction_RoundsTowardZero()
     {
-        var bf = new BigFloat(3.9);
-        var result = bf.Truncate();
+        BigFloat bf = new BigFloat(3.9);
+        BigFloat result = bf.Truncate();
         Assert.Equal(3.0, (double)result);
     }
 
     [Fact]
     public void Truncate_NegativeFraction_RoundsTowardZero()
     {
-        var bf = new BigFloat(-3.9);
-        var result = bf.Truncate();
+        BigFloat bf = new BigFloat(-3.9);
+        BigFloat result = bf.Truncate();
         Assert.Equal(-3.0, (double)result);
     }
 
     [Fact]
     public void Truncate_WholeNumber_ReturnsUnchanged()
     {
-        var bf = new BigFloat(5.0);
-        var result = bf.Truncate();
+        BigFloat bf = new BigFloat(5.0);
+        BigFloat result = bf.Truncate();
         Assert.Equal(5.0, (double)result);
 
         bf = new BigFloat(-5.0);
@@ -170,8 +170,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Truncate_VerySmallNumbers()
     {
-        var bf = new BigFloat(0.999);
-        var result = bf.Truncate();
+        BigFloat bf = new BigFloat(0.999);
+        BigFloat result = bf.Truncate();
         Assert.Equal(0.0, (double)result);
 
         bf = new BigFloat(-0.999);
@@ -182,9 +182,9 @@ public class BigFloatRoundingTests
     [Fact]
     public void TruncateByAndRound_RoundsUpWhenDiscardedBitSet()
     {
-        var value = new BigFloat(new BigInteger(0b1111), BigFloat.GuardBits, valueIncludesGuardBits: true);
+        BigFloat value = new BigFloat(new BigInteger(0b1111), BigFloat.GuardBits, valueIncludesGuardBits: true);
 
-        var result = BigFloat.TruncateByAndRound(value, 2);
+        BigFloat result = BigFloat.TruncateByAndRound(value, 2);
 
         Assert.Equal(15.0, (double)value);
         Assert.Equal(16.0, (double)result);
@@ -196,9 +196,9 @@ public class BigFloatRoundingTests
     [Fact]
     public void TruncateByAndRound_DoesNotRoundWhenDiscardedBitsAreZero()
     {
-        var value = new BigFloat(new BigInteger(0b1100), BigFloat.GuardBits, valueIncludesGuardBits: true);
+        BigFloat value = new BigFloat(new BigInteger(0b1100), BigFloat.GuardBits, valueIncludesGuardBits: true);
 
-        var result = BigFloat.TruncateByAndRound(value, 2);
+        BigFloat result = BigFloat.TruncateByAndRound(value, 2);
 
         Assert.Equal(12.0, (double)value);
         Assert.Equal(12.0, (double)result);
@@ -210,10 +210,10 @@ public class BigFloatRoundingTests
     [Fact]
     public void TruncateToIntegerKeepingAccuracy_PreservesAccuracyForFractionalValues()
     {
-        var value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
+        BigFloat value = new BigFloat(new BigInteger(42), binaryScaler: -5, valueIncludesGuardBits: false, addedBinaryPrecision: 10);
         int originalAccuracy = value.Accuracy;
 
-        var truncated = value.TruncateToIntegerKeepingAccuracy();
+        BigFloat truncated = value.TruncateToIntegerKeepingAccuracy();
 
         Assert.Equal(originalAccuracy, truncated.Accuracy);
         Assert.True(truncated.IsInteger);
@@ -222,10 +222,10 @@ public class BigFloatRoundingTests
     [Fact]
     public void TruncateToIntegerKeepingAccuracy_ToZeroRetainsAccuracyBudget()
     {
-        var tiny = new BigFloat(1, binaryScaler: -200, valueIncludesGuardBits: false, binaryPrecision: 1);
+        BigFloat tiny = new BigFloat(1, binaryScaler: -200, valueIncludesGuardBits: false, binaryPrecision: 1);
         int originalAccuracy = tiny.Accuracy;
 
-        var truncated = BigFloat.TruncateToIntegerKeepingAccuracy(tiny);
+        BigFloat truncated = BigFloat.TruncateToIntegerKeepingAccuracy(tiny);
 
         Assert.True(truncated.IsStrictZero);
         Assert.Equal(originalAccuracy, truncated.Accuracy);
@@ -242,29 +242,29 @@ public class BigFloatRoundingTests
         var positive = new BigFloat(7.0);
         var negative = new BigFloat(-7.0);
 
-        Assert.Equal(positive, BigFloat.RoundToInteger(positive));
-        Assert.Equal(negative, BigFloat.RoundToInteger(negative));
+        Assert.Equal(positive, BigFloat.Round(positive));
+        Assert.Equal(negative, BigFloat.Round(negative));
     }
 
     [Fact]
     public void RoundToInteger_FractionalValues_RoundHalfAwayFromZero()
     {
-        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.6)));
-        Assert.Equal(2.0, (double)BigFloat.RoundToInteger(new BigFloat(2.4)));
+        Assert.Equal(3.0, (double)BigFloat.Round(new BigFloat(2.6)));
+        Assert.Equal(2.0, (double)BigFloat.Round(new BigFloat(2.4)));
 
-        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.6)));
-        Assert.Equal(-2.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.4)));
+        Assert.Equal(-3.0, (double)BigFloat.Round(new BigFloat(-2.6)));
+        Assert.Equal(-2.0, (double)BigFloat.Round(new BigFloat(-2.4)));
 
-        Assert.Equal(3.0, (double)BigFloat.RoundToInteger(new BigFloat(2.5)));
-        Assert.Equal(-3.0, (double)BigFloat.RoundToInteger(new BigFloat(-2.5)));
+        Assert.Equal(3.0, (double)BigFloat.Round(new BigFloat(2.5)));
+        Assert.Equal(-3.0, (double)BigFloat.Round(new BigFloat(-2.5)));
     }
 
     [Fact]
     public void Round_ExactlyHalf()
     {
         // 2.5 -> 3 (away from zero)
-        var bf = new BigFloat(2.5);
-        var result = bf.Round();
+        BigFloat bf = new BigFloat(2.5);
+        BigFloat result = bf.Round();
         Assert.Equal(3.0, (double)result);
 
         // 3.5 -> 4 (away from zero)
@@ -286,8 +286,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Round_NotExactlyHalf_RoundsNormally()
     {
-        var bf = new BigFloat(2.6);
-        var result = bf.Round();
+        BigFloat bf = new BigFloat(2.6);
+        BigFloat result = bf.Round();
         Assert.Equal(3.0, (double)result);
 
         bf = new BigFloat(2.4);
@@ -306,8 +306,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void Round_WholeNumber_ReturnsUnchanged()
     {
-        var bf = new BigFloat(5.0);
-        var result = bf.Round();
+        BigFloat bf = new BigFloat(5.0);
+        BigFloat result = bf.Round();
         Assert.Equal(5.0, (double)result);
     }
 
@@ -315,8 +315,8 @@ public class BigFloatRoundingTests
     public void Round_VerySmallNumbers()
     {
         // 0.4 -> 0
-        var bf = new BigFloat(0.4);
-        var result = bf.Round();
+        BigFloat bf = new BigFloat(0.4);
+        BigFloat result = bf.Round();
         Assert.Equal(0.0, (double)result);
 
         // 0.5 -> 1 (away from zero)
@@ -335,8 +335,8 @@ public class BigFloatRoundingTests
     {
         // Test with exact binary representations
         // 0.25 (0.01 in binary)
-        var bf = new BigFloat(0.25);
-        var result = bf.Round();
+        BigFloat bf = new BigFloat(0.25);
+        BigFloat result = bf.Round();
         Assert.Equal(0.0, (double)result);
 
         // 0.75 (0.11 in binary)
@@ -352,8 +352,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void FractionalPart_PositiveNumber_ReturnsFractionalPart()
     {
-        var bf = new BigFloat(3.14159);
-        var result = bf.FractionalPart();
+        BigFloat bf = new BigFloat(3.14159);
+        BigFloat result = bf.FractionalPart();
         var resultDouble = (double)result;
         Assert.Equal(0.14159, resultDouble, 5); // 5 decimal places precision
     }
@@ -361,8 +361,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void FractionalPart_NegativeNumber_ReturnsFractionalPart()
     {
-        var bf = new BigFloat(-3.14159);
-        var result = bf.FractionalPart();
+        BigFloat bf = new BigFloat(-3.14159);
+        BigFloat result = bf.FractionalPart();
         var resultDouble = (double)result;
         Assert.Equal(-0.14159, resultDouble, 5); // 5 decimal places precision
     }
@@ -370,8 +370,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void FractionalPart_WholeNumber_ReturnsZero()
     {
-        var bf = new BigFloat(5.0);
-        var result = bf.FractionalPart();
+        BigFloat bf = new BigFloat(5.0);
+        BigFloat result = bf.FractionalPart();
         Assert.True(result.IsZero);
 
         bf = new BigFloat(-5.0);
@@ -382,16 +382,16 @@ public class BigFloatRoundingTests
     [Fact]
     public void FractionalPart_Zero_ReturnsZero()
     {
-        var bf = BigFloat.ZeroWithAccuracy(0);
-        var result = bf.FractionalPart();
+        BigFloat bf = BigFloat.ZeroWithAccuracy(0);
+        BigFloat result = bf.FractionalPart();
         Assert.True(result.IsZero);
     }
 
     [Fact]
     public void FractionalPart_SmallFraction_ReturnsItself()
     {
-        var bf = new BigFloat(0.123);
-        var result = bf.FractionalPart();
+        BigFloat bf = new BigFloat(0.123);
+        BigFloat result = bf.FractionalPart();
         Assert.Equal(bf, result);
     }
 
@@ -402,8 +402,8 @@ public class BigFloatRoundingTests
     [Fact]
     public void ModF_PositiveNumber_SplitsCorrectly()
     {
-        var bf = new BigFloat(3.14159);
-        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
+        BigFloat bf = new BigFloat(3.14159);
+        (BigFloat intPart, BigFloat fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(3.0, (double)intPart);
         var fracDouble = (double)fracPart;
@@ -414,7 +414,7 @@ public class BigFloatRoundingTests
     public void ModF_NegativeNumber_SplitsCorrectly()
     {
         var bf = new BigFloat(-3.14159);
-        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
+        (BigFloat intPart, BigFloat fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(-3.0, (double)intPart);
         var fracDouble = (double)fracPart;
@@ -425,7 +425,7 @@ public class BigFloatRoundingTests
     public void ModF_WholeNumber_ReturnsSelfAndZero()
     {
         var bf = new BigFloat(5.0);
-        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
+        (BigFloat intPart, BigFloat fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(5.0, (double)intPart);
         Assert.True(fracPart.IsZero);
@@ -435,7 +435,7 @@ public class BigFloatRoundingTests
     public void ModF_SmallFraction_ReturnsZeroAndSelf()
     {
         var bf = new BigFloat(0.123);
-        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
+        (BigFloat intPart, BigFloat fracPart) = bf.SplitIntegerAndFractionalParts();
 
         Assert.Equal(0.0, (double)intPart);
         Assert.Equal((double)bf, (double)fracPart);
@@ -445,9 +445,9 @@ public class BigFloatRoundingTests
     public void ModF_RecombineEqualsOriginal()
     {
         var bf = new BigFloat(123.456);
-        var (intPart, fracPart) = bf.SplitIntegerAndFractionalParts();
+        (BigFloat intPart, BigFloat fracPart) = bf.SplitIntegerAndFractionalParts();
 
-        var recombined = intPart + fracPart;
+        BigFloat recombined = intPart + fracPart;
         Assert.Equal(0, bf.CompareTo(recombined));
     }
 
@@ -474,16 +474,16 @@ public class BigFloatRoundingTests
         // Test numbers at the edge of precision
         var bf = BigFloat.Parse("1.000000000000001");
 
-        var ceil = bf.Ceiling();
+        BigFloat ceil = bf.Ceiling();
         Assert.Equal(2.0, (double)ceil);
 
-        var floor = bf.Floor();
+        BigFloat floor = bf.Floor();
         Assert.Equal(1.0, (double)floor);
 
-        var trunc = bf.Truncate();
+        BigFloat trunc = bf.Truncate();
         Assert.Equal(1.0, (double)trunc);
 
-        var round = bf.Round();
+        BigFloat round = bf.Round();
         Assert.Equal(1.0, (double)round);
     }
 
@@ -492,8 +492,8 @@ public class BigFloatRoundingTests
     {
         var bf = new BigFloat(3.14, -10); // aka 0.00306640625|000000012143064
         int accuracy = bf.Accuracy;
-        var result1 = bf.CeilingPreservingAccuracy();
-        var result2 = bf.Ceiling();
+        BigFloat result1 = bf.CeilingPreservingAccuracy();
+        BigFloat result2 = bf.Ceiling();
         Assert.Equal(result1, BigFloat.OneWithAccuracy(accuracy));
         Assert.Equal(result2, 1);
 

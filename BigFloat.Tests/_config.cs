@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace BigFloatLibrary.Tests;
 
-namespace BigFloatLibrary.Tests;
-
-public static class _config
+internal static class _config
 {
     /// <summary>
     /// For long running methods only, This specifies the target time in milliseconds.
