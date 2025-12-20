@@ -1,15 +1,13 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using System;
-using System.Linq;
 using FsCheck;
 using FsCheck.Fluent;
 using FsCheck.Xunit;
 
 namespace BigFloatLibrary.Tests;
 
-public static class BigFloatGenerators
+internal static class BigFloatGenerators
 {
     private static Gen<BigFloat> CreateBigFloatGenerator(
         bool allowNegative,
@@ -27,7 +25,7 @@ public static class BigFloatGenerators
                           exponent - 1,
                           exponent + 1,
                           logarithmic: true,
-                          TestsShared._rand) * (negative ? -1 : 1);
+                          _config._rand) * (negative ? -1 : 1);
     }
 
     public static Gen<BigFloat> ModerateMagnitudeGen() =>

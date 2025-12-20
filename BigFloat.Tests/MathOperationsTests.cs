@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.Numerics;
 using Xunit.Sdk;
 
-using static BigFloatLibrary.TestsShared;
-
 namespace BigFloatLibrary.Tests;
 /// <summary>
 /// Tests for mathematical operations including Pow, NthRoot, and arithmetic operations
@@ -88,7 +86,7 @@ public class MathOperationsTests
     [Fact]
     public void NthRoot_RandomValues_AccurateResults()
     {
-        RunBudgeted(TestTargetInMilliseconds, RAND_SEED, (rand, iter) =>
+        RunBudgeted(_config.TestTargetInMilliseconds, _config.RAND_SEED, (rand, iter) =>
         {
             int mantissaBits = (int)LogUniform(rand, BigFloat.GuardBits, 2999);
             int root = (int)LogUniform(rand, 1, 34);
@@ -105,13 +103,13 @@ public class MathOperationsTests
 
             if (!answer.EqualsUlp(result, 3, true))
                 throw new XunitException(
-                    $"EqualsUlp failed: seed={RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
+                    $"EqualsUlp failed: seed={_config.RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
                     $"result={result}, answer={answer}, input={toTest}");
 
             int sizeDiff = toTest.SizeWithGuardBits - result.SizeWithGuardBits;
             if (sizeDiff >= 32)
                 throw new XunitException(
-                    $"Size diff too big: seed={RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
+                    $"Size diff too big: seed={_config.RAND_SEED}, iter={iter}, bits={mantissaBits}, root={root}, " +
                     $"sizeDiff={sizeDiff}, result={result}, answer={answer}, input={toTest}");
         });
     }
@@ -122,7 +120,7 @@ public class MathOperationsTests
         const long minA = 2, maxA = 999;   // answer < 1000
         const int minE = 1, maxE = 199;   // e < 200
 
-        RunBudgeted(10, RAND_SEED, (rand, iter) =>
+        RunBudgeted(10, _config.RAND_SEED, (rand, iter) =>
         {
             long a = LogUniform(rand, minA, maxA);
             int e = (int)LogUniform(rand, minE, maxE);
@@ -134,7 +132,7 @@ public class MathOperationsTests
             BigInteger root = BigIntegerTools.NthRoot(x, e);
 
             if (root != a)
-                throw new XunitException($"NthRoot failed: seed={RAND_SEED}, iter={iter}, a={a}, e={e}");
+                throw new XunitException($"NthRoot failed: seed={_config.RAND_SEED}, iter={iter}, a={a}, e={e}");
         });
     }
 

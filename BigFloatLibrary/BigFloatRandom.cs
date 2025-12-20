@@ -13,13 +13,6 @@ public readonly partial struct BigFloat
 {
     private const int _defaultFractionBits = 128;       // enough for most uses
 
-    /// <summary>
-    /// For long running methods only, This specifies the target time in milliseconds.
-    /// </summary>
-    public const int TestTargetInMilliseconds = 100;
-    public const int RAND_SEED = 0x51C0_F00D;
-    public static readonly Random _rand = new(RAND_SEED);
-
     /// <summary>Uniform or logarithmic sample in [min,max] (inclusive of min, exclusive of max).</summary>
     public static BigFloat RandomInRange(
         BigFloat min,
@@ -27,7 +20,7 @@ public readonly partial struct BigFloat
         bool logarithmic = false,
         Random? rand = null)
     {
-        rand ??= _rand;
+        rand ??= Random.Shared;
         if (min > max) (min, max) = (max, min);
         if (min == max) return min;
 
@@ -73,7 +66,7 @@ public readonly partial struct BigFloat
         if (minBinaryExponent > maxBinaryExponent)
             (minBinaryExponent, maxBinaryExponent) = (maxBinaryExponent, minBinaryExponent);
 
-        rand ??= _rand;
+        rand ??= Random.Shared;
 
         /* ---- choose exponent ---- */
         int chosenExp = logarithmic
