@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-namespace BigFloat.Benchmarks;
+namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Math")]

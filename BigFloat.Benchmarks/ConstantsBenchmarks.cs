@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
-namespace BigFloat.Benchmarks;
+using static BigFloatLibrary.BigFloat;
+namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Constants")]

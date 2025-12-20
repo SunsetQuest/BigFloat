@@ -5,7 +5,7 @@ using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Attributes;
 
-namespace BigFloat.Benchmarks;
+namespace BigFloatLibrary.Benchmarks;
 
 internal static class Program
 {
