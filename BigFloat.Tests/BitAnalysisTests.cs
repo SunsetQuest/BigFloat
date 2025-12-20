@@ -1,6 +1,4 @@
-using System.Reflection;
-using BigFloatLibrary;
-using Xunit;
+﻿using System.Reflection;
 
 namespace BigFloatLibrary.Tests;
 
@@ -17,7 +15,7 @@ public class BitAnalysisTests
     [InlineData(0x8000_0000_0000_0000UL, 64)]
     public void GetBitLength_UsesExpectedCounts(ulong value, int expected)
     {
-        int bitLength = (int)GetBitLengthMethod.Invoke(null, new object[] { value })!;
+        int bitLength = (int)GetBitLengthMethod.Invoke(null, [value])!;
 
         Assert.Equal(expected, bitLength);
     }

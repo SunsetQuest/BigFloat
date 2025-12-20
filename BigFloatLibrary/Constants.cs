@@ -759,7 +759,7 @@ public readonly partial struct BigFloat
             CacheLock.EnterUpgradeableReadLock();
             try
             {
-                if (ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat> precisionMap))
+                if (ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat>? precisionMap) && precisionMap is not null)
                 {
                     // Check if we have the exact precision
                     if (precisionMap.TryGetValue(precisionInBits, out BigFloat exactValue))

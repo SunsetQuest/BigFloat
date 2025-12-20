@@ -8,7 +8,7 @@ namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
 {
-    public readonly struct ConstantInfo(string name, string formula, string moreInfoLink, string sourceOfDigitsURL, string sourceOfDigitsName, int sizeAvailableInFile, int scale, string bitsInBase64)
+    public readonly struct ConstantInfo(string name, string formula, string moreInfoLink, string sourceOfDigitsURL, string sourceOfDigitsName, int sizeAvailableInFile, int scale, string bitsInBase64) : IEquatable<ConstantInfo>
     {
         /// <summary>
         /// The name of the constant. (Example: Pi, Fine-Structure Constant, Phi)
@@ -379,6 +379,31 @@ public readonly partial struct BigFloat
         public override string ToString()
         {
             return GetSummary();
+        }
+
+        public override bool Equals(object obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int GetHashCode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static bool operator ==(ConstantInfo left, ConstantInfo right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ConstantInfo left, ConstantInfo right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(ConstantInfo other)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -9,8 +9,8 @@ public class IntegerOperatorTests
 {
     public static IEnumerable<object[]> SmallIntFactors()
     {
-        int[] factors = { -4, -3, -2, -1, 1, 2, 3, 4 };
-        string[] values = { "0.5", "-1.5", "3.25", "1e30", "-1e-40" };
+        int[] factors = [-4, -3, -2, -1, 1, 2, 3, 4];
+        string[] values = ["0.5", "-1.5", "3.25", "1e30", "-1e-40"];
 
         foreach (string value in values)
         {
@@ -25,9 +25,9 @@ public class IntegerOperatorTests
     [MemberData(nameof(SmallIntFactors))]
     public void Multiply_IntMatchesBigInteger(string value, int factor)
     {
-        var original = new BigFloat(value);
-        var viaInt = original * factor;
-        var viaBigInteger = original * new BigFloat(new BigInteger(factor));
+        BigFloat original = new BigFloat(value);
+        BigFloat viaInt = original * factor;
+        BigFloat viaBigInteger = original * new BigFloat(new BigInteger(factor));
 
         Assert.True(viaInt.EqualsZeroExtended(viaBigInteger));
     }
@@ -41,9 +41,9 @@ public class IntegerOperatorTests
             return; // unreachable but keeps data generator symmetric
         }
 
-        var original = new BigFloat(value);
-        var viaInt = original / factor;
-        var viaBigInteger = original / new BigFloat(new BigInteger(factor));
+        BigFloat original = new BigFloat(value);
+        BigFloat viaInt = original / factor;
+        BigFloat viaBigInteger = original / new BigFloat(new BigInteger(factor));
 
         Assert.True(viaInt.EqualsZeroExtended(viaBigInteger));
     }
@@ -58,10 +58,10 @@ public class IntegerOperatorTests
     [InlineData("0.25", -1, "1.25")]
     public void Subtract_IntProducesExpectedValueAndSign(string value, int subtrahend, string expected)
     {
-        var original = new BigFloat(value);
+        BigFloat original = new BigFloat(value);
 
-        var result = original - subtrahend;
-        var expectedValue = new BigFloat(expected);
+        BigFloat result = original - subtrahend;
+        BigFloat expectedValue = new BigFloat(expected);
 
         Assert.True(result.EqualsUlp(expectedValue, 4, true));
         Assert.Equal(expectedValue.Sign, result.Sign);
@@ -72,14 +72,14 @@ public class IntegerOperatorTests
     [InlineData("-1e-2000", int.MinValue)]
     public void DivisionAndMultiplication_HandleExtremeScales(string value, int factor)
     {
-        var original = new BigFloat(value);
+        BigFloat original = new BigFloat(value);
 
-        var multiplied = original * factor;
-        var multipliedReference = original * new BigFloat(new BigInteger(factor));
+        BigFloat multiplied = original * factor;
+        BigFloat multipliedReference = original * new BigFloat(new BigInteger(factor));
         Assert.True(multiplied.EqualsZeroExtended(multipliedReference));
 
-        var divided = original / factor;
-        var dividedReference = original / new BigFloat(new BigInteger(factor));
+        BigFloat divided = original / factor;
+        BigFloat dividedReference = original / new BigFloat(new BigInteger(factor));
         Assert.True(divided.EqualsZeroExtended(dividedReference));
     }
 
@@ -87,7 +87,7 @@ public class IntegerOperatorTests
     [Fact]
     public void Division_ByZeroIntThrows()
     {
-        var numerator = new BigFloat(1);
+        BigFloat numerator = new BigFloat(1);
         Assert.Throws<DivideByZeroException>(() => numerator / 0);
     }
 #endif

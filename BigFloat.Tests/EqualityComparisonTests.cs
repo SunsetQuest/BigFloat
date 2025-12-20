@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Numerics;
@@ -301,8 +301,8 @@ public class EqualityAndComparisonTests
     [InlineData("0b11", "0b01", 0, 3, true)]   // Equal at tolerance 3
     public void CompareUlp_BinaryParsed(string aStr, string bStr, int scale, int tolerance, bool shouldBeEqual)
     {
-        BigFloat.TryParseBinary(aStr.Substring(2), out var a);
-        BigFloat.TryParseBinary(bStr.Substring(2), out var b);
+        BigFloat.TryParseBinary(aStr.AsSpan(2), out BigFloat a);
+        BigFloat.TryParseBinary(bStr.AsSpan(2), out BigFloat b);
         a = new BigFloat(a.RawMantissa, scale, true);
         b = new BigFloat(b.RawMantissa, scale, true);
 
