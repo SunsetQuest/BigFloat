@@ -1,2 +1,2 @@
-﻿//global using BigFloatNumber = BigFloatLibrary.BigFloat;
-//global using ConstantsCatalog = BigFloatLibrary.BigFloat.Catalog;
+global using BigFloatLibrary;
+global using BigFloat = BigFloatLibrary.BigFloat;
