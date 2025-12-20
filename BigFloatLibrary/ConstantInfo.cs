@@ -13,36 +13,36 @@ public readonly partial struct BigFloat
         /// <summary>
         /// The name of the constant. (Example: Pi, Fine-Structure Constant, Phi)
         /// </summary>
-        public readonly string Name = name;
+        public string Name { get; } = name;
         /// <summary>
         /// A formula that can generate this. Example: 
         /// </summary>
-        public readonly string Formula = formula;
+        public string Formula { get; } = formula;
         /// <summary>
         /// Provides a URL/Link to more info on the number.
         /// </summary>
-        public readonly string MoreInfoURL = moreInfoLink;
+        public string MoreInfoURL { get; } = moreInfoLink;
         /// <summary>
         /// Provides a URL/Link the location of the digits.
         /// </summary>
-        public readonly string SourceOfDigitsURL = sourceOfDigitsURL;
+        public string SourceOfDigitsURL { get; } = sourceOfDigitsURL;
         /// <summary>
         /// Provides a the Person or sites name that generated the list.
         /// </summary>
-        public readonly string SourceOfDigitsName = sourceOfDigitsName;
+        public string SourceOfDigitsName { get; } = sourceOfDigitsName;
         /// <summary>
         /// The number of decimal placed available in the external file, if available, for numbers over 5000 digits.
         /// </summary>
-        public readonly int SizeAvailableInFile = sizeAvailableInFile;
+        public int SizeAvailableInFile { get; } = sizeAvailableInFile;
         /// <summary>
         /// The amount need to shift to get proper radix, assuming BASE64 has radix just in front of it.
         /// Scale = RadixShiftFromLeadingBit - DataBits.GetBitLength()
         /// </summary>
-        public readonly int RadixShiftFromLeadingBit = scale;
+        public int RadixShiftFromLeadingBit { get; } = scale;
         /// <summary>
         /// Contains the constant as a string in base64. (from 56 to 2780 chars)
         /// </summary>
-        public readonly string BitsInBase64 = bitsInBase64;
+        public string BitsInBase64 { get; } = bitsInBase64;
 
         /// <summary>
         /// Returns the number bits available in the Base64 string, minus the guard bits.
