@@ -1,5 +1,14 @@
 # Change Log *(newest first)*
 
+### 2025-12-21
+
+* **v4.2.0 documentation refresh**
+  Updated README, specification, and docs site content to consolidate the 4.1.x feature wave (precision knobs, rounding suite, parsing/formatting, comparison updates) into a single reference tied to the new v4.2.0 release metadata.
+* **NuGet metadata bump**
+  Bumped `BigFloatLibrary.nuspec` to v4.2.0 with updated release-note links.
+* **Acknowledgements**
+  Documented the v4.2.0 documentation refresh assistance for transparency in the provenance sections.
+
 ### 2025-12-03
 
 * **Playground separation and cleanup**

@@ -1,8 +1,16 @@
 # BigFloat Library Specification
 
-*Updated: December 2025 — technical reference for developers and AI systems*
+*Updated: December 21, 2025 — technical reference for developers and AI systems*
 
 > **Scope.** This document specifies the behavior, data model, key APIs, rounding/comparison semantics, parsing/formatting, math functions, precision control, and range/convertibility characteristics of **BigFloat** as implemented in the current sources. It supersedes the August 2025 draft. 
+
+---
+
+## What’s new since v4.0.0 (2025‑12‑03)
+
+* **Documentation consolidated for v4.2.0.** This spec now compacts the 4.1.x feature wave into a single reference, aligning the README and docs site with the 2025-09 through 2025-12 code changes.
+* **Package metadata & release labeling.** NuGet metadata and public-facing documentation now reference **v4.2.0** while preserving the underlying behavior described below.
+* **Provenance note.** The v4.2.0 documentation refresh credits assistance from OpenAI’s GPT‑5.2‑Codex‑Max in the provenance section for transparency.
 
 ---
 
@@ -17,7 +25,7 @@
 * **IConvertible.** `BigFloat` implements `IConvertible` with safe overflow checks and a `ToType` dispatcher.
 * **Arithmetic touch‑ups.** Safer/faster remainder path; multiply short‑circuits strict zero while preserving the tighter accuracy; divide keeps hooks for adaptive algorithms while using the standard path.
 * **Playground & benchmarks.** Playground sample, benchmark, and testing utilities are separated into dedicated files to keep demos organized and repeatable (library behavior unaffected).
-* **Packaging.** NuGet metadata bumped **v4.1.0** in Dec 2025; ongoing fixes through Oct–Dec per change log.
+* **Packaging.** NuGet metadata bumped **v4.2.0** in Dec 2025; ongoing fixes through Oct–Dec per change log.
 
 ---
 
@@ -223,7 +231,8 @@ string bits = value.ToBinaryString(numberOfGuardBitsToInclude: 32, showPrecision
 
 ## Versioning & provenance
 
-* Current NuGet metadata in repo indicates **v4.1.0** (December 2025), with ongoing fixes (Sep–Nov). See `ChangeLog.md` for dated entries (constructor precision, remainder optimization, `IConvertible`, rounding suite, zero handling, formatting).
+* Current NuGet metadata in repo indicates **v4.2.0** (December 2025), with ongoing fixes (Sep–Dec). See `ChangeLog.md` for dated entries (constructor precision, remainder optimization, `IConvertible`, rounding suite, zero handling, formatting).
+* Documentation refresh for v4.2.0 prepared with assistance from OpenAI’s GPT‑5.2‑Codex‑Max.
 
 ---
 
