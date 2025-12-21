@@ -6,9 +6,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BigFloatLibrary", "BigFloat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlaygroundAndShowCase", "BigFloatPlayground\PlaygroundAndShowCase.csproj", "{1EC1B239-6746-427B-A1E0-89BBEB4104D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigFloatLibrary.Tests", "BigFloat.Tests\BigFloatLibrary.Tests.csproj", "{90D0A568-0E16-4236-8892-D39E1B74E370}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigFloatLibrary.Tests", "BigFloatLibrary.Tests\BigFloatLibrary.Tests.csproj", "{90D0A568-0E16-4236-8892-D39E1B74E370}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigFloatLibrary.Benchmarks", "BigFloat.Benchmarks\BigFloatLibrary.Benchmarks.csproj", "{52CF618B-43E6-4FBF-9AF2-9313659DE62B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BigFloatLibrary.Benchmarks", "BigFloatLibrary.Benchmarks\BigFloatLibrary.Benchmarks.csproj", "{52CF618B-43E6-4FBF-9AF2-9313659DE62B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
