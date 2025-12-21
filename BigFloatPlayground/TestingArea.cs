@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using BigFloatLibrary;
@@ -9,7 +9,7 @@ using static BigFloatLibrary.BigFloat;
 
 namespace PlaygroundAndShowCase;
 
-public static class TestingArea
+internal static class TestingArea
 {
     public static void Constant_Stuff()
     {
@@ -17,16 +17,16 @@ public static class TestingArea
         Console.WriteLine($"Pi(generated): {PiFromGenerated}");
 
         // Default constants with standard precision
-        BigFloat PiFromDefault = BigFloat.Constants.Pi;
+        BigFloat PiFromDefault = Constants.Pi;
         Console.WriteLine($"Pi(default): {PiFromDefault}");
 
         // Get all constants at once with configured precision
-        var allConstants = BigFloat.Constants.WithConfig(precisionInBits: 20000).GetAll();
+        Dictionary<string, BigFloat> allConstants = Constants.WithConfig(precisionInBits: 20000).GetAll();
         allConstants.TryGetValue("Pi", out BigFloat piFromConfig);
         Console.WriteLine($"Pi(using configured precision): {piFromConfig}");
 
         // Default constants by name
-        var PiFromConstantName = BigFloat.Constants.Get("Pi");
+        BigFloat PiFromConstantName = Constants.Get("Pi");
         Console.WriteLine($"Pi(by name): {PiFromConstantName}");
 
         // Other constants with default precision

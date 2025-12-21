@@ -10,7 +10,7 @@ namespace PlaygroundAndShowCase;
 /// <summary>
 /// Helpers for visualizing and displaying mathematical constants.
 /// </summary>
-public static class ConstantVisualization
+internal static class ConstantVisualization
 {
     /// <summary>
     /// Formats a mathematical constant for display with customizable formatting.

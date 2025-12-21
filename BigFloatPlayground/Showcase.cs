@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using BigFloatLibrary;
@@ -6,7 +6,7 @@ using static BigFloatLibrary.BigFloat;
 
 namespace PlaygroundAndShowCase;
 
-public static partial class Showcase
+internal static partial class Showcase
 {
     ////////////// Play Area & Examples //////////////
     public static void Main()
@@ -155,7 +155,7 @@ public static partial class Showcase
         Console.WriteLine($"Large Number: {largeNumber}");
         // Output: Large Number: 1.234e+10
 
-        Console.WriteLine($"Large Number: {BigFloat.ToStringDecimal(largeNumber, digitMaskingForm: true)}");
+        Console.WriteLine($"Large Number: {ToStringDecimal(largeNumber, digitMaskingForm: true)}");
         // Output: Large Number: 1234XXXXXXX
 
         // Creating a very large number
