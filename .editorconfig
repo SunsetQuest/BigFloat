@@ -1,13 +1,18 @@
 root = true
 
-[*.cs]
-charset = utf-8-bom
+[*]
+charset = utf-8
 end_of_line = lf
 insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+charset = utf-8-bom
 indent_style = space
 indent_size = 4
-trim_trailing_whitespace = true
 max_line_length = 120
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
 
 # Naming rules
 dotnet_naming_rule.private_fields_should_be_camel_with_underscore.symbols = private_fields
@@ -45,9 +50,11 @@ csharp_new_line_before_open_brace = all
 csharp_new_line_between_query_expression_clauses = true
 csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
+csharp_prefer_simple_using_statement = true:suggestion
 csharp_prefer_braces = true:warning
 csharp_prefer_static_local_function = true:suggestion
 csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_using_directive_placement = outside_namespace:suggestion
 
 # Modern C# preferences
 csharp_style_var_for_built_in_types = true:suggestion
@@ -82,11 +89,17 @@ dotnet_style_collection_initializer = true:suggestion
 dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_null_propagation = true:suggestion
 dotnet_style_prefer_is_not_expression = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
 
 # Analyzer severities
 [*.cs]
 dotnet_analyzer_diagnostic.category-Style.severity = warning
 dotnet_analyzer_diagnostic.category-Naming.severity = warning
+dotnet_analyzer_diagnostic.category-Performance.severity = warning
+dotnet_analyzer_diagnostic.category-Reliability.severity = warning
+dotnet_analyzer_diagnostic.category-Security.severity = warning
+dotnet_analyzer_diagnostic.category-Usage.severity = warning
 dotnet_diagnostic.IDE0011.severity = none
 dotnet_diagnostic.IDE0022.severity = none
 dotnet_diagnostic.IDE0024.severity = none
