@@ -56,7 +56,7 @@
 		<Optimize>true</Optimize>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Condition="'$(EnableSourceLink)' == 'true'">
 		<!-- GitHub SourceLink -->
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	</ItemGroup>

@@ -5,6 +5,8 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <NoWarn>$(NoWarn);CS8625;CS8765;CS8767</NoWarn>
+    <NoWarn>$(NoWarn);CS8625;CS8765;CS8767;EnableGenerateDocumentationFile</NoWarn>
+    <EnableSourceLink>false</EnableSourceLink>
+    <SourceLinkCreate>false</SourceLinkCreate>
   </PropertyGroup>
 </Project>
