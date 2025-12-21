@@ -13,17 +13,6 @@ namespace BigFloatLibrary;
 internal static class BigFloatNumerics
 {
     /// <summary>
-    /// When both operands reach roughly this many significant bits, Karatsuba
-    /// multiplication outpaces schoolbook O(n^2) multiplication. The threshold is
-    /// based on the smaller operand because Karatsuba's benefit appears once both
-    /// halves of the split are large enough to amortize the extra additions.
-    /// Tuned against the threshold sweep in docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v80.md
-    /// and docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v90.md, which show the
-    /// crossover near 320 bits on typical developer hardware running .NET 8/9.
-    /// </summary>
-    public const int KARATSUBA_THRESHOLD = 320;
-
-    /// <summary>
     /// Burnikel–Ziegler division becomes more efficient than basic long division
     /// once either operand grows past this bit-length. The algorithm works in
     /// word-sized blocks; sweeps on .NET 8/9 (see docs/benchmarks/threshold-sweeps-*.md)
@@ -39,14 +28,6 @@ internal static class BigFloatNumerics
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int MantissaSize(BigInteger value)
         => (int)BigInteger.Abs(value).GetBitLength();
-
-    /// <summary>
-    /// Determines whether Karatsuba multiplication should be preferred over the
-    /// schoolbook algorithm given two operand sizes.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ShouldUseKaratsuba(int sizeA, int sizeB)
-        => Math.Min(sizeA, sizeB) >= KARATSUBA_THRESHOLD;
 
     /// <summary>
     /// Determines whether Burnikel–Ziegler division should be preferred over the
