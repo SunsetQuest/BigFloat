@@ -1,12 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BigFloatLibrary.Benchmarks;
-
 
 [MemoryDiagnoser]
 internal class ParsingBenchmarks
@@ -19,8 +13,11 @@ internal class ParsingBenchmarks
     [Benchmark]
     public BigFloat ParseWithSpan()
     {
-        BigFloat.TryParse(_input.AsSpan(), out BigFloat value);
-        return value;
+        if (BigFloat.TryParse(_input.AsSpan(), out BigFloat value))
+        {
+            return value;
+        }
+
+        throw new FormatException("Failed to parse input as BigFloat.");
     }
 }
-
