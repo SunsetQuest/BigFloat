@@ -1,6 +1,7 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BigFloatLibrary.BigFloatNumerics;
 
@@ -8,6 +9,7 @@ namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
 {
+    [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Constants are grouped under BigFloat for API discoverability.")]
     public static class ConstantBuilder
     {
         /// <summary>

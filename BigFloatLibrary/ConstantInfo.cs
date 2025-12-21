@@ -9,6 +9,7 @@ namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
 {
+    [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Constants are grouped under BigFloat for API discoverability.")]
     [SuppressMessage("Design", "CA1054:Uri parameters should not be strings", Justification = "Constants use string metadata to preserve original sources without forcing URI parsing.")]
     public readonly struct ConstantInfo(string name, string formula, string moreInfoLink, string sourceOfDigitsURL, string sourceOfDigitsName, int sizeAvailableInFile, int scale, string bitsInBase64) : IEquatable<ConstantInfo>
     {

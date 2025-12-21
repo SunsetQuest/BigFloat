@@ -8,6 +8,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Catalog of available mathematical constants.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Constants are grouped under BigFloat for API discoverability.")]
     public static class Catalog
     {
         // Fundamental constants

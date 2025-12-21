@@ -12,6 +12,7 @@ public readonly partial struct BigFloat
     /// <summary>
     /// Provides access to mathematical constants with configurable precision.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Constants are grouped under BigFloat for API discoverability.")]
     public static class Constants
     {
         // Default precision options
