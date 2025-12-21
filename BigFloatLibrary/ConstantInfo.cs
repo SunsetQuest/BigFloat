@@ -1,6 +1,7 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using static BigFloatLibrary.BigFloatNumerics;
 
@@ -8,6 +9,7 @@ namespace BigFloatLibrary;
 
 public readonly partial struct BigFloat
 {
+    [SuppressMessage("Design", "CA1054:Uri parameters should not be strings", Justification = "Constants use string metadata to preserve original sources without forcing URI parsing.")]
     public readonly struct ConstantInfo(string name, string formula, string moreInfoLink, string sourceOfDigitsURL, string sourceOfDigitsName, int sizeAvailableInFile, int scale, string bitsInBase64) : IEquatable<ConstantInfo>
     {
         /// <summary>
@@ -21,10 +23,12 @@ public readonly partial struct BigFloat
         /// <summary>
         /// Provides a URL/Link to more info on the number.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Constants use string metadata to preserve original sources without forcing URI parsing.")]
         public string MoreInfoURL { get; } = moreInfoLink;
         /// <summary>
         /// Provides a URL/Link the location of the digits.
         /// </summary>
+        [SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Constants use string metadata to preserve original sources without forcing URI parsing.")]
         public string SourceOfDigitsURL { get; } = sourceOfDigitsURL;
         /// <summary>
         /// Provides a the Person or sites name that generated the list.
@@ -201,9 +205,19 @@ public readonly partial struct BigFloat
                 value = TruncateByAndRound(value, overAccurateBy);
                 return true;
             }
-            catch (Exception) //Exception ex
+            catch (FormatException) //Exception ex
             {
                 // For debugging: Console.WriteLine($"Error in TryGetAsBigFloat: {ex.Message}");
+                value = default;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                value = default;
+                return false;
+            }
+            catch (OverflowException)
+            {
                 value = default;
                 return false;
             }
@@ -286,9 +300,18 @@ public readonly partial struct BigFloat
                     }
                 }
             }
-            catch (Exception) //Exception ex
+            catch (IOException) //Exception ex
             {
                 // For debugging: Console.WriteLine($"Error loading from external file: {ex.Message}");
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
             }
 
             return false;
@@ -383,12 +406,20 @@ public readonly partial struct BigFloat
 
         public override bool Equals(object obj)
         {
-            throw new NotImplementedException();
+            return obj is ConstantInfo other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            throw new NotImplementedException();
+            return HashCode.Combine(
+                Name,
+                Formula,
+                MoreInfoURL,
+                SourceOfDigitsURL,
+                SourceOfDigitsName,
+                SizeAvailableInFile,
+                RadixShiftFromLeadingBit,
+                BitsInBase64);
         }
 
         public static bool operator ==(ConstantInfo left, ConstantInfo right)
@@ -403,7 +434,14 @@ public readonly partial struct BigFloat
 
         public bool Equals(ConstantInfo other)
         {
-            throw new NotImplementedException();
+            return string.Equals(Name, other.Name, StringComparison.Ordinal)
+                && string.Equals(Formula, other.Formula, StringComparison.Ordinal)
+                && string.Equals(MoreInfoURL, other.MoreInfoURL, StringComparison.Ordinal)
+                && string.Equals(SourceOfDigitsURL, other.SourceOfDigitsURL, StringComparison.Ordinal)
+                && string.Equals(SourceOfDigitsName, other.SourceOfDigitsName, StringComparison.Ordinal)
+                && SizeAvailableInFile == other.SizeAvailableInFile
+                && RadixShiftFromLeadingBit == other.RadixShiftFromLeadingBit
+                && string.Equals(BitsInBase64, other.BitsInBase64, StringComparison.Ordinal);
         }
     }
 }

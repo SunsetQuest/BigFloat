@@ -88,8 +88,10 @@ public readonly partial struct BigFloat
         /// </summary>
         /// <param name="targetList">The BigFloat list to add to.</param>
         /// <param name="minimumAccuracy">The minimum accuracy in bits that must be available via the class or external file.</param>
-        public static void AddConstantToList(List<BigFloat> targetList, ConstantInfo constantToAdd, int minimumAccuracy, bool useExternalFiles = true)
+        public static void AddConstantToList(ICollection<BigFloat> targetList, ConstantInfo constantToAdd, int minimumAccuracy, bool useExternalFiles = true)
         {
+            ArgumentNullException.ThrowIfNull(targetList);
+
             bool success = constantToAdd.TryGetAsBigFloat(out BigFloat value, minimumAccuracy, useExternalFiles: useExternalFiles);
             if (success)
             {
