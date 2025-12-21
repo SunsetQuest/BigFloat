@@ -301,8 +301,8 @@ public class EqualityAndComparisonTests
     [InlineData("0b11", "0b01", 0, 3, true)]   // Equal at tolerance 3
     public void CompareUlp_BinaryParsed(string aStr, string bStr, int scale, int tolerance, bool shouldBeEqual)
     {
-        BigFloat.TryParseBinary(aStr.AsSpan(2), out BigFloat a);
-        BigFloat.TryParseBinary(bStr.AsSpan(2), out BigFloat b);
+        Assert.True(BigFloat.TryParseBinary(aStr.AsSpan(2), out BigFloat a));
+        Assert.True(BigFloat.TryParseBinary(bStr.AsSpan(2), out BigFloat b));
         a = new BigFloat(a.RawMantissa, scale, true);
         b = new BigFloat(b.RawMantissa, scale, true);
 
@@ -451,8 +451,8 @@ public class EqualityAndComparisonTests
     [InlineData("10001000", "1000000000", 0, -1)]
     public void NumberOfMatchingLeadingBitsWithRounding_BinaryValues(string aBinary, string bBinary, int expectedResult, int expectedSign)
     {
-        BigFloat.TryParseBinary(aBinary, out BigFloat a);
-        BigFloat.TryParseBinary(bBinary, out BigFloat b);
+        Assert.True(BigFloat.TryParseBinary(aBinary, out BigFloat a));
+        Assert.True(BigFloat.TryParseBinary(bBinary, out BigFloat b));
         
         int result = BigFloat.NumberOfMatchingLeadingBitsWithRounding(a, b, out int sign);
         

@@ -23,9 +23,6 @@ public class BigFloatTests
     private const long InverseBruteForceStoppedAt = 524288;
 #endif
 
-    private const int RAND_SEED = 22;
-    private static readonly Random _rand = new(RAND_SEED);
-
     #region String Representation Tests
 
     [Theory]
@@ -109,6 +106,8 @@ public class BigFloatTests
     [InlineData(9, "0.1111111111")]
     public void Inverse_RepeatingDecimals_ApproximateResults(int input, string expectedPrefix)
     {
+        ArgumentNullException.ThrowIfNull(expectedPrefix);
+
         var value = new BigFloat(input);
         var inverse = BigFloat.Inverse(value);
         
