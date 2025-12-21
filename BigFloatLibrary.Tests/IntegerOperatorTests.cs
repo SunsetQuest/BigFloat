@@ -7,8 +7,10 @@ namespace BigFloatLibrary.Tests;
 
 public class IntegerOperatorTests
 {
-    public static IEnumerable<object[]> SmallIntFactors()
+    // Replace SmallIntFactors to use TheoryData<string, int> for type safety
+    public static TheoryData<string, int> SmallIntFactors()
     {
+        var data = new TheoryData<string, int>();
         int[] factors = [-4, -3, -2, -1, 1, 2, 3, 4];
         string[] values = ["0.5", "-1.5", "3.25", "1e30", "-1e-40"];
 
@@ -16,9 +18,10 @@ public class IntegerOperatorTests
         {
             foreach (int factor in factors)
             {
-                yield return new object[] { value, factor };
+                data.Add(value, factor);
             }
         }
+        return data;
     }
 
     [Theory]

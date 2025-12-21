@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Numerics;
@@ -131,18 +131,21 @@ public class ConversionTests
         }
     }
 
-    public static IEnumerable<object[]> FloatRoundTripValues()
+    public static TheoryData<float> FloatRoundTripValues()
     {
-        yield return new object[] { 0.0f };
-        yield return new object[] { -0.0f };
-        yield return new object[] { 1.0f };
-        yield return new object[] { -1.0f };
-        yield return new object[] { float.MaxValue };
-        yield return new object[] { -float.MaxValue };
-        yield return new object[] { FloatMinPositiveNormal };
-        yield return new object[] { FloatLargestSubnormal };
-        yield return new object[] { float.Epsilon };
-        yield return new object[] { -float.Epsilon };
+        return
+        [
+            0.0f,
+            -0.0f,
+            1.0f,
+            -1.0f,
+            float.MaxValue,
+            -float.MaxValue,
+            FloatMinPositiveNormal,
+            FloatLargestSubnormal,
+            float.Epsilon,
+            -float.Epsilon
+        ];
     }
 
     [Theory]
@@ -181,26 +184,29 @@ public class ConversionTests
         }
     }
 
-    public static IEnumerable<object[]> DoubleRoundTripValues()
+    public static TheoryData<double> DoubleRoundTripValues()
     {
-        yield return new object[] { 0.0 };
-        yield return new object[] { -0.0 };
-        yield return new object[] { 1.0 };
-        yield return new object[] { -1.0 };
-        yield return new object[] { double.MaxValue };
-        yield return new object[] { -double.MaxValue };
-        yield return new object[] { DoubleMinPositiveNormal };
-        yield return new object[] { DoubleLargestSubnormal };
-        yield return new object[] { double.Epsilon };
-        yield return new object[] { -double.Epsilon };
+        return
+        [
+            0.0,
+            -0.0,
+            1.0,
+            -1.0,
+            double.MaxValue,
+            -double.MaxValue,
+            DoubleMinPositiveNormal,
+            DoubleLargestSubnormal,
+            double.Epsilon,
+            -double.Epsilon
+        ];
     }
 
     [Theory]
     [MemberData(nameof(DoubleRoundTripValues))]
     public void Constructor_FromDouble_RoundTripsIEEERepresentableValues(double value)
     {
-        var bf = new BigFloat(value);
-        var roundTrip = (double)bf;
+        BigFloat bf = new BigFloat(value);
+        double roundTrip = (double)bf;
 
         if (value == 0.0)
         {
@@ -215,7 +221,7 @@ public class ConversionTests
     [Fact]
     public void Constructor_FromDoubleEpsilon_PlacesBitOutsideGuardBits()
     {
-        var bf = new BigFloat(double.Epsilon);
+        BigFloat bf = new BigFloat(double.Epsilon);
 
         Assert.Equal(1, bf.Size);                 // epsilon now keeps a single precision bit after conversion
         Assert.Equal(-1074, bf.BinaryExponent);    // matches IEEE-754 exponent for epsilon
@@ -238,7 +244,7 @@ public class ConversionTests
         // For values within decimal range, conversion should be exact
         if (bf.FitsInADecimal)
         {
-            var backToDecimal = (decimal)bf;
+            decimal backToDecimal = (decimal)bf;
             Assert.Equal(value, backToDecimal);
         }
     }
@@ -356,8 +362,8 @@ public class ConversionTests
     [InlineData("1.23456789", 1.2345679f)] // Limited precision
     public void ExplicitCast_ToFloat_ReturnsCorrectValue(string bfStr, float expected)
     {
-        var bf = new BigFloat(bfStr);
-        var result = (float)bf;
+        BigFloat bf = new BigFloat(bfStr);
+        float result = (float)bf;
         Assert.Equal(expected, result, 6); // 6 decimal places precision
     }
 
@@ -370,16 +376,16 @@ public class ConversionTests
     [InlineData("1.23456789012345", 1.23456789012345)]
     public void ExplicitCast_ToDouble_ReturnsCorrectValue(string bfStr, double expected)
     {
-        var bf = new BigFloat(bfStr);
-        var result = (double)bf;
+        BigFloat bf = new BigFloat(bfStr);
+        double result = (double)bf;
         Assert.Equal(expected, result, 15); // 15 decimal places precision
     }
 
     [Fact]
     public void ExplicitCast_ToDouble_RoundsHalfwayToEven()
     {
-        var midpointDown = new BigFloat((BigInteger.One << 53) + 1, -53); // 1 + 2^-53 (between 1 and nextafter(1))
-        var midpointUp = new BigFloat((BigInteger.One << 53) + 3, -53);   // 1 + 3·2^-53 (between ulp #1 and #2)
+        BigFloat midpointDown = new BigFloat((BigInteger.One << 53) + 1, -53); // 1 + 2^-53 (between 1 and nextafter(1))
+        BigFloat midpointUp = new BigFloat((BigInteger.One << 53) + 3, -53);   // 1 + 3·2^-53 (between ulp #1 and #2)
 
         var next = BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(1.0) + 1);
         var nextNext = BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(1.0) + 2);
@@ -392,8 +398,8 @@ public class ConversionTests
     [Fact]
     public void ExplicitCast_ToFloat_RoundsHalfwayToEven()
     {
-        var midpointDown = new BigFloat((BigInteger.One << 24) + 1, -24); // 1 + 2^-24
-        var midpointUp = new BigFloat((BigInteger.One << 24) + 3, -24);   // 1 + 3·2^-24
+        BigFloat midpointDown = new BigFloat((BigInteger.One << 24) + 1, -24); // 1 + 2^-24
+        BigFloat midpointUp = new BigFloat((BigInteger.One << 24) + 3, -24);   // 1 + 3·2^-24
 
         var next = BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(1.0f) + 1);
         var nextNext = BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(1.0f) + 2);
@@ -406,10 +412,10 @@ public class ConversionTests
     [Fact]
     public void ExplicitCast_ToDouble_SubnormalBoundaryRoundsCorrectly()
     {
-        var smallestNormal = new BigFloat(DoubleMinPositiveNormal);
-        var halfStep = new BigFloat(double.Epsilon) / 2;
-        var tie = smallestNormal - halfStep; // midpoint between largest subnormal and smallest normal
-        var belowTie = smallestNormal - (halfStep + (halfStep / 2));
+        BigFloat smallestNormal = new BigFloat(DoubleMinPositiveNormal);
+        BigFloat halfStep = new BigFloat(double.Epsilon) / 2;
+        BigFloat tie = smallestNormal - halfStep; // midpoint between largest subnormal and smallest normal
+        BigFloat belowTie = smallestNormal - (halfStep + (halfStep / 2));
 
         Assert.Equal(DoubleMinPositiveNormal, (double)tie);
         Assert.Equal(DoubleLargestSubnormal, (double)belowTie);
@@ -418,10 +424,10 @@ public class ConversionTests
     [Fact]
     public void ExplicitCast_ToFloat_SubnormalBoundaryRoundsCorrectly()
     {
-        var smallestNormal = new BigFloat(FloatMinPositiveNormal);
-        var halfStep = new BigFloat(float.Epsilon) / 2;
-        var tie = smallestNormal - halfStep;
-        var belowTie = smallestNormal - (halfStep + (halfStep / 2));
+        BigFloat smallestNormal = new BigFloat(FloatMinPositiveNormal);
+        BigFloat halfStep = new BigFloat(float.Epsilon) / 2;
+        BigFloat tie = smallestNormal - halfStep;
+        BigFloat belowTie = smallestNormal - (halfStep + (halfStep / 2));
 
         Assert.Equal(FloatMinPositiveNormal, (float)tie);
         Assert.Equal(FloatLargestSubnormal, (float)belowTie);
@@ -430,8 +436,8 @@ public class ConversionTests
     [Fact]
     public void ExplicitCast_ToDouble_UnderflowKeepsSignedZero()
     {
-        var tinyNegative = -(new BigFloat(double.Epsilon) / 2); // |x| < double.Epsilon/2
-        var bits = BitConverter.DoubleToInt64Bits((double)tinyNegative);
+        BigFloat tinyNegative = -(new BigFloat(double.Epsilon) / 2); // |x| < double.Epsilon/2
+        long bits = BitConverter.DoubleToInt64Bits((double)tinyNegative);
 
         Assert.Equal(BitConverter.DoubleToInt64Bits(-0.0), bits);
     }
@@ -439,7 +445,7 @@ public class ConversionTests
     [Fact]
     public void ExplicitCast_ToFloat_UnderflowKeepsSignedZero()
     {
-        var tinyNegative = -(new BigFloat(float.Epsilon) / 2); // |x| < float.Epsilon/2
+        BigFloat tinyNegative = -(new BigFloat(float.Epsilon) / 2); // |x| < float.Epsilon/2
         var bits = BitConverter.SingleToInt32Bits((float)tinyNegative);
 
         Assert.Equal(BitConverter.SingleToInt32Bits(-0.0f), bits);
@@ -578,7 +584,7 @@ public class ConversionTests
     [InlineData(null, false, 0)]
     public void TryParse_VariousInputs_ReturnsExpectedResult(string? input, bool expectedSuccess, double expectedValue)
     {
-        var success = BigFloat.TryParse(input!, out var result);
+        bool success = BigFloat.TryParse(input!, out BigFloat result);
         
         Assert.Equal(expectedSuccess, success);
         if (success)
@@ -613,8 +619,8 @@ public class ConversionTests
     [InlineData("11111111", 255)]
     public void ParseBinary_ValidBinaryStrings_ParsesCorrectly(string binary, int expectedValue)
     {
-        var result = BigFloat.ParseBinary(binary);
-        var expected = new BigFloat(expectedValue);
+        BigFloat result = BigFloat.ParseBinary(binary);
+        BigFloat expected = new BigFloat(expectedValue);
         Assert.Equal(expected, result);
     }
 
@@ -625,8 +631,8 @@ public class ConversionTests
     [Fact]
     public void GetTypeCode_ReturnsObject()
     {
-        var bf = new BigFloat(123);
-        var typeCode = bf.GetTypeCode();
+        BigFloat bf = new BigFloat(123);
+        TypeCode typeCode = bf.GetTypeCode();
         Assert.Equal(TypeCode.Object, typeCode);
     }
 
