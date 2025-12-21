@@ -1,4 +1,4 @@
-// Copyright(c) 2020 - 2025 Ryan Scott White
+﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
 using System.Globalization;
@@ -70,14 +70,14 @@ public class BigFloatTests
 
     #region Inverse Tests
 
-    [Fact(Skip = "Long-running test - enable manually")]
+    [Fact]
     public void Inverse_BruteForce_SmallIntegers()
     {
         for (long i = 1; i < InverseBruteForceStoppedAt; i++)
         {
-            var value = new BigFloat(i);
-            var inverse = BigFloat.Inverse(value);
-            var product = value * inverse;
+            BigFloat value = new BigFloat(i);
+            BigFloat inverse = BigFloat.Inverse(value);
+            BigFloat product = value * inverse;
             
             Assert.True(product.EqualsUlp(1, 2),
                 $"Inverse({i}) * {i} = {product}, expected approximately 1");
@@ -92,9 +92,9 @@ public class BigFloatTests
     [InlineData(10, "0.1")]
     public void Inverse_SimpleValues_ExactResults(int input, string expected)
     {
-        var value = new BigFloat(input);
-        var inverse = BigFloat.Inverse(value);
-        var expectedValue = new BigFloat(expected);
+        BigFloat value = new BigFloat(input);
+        BigFloat inverse = BigFloat.Inverse(value);
+        BigFloat expectedValue = new BigFloat(expected);
         
         Assert.True(inverse.EqualsUlp(expectedValue, 0, true));
     }
@@ -404,12 +404,12 @@ public class BigFloatTests
     [InlineData(-5, -3, -5, -3)]
     public void MinMax_ReturnsCorrectValues(int a, int b, int expectedMin, int expectedMax)
     {
-        var valueA = new BigFloat(a);
-        var valueB = new BigFloat(b);
+        BigFloat valueA = new BigFloat(a);
+        BigFloat valueB = new BigFloat(b);
 
         //Future: create Min/Max
-        var min = BigFloat.Min(valueA, valueB);
-        var max = BigFloat.Max(valueA, valueB);
+        BigFloat min = BigFloat.Min(valueA, valueB);
+        BigFloat max = BigFloat.Max(valueA, valueB);
 
         Assert.Equal(new BigFloat(expectedMin), min);
         Assert.Equal(new BigFloat(expectedMax), max);
@@ -418,13 +418,13 @@ public class BigFloatTests
     [Fact]
     public void MinMax_PrefersHigherPrecisionWhenValuesAreEqual()
     {
-        var original = new BigFloat(3);
-        var widened = original.AdjustPrecision(8);
+        BigFloat original = new BigFloat(3);
+        BigFloat widened = original.AdjustPrecision(8);
 
         Assert.Equal(0, BigFloat.Compare(in original, in widened));
 
-        var min = BigFloat.Min(original, widened);
-        var max = BigFloat.Max(original, widened);
+        BigFloat min = BigFloat.Min(original, widened);
+        BigFloat max = BigFloat.Max(original, widened);
 
         Assert.Equal(widened, min);
         Assert.Equal(widened, max);
@@ -435,13 +435,13 @@ public class BigFloatTests
     [Fact]
     public void MinMax_PrefersHigherAccuracyForEqualZeros()
     {
-        var defaultZero = BigFloat.ZeroWithAccuracy(0);
-        var accurateZero = BigFloat.ZeroWithAccuracy(8);
+        BigFloat defaultZero = BigFloat.ZeroWithAccuracy(0);
+        BigFloat accurateZero = BigFloat.ZeroWithAccuracy(8);
 
         Assert.Equal(0, BigFloat.Compare(in defaultZero, in accurateZero));
 
-        var min = BigFloat.Min(defaultZero, accurateZero);
-        var max = BigFloat.Max(defaultZero, accurateZero);
+        BigFloat min = BigFloat.Min(defaultZero, accurateZero);
+        BigFloat max = BigFloat.Max(defaultZero, accurateZero);
 
         Assert.Equal(accurateZero.Accuracy, min.Accuracy);
         Assert.Equal(accurateZero.Accuracy, max.Accuracy);
