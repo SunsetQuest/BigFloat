@@ -1,7 +1,3 @@
-using System.Numerics;
-using BigFloatLibrary;
-using Xunit;
-
 namespace BigFloatLibrary.Tests;
 
 public class PowerOf2MaxPrecisionTests
@@ -9,7 +5,7 @@ public class PowerOf2MaxPrecisionTests
     [Fact]
     public void UsesFullPrecisionWhenOutputFits()
     {
-        BigFloat value = new(BigInteger.One << BigFloat.GuardBits, 0, true);
+        BigFloat value = new(System.Numerics.BigInteger.One << BigFloat.GuardBits, 0, true);
         BigFloat baseline = BigFloat.PowerOf2(value);
 
         BigFloat constrained = BigFloat.PowerOf2(value, 4);
@@ -21,7 +17,7 @@ public class PowerOf2MaxPrecisionTests
     [Fact]
     public void ReducesPrecisionWhenOutputTooLarge()
     {
-        BigFloat value = new(BigInteger.One << BigFloat.GuardBits, 0, true);
+        BigFloat value = new(System.Numerics.BigInteger.One << BigFloat.GuardBits, 0, true);
 
         BigFloat trimmed = BigFloat.PowerOf2(value, 0);
 

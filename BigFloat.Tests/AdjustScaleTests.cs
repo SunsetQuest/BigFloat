@@ -1,8 +1,6 @@
 ﻿// Copyright(c) 2020 - 2025 Ryan Scott White
 // Licensed under the MIT License. See LICENSE.txt in the project root for details.
 
-using System.Numerics;
-
 namespace BigFloatLibrary.Tests;
 
 public class AdjustScaleTests
@@ -34,7 +32,7 @@ public class AdjustScaleTests
     [Fact]
     public void AdjustScale_Static_Overflow_Throws()
     {
-        var largeScale = new BigFloat(BigInteger.One, int.MaxValue);
+        var largeScale = new BigFloat(System.Numerics.BigInteger.One, int.MaxValue);
 
         Assert.Throws<OverflowException>(() => BigFloat.AdjustScale(largeScale, 1));
     }
@@ -42,7 +40,7 @@ public class AdjustScaleTests
     [Fact]
     public void AdjustScale_Instance_Underflow_Throws()
     {
-        var smallScale = new BigFloat(BigInteger.One, int.MinValue);
+        var smallScale = new BigFloat(System.Numerics.BigInteger.One, int.MinValue);
 
         Assert.Throws<OverflowException>(() => smallScale.AdjustScale(-1));
     }
