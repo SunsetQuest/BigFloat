@@ -100,7 +100,7 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     {
         return BigFloatToDecimalConverter.ToDecimal(value);
     }
-    public static class BigFloatToDecimalConverter
+    private static class BigFloatToDecimalConverter
     {
         private const int MaxScale = 28;
         private const int PrecBits = 96;
@@ -227,5 +227,4 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
             return new decimal(bits);
         }
     }
-
 }

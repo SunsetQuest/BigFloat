@@ -518,18 +518,18 @@ public class OriginalBigFloatTests
     [InlineData(-42.5, 5)]
     public void AdjustAccuracy_Increase_IsValuePreserving(double v, int inc)
     {
-        var x = new BigFloat(v);
-        var y = BigFloat.AdjustAccuracy(x, inc);
+        BigFloat x = new BigFloat(v);
+        BigFloat y = BigFloat.AdjustAccuracy(x, inc);
         Assert.True(x == y, $"Value changed: {x} vs {y}");
     }
 
     [Fact]
     public void AdjustAccuracy_Increase_UpdatesAccuracyAndScale()
     {
-        var original = BigFloat.ParseBinary("101.01");
+        BigFloat original = BigFloat.ParseBinary("101.01");
         int delta = 5;
 
-        var widened = BigFloat.AdjustAccuracy(original, delta);
+        BigFloat widened = BigFloat.AdjustAccuracy(original, delta);
 
         Assert.Equal(original.Accuracy + delta, widened.Accuracy);
         Assert.Equal(original.Scale - delta, widened.Scale);
@@ -543,18 +543,18 @@ public class OriginalBigFloatTests
     [InlineData(123.0, 64)]
     public void AdjustAccuracy_Equals_AdjustPrecision(double v, int delta)
     {
-        var x = new BigFloat(v);
-        var a = BigFloat.AdjustAccuracy(x, delta);
-        var p = BigFloat.AdjustPrecision(x, delta);
+        BigFloat x = new BigFloat(v);
+        BigFloat a = BigFloat.AdjustAccuracy(x, delta);
+        BigFloat p = BigFloat.AdjustPrecision(x, delta);
         Assert.True(a.Equals(p), $"Mismatch: {a} vs {p}");
     }
 
     [Fact]
     public void AdjustAccuracy_Decrease_RoundsAndReducesAccuracy()
     {
-        var x = BigFloat.ParseBinary("1.1011");
+        BigFloat x = BigFloat.ParseBinary("1.1011");
 
-        var reduced = BigFloat.AdjustAccuracy(x, -2);
+        BigFloat reduced = BigFloat.AdjustAccuracy(x, -2);
 
         Assert.Equal(x.Accuracy - 2, reduced.Accuracy);
         Assert.Equal(BigFloat.ParseBinary("1.11"), reduced);
@@ -563,17 +563,17 @@ public class OriginalBigFloatTests
     [Fact]
     public void SetAccuracy_Matches_Other_Accuracy()
     {
-        var a = new BigFloat(1.23456789012345);
-        var b = new BigFloat(6.789);
-        var b2 = BigFloat.SetAccuracy(b, a.Accuracy);
+        BigFloat a = new BigFloat(1.23456789012345);
+        BigFloat b = new BigFloat(6.789);
+        BigFloat b2 = BigFloat.SetAccuracy(b, a.Accuracy);
         Assert.Equal(a.Accuracy, b2.Accuracy);
     }
 
     [Fact]
     public void SetAccuracy_OnZero_PreservesZeroAndContext()
     {
-        var z = BigFloat.ZeroWithAccuracy(100);     // existing API
-        var z2 = BigFloat.SetAccuracy(z, 10);
+        BigFloat z = BigFloat.ZeroWithAccuracy(100);     // existing API
+        BigFloat z2 = BigFloat.SetAccuracy(z, 10);
         Assert.True(z2.IsZero);
         Assert.Equal(10, z2.Accuracy);
     }
@@ -581,7 +581,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void SetAccuracy_StaticAndInstance_MatchAdjustPrecision()
     {
-        var value = BigFloat.IntWithAccuracy(3, 40);
+        BigFloat value = BigFloat.IntWithAccuracy(3, 40);
         int[] targetAccuracies =
         [
             value.Accuracy,            // no-op
@@ -593,10 +593,10 @@ public class OriginalBigFloatTests
         foreach (int target in targetAccuracies)
         {
             int delta = target - value.Accuracy;
-            var expected = BigFloat.AdjustPrecision(value, delta);
+            BigFloat expected = BigFloat.AdjustPrecision(value, delta);
 
-            var viaStatic = BigFloat.SetAccuracy(value, target);
-            var viaInstance = value.SetAccuracy(target);
+            BigFloat viaStatic = BigFloat.SetAccuracy(value, target);
+            BigFloat viaInstance = value.SetAccuracy(target);
 
             Assert.Equal(target, viaStatic.Accuracy);
             Assert.Equal(expected, viaStatic);
@@ -610,13 +610,13 @@ public class OriginalBigFloatTests
     [InlineData(0)]
     public void SetAccuracy_TracksTargetAcrossRanges(int delta)
     {
-        var source = BigFloat.ParseBinary("101.101");
+        BigFloat source = BigFloat.ParseBinary("101.101");
         int targetAccuracy = source.Accuracy + delta;
 
-        var expected = BigFloat.AdjustPrecision(source, delta);
+        BigFloat expected = BigFloat.AdjustPrecision(source, delta);
 
-        var aligned = BigFloat.SetAccuracy(source, targetAccuracy);
-        var alignedInstance = source.SetAccuracy(targetAccuracy);
+        BigFloat aligned = BigFloat.SetAccuracy(source, targetAccuracy);
+        BigFloat alignedInstance = source.SetAccuracy(targetAccuracy);
 
         Assert.Equal(targetAccuracy, aligned.Accuracy);
         Assert.Equal(expected, aligned);
@@ -1456,7 +1456,7 @@ public class OriginalBigFloatTests
         Assert.Equal(BigFloat.Pow(2, 2), 4);
 
         BigFloat three = new(3, binaryPrecision: 0);
-        var powThreeSquared = BigFloat.Pow(three, 2);
+        BigFloat powThreeSquared = BigFloat.Pow(three, 2);
         Assert.Equal(9.0, (double)powThreeSquared); // Preserve value when re-scaling internal precision
         Assert.True(BigFloat.Pow(three, 2).EqualsZeroExtended(9));
         // 1/26/2025 - Modified BigFloat.CompareTo() and borderline case is now accepted as false. 9/7/2025 - brought back as True with ulp=0
@@ -1918,6 +1918,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_CharToBigFloat()
     {
+#pragma warning disable CS0162 // Unreachable code detected
         if (_config.TestTargetInMilliseconds < 3)
         {
             CharChecker(0, 0);
@@ -1970,6 +1971,7 @@ public class OriginalBigFloatTests
                 CharChecker(1 << i, 0);
             }
         }
+#pragma warning restore CS0162 // Unreachable code detected
     }
 
     private static void CharChecker(long input, int scale = 0)
@@ -2318,9 +2320,9 @@ public class OriginalBigFloatTests
     [Fact]
     public void Floor_Ceiling_PositiveIntegers_ShouldBeIdentical()
     {
-        var integerValues = new[] { 1, 2, 127, 128, 255, 256, 32767, 32768, 65535, 65536 };
+        int[] integerValues = [1, 2, 127, 128, 255, 256, 32767, 32768, 65535, 65536];
 
-        foreach (var value in integerValues)
+        foreach (int value in integerValues)
         {
             AssertIntegerBehavior(value, expectedValue: value);
         }
@@ -2329,9 +2331,9 @@ public class OriginalBigFloatTests
     [Fact]
     public void Floor_Ceiling_NegativeIntegers_ShouldBeIdentical()
     {
-        var integerValues = new[] { -1, -2, -127, -128, -255, -256, -32767, -32768, -65535, -65536 };
+        int[] integerValues = [-1, -2, -127, -128, -255, -256, -32767, -32768, -65535, -65536];
 
-        foreach (var value in integerValues)
+        foreach (int value in integerValues)
         {
             AssertIntegerBehavior(value, expectedValue: value);
         }
