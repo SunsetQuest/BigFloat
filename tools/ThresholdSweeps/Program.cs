@@ -8,11 +8,11 @@ namespace ThresholdSweeps;
 
 internal static class Program
 {
-    private static readonly int[] MultiplicationSizes = new[] { 64, 96, 128, 160, 192, 224, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
-    private static readonly int[] DivisionSizes = new[] { 128, 192, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
+    private static readonly int[] MultiplicationSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
+    private static readonly int[] DivisionSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
 
-    private const int MultiplyIterations = 6000;
-    private const int DivisionIterations = 4000;
+    private const int MultiplyIterations = 300;
+    private const int DivisionIterations = 200;
 
     public static void Main()
     {
