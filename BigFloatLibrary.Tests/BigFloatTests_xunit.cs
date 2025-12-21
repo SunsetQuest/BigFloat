@@ -14,23 +14,6 @@ namespace BigFloatLibrary.Tests;
 
 public class OriginalBigFloatTests
 {
-    /// <summary>
-    /// Target time for each test. Time based on release mode on 16 core x64 CPU.
-    /// </summary>
-    private readonly int TestTargetInMillseconds = 100;
-
-#if DEBUG
-    private const int MaxDegreeOfParallelism = 1;
-    private const long sqrtBruteForceStoppedAt = 262144;
-    private const long inverseBruteForceStoppedAt = 262144;
-#else
-    readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
-    const long sqrtBruteForceStoppedAt = 524288;
-    const long inverseBruteForceStoppedAt = 524288 * 1;
-#endif
-
-    private const int RAND_SEED = 22;// new Random().Next();
-    private static readonly Random _rand = new(RAND_SEED);
 
     [Fact]
     public void Verify_Misc()
@@ -109,7 +92,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_Constants_Pi()
     {
-        int MAX_INT = TestTargetInMillseconds switch
+        int MAX_INT = _config.TestTargetInMilliseconds switch
         {
             >= 5000 => 24000,
             >= 3400 => 20000,
@@ -1109,7 +1092,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_PowerOf2()
     {
-        (int MAX_INT1, int MAX_INT2, int MAX_INT3) = TestTargetInMillseconds switch
+        (int MAX_INT1, int MAX_INT2, int MAX_INT3) = _config.TestTargetInMilliseconds switch
         {
             >= 86000 => (32767, 100000, 100000),  //time is for each 
             >= 4100 => (32767, 30000, 30000),
@@ -1633,14 +1616,14 @@ public class OriginalBigFloatTests
         int maxValBitSize = 4200;
         int maxWantedBitSize = 4200;
         int maxExpSize = 17;
-        int runCount = TestTargetInMillseconds * MaxDegreeOfParallelism;
+        int runCount = _config.TestTargetInMilliseconds * _config.MaxDegreeOfParallelism;
 
         int roundFailsAllowed = (int)(runCount * 0.01);
 
-        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
+        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = _config.MaxDegreeOfParallelism };
         _ = Parallel.For(2, runCount, parallelOptions, x =>
         {
-            int wantedBits = 1 + _rand.Next(1, maxWantedBitSize);
+            int wantedBits = 1 + _config.random.Next(1, maxWantedBitSize);
             BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
             int exp = GenerateLogUniformRandomInt(maxExpSize);
 
@@ -1703,20 +1686,20 @@ public class OriginalBigFloatTests
         int maxValBitSize = 1650;
         int maxWantedBitSize = 1650;
         int maxExpSize = 10;
-        int runCount = TestTargetInMillseconds * MaxDegreeOfParallelism / 8;
+        int runCount = _config.TestTargetInMilliseconds * MaxDegreeOfParallelism / 8;
 #else
         int maxValBitSize = 2050;
         int maxWantedBitSize = 2050;
         int maxExpSize = 11;
-        int runCount = (TestTargetInMillseconds * MaxDegreeOfParallelism) / 256;
+        int runCount = (_config.TestTargetInMilliseconds * _config.MaxDegreeOfParallelism) / 256;
 #endif
 
         int roundFailsAllowed = 1;
 
-        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxDegreeOfParallelism };
+        ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = _config.MaxDegreeOfParallelism };
         _ = Parallel.For(2, runCount, parallelOptions, x =>
         {
-            int wantedBits = 1 + _rand.Next(1, maxWantedBitSize);
+            int wantedBits = 1 + _config.random.Next(1, maxWantedBitSize);
             BigInteger val = GenerateLogUniformRandomBigInteger(maxValBitSize);
             int exp = GenerateLogUniformRandomInt(maxExpSize);
 
@@ -1838,14 +1821,14 @@ public class OriginalBigFloatTests
     private static BigInteger GenerateLogUniformRandomBigInteger(int maxNumberOfBits)
     {
         byte[] data = new byte[(maxNumberOfBits / 8) + 1];
-        _rand.NextBytes(data);
+        _config.random.NextBytes(data);
         data[^1] >>= 8 - (maxNumberOfBits % 8);
         return new(data, true);
     }
 
     private static int GenerateLogUniformRandomInt(int maxLengthInBits)
     {
-        return (int)_rand.NextInt64(0, maxValue: (long)1 << _rand.Next(Math.Min(31, maxLengthInBits)));
+        return (int)_config.random.NextInt64(0, maxValue: (long)1 << _config.random.Next(Math.Min(31, maxLengthInBits)));
     }
 
     [Fact]
@@ -1935,7 +1918,7 @@ public class OriginalBigFloatTests
     [Fact]
     public void Verify_CharToBigFloat()
     {
-        if (TestTargetInMillseconds < 3)
+        if (_config.TestTargetInMilliseconds < 3)
         {
             CharChecker(0, 0);
             CharChecker(-1, 0);
@@ -1959,7 +1942,7 @@ public class OriginalBigFloatTests
             CharChecker(-65536, 0);
             CharChecker(65536, 0);
         }
-        else if (TestTargetInMillseconds < 10)
+        else if (_config.TestTargetInMilliseconds < 10)
         {
             for (int i = -256; i <= 256; i++)
             {
@@ -2245,7 +2228,7 @@ public class OriginalBigFloatTests
         TestHiLow64Bits(new BigFloat(BigInteger.Parse("020000000000000002", NumberStyles.AllowHexSpecifier), 0, true), "0x2 00000000 00000002", "0000000000000002", "0000000200000000", "8000000000000000");
 
         // Below are some values selected based on a Ryzen 7000 processor
-        double stepFactor = TestTargetInMillseconds switch
+        double stepFactor = _config.TestTargetInMilliseconds switch
         {
             >= 16384 => 0.000002, //15000
             >= 4096 => 0.000009,
@@ -5490,7 +5473,7 @@ public class OriginalBigFloatTests
         //                                                                                       ################################  GuardBits
         Assert.False(output == expect);
 
-        (double growthSpeed_i, double growthSpeed_j, int MAX_INT) = TestTargetInMillseconds switch
+        (double growthSpeed_i, double growthSpeed_j, int MAX_INT) = _config.TestTargetInMilliseconds switch
         {
             >= 30900 => (1.1, 1.3, 1024),
             >= 6700 => (1.3, 1.7, 1024),

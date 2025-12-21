@@ -10,19 +10,6 @@ namespace BigFloatLibrary.Tests;
 /// </summary>
 public class BigFloatTests
 {
-    /// <summary>
-    /// Target time for each test in milliseconds.
-    /// </summary>
-    private const int TestTargetInMilliseconds = 100;
-
-#if DEBUG
-    private const int MaxDegreeOfParallelism = 1;
-    private const long InverseBruteForceStoppedAt = 131072;
-#else
-    private readonly int MaxDegreeOfParallelism = Environment.ProcessorCount;
-    private const long InverseBruteForceStoppedAt = 524288;
-#endif
-
     #region String Representation Tests
 
     [Theory]
@@ -73,7 +60,7 @@ public class BigFloatTests
     [Fact]
     public void Inverse_BruteForce_SmallIntegers()
     {
-        for (long i = 1; i < InverseBruteForceStoppedAt; i++)
+        for (long i = 1; i < _config.InverseBruteForceStoppedAt; i++)
         {
             BigFloat value = new BigFloat(i);
             BigFloat inverse = BigFloat.Inverse(value);

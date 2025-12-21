@@ -25,7 +25,7 @@ internal static class BigFloatGenerators
                           exponent - 1,
                           exponent + 1,
                           logarithmic: true,
-                          _config._rand) * (negative ? -1 : 1);
+                          _config.random) * (negative ? -1 : 1);
     }
 
     public static Gen<BigFloat> ModerateMagnitudeGen() =>
