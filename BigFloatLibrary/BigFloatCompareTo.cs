@@ -539,6 +539,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Collapses representation differences that do not change the rounded value.
     /// Use when you want sorting by numeric value only; equal numbers tie.
     /// </summary>
+    [SuppressMessage("Design", "CA1034:NestedTypesShouldNotBeVisible",
+        Justification = "Comparer types are part of BigFloat's public API and grouped for discoverability.")]
     public sealed class ValueComparer : IComparer<BigFloat>
     {
         public static readonly ValueComparer Instance = new();
@@ -552,6 +554,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// so zero-extensions of the same value tie (e.g., 2.5 and 2.50 compare equal).
     /// Use for stable, deterministic sorting keys where different precisions of the same value should not reorder.
     /// </summary>
+    [SuppressMessage("Design", "CA1034:NestedTypesShouldNotBeVisible",
+        Justification = "Comparer types are part of BigFloat's public API and grouped for discoverability.")]
     public sealed class TotalOrderComparer : IComparer<BigFloat>
     {
         public static readonly TotalOrderComparer Instance = new();
@@ -564,6 +568,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
     /// Useful for numerics where small last-place differences are noise. Not a strict weak ordering; avoid for
     /// data structures requiring transitive comparators (e.g., SortedSet/SortedDictionary).
     /// </summary>
+    [SuppressMessage("Design", "CA1034:NestedTypesShouldNotBeVisible",
+        Justification = "Comparer types are part of BigFloat's public API and grouped for discoverability.")]
     public sealed class UlpToleranceComparer(int ulps, bool includeGuardBits = true) : IComparer<BigFloat>
     {
         private readonly int _ulps = ulps;
@@ -574,6 +580,8 @@ public readonly partial struct BigFloat : IComparable, IComparable<BigFloat>, IE
         public static UlpToleranceComparer WithTolerance(int ulps, bool includeGuardBits = true) => new(ulps, includeGuardBits);
     }
 
+    [SuppressMessage("Design", "CA1034:NestedTypesShouldNotBeVisible",
+        Justification = "Comparer types are part of BigFloat's public API and grouped for discoverability.")]
     public sealed class BitwiseEqualityComparer : IEqualityComparer<BigFloat>
     {
         public static readonly BitwiseEqualityComparer Instance = new();
