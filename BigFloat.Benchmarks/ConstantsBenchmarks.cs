@@ -4,7 +4,7 @@ namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Constants")]
-internal class ConstantsBenchmarks
+public class ConstantsBenchmarks
 {
     [Params(128, 512, 2048)]
     public int PrecisionBits { get; set; }

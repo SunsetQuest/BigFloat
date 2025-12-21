@@ -829,7 +829,7 @@ public readonly partial struct BigFloat
             CacheLock.EnterWriteLock();
             try
             {
-                if (!ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat> precisionMap))
+                if (!ConstantCache.TryGetValue(constantId, out Dictionary<int, BigFloat>? precisionMap) || precisionMap is null)
                 {
                     precisionMap = [];
                     ConstantCache[constantId] = precisionMap;

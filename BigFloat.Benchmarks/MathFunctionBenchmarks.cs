@@ -3,7 +3,7 @@ namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("Math")]
-internal class MathFunctionBenchmarks
+public class MathFunctionBenchmarks
 {
     [Params(64, 256, 1024)]
     public int OperandBits { get; set; }

@@ -3,7 +3,7 @@ namespace BigFloatLibrary.Benchmarks;
 
 [MemoryDiagnoser]
 [BenchmarkCategory("IO")]
-internal class ParsingFormattingBenchmarks
+public class ParsingFormattingBenchmarks
 {
     [Params(64, 256, 1024)]
     public int OperandBits { get; set; }
