@@ -62,7 +62,7 @@ public class ParseTests
     [InlineData("+.")]
     public void TryParse_InvalidInput_ReturnsFalse(string? input)
     {
-        Assert.False(BigFloat.TryParse(input, out _));
+        Assert.False(BigFloat.TryParse(input!, out _));
     }
 
     #endregion
@@ -89,7 +89,7 @@ public class ParseTests
     [InlineData("2")]
     public void TryParseBinary_InvalidInput_ReturnsFalse(string? input)
     {
-        Assert.False(BigFloat.TryParseBinary(input, out _, 0));
+        Assert.False(BigFloat.TryParseBinary(input.AsSpan(), out _, 0));
     }
 
     [Theory]

@@ -578,7 +578,7 @@ public class ConversionTests
     [InlineData(null, false, 0)]
     public void TryParse_VariousInputs_ReturnsExpectedResult(string? input, bool expectedSuccess, double expectedValue)
     {
-        var success = BigFloat.TryParse(input, out var result);
+        var success = BigFloat.TryParse(input!, out var result);
         
         Assert.Equal(expectedSuccess, success);
         if (success)

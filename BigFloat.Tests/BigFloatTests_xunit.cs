@@ -5819,282 +5819,6 @@ public class OriginalBigFloatTests
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// <summary>
-    /// Tests for BigFloat trigonometric function implementations.
-    /// Verifies accuracy against known mathematical constants and standard library functions.
-    /// </summary>
-    public class BigFloatTrigonometricTests(ITestOutputHelper output)
-    {
-        private readonly ITestOutputHelper _output = output;
-
-        // High-precision constants for testing
-        private static readonly BigFloat Pi = BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, precisionInBits: 200);
-        private static readonly BigFloat HalfPi = Pi / 2;
-        private static readonly BigFloat QuarterPi = Pi / 4;
-
-        // Test precision constants
-        private const int StandardPrecision = 100;
-        private const int HighPrecision = 200;
-        private const double DoublePrecisionTolerance = 1e-15;
-        private const double TaylorApproximationTolerance = 1e-17;
-
-        #region Exact Mathematical Values Tests
-
-        [Fact]
-        public void Sin_Should_ReturnZero_When_InputIsZero()
-        {
-            var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
-            var result = BigFloat.Sin(0);
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
-        public void Cos_Should_ReturnOne_When_InputIsZero()
-        {
-            var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
-            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-            var result = BigFloat.Cos(input);
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
-        public void Sin_Should_ReturnOne_When_InputIsHalfPi()
-        {
-            BigFloat input = HalfPi;
-            BigFloat expected = BigFloat.OneWithAccuracy(StandardPrecision);
-            BigFloat result = BigFloat.Sin(input);
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
-        public void Cos_Should_ReturnMinusOne_When_InputIsPi()
-        {
-            BigFloat input = Pi;
-            BigFloat expected = -BigFloat.OneWithAccuracy(StandardPrecision);
-            BigFloat result = BigFloat.Cos(input);
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
-        public void Sin_Should_ReturnZero_When_InputIsPi()
-        {
-            BigFloat input = Pi;
-            var expected = BigFloat.ZeroWithAccuracy(HighPrecision);
-            var result = BigFloat.Sin(input);
-            Assert.True(result.EqualsUlp(expected));
-        }
-
-        [Fact]
-        public void Tan_Should_ReturnZero_When_InputIsZero()
-        {
-            var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
-            var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
-            var result = BigFloat.Tan(input);
-            Assert.Equal(expected, result);
-        }
-
-        [Fact]
-        public void Tan_Should_ReturnOne_When_InputIsQuarterPi()
-        {
-            BigFloat input = QuarterPi;
-            var expected = BigFloat.OneWithAccuracy(StandardPrecision);
-            var result = BigFloat.Tan(input);
-            Assert.True(expected.EqualsUlp(result, 1, true));
-        }
-
-        #endregion
-
-        #region Standard Library Compatibility Tests
-
-        [Theory]
-        [InlineData(0.5)]
-        [InlineData(0.3)]
-        [InlineData(0.7)]
-        [InlineData(1.0)]
-        public void Sin_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
-        {
-            var bigFloatInput = (BigFloat)input;
-            var expectedFromStdLib = Math.Sin(input);
-
-            var bigFloatResult = BigFloat.Sin(bigFloatInput);
-            var actualDouble = (double)bigFloatResult;
-
-            Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
-        }
-
-        [Fact]
-        public void Cos_Should_MatchHighPrecisionValue_When_InputIs0Point3()
-        {
-            const string inputStr = "0.30000000000000000000000000000000000000000000000000000000";
-            const string expectedStr = "0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629";
-
-            var input = BigFloat.Parse(inputStr);
-            var expected = BigFloat.Parse(expectedStr);
-
-            var result = BigFloat.Cos(input);
-
-            Assert.Equal(0, expected.CompareUlp(result, 1, true));
-
-            // Also verify double precision compatibility
-            var actualDouble = (double)BigFloat.Cos((BigFloat)0.3);
-            Assert.Equal(Math.Cos(0.3), actualDouble, DoublePrecisionTolerance);
-
-            _output.WriteLine($"High precision result: {result.ToString(true)}");
-        }
-
-        [Theory]
-        [InlineData(0.7)]
-        public void Tan_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
-        {
-            var bigFloatInput = (BigFloat)input;
-            var expectedFromStdLib = Math.Tan(input);
-
-            var bigFloatResult = BigFloat.Tan(bigFloatInput);
-            var actualDouble = (double)bigFloatResult;
-
-            Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
-        }
-
-        #endregion
-
-        #region Taylor Series Approximation Tests
-
-        [Theory]
-        [InlineData(0.1, "Small angle approximation")]
-        [InlineData(1.0, "Larger angle approximation")]
-        public void SinAprox_Should_BeWithinTolerance_When_ComparedToExactSin(double inputValue, string testCase)
-        {
-            var input = (BigFloat)inputValue;
-
-            var exactResult = BigFloat.Sin(input);
-            var approximateResult = BigFloat.SinAprox(input);
-            var error = Math.Abs((double)(exactResult - approximateResult));
-
-            Assert.True(error < TaylorApproximationTolerance,
-                $"{testCase}: Error {error:E} exceeds tolerance {TaylorApproximationTolerance:E}");
-
-            _output.WriteLine($"{testCase} - Input: {inputValue}, Error: {error:E}");
-        }
-
-        #endregion
-    }
-
-    /// <summary>
-    /// Tests for BigInteger binary string conversion utilities.
-    /// Validates different output formats and width specifications.
-    /// </summary>
-    public class BigIntegerBinaryStringTests(ITestOutputHelper output)
-    {
-        private readonly ITestOutputHelper _output = output;
-
-        #region Two's Complement Format Tests
-
-        [Theory]
-        [InlineData("256", "0000000100000000", 12, "Standard width test")]
-        [InlineData("127", "01111111", 8, "Positive boundary value")]
-        [InlineData("-127", "10000001", 8, "Negative boundary value")]
-        [InlineData("-63", "1111111111000001", 16, "Negative with minimum width")]
-        public void ToBinaryString_Should_ProduceTwosComplement_When_FormatSpecified(
-            string inputValue, string expectedResult, int minWidth, string testDescription)
-        {
-            // Arrange
-            var input = BigInteger.Parse(inputValue);
-
-            // Act
-            var result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: minWidth);
-
-            // Assert
-            Assert.Equal(expectedResult, result);
-            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
-        }
-
-        #endregion
-
-        #region Standard Format Tests
-
-        [Theory]
-        [InlineData("256", "100000000", "Large positive value")]
-        [InlineData("127", "1111111", "Boundary positive value")]
-        [InlineData("-127", "-1111111", "Boundary negative value")]
-        [InlineData("-63", "-0000000000111111", "Negative with padding", 16)]
-        public void ToBinaryString_Should_ProduceStandardFormat_When_FormatSpecified(
-            string inputValue, string expectedResult, string testDescription, int minWidth = 0)
-        {
-            // Arrange
-            var input = BigInteger.Parse(inputValue);
-
-            // Act
-            var result = minWidth > 0
-                ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: minWidth)
-                : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard);
-
-            // Assert
-            Assert.Equal(expectedResult, result);
-            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
-        }
-
-        #endregion
-
-        #region Shades Format Tests
-
-        [Theory]
-        [InlineData("256", "···█········", 12, "Large value with padding")]
-        [InlineData("256", "█········", 0, "Large value without padding")]
-        [InlineData("127", "███████", 0, "Multiple ones pattern")]
-        [InlineData("-127", "-███████", 0, "Negative multiple ones")]
-        [InlineData("-63", "-██████", 0, "Negative pattern")]
-        public void ToBinaryString_Should_ProduceShadesFormat_When_FormatSpecified(
-            string inputValue, string expectedResult, int minWidth, string testDescription)
-        {
-            // Arrange
-            var input = BigInteger.Parse(inputValue);
-
-            // Act
-            var result = minWidth > 0
-                ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: minWidth)
-                : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades);
-
-            // Assert
-            Assert.Equal(expectedResult, result);
-            _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
-        }
-
-        #endregion
-
-        #region Edge Cases and Validation Tests
-
-        [Fact]
-        public void ToBinaryString_Should_HandleZero_When_InputIsZero()
-        {
-            // Arrange
-            BigInteger input = BigInteger.Zero;
-
-            // Act & Assert
-            Assert.Equal("0", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard));
-            Assert.Equal("00000000", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement));
-            Assert.Equal("·", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades));
-        }
-
-        [Fact]
-        public void ToBinaryString_Should_HandleLargeNumbers_When_InputExceedsIntRange()
-        {
-            // Arrange
-            var largeNumber = BigInteger.Parse("123456789012345678901234567890");
-
-            // Act
-            var result = BigIntegerTools.ToBinaryString(largeNumber, BinaryStringFormat.Standard);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result);
-            Assert.DoesNotContain(" ", result); // Should not contain spaces
-            _output.WriteLine($"Large number binary representation length: {result.Length}");
-        }
-
-        #endregion
-    }
-
-
     [Fact]
     public void TryParseBinary_WithValidInput_ShouldReturnExpectedValue()
     {
@@ -6311,6 +6035,8 @@ public class OriginalBigFloatTests
     [InlineData("111111111111111111111110000000000000", -4, false, "0.1111")]
     public void ToBinaryString_WithVariousInputs_ReturnsExpectedOutput(string binaryInput, int scale, bool includeGuard, string expectedOutput)
     {
+        ArgumentNullException.ThrowIfNull(expectedOutput);
+
         // Arrange
         Assert.True(BigIntegerTools.TryParseBinary(binaryInput, out BigInteger mantissa));
         var bigFloat = new BigFloat(mantissa, scale, true);
@@ -6393,4 +6119,279 @@ public class OriginalBigFloatTests
         // Assert
         Assert.Equal("1e+1", result);
     }
+}
+
+/// <summary>
+/// Tests for BigFloat trigonometric function implementations.
+/// Verifies accuracy against known mathematical constants and standard library functions.
+/// </summary>
+public class BigFloatTrigonometricTests(ITestOutputHelper output)
+{
+    private readonly ITestOutputHelper _output = output;
+
+    // High-precision constants for testing
+    private static readonly BigFloat Pi = BigFloat.Constants.GetConstant(BigFloat.Catalog.Pi, precisionInBits: 200);
+    private static readonly BigFloat HalfPi = Pi / 2;
+    private static readonly BigFloat QuarterPi = Pi / 4;
+
+    // Test precision constants
+    private const int StandardPrecision = 100;
+    private const int HighPrecision = 200;
+    private const double DoublePrecisionTolerance = 1e-15;
+    private const double TaylorApproximationTolerance = 1e-17;
+
+    #region Exact Mathematical Values Tests
+
+    [Fact]
+    public void Sin_Should_ReturnZero_When_InputIsZero()
+    {
+        var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
+        var result = BigFloat.Sin(0);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Cos_Should_ReturnOne_When_InputIsZero()
+    {
+        var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
+        var expected = BigFloat.OneWithAccuracy(StandardPrecision);
+        var result = BigFloat.Cos(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Sin_Should_ReturnOne_When_InputIsHalfPi()
+    {
+        BigFloat input = HalfPi;
+        BigFloat expected = BigFloat.OneWithAccuracy(StandardPrecision);
+        BigFloat result = BigFloat.Sin(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Cos_Should_ReturnMinusOne_When_InputIsPi()
+    {
+        BigFloat input = Pi;
+        BigFloat expected = -BigFloat.OneWithAccuracy(StandardPrecision);
+        BigFloat result = BigFloat.Cos(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Sin_Should_ReturnZero_When_InputIsPi()
+    {
+        BigFloat input = Pi;
+        var expected = BigFloat.ZeroWithAccuracy(HighPrecision);
+        var result = BigFloat.Sin(input);
+        Assert.True(result.EqualsUlp(expected));
+    }
+
+    [Fact]
+    public void Tan_Should_ReturnZero_When_InputIsZero()
+    {
+        var input = BigFloat.ZeroWithAccuracy(StandardPrecision);
+        var expected = BigFloat.ZeroWithAccuracy(StandardPrecision);
+        var result = BigFloat.Tan(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Tan_Should_ReturnOne_When_InputIsQuarterPi()
+    {
+        BigFloat input = QuarterPi;
+        var expected = BigFloat.OneWithAccuracy(StandardPrecision);
+        var result = BigFloat.Tan(input);
+        Assert.True(expected.EqualsUlp(result, 1, true));
+    }
+
+    #endregion
+
+    #region Standard Library Compatibility Tests
+
+    [Theory]
+    [InlineData(0.5)]
+    [InlineData(0.3)]
+    [InlineData(0.7)]
+    [InlineData(1.0)]
+    public void Sin_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
+    {
+        var bigFloatInput = (BigFloat)input;
+        var expectedFromStdLib = Math.Sin(input);
+
+        var bigFloatResult = BigFloat.Sin(bigFloatInput);
+        var actualDouble = (double)bigFloatResult;
+
+        Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
+    }
+
+    [Fact]
+    public void Cos_Should_MatchHighPrecisionValue_When_InputIs0Point3()
+    {
+        const string inputStr = "0.30000000000000000000000000000000000000000000000000000000";
+        const string expectedStr = "0.95533648912560601964231022756804989824421408263203767451761361222758159119178287117193528426930399766502502337829176922206077713583632366729045871758981790339061840133145752476700911253193689140325629";
+
+        var input = BigFloat.Parse(inputStr);
+        var expected = BigFloat.Parse(expectedStr);
+
+        var result = BigFloat.Cos(input);
+
+        Assert.Equal(0, expected.CompareUlp(result, 1, true));
+
+        // Also verify double precision compatibility
+        var actualDouble = (double)BigFloat.Cos((BigFloat)0.3);
+        Assert.Equal(Math.Cos(0.3), actualDouble, DoublePrecisionTolerance);
+
+        _output.WriteLine($"High precision result: {result.ToString(true)}");
+    }
+
+    [Theory]
+    [InlineData(0.7)]
+    public void Tan_Should_MatchStandardLibrary_When_InputIsWithinRange(double input)
+    {
+        var bigFloatInput = (BigFloat)input;
+        var expectedFromStdLib = Math.Tan(input);
+
+        var bigFloatResult = BigFloat.Tan(bigFloatInput);
+        var actualDouble = (double)bigFloatResult;
+
+        Assert.Equal(expectedFromStdLib, actualDouble, DoublePrecisionTolerance);
+    }
+
+    #endregion
+
+    #region Taylor Series Approximation Tests
+
+    [Theory]
+    [InlineData(0.1, "Small angle approximation")]
+    [InlineData(1.0, "Larger angle approximation")]
+    public void SinAprox_Should_BeWithinTolerance_When_ComparedToExactSin(double inputValue, string testCase)
+    {
+        var input = (BigFloat)inputValue;
+
+        var exactResult = BigFloat.Sin(input);
+        var approximateResult = BigFloat.SinAprox(input);
+        var error = Math.Abs((double)(exactResult - approximateResult));
+
+        Assert.True(error < TaylorApproximationTolerance,
+            $"{testCase}: Error {error:E} exceeds tolerance {TaylorApproximationTolerance:E}");
+
+        _output.WriteLine($"{testCase} - Input: {inputValue}, Error: {error:E}");
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Tests for BigInteger binary string conversion utilities.
+/// Validates different output formats and width specifications.
+/// </summary>
+public class BigIntegerBinaryStringTests(ITestOutputHelper output)
+{
+    private readonly ITestOutputHelper _output = output;
+
+    #region Two's Complement Format Tests
+
+    [Theory]
+    [InlineData("256", "0000000100000000", 12, "Standard width test")]
+    [InlineData("127", "01111111", 8, "Positive boundary value")]
+    [InlineData("-127", "10000001", 8, "Negative boundary value")]
+    [InlineData("-63", "1111111111000001", 16, "Negative with minimum width")]
+    public void ToBinaryString_Should_ProduceTwosComplement_When_FormatSpecified(
+        string inputValue, string expectedResult, int minWidth, string testDescription)
+    {
+        // Arrange
+        var input = BigInteger.Parse(inputValue);
+
+        // Act
+        var result = BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement, minWidth: minWidth);
+
+        // Assert
+        Assert.Equal(expectedResult, result);
+        _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+    }
+
+    #endregion
+
+    #region Standard Format Tests
+
+    [Theory]
+    [InlineData("256", "100000000", "Large positive value")]
+    [InlineData("127", "1111111", "Boundary positive value")]
+    [InlineData("-127", "-1111111", "Boundary negative value")]
+    [InlineData("-63", "-0000000000111111", "Negative with padding", 16)]
+    public void ToBinaryString_Should_ProduceStandardFormat_When_FormatSpecified(
+        string inputValue, string expectedResult, string testDescription, int minWidth = 0)
+    {
+        // Arrange
+        var input = BigInteger.Parse(inputValue);
+
+        // Act
+        var result = minWidth > 0
+            ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard, minWidth: minWidth)
+            : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard);
+
+        // Assert
+        Assert.Equal(expectedResult, result);
+        _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+    }
+
+    #endregion
+
+    #region Shades Format Tests
+
+    [Theory]
+    [InlineData("256", "···█········", 12, "Large value with padding")]
+    [InlineData("256", "█········", 0, "Large value without padding")]
+    [InlineData("127", "███████", 0, "Multiple ones pattern")]
+    [InlineData("-127", "-███████", 0, "Negative multiple ones")]
+    [InlineData("-63", "-██████", 0, "Negative pattern")]
+    public void ToBinaryString_Should_ProduceShadesFormat_When_FormatSpecified(
+        string inputValue, string expectedResult, int minWidth, string testDescription)
+    {
+        // Arrange
+        var input = BigInteger.Parse(inputValue);
+
+        // Act
+        var result = minWidth > 0
+            ? BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades, minWidth: minWidth)
+            : BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades);
+
+        // Assert
+        Assert.Equal(expectedResult, result);
+        _output.WriteLine($"{testDescription}: {inputValue} -> {result}");
+    }
+
+    #endregion
+
+    #region Edge Cases and Validation Tests
+
+    [Fact]
+    public void ToBinaryString_Should_HandleZero_When_InputIsZero()
+    {
+        // Arrange
+        BigInteger input = BigInteger.Zero;
+
+        // Act & Assert
+        Assert.Equal("0", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Standard));
+        Assert.Equal("00000000", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.TwosComplement));
+        Assert.Equal("·", BigIntegerTools.ToBinaryString(input, BinaryStringFormat.Shades));
+    }
+
+    [Fact]
+    public void ToBinaryString_Should_HandleLargeNumbers_When_InputExceedsIntRange()
+    {
+        // Arrange
+        var largeNumber = BigInteger.Parse("123456789012345678901234567890");
+
+        // Act
+        var result = BigIntegerTools.ToBinaryString(largeNumber, BinaryStringFormat.Standard);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+        Assert.DoesNotContain(" ", result); // Should not contain spaces
+        _output.WriteLine($"Large number binary representation length: {result.Length}");
+    }
+
+    #endregion
 }

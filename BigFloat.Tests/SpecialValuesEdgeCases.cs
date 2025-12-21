@@ -189,8 +189,10 @@ public class SpecialValuesAndEdgeCasesTests
     [InlineData("0b1111", "0b1101", 0)]
     public void BinaryConstructor_WithScale(string mantissaBinary, string expectedMantissaBinary, int scale)
     {
-        BigFloat.TryParseBinary(mantissaBinary.Substring(2), out var mantissaBF);
-        BigFloat.TryParseBinary(expectedMantissaBinary.Substring(2), out var expectedMantissaBF);
+        ArgumentNullException.ThrowIfNull(mantissaBinary);
+        ArgumentNullException.ThrowIfNull(expectedMantissaBinary);
+        Assert.True(BigFloat.TryParseBinary(mantissaBinary.AsSpan(2), out var mantissaBF));
+        Assert.True(BigFloat.TryParseBinary(expectedMantissaBinary.AsSpan(2), out var expectedMantissaBF));
         
         var bf = new BigFloat(mantissaBF.RawMantissa, scale, valueIncludesGuardBits: true);
         var expected = new BigFloat(expectedMantissaBF.RawMantissa, scale, valueIncludesGuardBits: true);
@@ -619,6 +621,8 @@ public class SpecialValuesAndEdgeCasesTests
     [InlineData("123.45%", false)]         // Percent symbol
     public void Parse_FormattedNumbers(string input, object expected)
     {
+        ArgumentNullException.ThrowIfNull(input);
+
         if (expected is string expectedStr)
         {
             // Try parsing with InvariantCulture

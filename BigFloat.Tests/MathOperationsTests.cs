@@ -230,10 +230,7 @@ public class MathOperationsTests
     [InlineData(10UL, 6, "1.46779926762206954092|0517114816")]
     public void NthRoot_ULongValues_ExpectedPrecision(ulong value, int root, string expectedStr)
     {
-        if (expectedStr is null)
-        {
-            throw new ArgumentNullException(nameof(expectedStr));
-        }
+        ArgumentNullException.ThrowIfNull(expectedStr);
 
         var input = new BigFloat(value);
         var result = BigFloat.NthRoot(input, root);
