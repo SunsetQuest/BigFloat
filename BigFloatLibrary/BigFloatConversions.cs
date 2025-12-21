@@ -61,7 +61,7 @@ public readonly partial struct BigFloat : IConvertible
     /// </summary>
     public object ToType(Type conversionType, IFormatProvider? provider)
     {
-        if (conversionType is null) throw new ArgumentNullException(nameof(conversionType));
+        ArgumentNullException.ThrowIfNull(conversionType);
 
         if (conversionType == typeof(BigFloat) || conversionType.IsAssignableFrom(typeof(BigFloat)))
             return this;
