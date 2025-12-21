@@ -346,8 +346,7 @@ public readonly partial struct BigFloat
 #if DEBUG
             1; // Single-threaded in debug mode
 #else
-            System.Environment.ProcessorCount; // Use all cores in release mode
-
+            Environment.ProcessorCount; // Use all cores in release mode
 #endif
                 ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = MaxParallelism };
                 _ = Parallel.ForEach(Catalog.AllConstants, parallelOptions, constantId =>

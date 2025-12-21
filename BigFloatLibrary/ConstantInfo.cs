@@ -58,7 +58,7 @@ public readonly partial struct BigFloat
                 byte[] first = new byte[3]; // Base64 decoding requires at least 4 bytes
                 if (!Convert.TryFromBase64Chars(BitsInBase64.AsSpan()[0..4], first, out _))
                 {
-                    throw new Exception("Unable to decode 'BitsInBase64'.");
+                    return -1; // Unable to decode 'BitsInBase64'
                 }
                 return (BitsInBase64.Length - 1) * 6 + (byte.Log2(first[0]) - 1) - GuardBits;
 
