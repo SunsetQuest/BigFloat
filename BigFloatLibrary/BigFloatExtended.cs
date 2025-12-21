@@ -481,6 +481,16 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts an <see cref="ushort"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned short to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromUInt16(ushort value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a signed 16-bit integer to a BigFloat.</summary>
     public static implicit operator BigFloat(short value)
     {
@@ -493,6 +503,16 @@ public readonly partial struct BigFloat
     /// <param name="value">The unsigned short to convert.</param>
     /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
     public static BigFloat FromShort(short value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts an <see cref="short"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The signed short to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromInt16(short value)
     {
         return new BigFloat(value);
     }
@@ -519,8 +539,28 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts a <see cref="ulong"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned 64-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromUInt64(ulong value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
     public static implicit operator BigFloat(long value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="long"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The signed 64-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromInt64(long value)
     {
         return new BigFloat(value);
     }
@@ -531,8 +571,28 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts an <see cref="Int128"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The signed 128-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromInt128(Int128 value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a signed 64-bit integer to a BigFloat.</summary>
     public static implicit operator BigFloat(UInt128 value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="UInt128"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The unsigned 128-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromUInt128(UInt128 value)
     {
         return new BigFloat(value);
     }
@@ -544,8 +604,28 @@ public readonly partial struct BigFloat
         return new BigFloat(value);
     }
 
+    /// <summary>
+    /// Converts an <see cref="int"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The signed 32-bit integer to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromInt32(int value)
+    {
+        return new BigFloat(value);
+    }
+
     /// <summary>Defines an implicit conversion of a decimal to a BigFloat.</summary>
     public static implicit operator BigFloat(decimal value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="decimal"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The decimal value to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromDecimal(decimal value)
     {
         return new BigFloat(value);
     }
@@ -554,6 +634,16 @@ public readonly partial struct BigFloat
 
     /// <summary>Defines an explicit conversion of a System.Single to a BigFloat.</summary>
     public static explicit operator BigFloat(float value)
+    {
+        return new BigFloat(value);
+    }
+
+    /// <summary>
+    /// Converts a <see cref="float"/> value to a <see cref="BigFloat"/>.
+    /// </summary>
+    /// <param name="value">The single-precision float to convert.</param>
+    /// <returns>A <see cref="BigFloat"/> representation of the input value.</returns>
+    public static BigFloat FromSingle(float value)
     {
         return new BigFloat(value);
     }
