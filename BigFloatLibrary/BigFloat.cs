@@ -963,6 +963,56 @@ public readonly partial struct BigFloat
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static BigFloat RightShift(BigFloat value, int shift) => value >> shift;
 
+    /// <summary>Named alternative for operator ++ (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Increment(BigFloat value) => ++value;
+
+    /// <summary>Named alternative for operator -- (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Decrement(BigFloat value) => --value;
+
+    /// <summary>Named alternative for unary operator + (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Plus(BigFloat value) => +value;
+
+    /// <summary>Named alternative for unary operator - (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Negate(BigFloat value) => -value;
+
+    /// <summary>Named alternative for operator + (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Add(BigFloat left, BigFloat right) => left + right;
+
+    /// <summary>Named alternative for operator + (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Add(BigFloat left, int right) => left + right;
+
+    /// <summary>Named alternative for operator - (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Subtract(BigFloat left, BigFloat right) => left - right;
+
+    /// <summary>Named alternative for operator - (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat Subtract(BigFloat left, int right) => left - right;
+
+    /// <summary>Named alternative for explicit conversion from BigInteger (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat FromBigInteger(BigInteger value) => (BigFloat)value;
+
+    /// <summary>Named alternative for explicit conversion from double (CA2225).</summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigFloat FromDouble(double value) => (BigFloat)value;
+
     #endregion
 
     /// <summary>
