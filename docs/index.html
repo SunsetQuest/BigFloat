@@ -57,7 +57,7 @@
                     <h1>BigFloat Library</h1>
                     <p class="hero-subtitle">Arbitrary-precision floating-point arithmetic for C#</p>
                     <p class="hero-description">
-                        Updated for the 2025-12 release, BigFloat delivers precision-aware arithmetic,
+                        Updated for the v4.2.0 (2025-12) release, BigFloat delivers precision-aware arithmetic,
                         guard-bit–safe rounding helpers, and flexible constructors that target .NET 9.
                         Use it for scientific computing, simulations, finance, cryptography, and anywhere
                         IEEE formats are not enough.
@@ -121,14 +121,16 @@ int nearest = BigFloat.ToNearestInt(area);</code></pre>
                 <div class="content-grid">
                     <div class="content-text">
                         <p>
-                            BigFloat 4.1.0 (December 2025) ships with refreshed constructors, accuracy/precision helpers,
-                            and playground cleanup. The docs and examples on this site now mirror the current APIs so you
+                            BigFloat 4.2.0 (December 2025) consolidates the 4.1.x feature wave that landed after v4.0.0:
+                            constructor precision knobs, rounding/truncation helpers, parsing/formatting upgrades, and
+                            comparison refinements. The docs and examples on this site now mirror the current APIs so you
                             can copy/paste without guessing which overloads exist.
                         </p>
                         <ul class="feature-list">
-                            <li>New <code>AdjustAccuracy</code> / <code>SetAccuracy</code> helpers replace older precision calls.</li>
-                            <li><code>ToNearestInt</code> and expanded rounding helpers clarify guard-bit behavior.</li>
-                            <li>Constructors now expose guard-bit and precision tuning for integer inputs.</li>
+                            <li>Precision-aware constructors now expose guard-bit and binary-precision tuning.</li>
+                            <li><code>ToNearestInt</code>, <code>Round</code>, and truncation helpers clarify guard-bit behavior.</li>
+                            <li>Parsing/formatting paths add guard-bit separators and more accurate decimal parsing.</li>
+                            <li>Comparison and remainder logic gained deterministic ordering and performance upgrades.</li>
                             <li>Benchmarks and playground snippets live in separate files to keep samples focused.</li>
                         </ul>
                         <p class="changelog-link">
@@ -383,6 +385,7 @@ BigFloat compound = BigFloat.Pow(e, rate * time);</code></pre>
                     <h4>BigFloat Library</h4>
                     <p>High-precision arithmetic for C#</p>
                     <p class="footer-meta">Created by Ryan Scott White</p>
+                    <p class="footer-meta">v4.2.0 docs refresh prepared with assistance from OpenAI’s GPT‑5.2‑Codex‑Max.</p>
                 </div>
                 
                 <div class="footer-section">
