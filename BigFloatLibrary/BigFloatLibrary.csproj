@@ -61,6 +61,11 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<!-- Path on disk, relative to the .csproj -->
+		<None Include="..\docs\images\icon.png" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
 	<!-- Pack README from the repo root into the root of the NuGet package -->
 	<ItemGroup Condition="'$(Configuration)'=='ReleaseMulti'">
 		<None Include="..\README.md" Pack="true" PackagePath="\" />
