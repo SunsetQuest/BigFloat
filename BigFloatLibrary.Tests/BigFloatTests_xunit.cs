@@ -1686,7 +1686,7 @@ public class OriginalBigFloatTests
         int maxValBitSize = 1650;
         int maxWantedBitSize = 1650;
         int maxExpSize = 10;
-        int runCount = _config.TestTargetInMilliseconds * MaxDegreeOfParallelism / 8;
+        int runCount = _config.TestTargetInMilliseconds * _config.MaxDegreeOfParallelism / 8;
 #else
         int maxValBitSize = 2050;
         int maxWantedBitSize = 2050;
