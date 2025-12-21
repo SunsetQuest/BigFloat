@@ -1,4 +1,4 @@
-#Example pack only (no push, override version):
+#Example:
 #.\tools\publish-nuget.ps1 -PackageVersion 4.3.0
 
 param(

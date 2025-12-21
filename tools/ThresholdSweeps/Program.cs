@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.Versioning;
@@ -11,46 +11,70 @@ internal static class Program
     private static readonly int[] MultiplicationSizes = new[] { 64, 96, 128, 160, 192, 224, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
     private static readonly int[] DivisionSizes = new[] { 128, 192, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
 
-    private const int MultiplyIterations = 6;
-    private const int DivisionIterations = 4;
+    private const int MultiplyIterations = 6000;
+    private const int DivisionIterations = 4000;
 
     public static void Main()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"# Threshold sweep ({System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription})");
-        sb.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        sb.AppendLine();
 
-        var rng = Random.Shared;
-
-        sb.AppendLine("## Karatsuba vs schoolbook multiplication");
-        sb.AppendLine("Bit length | Schoolbook mean (ms) | Karatsuba mean (ms)");
-        sb.AppendLine("---|---:|---:");
-
-        foreach (int bits in MultiplicationSizes)
+        for (int i = 0; i < 2; i++)
         {
-            var (aLimbs, bLimbs) = CreateOperands(bits, rng);
+            sb.Clear();
+            sb.AppendLine($"# Threshold sweep ({System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription})");
+            sb.AppendLine($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+            sb.AppendLine();
 
-            double schoolbook = Time(() => MultiplySchoolbook(aLimbs, bLimbs), MultiplyIterations);
-            double karatsuba = Time(() => MultiplyKaratsuba(aLimbs, bLimbs), MultiplyIterations);
+            var rng = Random.Shared;
 
-            sb.AppendLine($"{bits} | {schoolbook:F3} | {karatsuba:F3}");
-        }
+            sb.AppendLine("## Karatsuba vs schoolbook multiplication");
+            sb.AppendLine("Bit length | Schoolbook mean (ms) | Karatsuba mean (ms)");
+            sb.AppendLine("---|---:|---:");
 
-        sb.AppendLine();
-        sb.AppendLine("## Burnikel–Ziegler-style division vs basic shift-subtract");
-        sb.AppendLine("Bit length | Shift/subtract mean (ms) | DivRem mean (ms)");
-        sb.AppendLine("---|---:|---:");
+            foreach (int bits in MultiplicationSizes)
+            {
+                var (aLimbs, bLimbs) = CreateOperands(bits, rng);
+                double karatsuba, schoolbook;
+                if (rng.Next(2) == 0)
+                {
+                    karatsuba = Time(() => MultiplyKaratsuba(aLimbs, bLimbs), MultiplyIterations);
+                    schoolbook = Time(() => MultiplySchoolbook(aLimbs, bLimbs), MultiplyIterations);
+                }
+                else
+                {
+                    schoolbook = Time(() => MultiplySchoolbook(aLimbs, bLimbs), MultiplyIterations);
+                    karatsuba = Time(() => MultiplyKaratsuba(aLimbs, bLimbs), MultiplyIterations);
+                }
 
-        foreach (int bits in DivisionSizes)
-        {
-            var dividend = CreateBigInteger(bits, rng);
-            var divisor = CreateBigInteger(bits - 3, rng) | 1; // ensure non-zero, smaller divisor
 
-            double shiftSubtract = Time(() => ShiftSubtractDivide(dividend, divisor), DivisionIterations);
-            double divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
+                sb.AppendLine($"{bits} | {schoolbook:F3} | {karatsuba:F3}");
+            }
 
-            sb.AppendLine($"{bits} | {shiftSubtract:F3} | {divRem:F3}");
+            sb.AppendLine();
+            sb.AppendLine("## Burnikel–Ziegler-style division vs basic shift-subtract");
+            sb.AppendLine("Bit length | Shift/subtract mean (ms) | DivRem mean (ms)");
+            sb.AppendLine("---|---:|---:");
+
+            foreach (int bits in DivisionSizes)
+            {
+                var dividend = CreateBigInteger(bits, rng);
+                var divisor = CreateBigInteger(bits - 3, rng) | 1; // ensure non-zero, smaller divisor
+
+                double shiftSubtract, divRem;
+                if (rng.Next(2) == 0)
+                {
+                    divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
+                    shiftSubtract = Time(() => ShiftSubtractDivide(dividend, divisor), DivisionIterations);
+                }
+                else
+                {
+                    shiftSubtract = Time(() => ShiftSubtractDivide(dividend, divisor), DivisionIterations);
+                    divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
+                }
+
+
+                sb.AppendLine($"{bits} | {shiftSubtract:F3} | {divRem:F3}");
+            }
         }
 
         string output = sb.ToString();
@@ -71,7 +95,7 @@ internal static class Program
             action();
         }
         sw.Stop();
-        return sw.Elapsed.TotalMilliseconds / iterations;
+        return (sw.Elapsed.TotalMilliseconds*1000) / iterations;
     }
 
     private static (uint[] A, uint[] B) CreateOperands(int bits, Random rng)
