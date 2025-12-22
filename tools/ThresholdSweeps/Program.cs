@@ -8,11 +8,11 @@ namespace ThresholdSweeps;
 
 internal static class Program
 {
-    private static readonly int[] MultiplicationSizes = new[] { 64, 96, 128, 160, 192, 224, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
-    private static readonly int[] DivisionSizes = new[] { 128, 192, 256, 320, 384, 448, 512, 640, 768, 896, 1024, 1280, 1536 };
+    private static readonly int[] MultiplicationSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
+    private static readonly int[] DivisionSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
 
-    private const int MultiplyIterations = 6000;
-    private const int DivisionIterations = 4000;
+    private const int MultiplyIterations = 300;
+    private const int DivisionIterations = 200;
 
     public static void Main()
     {
@@ -51,29 +51,17 @@ internal static class Program
             }
 
             sb.AppendLine();
-            sb.AppendLine("## Burnikel–Ziegler-style division vs basic shift-subtract");
-            sb.AppendLine("Bit length | Shift/subtract mean (ms) | DivRem mean (ms)");
-            sb.AppendLine("---|---:|---:");
+            sb.AppendLine("## Division (BigInteger.DivRem)");
+            sb.AppendLine("Bit length | DivRem mean (ms)");
+            sb.AppendLine("---|---:");
 
             foreach (int bits in DivisionSizes)
             {
                 var dividend = CreateBigInteger(bits, rng);
                 var divisor = CreateBigInteger(bits - 3, rng) | 1; // ensure non-zero, smaller divisor
 
-                double shiftSubtract, divRem;
-                if (rng.Next(2) == 0)
-                {
-                    divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
-                    shiftSubtract = Time(() => ShiftSubtractDivide(dividend, divisor), DivisionIterations);
-                }
-                else
-                {
-                    shiftSubtract = Time(() => ShiftSubtractDivide(dividend, divisor), DivisionIterations);
-                    divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
-                }
-
-
-                sb.AppendLine($"{bits} | {shiftSubtract:F3} | {divRem:F3}");
+                double divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
+                sb.AppendLine($"{bits} | {divRem:F3}");
             }
         }
 
@@ -231,31 +219,4 @@ internal static class Program
         return Trim(result);
     }
 
-    private static BigInteger ShiftSubtractDivide(BigInteger numerator, BigInteger denominator)
-    {
-        if (denominator.IsZero)
-        {
-            return BigInteger.Zero;
-        }
-
-        BigInteger quotient = BigInteger.Zero;
-        int shift = (int)numerator.GetBitLength() - (int)denominator.GetBitLength();
-        if (shift < 0)
-        {
-            return BigInteger.Zero;
-        }
-
-        BigInteger shiftedDivisor = denominator << shift;
-        for (int i = shift; i >= 0; i--)
-        {
-            if (numerator >= shiftedDivisor)
-            {
-                numerator -= shiftedDivisor;
-                quotient |= BigInteger.One << i;
-            }
-            shiftedDivisor >>= 1;
-        }
-
-        return quotient;
-    }
 }

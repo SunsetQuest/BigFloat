@@ -42,14 +42,6 @@ internal static class BigFloatNumerics
         => (int)BigInteger.Abs(value).GetBitLength();
 
     /// <summary>
-    /// Determines whether Karatsuba multiplication should be preferred over the
-    /// schoolbook algorithm given two operand sizes.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ShouldUseKaratsuba(int sizeA, int sizeB)
-        => Math.Min(sizeA, sizeB) >= KARATSUBA_THRESHOLD;
-
-    /// <summary>
     /// Determines whether Burnikel–Ziegler division should be preferred over the
     /// standard division implementation.
     /// </summary>
