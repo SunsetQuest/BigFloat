@@ -804,10 +804,15 @@ public readonly partial struct BigFloat
     /// </summary>
     private static BigFloat DivideLargeNumbers(BigFloat divisor, BigFloat dividend)
     {
-        // For now, rely on BigInteger's division (used by DivideStandard) for large operands.
-        // If a Burnikel–Ziegler implementation is added later, it should remain internal and benchmarked.
-        return DivideStandard(divisor, dividend);
+        BigFloat result = default;
+        bool handled = false;
+
+        OnDivideLargeNumbers(divisor, dividend, ref handled, ref result);
+
+        return handled ? result : DivideStandard(divisor, dividend);
     }
+
+    static partial void OnDivideLargeNumbers(BigFloat divisor, BigFloat dividend, ref bool handled, ref BigFloat result);
 
     /// <summary>
     /// Standard division algorithm with optimizations
