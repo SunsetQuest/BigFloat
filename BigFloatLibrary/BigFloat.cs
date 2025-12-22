@@ -759,7 +759,9 @@ public readonly partial struct BigFloat
         int wantedSizeForT = dividend.Size + outputSize + GuardBits;
         int leftShiftTBy = wantedSizeForT - divisor.Size;
 
-        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy <= 64)
+
+        //        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy <= 64) put back???
+        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy is >= 0 and <= 64)
         {
             ulong divisorAbs = (ulong)BigInteger.Abs(divisor._mantissa);
             ulong dividendAbs = (ulong)BigInteger.Abs(dividend._mantissa);
@@ -809,7 +811,9 @@ public readonly partial struct BigFloat
 
         OnDivideLargeNumbers(divisor, dividend, ref handled, ref result);
 
-        return handled ? result : DivideStandard(divisor, dividend);
+        return handled ?
+            result :
+            DivideStandard(divisor, dividend);
     }
 
     static partial void OnDivideLargeNumbers(BigFloat divisor, BigFloat dividend, ref bool handled, ref BigFloat result);
