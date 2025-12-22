@@ -3,16 +3,27 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text;
+using BigFloatLibrary;
 
 namespace ThresholdSweeps;
 
 internal static class Program
 {
     private static readonly int[] MultiplicationSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
-    private static readonly int[] DivisionSizes = new[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144 };
+    private static readonly int[] DivisionEqualSizes = new[] { 32, 64, 128, 256, 512, 1024, 2048, 4096 };
+    private static readonly (int NumeratorBits, int DenominatorBits)[] DivisionUnbalancedSizes = new[]
+    {
+        (1000, 10),
+        (2048, 32),
+        (4096, 64)
+    };
 
     private const int MultiplyIterations = 300;
-    private const int DivisionIterations = 200;
+    private const int DivisionIterations = 120;
+
+    private static readonly Func<BigFloat, BigFloat, BigFloat> DivideSmallNumbers = CreateDivideDelegate(nameof(DivideSmallNumbers));
+    private static readonly Func<BigFloat, BigFloat, BigFloat> DivideStandard = CreateDivideDelegate(nameof(DivideStandard));
+    private static readonly Func<BigFloat, BigFloat, BigFloat> DivideLargeNumbers = CreateDivideDelegate(nameof(DivideLargeNumbers));
 
     public static void Main()
     {
@@ -51,18 +62,10 @@ internal static class Program
             }
 
             sb.AppendLine();
-            sb.AppendLine("## Division (BigInteger.DivRem)");
-            sb.AppendLine("Bit length | DivRem mean (ms)");
-            sb.AppendLine("---|---:");
-
-            foreach (int bits in DivisionSizes)
-            {
-                var dividend = CreateBigInteger(bits, rng);
-                var divisor = CreateBigInteger(bits - 3, rng) | 1; // ensure non-zero, smaller divisor
-
-                double divRem = Time(() => BigInteger.DivRem(dividend, divisor, out _), DivisionIterations * 3);
-                sb.AppendLine($"{bits} | {divRem:F3}");
-            }
+            sb.AppendLine("## Division (BigFloat variants)");
+            AppendDivisionEqualSizeSweep(sb, rng);
+            AppendDivisionUnbalancedSweep(sb, rng);
+            AppendDivisionRandomSweep(sb, rng, count: 8);
         }
 
         string output = sb.ToString();
@@ -86,6 +89,128 @@ internal static class Program
         return (sw.Elapsed.TotalMilliseconds*1000) / iterations;
     }
 
+    private static void AppendDivisionEqualSizeSweep(StringBuilder sb, Random rng)
+    {
+        sb.AppendLine("### Equal-size operands");
+        sb.AppendLine("Bit length | Small path mean (us) | Standard mean (us) | Large/BZ mean (us)");
+        sb.AppendLine("---|---:|---:|---:");
+
+        var results = new List<DivisionResult>(DivisionEqualSizes.Length);
+
+        foreach (int bits in DivisionEqualSizes)
+        {
+            DivisionResult result = BenchmarkDivision(bits, bits, rng);
+            results.Add(result);
+            sb.AppendLine($"{bits} | {result.SmallMean:F3} | {result.StandardMean:F3} | {result.LargeMean:F3}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine(RenderCrossoverSummary(results, includeHeader: true));
+        sb.AppendLine();
+    }
+
+    private static void AppendDivisionUnbalancedSweep(StringBuilder sb, Random rng)
+    {
+        sb.AppendLine("### Unbalanced operands");
+        sb.AppendLine("Numerator bits | Denominator bits | Small path mean (us) | Standard mean (us) | Large/BZ mean (us)");
+        sb.AppendLine("---|---|---:|---:|---:");
+
+        foreach ((int numeratorBits, int denominatorBits) in DivisionUnbalancedSizes)
+        {
+            DivisionResult result = BenchmarkDivision(numeratorBits, denominatorBits, rng);
+            sb.AppendLine($"{numeratorBits} | {denominatorBits} | {result.SmallMean:F3} | {result.StandardMean:F3} | {result.LargeMean:F3}");
+        }
+
+        sb.AppendLine();
+    }
+
+    private static void AppendDivisionRandomSweep(StringBuilder sb, Random rng, int count)
+    {
+        sb.AppendLine("### Random operand sizes");
+        sb.AppendLine("Case | Numerator bits | Denominator bits | Small path mean (us) | Standard mean (us) | Large/BZ mean (us)");
+        sb.AppendLine("---|---|---|---:|---:|---:");
+
+        for (int i = 0; i < count; i++)
+        {
+            int numeratorBits = rng.Next(32, 4097);
+            int denominatorBits = rng.Next(16, 2049);
+            DivisionResult result = BenchmarkDivision(numeratorBits, denominatorBits, rng);
+            sb.AppendLine($"{i + 1} | {numeratorBits} | {denominatorBits} | {result.SmallMean:F3} | {result.StandardMean:F3} | {result.LargeMean:F3}");
+        }
+
+        sb.AppendLine();
+    }
+
+    private static DivisionResult BenchmarkDivision(int numeratorBits, int denominatorBits, Random rng)
+    {
+        BigFloat numerator = CreateBigFloat(numeratorBits, rng);
+        BigFloat denominator = CreateBigFloat(denominatorBits, rng);
+
+        _ = DivideSmallNumbers(numerator, denominator);
+        _ = DivideStandard(numerator, denominator);
+        _ = DivideLargeNumbers(numerator, denominator);
+
+        int iterations = GetDivisionIterations(numeratorBits, denominatorBits);
+
+        double smallMean = Time(() => DivideSmallNumbers(numerator, denominator), iterations);
+        double standardMean = Time(() => DivideStandard(numerator, denominator), iterations);
+        double largeMean = Time(() => DivideLargeNumbers(numerator, denominator), iterations);
+
+        return new DivisionResult(numeratorBits, denominatorBits, smallMean, standardMean, largeMean);
+    }
+
+    private static string RenderCrossoverSummary(IReadOnlyList<DivisionResult> results, bool includeHeader)
+    {
+        int? smallToStandard = FindCrossover(results, result => result.SmallMean, result => result.StandardMean);
+        int? standardToLarge = FindCrossover(results, result => result.StandardMean, result => result.LargeMean);
+
+        var sb = new StringBuilder();
+        if (includeHeader)
+        {
+            sb.AppendLine("Crossover summary:");
+        }
+
+        sb.AppendLine($"- Small vs standard: {(smallToStandard is null ? "no crossover in sweep" : $"{smallToStandard} bits")}.");
+        sb.AppendLine($"- Standard vs large/BZ: {(standardToLarge is null ? "no crossover in sweep" : $"{standardToLarge} bits")}.");
+        return sb.ToString();
+    }
+
+    private static int? FindCrossover(IReadOnlyList<DivisionResult> results, Func<DivisionResult, double> left, Func<DivisionResult, double> right)
+    {
+        foreach (DivisionResult result in results)
+        {
+            if (right(result) <= left(result))
+            {
+                return result.NumeratorBits;
+            }
+        }
+
+        return null;
+    }
+
+    private static int GetDivisionIterations(int numeratorBits, int denominatorBits)
+    {
+        int maxBits = Math.Max(numeratorBits, denominatorBits);
+        return maxBits switch
+        {
+            >= 4096 => 30,
+            >= 2048 => 50,
+            >= 1024 => 80,
+            _ => DivisionIterations
+        };
+    }
+
+    private static Func<BigFloat, BigFloat, BigFloat> CreateDivideDelegate(string name)
+    {
+        MethodInfo? method = typeof(BigFloat).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static);
+        if (method is null)
+        {
+            throw new InvalidOperationException($"Unable to locate BigFloat.{name} for threshold sweep.");
+        }
+
+        return (Func<BigFloat, BigFloat, BigFloat>)method.CreateDelegate(typeof(Func<BigFloat, BigFloat, BigFloat>));
+    }
+
     private static (uint[] A, uint[] B) CreateOperands(int bits, Random rng)
     {
         return (ToLimbs(CreateBigInteger(bits, rng)), ToLimbs(CreateBigInteger(bits - 1, rng)));
@@ -106,6 +231,11 @@ internal static class Program
         bytes[^2] |= 0x80; // ensure the number stays close to the requested width
         bytes[^1] = 0; // positive
         return new BigInteger(bytes);
+    }
+
+    private static BigFloat CreateBigFloat(int bits, Random rng)
+    {
+        return new BigFloat(CreateBigInteger(bits, rng));
     }
 
     private static uint[] ToLimbs(BigInteger value)
@@ -218,5 +348,7 @@ internal static class Program
         result[^1] = (uint)carry;
         return Trim(result);
     }
+
+    private sealed record DivisionResult(int NumeratorBits, int DenominatorBits, double SmallMean, double StandardMean, double LargeMean);
 
 }
