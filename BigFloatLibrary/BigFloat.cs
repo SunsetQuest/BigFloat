@@ -720,8 +720,8 @@ public readonly partial struct BigFloat
     /// </summary>
     public static BigFloat operator /(BigFloat numerator, BigFloat denominator)
     {
-        const int SMALL_NUMBER_THRESHOLD = 64;  // Threshold for small number optimizations
-        
+        const int SMALL_NUMBER_THRESHOLD = 96;  // Threshold for small number optimizations
+
         // Early exit for zero divisor
         if (denominator.IsStrictZero)
         {

@@ -16,10 +16,10 @@ internal static class BigFloatNumerics
     /// Burnikel–Ziegler division becomes more efficient than basic long division
     /// once either operand grows past this bit-length. The algorithm works in
     /// word-sized blocks; sweeps on .NET 8/9 (see docs/benchmarks/threshold-sweeps-*.md)
-    /// show the quadratic shift/subtract curve starting to climb by ~512 bits, so
+    /// show the quadratic shift/subtract curve starting to climb by ~768 bits, so
     /// we switch above that point to keep large divisions sub-quadratic for real-world inputs.
     /// </summary>
-    public const int BURNIKEL_ZIEGLER_THRESHOLD = 512;
+    public const int BURNIKEL_ZIEGLER_THRESHOLD = 768;
 
     /// <summary>
     /// Returns the bit-length of a mantissa using absolute value to keep
