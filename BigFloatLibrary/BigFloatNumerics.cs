@@ -1,4 +1,4 @@
-// Copyright Ryan Scott White. 2020-2025
+﻿// Copyright Ryan Scott White. 2020-2025
 //
 // Centralized helpers for core numeric decisions shared across BigFloat partials.
 
@@ -12,18 +12,6 @@ namespace BigFloatLibrary;
 /// </summary>
 internal static class BigFloatNumerics
 {
-    /// <summary>
-    /// When both operands reach roughly this many significant bits, Karatsuba
-    /// multiplication outpaces schoolbook O(n^2) multiplication. The threshold is
-    /// based on the smaller operand because Karatsuba's benefit appears once both
-    /// halves of the split are large enough to amortize the extra additions.
-    /// Tuned against the threshold sweep in docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v80.md
-    /// and docs/benchmarks/threshold-sweeps-NETCoreAppVersion-v90.md. Recent sweeps
-    /// on developer hardware show the crossover closer to 8k bits, so we bias toward
-    /// schoolbook until both operands are large enough to amortize the extra additions.
-    /// </summary>
-    public const int KARATSUBA_THRESHOLD = 8192;
-
     /// <summary>
     /// Burnikel–Ziegler division becomes more efficient than basic long division
     /// once either operand grows past this bit-length. The algorithm works in
