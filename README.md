@@ -4,7 +4,7 @@ BigFloat is a C# struct/class library for arbitrary-precision floating-point num
 
 Ryan Scott White / [MIT License](http://www.opensource.org/licenses/mit-license.php "The MIT License")  
 Updated: December 21st, 2025  
-Current BigFloat version: **4.2.0**
+Current BigFloat version: **4.3.0**
 
 - GitHub repo: https://github.com/SunsetQuest/BigFloat
 - Documentation site: https://bigfloat.org
@@ -95,7 +95,7 @@ Modern APIs are available for explicitly managing the accuracy “budget”:
 
 ## What's new since v4.0.0 (2025-12-03)
 
-The 4.1.x line (Sep–Dec 2025) introduced the most significant updates since v4.0.0. This v4.2.0 documentation refresh consolidates those changes in one place:
+The 4.1.x line (Sep–Dec 2025) introduced the most significant updates since v4.0.0. This v4.3.0 documentation refresh consolidates those changes in one place:
 
 - Precision-aware constructor refactor with `binaryPrecision` knobs, guard-bit flags, and stronger zero handling (including fixed-width tuning and `Int128.MinValue` coverage).
 - Expanded rounding & truncation helpers (`Round`, `TruncateByAndRound`, `RoundToInteger`, `ToNearestInt`) with guard-bit-aware behaviors.
@@ -161,7 +161,7 @@ or via `PackageReference`:
 </ItemGroup>
 ```
 
-Refer to NuGet for the current package version (the README describes the 4.2.0 library APIs; NuGet version numbers may differ). ([NuGet][1])
+Refer to NuGet for the current package version (the README describes the 4.3.0 library APIs; NuGet version numbers may differ). ([NuGet][1])
 
 ### Option 2 – From source
 
@@ -593,7 +593,7 @@ The repository is organized roughly as follows: ([GitHub][2])
 
 * **`ChangeLog.md`**
 
-  * High-level history of releases and notable changes (consult this file for detailed version history, including 4.2.0 notes).
+  * High-level history of releases and notable changes (consult this file for detailed version history, including 4.3.0 notes).
 
 * **`BigFloatSpecification.md`**
 
@@ -620,9 +620,9 @@ This project is distributed under the [MIT License](http://www.opensource.org/li
 
 ## Provenance & acknowledgements
 
-* Documentation refresh for v4.2.0 prepared with assistance from OpenAI’s GPT‑5.2‑Codex‑Max.
+* Documentation refresh for v4.3.0 prepared with assistance from OpenAI’s GPT‑5.2‑Codex‑Max.
 
-[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 4.2.0"
+[1]: https://www.nuget.org/packages/bigfloatlibrary?utm_source=chatgpt.com "BigFloatLibrary 4.3.0"
 [2]: https://github.com/SunsetQuest/BigFloat "GitHub - SunsetQuest/BigFloat: A floating point library for large numbers."
 [3]: https://bigfloat.org/getting-started.html "Getting Started - BigFloat Library"
 [4]: https://raw.githubusercontent.com/SunsetQuest/BigFloat/master/BigFloatLibrary/BigFloat.cs "raw.githubusercontent.com"
