@@ -210,6 +210,43 @@ public class OperatorTests
         Assert.True(result.EqualsUlp(expectedResult, 10));
     }
 
+    [Fact]
+    public void Division_SmallMantissasMatchStandardAlgorithm()
+    {
+        var numerator = new BigFloat(123456789, binaryScaler: 12);
+        var denominator = new BigFloat(654321, binaryScaler: -5);
+
+        var expected = DivideStandardReference(numerator, denominator);
+        var result = numerator / denominator;
+
+        Assert.Equal(expected.RawMantissa, result.RawMantissa);
+        Assert.Equal(expected.Scale, result.Scale);
+        Assert.Equal(expected.Size, result.Size);
+    }
+
+    [Fact]
+    public void Division_LargeMantissasMatchStandardAlgorithm()
+    {
+        BigInteger numeratorMantissa = (BigInteger.One << 1400) + (BigInteger.One << 900) + 12345;
+        BigInteger denominatorMantissa = (BigInteger.One << 1200) + (BigInteger.One << 100) + 77;
+
+        var numerator = BigFloat.CreateFromRawComponents(
+            numeratorMantissa,
+            binaryScaler: 7,
+            mantissaSize: GetBitLength(numeratorMantissa));
+        var denominator = BigFloat.CreateFromRawComponents(
+            denominatorMantissa,
+            binaryScaler: -3,
+            mantissaSize: GetBitLength(denominatorMantissa));
+
+        var expected = DivideStandardReference(numerator, denominator);
+        var result = numerator / denominator;
+
+        Assert.Equal(expected.RawMantissa, result.RawMantissa);
+        Assert.Equal(expected.Scale, result.Scale);
+        Assert.Equal(expected.Size, result.Size);
+    }
+
     #endregion
 
     #region Modulo Tests
@@ -754,4 +791,28 @@ public class OperatorTests
     }
 
     #endregion
+
+    private static BigFloat DivideStandardReference(BigFloat divisor, BigFloat dividend)
+    {
+        int outputSize = Math.Min(divisor.Size, dividend.Size);
+
+        if (divisor.RawMantissa >> (divisor.Size - dividend.Size) <= dividend.RawMantissa)
+        {
+            outputSize--;
+        }
+
+        int wantedSizeForT = dividend.Size + outputSize + BigFloat.GuardBits;
+        int leftShiftTBy = wantedSizeForT - divisor.Size;
+
+        BigInteger leftShiftedT = divisor.RawMantissa << leftShiftTBy;
+        BigInteger resIntPart = leftShiftedT / dividend.RawMantissa;
+
+        int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + BigFloat.GuardBits;
+        int sizePart = GetBitLength(resIntPart);
+
+        return BigFloat.CreateFromRawComponents(resIntPart, resScalePart, sizePart);
+    }
+
+    private static int GetBitLength(BigInteger value)
+        => (int)BigInteger.Abs(value).GetBitLength();
 }

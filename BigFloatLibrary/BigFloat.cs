@@ -749,8 +749,54 @@ public readonly partial struct BigFloat
     /// </summary>
     private static BigFloat DivideSmallNumbers(BigFloat divisor, BigFloat dividend)
     {
-        // future: implement optimized small number division using hardware arithmetic
+        int outputSize = Math.Min(divisor.Size, dividend.Size);
+
+        if (divisor._mantissa >> (divisor.Size - dividend.Size) <= dividend._mantissa)
+        {
+            outputSize--;
+        }
+
+        int wantedSizeForT = dividend.Size + outputSize + GuardBits;
+        int leftShiftTBy = wantedSizeForT - divisor.Size;
+
+        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy <= 64)
+        {
+            ulong divisorAbs = BigInteger.Abs(divisor._mantissa).ToUInt64();
+            ulong dividendAbs = BigInteger.Abs(dividend._mantissa).ToUInt64();
+
+            if (dividendAbs != 0)
+            {
+                UInt128 leftShiftedT = (UInt128)divisorAbs << leftShiftTBy;
+                UInt128 quotientAbs = leftShiftedT / dividendAbs;
+
+                BigInteger resIntPart = CreateBigIntegerFromUInt128(quotientAbs);
+                if (divisor._mantissa.Sign != dividend._mantissa.Sign)
+                {
+                    resIntPart = BigInteger.Negate(resIntPart);
+                }
+
+                int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
+                int sizePart = MantissaSize(resIntPart);
+
+                return new BigFloat(resIntPart, resScalePart, sizePart);
+            }
+        }
+
         return DivideStandard(divisor, dividend);
+
+        static BigInteger CreateBigIntegerFromUInt128(UInt128 value)
+        {
+            Span<byte> bytes = stackalloc byte[16];
+            UInt128 temp = value;
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = (byte)temp;
+                temp >>= 8;
+            }
+
+            return new BigInteger(bytes, isUnsigned: true);
+        }
     }
 
     /// <summary>
@@ -758,7 +804,8 @@ public readonly partial struct BigFloat
     /// </summary>
     private static BigFloat DivideLargeNumbers(BigFloat divisor, BigFloat dividend)
     {
-        // future: implement Burnikel-Ziegler division algorithm for better performance on large numbers
+        // For now, rely on BigInteger's division (used by DivideStandard) for large operands.
+        // If a Burnikel–Ziegler implementation is added later, it should remain internal and benchmarked.
         return DivideStandard(divisor, dividend);
     }
 
