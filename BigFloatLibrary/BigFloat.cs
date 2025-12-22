@@ -761,8 +761,8 @@ public readonly partial struct BigFloat
 
         if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy <= 64)
         {
-            ulong divisorAbs = BigInteger.Abs(divisor._mantissa).ToUInt64();
-            ulong dividendAbs = BigInteger.Abs(dividend._mantissa).ToUInt64();
+            ulong divisorAbs = (ulong)BigInteger.Abs(divisor._mantissa);
+            ulong dividendAbs = (ulong)BigInteger.Abs(dividend._mantissa);
 
             if (dividendAbs != 0)
             {
