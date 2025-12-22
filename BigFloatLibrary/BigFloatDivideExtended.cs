@@ -136,18 +136,22 @@ public readonly partial struct BigFloat
 
         if (correctedRemainder.Sign < 0)
         {
-            do
+            BigInteger adjustment = BigInteger.DivRem(BigInteger.Negate(correctedRemainder), denominator, out BigInteger remainder);
+            if (!remainder.IsZero)
             {
-                quotientApprox -= BigInteger.One;
-                correctedRemainder += denominator;
-            } while (correctedRemainder.Sign < 0);
+                adjustment += BigInteger.One;
+            }
+
+            quotientApprox -= adjustment;
+            correctedRemainder += adjustment * denominator;
         }
         else
         {
-            while (correctedRemainder >= denominator)
+            if (correctedRemainder >= denominator)
             {
-                quotientApprox += BigInteger.One;
-                correctedRemainder -= denominator;
+                BigInteger adjustment = correctedRemainder / denominator;
+                quotientApprox += adjustment;
+                correctedRemainder -= adjustment * denominator;
             }
         }
 
