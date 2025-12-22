@@ -3,7 +3,6 @@
 
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 

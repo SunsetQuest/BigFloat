@@ -3,7 +3,6 @@
 
 using System.Numerics;
 using static BigFloatLibrary.BigIntegerTools;
-using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -125,12 +124,12 @@ public readonly partial struct BigFloat
         // totalLen   = total useful bits of the radicand (ex‑guard)
         // needShift  = shift that makes totalLen even and gives us exactly
         //              2*wantedPrecision bits before we call the integer sqrt.
-        int totalLen = x.Scale + (x._size - BigFloat.GuardBits);
+        int totalLen = x.Scale + (x._size - GuardBits);
         int needShift = (wantedPrecision << 1)                // 2·prec
-                            - (x._size - BigFloat.GuardBits)  // minus existing bits
+                            - (x._size - GuardBits)  // minus existing bits
                             - (totalLen & 1);                 // make len even
 
-        BigInteger xx = x._mantissa << (needShift + BigFloat.GuardBits);
+        BigInteger xx = x._mantissa << (needShift + GuardBits);
 
         // ---- 2. Fast integer √ via the original Newton+ algorithm ---------------
         BigInteger root = NewtonPlusSqrt(xx);
@@ -503,7 +502,7 @@ public readonly partial struct BigFloat
         // 3) lift back to BigFloat and clamp to min(input‐precision, 52 bits)
         BigFloat result = new(sd);
         int wanted = Math.Min(prec, 52);
-        return BigFloat.SetPrecisionWithRound(result, wanted);
+        return SetPrecisionWithRound(result, wanted);
     }
 
     private static BigFloat SinCosTyler(BigFloat x, BigFloat term, int stopExp, int k)
@@ -522,7 +521,7 @@ public readonly partial struct BigFloat
                 break;
             }
 
-            if (denomLong >= int.MinValue && denomLong <= int.MaxValue)
+            if (denomLong is >= int.MinValue and <= int.MaxValue)
             {
                 term = -term * x2 / (int)denomLong;
             }

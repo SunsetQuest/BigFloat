@@ -8,7 +8,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
-using static BigFloatLibrary.BigFloatNumerics;
 using static BigFloatLibrary.BigIntegerTools;
 
 namespace BigFloatLibrary;
@@ -714,109 +713,17 @@ public readonly partial struct BigFloat
     ///////////////////////// Operator Overloads: BigFloat <--> BigInteger /////////////////////////
 
 
-
-    /// <summary>
-    /// Enhanced division with adaptive algorithm selection based on operand sizes
-    /// </summary>
     public static BigFloat operator /(BigFloat numerator, BigFloat denominator)
     {
-        const int SMALL_NUMBER_THRESHOLD = 96;  // Threshold for small number optimizations
-
         // Early exit for zero divisor
         if (denominator.IsStrictZero)
         {
             throw new DivideByZeroException("Division by zero");
         }
 
-        // Use optimized algorithm for small numbers
-        if (numerator._size < SMALL_NUMBER_THRESHOLD && denominator._size < SMALL_NUMBER_THRESHOLD)
-        {
-            return DivideSmallNumbers(numerator, denominator);
-        }
-
-        // Use advanced division algorithms for large numbers
-        if (ShouldUseBurnikelZiegler(numerator._size, denominator._size))
-        {
-            return DivideLargeNumbers(numerator, denominator);
-        }
-
         // Standard division algorithm
         return DivideStandard(numerator, denominator);
     }
-
-    /// <summary>
-    /// Optimized division for small numbers using hardware arithmetic when possible
-    /// </summary>
-    private static BigFloat DivideSmallNumbers(BigFloat divisor, BigFloat dividend)
-    {
-        int outputSize = Math.Min(divisor.Size, dividend.Size);
-
-        if (divisor._mantissa >> (divisor.Size - dividend.Size) <= dividend._mantissa)
-        {
-            outputSize--;
-        }
-
-        int wantedSizeForT = dividend.Size + outputSize + GuardBits;
-        int leftShiftTBy = wantedSizeForT - divisor.Size;
-
-
-        //        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy <= 64) put back???
-        if (divisor._size <= 64 && dividend._size <= 64 && leftShiftTBy is >= 0 and <= 64)
-        {
-            ulong divisorAbs = (ulong)BigInteger.Abs(divisor._mantissa);
-            ulong dividendAbs = (ulong)BigInteger.Abs(dividend._mantissa);
-
-            if (dividendAbs != 0)
-            {
-                UInt128 leftShiftedT = (UInt128)divisorAbs << leftShiftTBy;
-                UInt128 quotientAbs = leftShiftedT / dividendAbs;
-
-                BigInteger resIntPart = CreateBigIntegerFromUInt128(quotientAbs);
-                if (divisor._mantissa.Sign != dividend._mantissa.Sign)
-                {
-                    resIntPart = BigInteger.Negate(resIntPart);
-                }
-
-                int resScalePart = divisor.Scale - dividend.Scale - leftShiftTBy + GuardBits;
-                int sizePart = MantissaSize(resIntPart);
-
-                return new BigFloat(resIntPart, resScalePart, sizePart);
-            }
-        }
-
-        return DivideStandard(divisor, dividend);
-
-        static BigInteger CreateBigIntegerFromUInt128(UInt128 value)
-        {
-            Span<byte> bytes = stackalloc byte[16];
-            UInt128 temp = value;
-
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                bytes[i] = (byte)temp;
-                temp >>= 8;
-            }
-
-            return new BigInteger(bytes, isUnsigned: true);
-        }
-    }
-
-    /// <summary>
-    /// Advanced division algorithm for large numbers
-    /// </summary>
-    private static BigFloat DivideLargeNumbers(BigFloat divisor, BigFloat dividend)
-    {
-        BigFloat result = default;
-        bool handled = false;
-
-        OnDivideLargeNumbers(divisor, dividend, ref handled, ref result);
-
-        return handled ?
-            result :
-            DivideStandard(divisor, dividend);
-    }
-
-    static partial void OnDivideLargeNumbers(BigFloat divisor, BigFloat dividend, ref bool handled, ref BigFloat result);
 
     /// <summary>
     /// Standard division algorithm with optimizations
@@ -2115,6 +2022,14 @@ public readonly partial struct BigFloat
             return checked((int)trunc);
         }
     }
+
+    /// <summary>
+    /// Returns the bit-length of a mantissa using absolute value to keep
+    /// power-of-two negatives consistent with positives. Returns 0 for zero.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int MantissaSize(BigInteger value)
+        => (int)BigInteger.Abs(value).GetBitLength();
 
     /// <summary>
     /// Checks whether this BigFloat struct holds a valid internal state.

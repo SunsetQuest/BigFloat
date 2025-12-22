@@ -72,7 +72,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using static BigFloatLibrary.BigIntegerTools;
-using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 

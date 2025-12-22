@@ -5,7 +5,6 @@ using System.Buffers;
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using static BigFloatLibrary.BigFloatNumerics;
 
 namespace BigFloatLibrary;
 
@@ -446,7 +445,7 @@ public readonly partial struct BigFloat
     // future: add ", bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
     public static BigFloat ParseHex(string binaryInput, int binaryScaler = 0, int includedGuardBits = 0)
     {
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(binaryInput);
+        ArgumentException.ThrowIfNullOrWhiteSpace(binaryInput);
 
         return !TryParseHex(binaryInput.AsSpan(), out BigFloat result, binaryScaler, includedGuardBits)
             ? throw new ArgumentException("Unable to convert the hexadecimal string to a BigFloat.", binaryInput)
@@ -730,7 +729,7 @@ public readonly partial struct BigFloat
     /// <returns>A BigFloat result of the input binary string.</returns>
     public static BigFloat ParseBinary(string binaryInput, int binaryScaler = 0, int forceSign = 0, int includedGuardBits = int.MinValue)
     {
-        ArgumentNullException.ThrowIfNullOrWhiteSpace(binaryInput);
+        ArgumentException.ThrowIfNullOrWhiteSpace(binaryInput);
 
         return !TryParseBinary(binaryInput.AsSpan(), out BigFloat result, binaryScaler, forceSign, includedGuardBits)
             ? throw new ArgumentException("Unable to convert the binary string to a BigFloat.", binaryInput)
