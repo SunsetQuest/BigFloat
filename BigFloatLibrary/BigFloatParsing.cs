@@ -360,7 +360,7 @@ public readonly partial struct BigFloat
         // (1) in base-10 needs to be converted to base-2
         // (2) currently it's measured from the MSB but should measure from LSB
         int guardBits = (guardBitsIncluded != int.MinValue) ? guardBitsIncluded :
-            (accuracyDelimiterPosition < 0) ? 0 : // Future:instead of" < 0", maybe "< (GuardBits/2)"   //(radixDepth >= 0 ? 0 : 1)
+            (accuracyDelimiterPosition < 0) ? 0 :
             (int)((cleaned.Length - accuracyDelimiterPosition) * 3.321928095f);
 
         if (sign < 0) { val = BigInteger.Negate(val); }
@@ -378,7 +378,6 @@ public readonly partial struct BigFloat
             return true;
         }
 
-        // Future: we should probably increment guardBits for ALL numbers, not just "1" (we can just do a "guardBits+=2", I propose the same for TryParseHex)
         // If the user specifies a one (e.g., 1XXX OR 1 OR 0.01), the intended precision is closer to 2 bits.
         if (guardBits == 0 && BigInteger.Abs(val).IsOne)
         {
@@ -442,7 +441,6 @@ public readonly partial struct BigFloat
         }
     }
 
-    // future: add ", bool valueIncludesGuardBits = false, int addedBinaryPrecision = 0)
     public static BigFloat ParseHex(string binaryInput, int binaryScaler = 0, int includedGuardBits = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(binaryInput);
