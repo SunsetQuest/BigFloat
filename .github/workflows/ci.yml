@@ -32,4 +32,4 @@ jobs:
         run: dotnet test BigFloat.sln --configuration Release --no-build --verbosity normal
 
       - name: Run CI benchmarks (short)
-        run: dotnet run -c Release -p BigFloat.Benchmarks -- --job short --anyCategories CI
+        run: dotnet run -c Release --project BigFloatLibrary.Benchmarks/BigFloatLibrary.Benchmarks.csproj -- --job short --anyCategories CI
