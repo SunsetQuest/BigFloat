@@ -35,7 +35,7 @@ $packArgs = @(
     "BigFloatLibrary/BigFloatLibrary.csproj",
     "--configuration", $Configuration,
     "--no-build",
-    "--output", "published-packages"
+    "--output", "BigFloatLibrary/published-packages"
 )
 
 if (-not [string]::IsNullOrWhiteSpace($PackageVersion)) {

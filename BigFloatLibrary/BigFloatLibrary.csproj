@@ -13,7 +13,7 @@
 		<!-- NuGet package metadata -->
 		<PackageId>BigFloatLibrary</PackageId>
 		<!-- Update this for each release -->
-		<Version>4.0.2</Version>
+		<Version>4.3.0</Version>
 
 		<Authors>Ryan Scott White</Authors>
 		<Description>
